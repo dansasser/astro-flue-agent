@@ -26,11 +26,13 @@ SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.
 - [Documentation](#documentation)
 - [Development](#development)
 - [Contributing](#contributing)
-- [Maintainers / Author](#maintainers--author)
+- [Author](#author)
 - [Code of Conduct](#code-of-conduct)
 - [Security](#security)
+- [Support](#support)
+- [Changelog](#changelog)
 - [License](#license)
-- [Attribution](#attribution)
+- [Gorombo And The SIM-ONE Framework](#gorombo-and-the-sim-one-framework)
 
 ## Status
 
@@ -557,28 +559,119 @@ SIM-ONE Alpha applies the [SIM-ONE Framework](https://simoneframework.org/) on t
 
 ## Development
 
-<!-- Contributor setup, build, test, and typecheck guidance. -->
+Contributor development begins with the checkout and toolchain described in
+[Build From Source](#build-from-source). The repository uses Node.js 22.18 or
+newer and supports either npm, included with Node.js, or pnpm 10.10.0.
+
+### Run The Development Runtime
+
+Use the development runtime while changing the Flue application, agents,
+workers, tools, skills, connectors, or supporting services.
+
+#### npm
+
+```bash
+npm run dev
+```
+
+#### pnpm
+
+```bash
+pnpm run dev
+```
+
+### Build The Complete Product
+
+A complete contributor build prepares the embedding assets and Rust/WebAssembly
+memory helper, then builds the Flue runtime, SIM-ONE TUI, CLI, and product
+wrapper.
+
+#### npm
+
+```bash
+npm run fetch-embedding-model
+npm run wasm:build
+npm run build
+npm run build:tui
+npm --prefix sim-one-cli run build
+node scripts/check-sim-one-product-command.mjs
+```
+
+#### pnpm
+
+```bash
+pnpm run fetch-embedding-model
+pnpm run wasm:build
+pnpm run build
+pnpm run build:tui
+pnpm run build:cli
+node scripts/check-sim-one-product-command.mjs
+```
+
+### Verify The Complete Product
+
+Complete verification covers TypeScript and unit tests, Rust crates, the
+Rust/WebAssembly memory path, the built Flue HTTP runtime, the packaged SIM-ONE
+TUI, and the `sim-one` command. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+full npm and pnpm verification sequences, architecture expectations,
+change-specific checks, issue standards, and pull-request requirements.
 
 ## Contributing
 
-<!-- Contribution model, GitHub issues, PR expectations, development-phase note. -->
+Use [GitHub Issues](https://github.com/dansasser/sim-one-alpha/issues) for bug
+reports, feature requests, and documentation problems. Focused pull requests
+that meet the project standards may be submitted against `main`.
 
-## Maintainers / Author
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull request.
+Do not disclose vulnerabilities or secrets in public issues; follow the
+[Security Policy](SECURITY.md).
 
-<!-- Gorombo, Daniel T Sasser II, project links, ownership. -->
+## Author
+
+SIM-ONE Alpha was created by
+[Daniel T Sasser II](https://dansasser.me), founder and CEO of
+[Gorombo](https://gorombo.com) and creator of the
+[SIM-ONE Framework](https://simoneframework.org). See
+[AUTHORS.md](AUTHORS.md) for authorship, project ownership, and contributor
+attribution.
 
 ## Code of Conduct
 
-<!-- Community expectations or link to CODE_OF_CONDUCT.md when present. -->
+Participation in the SIM-ONE Alpha community is governed by the
+[Code of Conduct](CODE_OF_CONDUCT.md). Report conduct concerns privately to
+[contact@gorombo.com](mailto:contact@gorombo.com).
 
 ## Security
 
-<!-- Responsible disclosure, no secrets in issues, approval-gated action model. -->
+Do not disclose vulnerabilities, credentials, private data, or other sensitive
+information in public issues. Report security concerns privately to
+[contact@gorombo.com](mailto:contact@gorombo.com) and follow the
+[Security Policy](SECURITY.md).
+
+## Support
+
+See [Support](SUPPORT.md) for installation help, usage questions, bug reports,
+and feature requests. Security vulnerabilities and conduct concerns must use the
+private reporting paths above.
+
+## Changelog
+
+User-visible changes are recorded in the [Changelog](CHANGELOG.md), beginning
+with **SIM-ONE Alpha 0.1.0 - Beta Release**.
 
 ## License
 
-<!-- Actual license statement or current license status. -->
+SIM-ONE Alpha is released under the [MIT License](LICENSE).
 
-## Attribution
+## Gorombo And The SIM-ONE Framework
 
-<!-- Gorombo, Flue, Astro ecosystem, SIM-ONE Framework, and other required acknowledgements. -->
+SIM-ONE Alpha is developed by [Gorombo](https://gorombo.com) as the base
+architecture behind Gorombo's AI Employees. It applies the
+[SIM-ONE Framework](https://simoneframework.org), Gorombo's protocol-governed
+method for building AI employees whose rules, context, capabilities, delegated
+work, approvals, and responses remain inside an enforced orchestration path.
+
+The product is built with [Flue](https://flueframework.com/), the TypeScript
+agent runtime from the Astro ecosystem. Flue provides the durable agent
+primitives; the SIM-ONE Framework defines how Gorombo applies those primitives
+to governed AI employee systems.
