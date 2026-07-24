@@ -1,0 +1,61 @@
+THIRD_PARTY_NOTICES.md
+  s_a3b1aea6901a1b::t_bd5e0d68536977 1-18,20-71,73-74,76-182
+  s_a3b1aea6901a1b::t_d14f7247f7c21e 72
+  s_a3b1aea6901a1b::t_cb0c019e584746 19,75
+AUTHORS.md
+  s_a3b1aea6901a1b::t_6419f1e7e2fe37 1-60
+SUPPORT.md
+  s_a3b1aea6901a1b::t_bd5e0d68536977 1-60
+CHANGELOG.md
+  s_a3b1aea6901a1b::t_bd5e0d68536977 3-6,10,15,33-34
+  s_a3b1aea6901a1b::t_e020ada0167ed7 1-2,7-9,11-14,16-32
+SECURITY.md
+  s_a3b1aea6901a1b::t_bd5e0d68536977 1-61,66-68
+  s_a3b1aea6901a1b::t_cb0c019e584746 62-65
+README.md
+  s_a3b1aea6901a1b::t_f08e27c4a6903d 566,568-572,577,581-617
+  s_a3b1aea6901a1b::t_8a3eb88d0c8844 562,579-580,621-623,625-627
+  s_a3b1aea6901a1b::t_95963eaa520f26 640-642,646-649,653-655,659,664,668-672,674-677
+  s_a3b1aea6901a1b::t_6bb8249c430690 660
+  s_a3b1aea6901a1b::t_9c3ce82c197662 29,32-33,35,629,651-652,656-658,666
+  s_a3b1aea6901a1b::t_ded29b4ed6799c 563
+  s_a3b1aea6901a1b::t_6419f1e7e2fe37 631-636
+  s_a3b1aea6901a1b::t_7b53bee9b0731b 564,567,573-576,578
+  s_a3b1aea6901a1b::t_0c88ac795443c4 565
+  s_a3b1aea6901a1b::t_53de41ee85711c 630
+  s_a3b1aea6901a1b::t_29137a34111826 650
+  s_a3b1aea6901a1b::t_791cfaf117f443 665
+LICENSE
+  s_a3b1aea6901a1b::t_bd5e0d68536977 1-21
+CODE_OF_CONDUCT.md
+  s_a3b1aea6901a1b::t_bd5e0d68536977 1-84
+package.json
+  s_a3b1aea6901a1b::t_6419f1e7e2fe37 14
+  s_a3b1aea6901a1b::t_3501f088796255 28-30
+  s_a3b1aea6901a1b::t_b9d905f55d2b02 15-18,20-22
+  s_a3b1aea6901a1b::t_c043a7e68ad290 7
+CONTRIBUTING.md
+  s_a3b1aea6901a1b::t_8a3eb88d0c8844 1-36,39-41,53-66,74,77-109,117-124,126,166-168,174-175,180,183,191-207,209-228,231-234
+  s_a3b1aea6901a1b::t_7b53bee9b0731b 37-38,42-52,68-73,75-76,131-134,157-158,160,163-165,184-186,189-190
+  s_a3b1aea6901a1b::t_bd5e0d68536977 110-116,208,229-230
+  s_a3b1aea6901a1b::t_f08e27c4a6903d 67,125,127-130,135,137-144,146-151,153-156,159,161-162,169-173,176-179,181-182
+  s_a3b1aea6901a1b::t_4466981c346804 136,145,187
+  s_a3b1aea6901a1b::t_80250c6d87a94e 152
+  s_a3b1aea6901a1b::t_d22803adc91109 188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0d0ee8942039f0c0b666309e5c01e8bbc6c26bc0",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
