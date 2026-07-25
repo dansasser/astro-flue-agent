@@ -67,7 +67,7 @@ uses the seven provider-backed chat and embedding cards from
 `createModelCards()`. The embedding chain reads the complete catalog so the
 bundled ONNX card participates in cloud-to-local fallback.
 
-| Card key | Advertised context | Guaranteed or provider-reported context | Maximum output |
+| Card key | Advertised context | Guaranteed or provider-reported context | Output limit or embedding dimensions |
 | --- | ---: | ---: | ---: |
 | `minimax-m3-cloud` | 1,000,000 | guaranteed 512,000; provider 524,288 | 131,072 |
 | `deepseek-v4-pro-cloud` | 1,048,576 | provider 1,048,576 | 1,048,576 |

@@ -154,6 +154,7 @@ After the complete build, run the full project verification:
 ### npm
 
 ```bash
+npm run docs:check
 npm run typecheck
 npm run test:unit
 npm run cargo:test
@@ -165,6 +166,7 @@ npm run smoke:memory
 ### pnpm
 
 ```bash
+pnpm run docs:check
 pnpm run typecheck
 pnpm run test:unit
 pnpm run cargo:test

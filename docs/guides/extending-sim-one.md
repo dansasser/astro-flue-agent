@@ -117,11 +117,8 @@ Updating a skill, tool, or worker re-fetches its recorded source. Removing it
 deletes the registry record and managed files. MCP update refreshes stored
 connection metadata; MCP removal deletes the connection record.
 
-Apply lifecycle changes with:
-
-```bash
-sim-one restart
-```
+Apply lifecycle changes by restarting the gateway through the process or
+service manager that launched it.
 
 ## Agent-Added Capabilities
 
@@ -147,12 +144,10 @@ remain subject to:
 
 ```bash
 sim-one <skill|tool|worker|mcp> list
-sim-one restart
-sim-one doctor
 ```
 
-Then open a new terminal session and confirm the capability is available to its
-owning agent.
+Restart the gateway, then open a new terminal session and confirm the
+capability is available to its owning agent.
 
 ## Related Documentation
 

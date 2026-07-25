@@ -30,7 +30,7 @@ Runtime loading happens during orchestrator initialization in `src/agents/orches
 - `loadUserWorkers()` imports user worker profiles.
 - The orchestrator merges user tools into `tools` and user workers into `subagents`.
 
-Skills are instruction assets. Tools, workers, and MCP servers can execute code or external calls, so approval and enablement behavior matters. CLI/user-initiated operations and agent-initiated operations are different trust contexts; check `docs/architecture/capability-system.md` and `src/engine/tools/capabilities-tool.ts` before changing this area.
+Skills are instruction assets. Tools, workers, and MCP servers can execute code or external calls, so approval and enablement behavior matters. CLI/user-initiated operations and agent-initiated operations are different trust contexts; check `docs/architecture/capability-system.md` and `src/engine/tools/capability-tools.ts` before changing this area.
 
 ## Protocols
 

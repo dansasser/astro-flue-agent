@@ -1,158 +1,102 @@
-# Telegram Connector — Operations Guide
+# Telegram Connector Operations
 
-This guide covers running and administering the native Telegram ingress/egress connector in SIM-ONE Alpha.
+SIM-ONE Alpha uses Flue's Telegram channel for authenticated webhook ingress
+and the Telegram Bot API for replies and administrative notifications.
 
-## What it does
+## Runtime Behavior
 
-- Long-polls the Telegram Bot API for messages.
-- Enforces an access gate for direct messages (DMs) and groups.
-- Delivers approved messages to the durable orchestrator agent.
-- Sends the orchestrator's text response back to Telegram.
-- Supports attachments downloaded to a local inbox.
-
-## Prerequisites
-
-1. Create a bot with [@BotFather](https://t.me/botfather) and copy the bot token.
-2. For group delivery:
-   - Disable **Group Privacy** in BotFather (`/setprivacy` → `Disable`).
-   - Remove and re-add the bot to the group so it can read messages.
-3. Choose one deployment environment per bot token. Telegram allows only one active `getUpdates` consumer per token.
+- Flue authenticates webhook requests with `TELEGRAM_WEBHOOK_SECRET_TOKEN`.
+- SIM-ONE normalizes admitted updates and persists trusted event context.
+- Direct-message and group admission runs before orchestrator dispatch.
+- The durable orchestrator receives admitted messages.
+- `telegram_reply` can respond only to the conversation identified by a
+  persisted trusted Telegram event.
+- Pairing, allow-list, group, and policy records live in the session database.
 
 ## Configuration
 
-### Environment variables
+Set the required values in the runtime secret environment:
 
 ```bash
-TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-TELEGRAM_APPROVED_USER_IDS=6653274440,123456789
-# optional
-TELEGRAM_BOT_USERNAME=mygorombobot
-TELEGRAM_DM_POLICY=pairing
-TELEGRAM_MENTION_PATTERNS=gorombo,bot
-TELEGRAM_INBOX_DIR=/var/gorombo/telegram-inbox
+TELEGRAM_BOT_TOKEN=<bot-api-token>
+TELEGRAM_WEBHOOK_SECRET_TOKEN=<random-webhook-secret>
 ```
 
-### Runtime config (future)
+Optional admission settings:
 
-A `connectors.telegram` block in `src/config/gorombo.config.json` is planned for a later iteration. For now, configure the connector through environment variables and the admin HTTP API. When the JSON block is implemented, env vars will take precedence for the bot token; config values will supplement or override env values for policy, approved IDs, and groups.
+```bash
+TELEGRAM_APPROVED_USER_IDS=<comma-separated-user-ids>
+TELEGRAM_ADMIN_USER_IDS=<comma-separated-admin-ids>
+TELEGRAM_BOT_USERNAME=<bot-username>
+TELEGRAM_DM_POLICY=pairing
+TELEGRAM_MENTION_PATTERNS=<comma-separated-patterns>
+TELEGRAM_INBOX_DIR=.gorombo/telegram-inbox
+```
 
-## DM policies
+Omit `TELEGRAM_BOT_TOKEN` to run without Telegram. When the bot token is set,
+`TELEGRAM_WEBHOOK_SECRET_TOKEN` is required and startup fails without it.
+
+## Direct-Message Policies
 
 | Policy | Behavior |
-|--------|----------|
-| `pairing` (default) | Unknown senders receive a 6-character pairing code and must be approved by an admin. |
-| `allowlist` | Only users in the allowlist (config + runtime DB) are served. Unknown senders are silently dropped. |
-| `disabled` | All Telegram DMs are dropped. |
+| --- | --- |
+| `pairing` | Admits users after a stored pairing request is approved |
+| `allowlist` | Admits only stored or configured users |
+| `disabled` | Rejects direct messages |
 
-Runtime policy changes via the admin API take effect immediately for the next update.
+The stored policy takes precedence; the default is `pairing`.
 
-## Pairing workflow
+## Group Admission
 
-1. Unknown user sends any message to the bot.
-2. Bot replies with: `Pairing required — ask an admin to run: openclaw pairing approve telegram <code>`
-3. Admin calls `POST /api/connectors/telegram/pair { code }`.
-4. Bot sends the user a welcome message. The user's next message is delivered.
+A group must have a stored group record. Its record can require a bot mention
+and restrict triggering users with `allowFrom`. The sender must also be in the
+stored or configured user allow list.
 
-## Admin HTTP API
+## Admin API
 
-All routes require the `x-api-secret` header (external connector auth — the local TUI bypasses this via loopback).
+All admin routes require the external API authentication contract documented in
+the [HTTP API Reference](../reference/http-api.md).
 
-```bash
-export API_SECRET=$(grep API_SECRET .env | cut -d= -f2)
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/connectors/telegram/status` | List policy, users, pending pairings, and groups |
+| `GET` | `/api/connectors/telegram/health` | Return connector counters and last-update state |
+| `POST` | `/api/connectors/telegram/pair` | Approve a pending pairing code |
+| `POST` | `/api/connectors/telegram/deny` | Deny a pending pairing code |
+| `POST` | `/api/connectors/telegram/allow` | Add an allowed user |
+| `POST` | `/api/connectors/telegram/remove` | Remove an allowed user |
+| `POST` | `/api/connectors/telegram/policy` | Change the direct-message policy |
+| `GET` | `/api/connectors/telegram/groups` | List configured groups |
+| `POST` | `/api/connectors/telegram/group` | Add or update a group |
+| `DELETE` | `/api/connectors/telegram/group/:groupId` | Remove a group |
 
-# Status
-GET /api/connectors/telegram/status
+Example approval request:
 
-# Health
-GET /api/connectors/telegram/health
-
-# Approve a pairing code
+```http
 POST /api/connectors/telegram/pair
-{ "code": "a4f91c" }
+x-api-secret: <API_SECRET>
+content-type: application/json
 
-# Deny/delete a pairing code
-POST /api/connectors/telegram/deny
-{ "code": "a4f91c" }
-
-# Directly allow a user
-POST /api/connectors/telegram/allow
-{ "userId": "6653274440", "chatId": "6653274440" }
-
-# Remove a user (notify=true sends a Telegram message)
-POST /api/connectors/telegram/remove
-{ "userId": "6653274440", "notify": true }
-
-# Switch DM policy at runtime
-POST /api/connectors/telegram/policy
-{ "dmPolicy": "disabled" }
-
-# Configure a group
-POST /api/connectors/telegram/group
-{ "groupId": "-1003884375753", "requireMention": true, "allowFrom": ["6653274440"] }
-
-# List configured groups
-GET /api/connectors/telegram/groups
-
-# Remove a group
-DELETE /api/connectors/telegram/group/-1003884375753
+{"code":"a4f91c"}
 ```
 
-## Group setup
+## Functional Verification
 
-1. Add the bot to the group.
-2. Call `POST /api/connectors/telegram/group` with the group ID.
-3. If `requireMention` is true, the bot only responds when:
-   - Mentioned as `@botusername`.
-   - The message is a reply to one of the bot's messages.
-   - The message text matches one of the configured `TELEGRAM_MENTION_PATTERNS` (case-insensitive word match).
-4. If `allowFrom` is set, only those user IDs can trigger responses, even if other members can mention the bot.
+Do not treat a process, port, or health payload alone as proof that Telegram is
+working.
 
-## Attachment inbox
+1. Send a webhook update with Telegram's configured secret token.
+2. Confirm `/api/connectors/telegram/health` records a recent update.
+3. Send a message from an allowed user.
+4. Confirm the orchestrator handles it and a Telegram reply arrives.
+5. Confirm an unknown or disallowed user is rejected by the admission policy.
 
-Photos, documents, voice, audio, video, video notes, and stickers are downloaded to `.gorombo/telegram-inbox/` (or `TELEGRAM_INBOX_DIR`). Local paths are attached to the normalized event under `event.raw.__goromboAttachmentPaths`.
+## Security Boundary
 
-## Deployment notes
-
-- **One poller per token.** Running two SIM-ONE Alpha processes with the same token will cause `409 Conflict` from Telegram.
-- **IPv4-first DNS.** Telegram's API can silently hang on IPv6 in some environments. Start the process with:
-
-  ```bash
-  NODE_OPTIONS=--dns-result-order=ipv4first node dist/server.mjs
-  ```
-
-- **Graceful shutdown.** `SIGTERM`/`SIGINT` aborts the in-flight `getUpdates` request and waits for any in-progress orchestrator delivery to finish.
-
-## Observability
-
-Structured events are written to stderr:
-
-```text
-telegram:poller:start {"username":"mygorombobot"}
-telegram:update:received ...
-telegram:gate:pair {"senderId":"...","chatId":"...","code":"..."}
-telegram:reply:sent {"chatId":"...","messageId":123}
-telegram:poller:error {"error":"..."}
-```
-
-The health endpoint returns:
-
-- `enabled` — connector configured and started
-- `pollerRunning` — poller loop is active
-- `lastUpdateReceivedAt` — ISO timestamp of the last Telegram update
-- `updateCount` — total updates received this run
-- `errorCount` — total errors this run
-- `pendingPairingCount` — active pending codes
-- `allowedUserCount` — approved users
-
-## Verifying it is working
-
-Do not rely on `ps` or port checks. Verify end-to-end:
-
-1. Check `/api/connectors/telegram/health` returns `enabled: true` and a recent `lastUpdateReceivedAt` after sending a message.
-2. Send a message from an approved user and confirm a Telegram reply arrives.
-3. Check stderr for `telegram:reply:sent` without a following `telegram:reply:failed`.
-
-## Limitations
-
-- Only long-polling is supported; webhooks are not implemented.
-- Inline queries, edited messages, channel posts, and reactions are ignored.
+- Webhook authentication occurs before update handling.
+- Connector identity comes from the Telegram channel, not a model-supplied
+  field.
+- Admission uses stored policy and trusted sender/chat identifiers.
+- The reply tool rehydrates trusted event context and cannot select an
+  arbitrary Telegram conversation.
+- Tokens and webhook secrets stay in the runtime secret environment.

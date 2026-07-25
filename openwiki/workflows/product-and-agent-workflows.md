@@ -89,7 +89,7 @@ Capabilities can be managed by developer scripts, agent tools, and the `sim-one`
 Current source surfaces:
 
 - `scripts/capability-admin.mjs` for developer/admin CRUD.
-- `src/engine/tools/capabilities-tool.ts` for orchestrator-visible capability management tools.
+- `src/engine/tools/capability-tools.ts` for orchestrator-visible capability management tools.
 - `sim-one-cli/src/cli.tsx` for product CLI subcommands.
 - `src/engine/capabilities/` for SQLite store, loaders, materializers, MCP broker, user tools, and user workers.
 
@@ -97,7 +97,11 @@ The current `sim-one` CLI declares `skill`, `tool`, `worker`, and `mcp` subcomma
 
 ## CLI and TUI workflow
 
-`sim-one-cli/src/cli.tsx` defines the `sim-one` binary. With no subcommand, it launches the Ink TUI. It can connect to a provided `--base-url`, or start/ensure a local server through `sim-one-cli/src/launcher/server-manager.ts`. The default session id is `primary`, reflecting recent history that renamed the default from `proto`.
+`sim-one-cli/src/cli.tsx` defines the `sim-one` binary. With no subcommand, it
+launches the current terminal interface. It can connect to a provided
+`--base-url`, or start/ensure a local server through
+`sim-one-cli/src/launcher/server-manager.ts`. Session creation and resume
+behavior belongs to the current terminal implementation and session routes.
 
 `package.json` exposes:
 
@@ -107,13 +111,16 @@ pnpm run build:all
 pnpm run test:tui
 ```
 
-`build:all` builds the runtime, builds the CLI package, and launches `.gorombo/sim-one-cli/cli.js`. This is a developer workflow, not the final installed product flow.
+`build:all` builds the runtime, terminal interface, and CLI package, then runs
+the product-command validation script.
 
 ## Telegram and connector workflow
 
 Telegram integration is under `src/channels/telegram.ts` with admin routes in `src/api/routes/telegram-admin.ts`. The orchestrator has a `telegram_reply` tool when `TELEGRAM_BOT_TOKEN` is configured.
 
-Tests include `src/tests/telegram-connector.test.ts` and `src/tests/telegram-approval-ui.test.ts`. Recent history moved Telegram from the previous `src/api/channels/` path to `src/channels/`, so use the current path.
+Tests include `src/tests/telegram-connector.test.ts` and
+`src/tests/telegram-approval-ui.test.ts`. Recent history moved Telegram from a
+former API-nested channel path to `src/channels/`, so use the current path.
 
 ## Schedule workflow
 

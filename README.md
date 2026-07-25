@@ -12,6 +12,12 @@
 
 SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.com), built with [Flue](https://flueframework.com/) and the [SIM-ONE Framework](https://simoneframework.org). It is the base architecture behind Gorombo's AI Employees: a self-hosted runtime that combines protocols, memory, RAG, workers, tools, schedules, connectors, approvals, and local computer control so AI employees can receive work, learn as they work, and act through governed execution paths.
 
+> **Pre-release notice:** SIM-ONE Alpha `0.1.0 Beta` has not been published.
+> The release package and `sim-one.sh` installer are not available yet. The
+> repository can be built from source, while packaged onboarding, service
+> commands, the Web UI, Discord, and full release protocol enforcement remain
+> release gates. See [Pre-Release Status](docs/getting-started/pre-release-status.md).
+
 ## Table of Contents
 
 - [Status](#status)
@@ -38,7 +44,7 @@ SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.
 
 ## Status
 
-SIM-ONE Alpha is the base architecture behind [Gorombo](https://gorombo.com)'s AI Employees. It ships as a self-hosted AI employee runtime with the `sim-one` CLI, SIM-ONE terminal UI, Web UI, gateway API, connectors, scheduled jobs, runtime capability management, memory/RAG, worker delegation, protocol loading, and approval-gated local actions.
+SIM-ONE Alpha is the base architecture behind [Gorombo](https://gorombo.com)'s AI Employees. The pre-release source provides the `sim-one` CLI, SIM-ONE terminal UI, gateway API, Telegram connector, scheduled jobs, runtime capability management, memory/RAG, worker delegation, protocol loading, and approval-gated local actions. Packaging and the remaining release gates are tracked in [Pre-Release Status](docs/getting-started/pre-release-status.md).
 
 ## What Is SIM-ONE Alpha?
 
@@ -52,16 +58,16 @@ The model still reasons, but the runtime governs how work is admitted, routed, e
 
 SIM-ONE Alpha belongs in the same broader category as [OpenClaw](https://github.com/openclaw/openclaw) and [Hermes Agent](https://github.com/NousResearch/Hermes-Agent): self-hosted AI agents that can use tools, remember context, connect to external channels, automate work, and improve over time.
 
-The difference is architectural. SIM-ONE Alpha uses [Flue](https://flueframework.com/) as the agent harness and layers the [SIM-ONE Framework](https://simoneframework.org) on top of it so governance is not just prompt text. The orchestrator is the mandatory control plane for all action and flow: it loads runtime protocols, checks permissions, selects capabilities, delegates to workers, validates results, and rejects work that is outside policy.
+The difference is architectural. SIM-ONE Alpha uses [Flue](https://flueframework.com/) as the agent harness and layers the [SIM-ONE Framework](https://simoneframework.org) on top of it so governance is not just prompt text. The orchestrator is the control plane for action and flow: it owns protocol loading, capability selection, worker delegation, validation, and policy rejection. The Protocol Tool, trusted-event lookup, SQLite provider, and base protocol records are present in the source; the complete release policy set and fail-closed pre-execution activation remain release gates.
 
 | Area | OpenClaw | Hermes Agent | SIM-ONE Alpha |
 | --- | --- | --- | --- |
 | Product class | Local-first personal AI assistant and agent gateway | Self-improving assistant and automation agent | Protocol-governed AI employee runtime |
 | Primary promise | A personal assistant that can connect across messaging surfaces and local automation | An agent that grows through tools, skills, memory, MCP, schedules, and gateway control | AI employees that receive work, remember context, delegate execution, and act through governed runtime paths |
-| Interfaces | Messaging gateway, local app/runtime, and assistant surfaces | CLI, messaging gateway, scheduled execution, and agent runtime surfaces | `sim-one` CLI, SIM-ONE terminal UI, Web UI, gateway API, connectors, and scheduled jobs |
-| Security architecture | Controls sit around the assistant session, gateway, and tool execution path | Controls sit around the agent loop, tools, skills, MCP, schedules, approvals, and subagents | The orchestrator is the required enforcement layer for every action: protocols are loaded from the runtime database, capabilities are selected through registries, workers report back, and disallowed work is rejected before it continues |
+| Interfaces | Messaging gateway, local app/runtime, and assistant surfaces | CLI, messaging gateway, scheduled execution, and agent runtime surfaces | `sim-one` CLI, SIM-ONE terminal UI, gateway API, Telegram, and scheduled jobs in the pre-release source |
+| Security architecture | Controls sit around the assistant session, gateway, and tool execution path | Controls sit around the agent loop, tools, skills, MCP, schedules, approvals, and subagents | The orchestrator is the required control layer: the protocol path and governed registries exist now; complete release policy records and fail-closed pre-execution enforcement are release gates |
 | Authority model | The assistant session is the primary control surface for reasoning, tool use, and user interaction | The agent control loop coordinates tools, skills, memory, schedules, approvals, and subagents | The orchestrator is the mandatory control plane between users, protocols, memory, tools, workers, approvals, and final response |
-| Governance source | Assistant instructions, settings, tool policies, workflow behavior, and gateway configuration | Assistant instructions, skills, tools, approval flows, gateway configuration, and runtime settings | SQLite-backed protocol records loaded at runtime before reasoning, tool execution, worker delegation, or response generation |
+| Governance source | Assistant instructions, settings, tool policies, workflow behavior, and gateway configuration | Assistant instructions, skills, tools, approval flows, gateway configuration, and runtime settings | SQLite-backed protocol records loaded through the Protocol Tool from trusted event context; release policy coverage and mandatory runtime enforcement are completed before publication |
 | Task execution | The assistant can use available tools and automation paths directly within its session model | The agent uses tools, skills, schedules, MCP, and subagents to complete work | Workers execute specialized work; the orchestrator governs routing, policy, validation, and final response |
 | Workers / subagents | Subagents and assistant workflows extend the main assistant experience | Subagents support task specialization inside the agent system | Workers are first-class executors that report back to the orchestrator instead of owning final authority |
 | Memory and learning | Assistant memory and context support continuity and personalization | Persistent memory, skills, and workflows support agent growth over time | Memory, RAG, work history, and capability records are retrieved and applied through the governed runtime |
@@ -89,7 +95,7 @@ User or connector
 
 The orchestrator governs. Workers execute.
 
-Protocols are runtime rule records stored in SQLite, not just instructions inside the model context. The orchestrator loads those protocols before final reasoning, tool execution, worker delegation, or response generation. Capabilities are exposed through registries. Workers report back to the orchestrator. Approval paths gate risky mutations.
+Protocols are runtime rule records stored in SQLite, not just instructions inside the model context. The Protocol Tool is attached to the orchestrator, rehydrates trusted event context, and loads matching enabled records. Chat ingress and orchestrator instructions require that call before final reasoning, tool execution, worker delegation, or response generation. Capabilities are exposed through registries, workers report back to the orchestrator, and approval paths gate risky mutations. Activation of the complete release protocol set and fail-closed pre-execution enforcement is recorded in [Pre-Release Status](docs/getting-started/pre-release-status.md).
 
 That is the SIM-ONE Alpha difference: security and governance are part of the runtime architecture, not only a set of reminders inside an assistant prompt.
 
@@ -97,8 +103,8 @@ That is the SIM-ONE Alpha difference: security and governance are part of the ru
 
 ### Governed Runtime
 
-- Protocol-governed orchestrator that loads runtime rules before reasoning, tool execution, worker delegation, or response generation.
-- SQLite-backed protocols for global, connector, client, project, workflow, task, output, and safety rules.
+- Protocol Tool attached to the orchestrator with trusted-event lookup and SQLite-backed rule loading.
+- Base protocol records for global, delegation, chat, coding verification, approval, and progress behavior.
 - Gateway-centered ingress for connector messages, API requests, schedules, approvals, telemetry, and durable sessions.
 - Approval-gated mutation paths for risky local, coding, MCP, and external side effects.
 
@@ -128,7 +134,7 @@ That is the SIM-ONE Alpha difference: security and governance are part of the ru
 - Product `sim-one` CLI for launching the local experience and managing capabilities.
 - SIM-ONE terminal UI with separate transcript/context pane, editable prompt pane, status bar, live progress rows, and durable session controls.
 - TUI slash commands for `/session`, `/sessions`, `/new`, `/clear`, `/resume`, `/rename`, `/compact`, `/help`, and `/exit`.
-- Web UI, gateway API, Telegram connector, scheduled jobs, and app-owned HTTP routes for chat events, sessions, knowledge, approvals, telemetry, and schedules.
+- Gateway API, Telegram connector, scheduled jobs, and app-owned HTTP routes for chat events, sessions, knowledge, approvals, telemetry, and schedules.
 
 ### Models, Tools, And Local Actions
 
@@ -138,33 +144,26 @@ That is the SIM-ONE Alpha difference: security and governance are part of the ru
 
 ## Quick Start
 
-Install SIM-ONE Alpha from a POSIX shell:
-
-```bash
-curl -fsSL https://github.com/dansasser/sim-one-alpha/releases/latest/download/sim-one.sh | sh
-```
-
-The installer adds the `sim-one` command, installs the self-hosted runtime, and opens the onboarding TUI. Onboarding walks through model-provider API keys, agent and service tokens, Gmail app authorization, and the other credentials and settings required by the services you enable. It validates the setup, starts the local gateway, and opens the SIM-ONE TUI for the first conversation.
-
-Once the first TUI session is working, ask SIM-ONE to connect Telegram, Discord, or another supported connector. SIM-ONE guides the connector-specific setup and pairing from that authenticated local session, leaving the user with secure local TUI access and approved connector access.
-
-After onboarding, launch the terminal interface at any time with:
-
-```bash
-sim-one
-```
+The `0.1.0 Beta` release package and `sim-one.sh` are not published yet. For
+pre-release evaluation, follow [Build From Source](#build-from-source), then
+launch the locally built `sim-one` command. The packaged first-run experience,
+including credential collection, onboarding, first chat, and conversational
+connector pairing, is documented in
+[Pre-Release Status](docs/getting-started/pre-release-status.md) until the
+signed release assets are available.
 
 ## Installation
 
 ### Install With `sim-one.sh`
 
-The packaged installer is the recommended installation method. It installs the SIM-ONE runtime, terminal interface, `sim-one` command, structured-memory engine, and required local assets under `~/.gorombo/`. Node.js, npm, pnpm, Rust, and `wasm-pack` are not required for a packaged installation.
-
-```bash
-curl -fsSL https://github.com/dansasser/sim-one-alpha/releases/latest/download/sim-one.sh | sh
-```
-
-The installer continues directly into onboarding. API keys, service tokens, Gmail authorization, and other secrets are collected there rather than placed in shell commands or committed configuration files. Connector pairing follows from the first working SIM-ONE TUI session.
+The packaged installer is the release installation method, but it is not
+published during this pre-release. Publication requires a versioned release
+archive, `sim-one.sh`, checksums, and an integrity-verified download procedure.
+It installs the runtime, terminal interface, `sim-one` command,
+structured-memory engine, and local assets under `~/.gorombo/`, then continues
+through onboarding to the first working conversation. See
+[Installation](docs/getting-started/installation.md) for the release contract
+and the currently available source-build path.
 
 ### Build From Source
 
@@ -208,23 +207,19 @@ pnpm run build:tui
 pnpm run build:cli
 ```
 
-Start onboarding from the locally built product command:
-
-```bash
-./.gorombo/sim-one-cli/sim-one install
-```
-
-After onboarding, start SIM-ONE with:
+Start SIM-ONE with:
 
 ```bash
 ./.gorombo/sim-one-cli/sim-one
 ```
 
-Both source-build paths fetch the bundled embedding model, compile the Rust/WASM structured-memory engine, build the Flue Node runtime, build the terminal interface, and create the `sim-one` product wrapper. Onboarding then follows the same credential, validation, first-chat, and connector-pairing flow as the packaged installer.
+Both source-build paths fetch the bundled embedding model, compile the Rust/WASM structured-memory engine, build the Flue Node runtime, build the terminal interface, and create the `sim-one` product wrapper. Source builds currently use file-based configuration; the packaged onboarding command is a release gate.
 
 ## Configuration
 
-Onboarding creates the initial configuration. After installation, SIM-ONE Alpha keeps runtime behavior separate from secrets:
+SIM-ONE Alpha keeps runtime behavior separate from secrets. Pre-release source
+builds configure these files directly; the packaged onboarding flow owns this
+setup after release:
 
 | File | Purpose |
 | --- | --- |
@@ -277,7 +272,9 @@ Add only the integrations you enable:
 | Web research | Uses Ollama Search and the configured Ollama key by default; `OLLAMA_WEB_SEARCH_BASE_URL` and `OLLAMA_WEB_SEARCH_TIMEOUT_MS` are optional |
 | Runpod image generation | Set `RUNPOD_API_KEY`; endpoint, model-catalog, and output-directory overrides are optional |
 
-Telegram remains disabled when `TELEGRAM_BOT_TOKEN` is omitted. Connector access is paired and governed from an authenticated SIM-ONE session after the local TUI is working.
+Telegram remains disabled when `TELEGRAM_BOT_TOKEN` is omitted. Telegram access
+is paired and governed through trusted connector and local administration
+surfaces.
 
 ### Runtime Data
 
@@ -295,31 +292,28 @@ Storage paths can be changed in the `storage`, `memory`, and `schedules` blocks 
 
 ### Apply Changes
 
-Configuration is loaded when the gateway starts. Apply file or secret changes and verify the resulting installation with:
-
-```bash
-sim-one restart
-sim-one doctor
-```
+Configuration is loaded when the gateway starts. After changing a file or
+secret, restart the gateway through the process or service manager that launched
+it, then open `sim-one` and verify an end-to-end response. The packaged
+`restart` and `doctor` commands are not available in the pre-release CLI.
 
 Startup fails closed for invalid JSON, unsupported configuration versions, invalid gateway values, unknown model-card keys, duplicate primary/backup selection, or missing credentials for a selected model.
 
 ## Usage
 
-`sim-one` is the unified command for onboarding, terminal access, configuration, diagnostics, gateway service control, and runtime capability management. Commands entered in the shell are separate from slash commands entered inside the TUI.
+The current `sim-one` command launches the terminal interface and manages
+runtime capabilities. Commands entered in the shell are separate from slash
+commands entered inside the TUI.
 
 ### Product Commands
 
 | Command | Purpose |
 | --- | --- |
-| `sim-one install` | Open the onboarding TUI for first-run setup. |
-| `sim-one doctor` | Check installation health, gateway connectivity, and model configuration. |
-| `sim-one config get <key>` | Read a runtime configuration value. |
-| `sim-one config set <key> <value>` | Set a runtime configuration value. |
-| `sim-one status` | Show the installed gateway service status. |
-| `sim-one start` | Start the installed gateway service. |
-| `sim-one restart` | Restart the installed gateway service. |
-| `sim-one stop` | Stop the installed gateway service. |
+| `sim-one` | Open the terminal interface. |
+| `sim-one skill ...` | Manage runtime skills. |
+| `sim-one tool ...` | Manage runtime tools. |
+| `sim-one worker ...` | Manage runtime workers. |
+| `sim-one mcp ...` | Manage runtime MCP servers. |
 | `sim-one --help` | Show the complete CLI command reference. |
 
 ### Launch The Terminal Interface
@@ -377,22 +371,31 @@ Flue is the TypeScript foundation for durable agents and sessions, workflows, sk
 
 ### SIM-ONE Governance Layer
 
-SIM-ONE Alpha applies the SIM-ONE Framework through a governing orchestrator/critic that retains final authority over every turn. It loads the applicable protocol bundle from SQLite before reasoning or execution, evaluates the incoming prompt and intended flow, selects permitted capabilities, delegates substantive work, and evaluates tool results, worker reports, and the draft response before anything is returned.
+SIM-ONE Alpha applies the SIM-ONE Framework through a governing orchestrator
+that owns routing, protocol access, capability selection, delegation, and final
+response synthesis. The source includes the Protocol Tool, trusted-event
+rehydration, SQLite protocol provider, base protocol records, worker boundaries,
+and approval services.
 
-The critic scores each stage against the active protocols and SIM-ONE validation criteria. It can allow the flow to continue, require revision or redelegation, route a risky action through approval, or reject work that falls outside policy. Protocols define the rules that must be followed; memory and RAG provide the context needed to perform the work. Skills, tools, workers, and MCP servers do not override those rules.
+The `0.1.0 Beta` release activates the complete policy set and fail-closed
+pre-execution enforcement needed for the orchestrator/critic to score and reject
+every disallowed path. That activation is a release gate, not a claim about the
+current source checkout. Protocols define mandatory rules; memory and RAG
+provide context. Skills, tools, workers, and MCP servers do not override either
+the active protocol bundle or product-owned runtime checks.
 
 ### Governed Execution Flow
 
 ```text
-TUI / Web UI / connector / API / schedule
+TUI / Telegram / API / schedule
 -> Secure gateway and normalized event
 -> Durable Flue orchestrator session
--> SQLite protocol bundle
--> Orchestrator/critic admission and validation
+-> Protocol Tool and SQLite protocol bundle
+-> Orchestrator routing and validation
 -> Memory, RAG, and capability registries
 -> Governed tool, worker, workflow, or MCP execution
--> Structured result returned to the orchestrator/critic
--> SIM-ONE protocol scoring and response validation
+-> Structured result returned to the orchestrator
+-> Protocol and response validation
 -> Approval, revision, rejection, or final response
 ```
 
@@ -446,7 +449,11 @@ SIM-ONE Alpha supports the built-in and runtime capability layers described in [
 | Worker | Specialized executor loaded as a Flue subagent profile | Disabled unless `--enable` is supplied |
 | MCP server | HTTP or HTTPS connection that contributes remote tools | Disabled unless `--enable` is supplied |
 
-Protocols are not skills or capabilities. They are mandatory SQLite-backed runtime rules loaded separately through the Protocol Tool and cannot be overridden by an installed capability.
+Protocols are not skills or capabilities. They are SQLite-backed runtime rules
+loaded separately through the Protocol Tool and cannot be overridden by an
+installed capability. The complete release policy set and fail-closed
+pre-execution activation are identified in
+[Pre-Release Status](docs/getting-started/pre-release-status.md).
 
 ### Runtime Capability Lifecycle
 
@@ -542,13 +549,9 @@ sim-one mcp --help
 
 `--url` is required. The default transport is `streamable-http`; `sse` is also supported. `--token-env` records the name of an environment variable containing the authentication token, not the token itself; names must start with a letter or underscore and contain only letters, numbers, and underscores. `mcp update` refreshes the stored connection metadata. Removing an MCP server deletes its connection record.
 
-After adding, enabling, disabling, updating, or removing a capability, run:
-
-```bash
-sim-one restart
-```
-
-This reloads the runtime capability registry. A product rebuild is not required.
+After adding, enabling, disabling, updating, or removing a capability, restart
+the gateway through the process or service manager that launched it. This
+reloads the runtime capability registry. A product rebuild is not required.
 
 See the [Capability system](docs/architecture/capability-system.md) and [Registry system](docs/architecture/registry-system.md) for implementation details.
 

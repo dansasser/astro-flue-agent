@@ -60,7 +60,7 @@ flowchart TD
     Revision --> Route
     Critic --> Rejection
     Critic --> Response
-    Approval --> Result
+    Approval --> Response
     Response --> Gateway
 ```
 

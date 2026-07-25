@@ -63,12 +63,8 @@ own their own tools, skills, subagents, and instructions.
 
 ## Runtime Skills
 
-Users and the agent can add a skill without rebuilding SIM-ONE Alpha:
-
-```bash
-sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
-```
+Users and the agent can add a skill without rebuilding SIM-ONE Alpha. The
+[CLI Reference](../reference/cli.md) owns the executable command syntax.
 
 Runtime skill records are stored in:
 
@@ -79,8 +75,12 @@ Runtime skill records are stored in:
 Enabled skill files are materialized under:
 
 ```text
-~/.gorombo/capabilities/skills/<id>/
+<configured-capability-directory>/skills/<id>/
 ```
+
+The directory defaults to project-local `.gorombo/capabilities/` in source
+checkouts and `~/.gorombo/capabilities/` for a normal installed launcher.
+`GOROMBO_CAPABILITIES_DIR` overrides it.
 
 Sources can be HTTPS Git repositories, other supported Git remotes, or local
 directories. A version can pin a remote tag, branch, or revision. Local

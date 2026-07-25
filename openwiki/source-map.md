@@ -56,7 +56,7 @@ Start with:
 
 - `docs/architecture/capability-system.md`
 - `src/engine/capabilities/`
-- `src/engine/tools/capabilities-tool.ts`
+- `src/engine/tools/capability-tools.ts`
 - `scripts/capability-admin.mjs`
 - `sim-one-cli/src/cli.tsx`
 
@@ -122,7 +122,9 @@ Start with:
 - `sim-one-cli/src/commands/`
 - `scripts/test-tui-e2e.mjs`
 
-The default TUI session id is `primary`. Product-flow docs describe target install/service behavior; verify source before claiming a command is currently implemented.
+Verify default and explicit session behavior against the current terminal
+implementation. Use `docs/getting-started/pre-release-status.md` before
+claiming that package-only install or service commands are available.
 
 ## Connectors and external surfaces
 

@@ -64,9 +64,12 @@ Submits a normalized Web API or terminal message.
 }
 ```
 
-The generic endpoint accepts only `web-api` and `tui` connector identities.
-Other values normalize to `web-api`; public callers cannot claim a trusted
-connector identity through JSON.
+The generic endpoint accepts `web-api` and `tui` in the JSON body. Other values
+normalize to `web-api`. External callers must authenticate with `API_SECRET`;
+callers that select `tui` must also provide a stable actor and conversation
+identity for session ownership. Telegram and other connector identities cannot
+be claimed through this generic JSON endpoint because their dedicated ingress
+paths derive trusted identity from connector authentication.
 
 ### `POST /api/chat/sessions`
 

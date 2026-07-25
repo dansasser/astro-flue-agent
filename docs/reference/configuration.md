@@ -13,19 +13,12 @@ service secrets.
 Keep secrets out of `gorombo.config.json`. Do not commit `.env` or copy secret
 values into an agent workspace, issue, or chat transcript.
 
-## Product Commands
+## Applying Configuration
 
-Read and update normal configuration through the product CLI:
-
-```bash
-sim-one config get <key>
-sim-one config set <key> <value>
-sim-one restart
-sim-one doctor
-```
-
-The gateway loads configuration at startup. Restart after changing files,
-secrets, models, or runtime capabilities.
+The pre-release CLI does not include configuration or service-management
+subcommands. Edit non-secret JSON and secret environment values directly, then
+restart the gateway through the process or service manager that launched it.
+The gateway loads configuration at startup.
 
 ## Configuration Shape
 
@@ -244,12 +237,8 @@ normal capability management rather than editing the configuration array.
 
 ## Validation
 
-After changes:
-
-```bash
-sim-one restart
-sim-one doctor
-```
+After changes, restart the gateway through its launcher and verify an
+end-to-end terminal response.
 
 See [Troubleshooting](../operations/troubleshooting.md) when configuration or
 credential validation fails.

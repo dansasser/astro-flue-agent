@@ -116,8 +116,13 @@ runtime-added worker is stored in the capability registry and materialized
 under:
 
 ```text
-~/.gorombo/capabilities/workers/<id>/
+<configured-capability-directory>/workers/<id>/
 ```
+
+The configured capability directory defaults to project-local
+`.gorombo/capabilities/` in a source checkout and
+`~/.gorombo/capabilities/` for a normal installed launcher.
+`GOROMBO_CAPABILITIES_DIR` overrides it.
 
 Installed workers are disabled until explicitly enabled. At startup, enabled
 worker records are validated and attached through the same Flue subagent

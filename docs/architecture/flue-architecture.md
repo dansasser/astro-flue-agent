@@ -166,5 +166,6 @@ The orchestrator must not directly call web search or a web-capable retrieval pa
 - [Protocol System](protocol-system.md)
 - [Skill System](skill-system.md)
 - [Worker System](worker-system.md)
+- [Managed GitHub Authentication](github-auth-system.md)
 - [Retrieval And Research](retrieval-and-research.md)
 - [Execution Workflows](execution-workflows.md)

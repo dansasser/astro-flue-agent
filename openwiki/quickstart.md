@@ -6,7 +6,10 @@ SIM-ONE Alpha is a Flue-based orchestrating agent runtime for a protocol-governe
 
 The live runtime is a Node/TypeScript Flue application. `src/app.ts` creates the Hono app, registers app-owned HTTP routes, protects sensitive routes with API-secret middleware, starts telemetry observation, and mounts Flue routes with `app.route('/', flue())`. `src/agents/orchestrator.ts` is the main Flue `createAgent(...)` entrypoint. It selects a model from project model cards, composes workspace instructions, attaches built-in tools, connects built-in and user MCP tools, loads user tools/workers from the capability store, and exposes the built-in `researcher` and `coding-worker` subagents.
 
-The repository also contains a separate Ink/React CLI package in `sim-one-cli/`, a Rust/WASM structured memory crate in `crates/gorombo-memory/`, developer scripts in `scripts/`, and existing architecture references under `docs/architecture/`.
+The repository also contains the `sim-one` CLI package, the Rust terminal
+interface, a Rust/WASM structured memory crate in `crates/gorombo-memory/`,
+developer scripts in `scripts/`, and architecture references under
+`docs/architecture/`.
 
 ## Start here
 
@@ -14,17 +17,15 @@ Read these OpenWiki pages in order when joining the project:
 
 - [Runtime architecture](architecture/runtime.md) for the Flue/Hono app boundary, orchestrator, workers, workflows, sessions, auth, and telemetry.
 - [Data and capabilities](architecture/data-and-capabilities.md) for SQLite-backed stores, protocol loading, structured memory, capabilities, schedules, approvals, model config, and RAG.
-- [Product and agent workflows](workflows/product-and-agent-workflows.md) for current user-facing flows, target product flow, chat events, researcher/coding-worker ownership, Telegram, schedules, and CLI behavior.
+- [Product and agent workflows](workflows/product-and-agent-workflows.md) for user-facing flows, chat events, researcher/coding-worker ownership, Telegram, schedules, and CLI behavior.
 - [Development and testing](operations/development-and-testing.md) for local commands, builds, tests, memory/WASM checks, and change-specific verification.
 - [Source map](source-map.md) for where future agents should start when changing common areas.
 
 The existing docs under `docs/architecture/` are still primary technical references. OpenWiki is the opinionated map and synthesis layer over those docs plus the current source.
 
-## Current state versus target state
+## Release And Source Boundaries
 
-Some documents describe the intended installed product, while the source shows the currently wired developer/runtime state.
-
-Currently wired in source:
+The source checkout includes:
 
 - Flue gateway app and protected HTTP routes in `src/app.ts` and `src/api/routes/`.
 - Durable orchestrator agent in `src/agents/orchestrator.ts`.
@@ -33,9 +34,12 @@ Currently wired in source:
 - Runtime-extensible capabilities backed by SQLite and materialized into user capability directories.
 - Structured memory through TypeScript shims plus the Rust/WASM `gorombo-memory` crate, with SQLite durability and fallback behavior.
 - Web research workflow owned by the researcher path in `src/workflows/web-research.ts`.
-- Ink-based `sim-one` CLI package in `sim-one-cli/` with TUI launch and capability subcommands.
+- `sim-one` CLI package in `sim-one-cli/` with terminal launch and capability subcommands.
 
-Target/product-flow items documented in `docs/architecture/product-flow.md` include the installer script, first-run wizard, web UI, and full service-management commands. Treat those as product direction unless matching source exists.
+Packaging, onboarding, service commands, the Web UI, Discord, and complete
+protocol enforcement are tracked in
+`docs/getting-started/pre-release-status.md`. Architecture pages describe
+implemented runtime contracts.
 
 ## Repository map
 
@@ -95,7 +99,3 @@ Before changing Flue runtime boundaries, read `docs/architecture/flue-architectu
 Before changing product wording, keep names distinct: Gorombo is the company, SIM-ONE Alpha is the product, Flue is the framework, `sim-one` is the product binary, and worker names are internal subsystems.
 
 Before changing memory, capabilities, schedules, model cards, or worker delegation, use the relevant OpenWiki section and source docs as a checklist, then run the focused tests listed in [Development and testing](operations/development-and-testing.md).
-
-## Git and local-change notes
-
-This initial wiki was created with HEAD at `549a87771badae694409cc9535b6dd1740fb0ac3`. The working tree already had modified `README.md` and `pnpm-workspace.yaml`, plus untracked `docs/archive/`, before OpenWiki edits. Those local changes were treated as user-owned evidence and not reverted.

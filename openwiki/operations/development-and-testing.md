@@ -32,7 +32,7 @@ pnpm run build            # flue build + builtin registry + runtime config + WAS
 pnpm run start            # node --env-file=.env .gorombo/sim-one-alpha/server.mjs
 pnpm run connect          # flue connect orchestrator local --target node --session local
 pnpm run build:cli        # build sim-one-cli package
-pnpm run build:all        # build runtime, build CLI, launch built CLI
+pnpm run build:all        # build runtime, TUI, CLI, and validate product command
 ```
 
 Do not read `.env`. Use `.env.example` and architecture docs for non-secret setup shape.
@@ -98,7 +98,9 @@ High-signal tests by change area:
 
 Recent commits added CLI build and TUI e2e testing to CI, fixed fork-PR handling for TUI tests, and fixed web research fallback/test behavior around missing `OLLAMA_API_KEY`. When changing `.github/workflows/ci.yml`, CLI startup, or web research, preserve these CI constraints.
 
-Recent commits also moved Flue-contract files back to top-level `src/` paths and removed shims. Avoid recreating old paths such as `src/engine/agents/orchestrator.ts` or `src/engine/workflows/*` unless there is a deliberate migration plan.
+Recent commits also moved Flue-contract files back to top-level `src/` paths
+and removed shims. Avoid recreating the former nested agent and workflow paths
+unless there is a deliberate migration.
 
 ## Change-specific guidance
 
@@ -114,11 +116,12 @@ When changing capabilities, run `capability-store.test.ts`, `worker-loader.test.
 
 When changing schedules, run schedule store/manager/routes/config tests and any coding schedule tool tests.
 
-When changing the CLI/TUI, run `pnpm run build:cli` and `pnpm run test:tui`. The default session id should remain `primary` unless product behavior intentionally changes.
+When changing the CLI/TUI, run `pnpm run build:cli` and `pnpm run test:tui`.
+Verify default and explicit session behavior against the current terminal
+implementation rather than preserving a historical hardcoded session ID.
 
 ## Operational cautions
 
 - Do not document or expose secret values from `.env` or local runtime databases.
 - User runtime data lives under `~/.gorombo/` by product convention; repository `.gorombo/` contains build/runtime artifacts and config seeds.
 - Capability, memory, protocol, and schedule data are runtime state. Be careful with migration behavior and backward compatibility.
-- The README is currently modified and contains release-scaffold placeholders, so source and architecture docs are stronger evidence for current behavior.

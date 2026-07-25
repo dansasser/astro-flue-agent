@@ -51,9 +51,9 @@ User message
 -> Connector response
 ```
 
-The terminal interface, Telegram, Discord, and Web/API clients all converge on
-the same orchestration boundary after connector-specific authentication and
-normalization.
+The terminal interface, Telegram, and Web/API clients converge on the same
+orchestration boundary after connector-specific authentication and
+normalization. Discord is a pre-release connector gate.
 
 ## Research Execution
 
@@ -114,7 +114,7 @@ Owned schedule
 -> Fire and run record
 -> Admission dispatch
 -> Orchestrator turn
--> Orchestrator or Coding Worker target
+-> Orchestrator handling or governed Coding Worker delegation
 -> Progress observation
 -> Completion, retry, skip, or error record
 ```
@@ -142,10 +142,12 @@ Install
 -> Governed availability to the owning agent or worker
 ```
 
-Skills are instruction content and are enabled by default. Tools, workers, and
-MCP servers remain disabled until the user enables them. Registry state,
-validation, runtime attachment, protocol rules, and approval policy all remain
-part of execution.
+Skills are instruction content and are enabled by default. Enablement grants no
+independent authority: skill guidance remains subordinate to active protocols,
+trusted scope, owning-agent attachment, executable-tool boundaries, sandbox
+policy, and action-specific approvals. Tools, workers, and MCP servers remain
+disabled until the user enables them. Registry state, validation, runtime
+attachment, protocol rules, and approval policy all remain part of execution.
 
 ## GitHub Authentication Workflow
 

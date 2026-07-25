@@ -79,7 +79,7 @@ Runtime-added tools follow this path:
 sim-one CLI or agent capability tool
 -> validate id and cross-kind collisions
 -> write disabled or enabled SQLite record
--> materialize source under ~/.gorombo/capabilities/tools/<id>/
+-> materialize source under <configured-capability-directory>/tools/<id>/
 -> gateway process restart
 -> read enabled capability records
 -> dynamic import of index.mjs
@@ -91,6 +91,11 @@ sim-one CLI or agent capability tool
 export, or named exports that resolve to Flue tool definitions. A failed import
 or invalid export is reported and omitted rather than granting a partially
 loaded capability.
+
+The configured capability directory defaults to project-local
+`.gorombo/capabilities/` in a source checkout and
+`~/.gorombo/capabilities/` for a normal installed launcher.
+`GOROMBO_CAPABILITIES_DIR` overrides it.
 
 ## Enablement And Authority
 

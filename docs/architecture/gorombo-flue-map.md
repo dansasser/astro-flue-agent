@@ -417,7 +417,10 @@ Allowed orchestrator capabilities:
 ```text
 load_protocols
 retrieve_memory
-task delegation to researcher, Coding Worker, and enabled runtime workers
+task delegation to researcher and Coding Worker
+task delegation to enabled runtime workers only when attached to the owning
+agent and admitted by active protocols, trusted scope, sandbox policy, and
+action-specific approvals
 final synthesis
 ```
 

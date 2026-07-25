@@ -15,6 +15,18 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = ROOT / "docs"
 ARCHITECTURE_ROOT = DOCS_ROOT / "architecture"
+OPENWIKI_ROOT = ROOT / "openwiki"
+
+RELEASE_MARKDOWN_NAMES = (
+    "README.md",
+    "AUTHORS.md",
+    "CHANGELOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "THIRD_PARTY_NOTICES.md",
+)
 
 EXPECTED_README_SECTIONS = (
     "Table of Contents",
@@ -87,7 +99,12 @@ class DocumentationError(Exception):
 
 
 def markdown_files() -> list[Path]:
-    return [ROOT / "README.md", *sorted(DOCS_ROOT.rglob("*.md"))]
+    release_files = [ROOT / name for name in RELEASE_MARKDOWN_NAMES]
+    return [
+        *release_files,
+        *sorted(DOCS_ROOT.rglob("*.md")),
+        *sorted(OPENWIKI_ROOT.rglob("*.md")),
+    ]
 
 
 def relative(path: Path) -> str:
@@ -277,7 +294,11 @@ def validate_source_references() -> int:
     checked = 0
     encountered_nonlive: set[tuple[str, str]] = set()
 
-    for path in sorted(ARCHITECTURE_ROOT.glob("*.md")):
+    reference_files = [
+        *sorted(ARCHITECTURE_ROOT.glob("*.md")),
+        *sorted(OPENWIKI_ROOT.rglob("*.md")),
+    ]
+    for path in reference_files:
         for raw in CODE_REFERENCE_RE.findall(path.read_text(encoding="utf-8")):
             target = raw.rstrip(".,:;")
             if not target.startswith(SOURCE_PREFIXES):
@@ -306,9 +327,10 @@ def validate_source_references() -> int:
 def validate_markdown_structure(files: list[Path]) -> None:
     errors = []
     required_single_h1 = {
-        ROOT / "README.md",
+        *(ROOT / name for name in RELEASE_MARKDOWN_NAMES),
         DOCS_ROOT / "README.md",
         *ARCHITECTURE_ROOT.glob("*.md"),
+        *OPENWIKI_ROOT.rglob("*.md"),
     }
     for path in files:
         text = path.read_text(encoding="utf-8")

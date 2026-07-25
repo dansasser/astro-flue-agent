@@ -7,6 +7,12 @@ Protocols are not prompts, skills, tools, or model-generated policy. They are
 stored outside model context in SQLite and are loaded through the
 `load_protocols` tool from trusted event data.
 
+The implemented source path includes tool attachment, trusted-event
+rehydration, selector derivation, SQLite matching, base records, and mandatory
+orchestration instructions. The complete release policy set and a trusted
+fail-closed pre-execution boundary are release gates. See
+[Pre-Release Status](../getting-started/pre-release-status.md).
+
 ## Responsibilities
 
 The protocol system provides:
@@ -69,7 +75,7 @@ Each protocol record contains:
 | `priority` | Descending application order |
 | `selector_json` | Event fields that must match |
 | `rules_json` | Ordered mandatory directives |
-| `source` | Record origin such as `seed` or `sqlite` |
+| `source` | Record origin: `seed`, `sqlite`, or `file` |
 | `tags` | Classification metadata |
 | timestamps | Creation and update history |
 
@@ -167,10 +173,10 @@ When the orchestrator delegates to the Coding Worker, it includes the parsed
 bundle in the delegated task. The worker lead applies
 `protocolBundle.protocols[].rules` to its bounded execution loop.
 
-## Orchestrator/Critic Enforcement
+## Release Enforcement Contract
 
-The orchestrator/critic remains the final authority for the turn. It uses the
-active protocol bundle to evaluate:
+The release orchestrator/critic remains the final authority for the turn. It
+uses the active protocol bundle to evaluate:
 
 - whether the request is admitted;
 - whether retrieval is required;
@@ -184,9 +190,13 @@ Workers do not approve their own actions or final results. They return work and
 evidence to the orchestrator/critic for evaluation under the same protocol
 bundle.
 
+The current source has the protocol lookup and delegation path, but trusted
+pre-execution enforcement and complete critic scoring are not activated across
+every direct response, alternate tool call, and delegation path.
+
 ## Failure Behavior
 
-Protocol lookup fails closed when:
+Once invoked, protocol lookup fails closed when:
 
 - `eventId` is missing or empty;
 - the event was not persisted;
@@ -195,7 +205,9 @@ Protocol lookup fails closed when:
 
 Invalid optional JSON fields are normalized to empty selectors or rule lists
 rather than granting additional authority. A protocol lookup failure must not
-be treated as permission to continue without governance.
+be treated as permission to continue without governance. The release
+pre-execution boundary must also prevent the orchestrator from bypassing the
+lookup entirely.
 
 ## Adding A User Protocol
 

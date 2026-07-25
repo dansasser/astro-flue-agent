@@ -14,7 +14,7 @@ upstream license files.
 | --- | --- | --- | --- |
 | Flue packages | 1.0.0-beta.1 | Apache-2.0 | [withastro/flue](https://github.com/withastro/flue) |
 | Ratatui | 0.30.2 | MIT | [ratatui/ratatui](https://github.com/ratatui/ratatui) |
-| ratatui-textarea | 0.9.2 | MIT | [ratatui/ratatui](https://github.com/ratatui/ratatui) |
+| ratatui-textarea | 0.9.2 | MIT | [ratatui/ratatui-textarea](https://github.com/ratatui/ratatui-textarea) |
 | Apache Arrow | 18.1.0 | Apache-2.0 | [apache/arrow](https://github.com/apache/arrow) |
 | node-liblzma | 2.2.0 | LGPL-3.0 | [oorabona/node-liblzma](https://github.com/oorabona/node-liblzma) |
 | all-MiniLM-L6-v2 | `1110a243fdf4706b3f48f1d95db1a4f5529b4d41` | Apache-2.0 | [sentence-transformers/all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) |

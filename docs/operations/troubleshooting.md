@@ -1,39 +1,21 @@
 # Troubleshooting
 
-Use the product diagnostics before changing files or runtime state.
-
-```bash
-sim-one doctor
-sim-one status
-```
-
-`status` confirms service state. `doctor` validates whether the installed
-runtime can perform its job, including gateway connectivity, model
-configuration, credentials, and required local assets.
+The packaged diagnostic and service commands are not available in the
+pre-release CLI. Verify behavior at the output level: inspect the launcher
+error, request `/health`, open `sim-one`, submit a prompt, and confirm the
+expected response or side effect.
 
 ## Installation Problems
 
-Run the packaged installer again:
-
-```bash
-curl -fsSL https://github.com/dansasser/sim-one-alpha/releases/latest/download/sim-one.sh | sh
-```
-
-The installer preserves user-owned runtime data under `~/.gorombo/` while
-repairing product files and returning to onboarding.
+The packaged installer is not published. Do not execute mutable `latest`
+content through `curl | sh`. Release installation uses a version-pinned
+download and checksum verification as documented in
+[Installation](../getting-started/installation.md).
 
 For a source build, compare prerequisites and commands with
 [Installation](../getting-started/installation.md).
 
 ## Gateway Does Not Start
-
-Check:
-
-```bash
-sim-one status
-sim-one doctor
-sim-one restart
-```
 
 Confirm:
 
@@ -43,18 +25,15 @@ Confirm:
 - selected model cards have their required credentials;
 - installed runtime files are readable by the current user.
 
+Restart the gateway through the process or service manager that launched it.
 Do not treat a running process or listening port as proof that the gateway is
-working. `sim-one doctor` must complete a functional check.
+working. Request `/health`, then submit a real terminal prompt and confirm the
+orchestrator responds correctly.
 
 ## Terminal Cannot Connect
 
-Start with:
-
-```bash
-sim-one status
-sim-one doctor
-sim-one
-```
+Start the terminal interface with `sim-one` and preserve the exact connection
+error.
 
 When connecting to a non-default gateway:
 
@@ -68,14 +47,9 @@ API and that external requests include the configured API secret.
 
 ## Model Or Credential Failure
 
-Open the configuration:
-
-```bash
-sim-one config get models.primary
-sim-one config get models.backup
-```
-
-Verify the matching credentials in `~/.gorombo/.env`.
+Read `models.primary` and optional `models.backup` from
+`~/.gorombo/sim-one-alpha/gorombo.config.json`, then verify the matching
+credentials in `~/.gorombo/.env`.
 
 | Model family | Credentials |
 | --- | --- |
@@ -85,12 +59,8 @@ Verify the matching credentials in `~/.gorombo/.env`.
 The Codex Brain URL must include `/v1`. Remove an unused backup card when its
 provider is intentionally not configured.
 
-After changes:
-
-```bash
-sim-one restart
-sim-one doctor
-```
+After changes, restart the gateway through its launcher and verify a real model
+response.
 
 ## Session Cannot Be Resumed
 
@@ -141,12 +111,8 @@ sim-one worker list
 sim-one mcp list
 ```
 
-Confirm that it is enabled, then reload the registry:
-
-```bash
-sim-one restart
-sim-one doctor
-```
+Confirm that it is enabled, restart the gateway through its launcher, and open
+a new terminal session to verify that the capability is attached.
 
 Tools, workers, and MCP servers are disabled by default unless explicitly
 enabled. Name collisions and unsafe ids fail without changing the registry.
@@ -166,13 +132,8 @@ See [HTTP API Reference](../reference/http-api.md).
 
 ## Memory Or Retrieval Problems
 
-Confirm the runtime can read the databases and bundled retrieval assets:
-
-```bash
-sim-one doctor
-```
-
-Check configured paths under:
+Check that the runtime can read the configured databases and bundled retrieval
+assets under:
 
 ```text
 ~/.gorombo/db/
@@ -198,11 +159,11 @@ timestamps to correlate a failure with telemetry or API results.
 
 Use this order:
 
-1. Run `sim-one doctor`.
-2. Check `sim-one status`.
-3. Validate configuration and required credentials.
-4. Restart with `sim-one restart`.
-5. Reproduce from the local terminal.
+1. Preserve the exact terminal or launcher error.
+2. Validate configuration and required credentials.
+3. Restart through the launcher or service manager.
+4. Request `/health`.
+5. Reproduce from the local terminal with a real prompt.
 6. Check connector, session, run, or telemetry identifiers.
 7. Repair the installation only after preserving `~/.gorombo/` runtime data.
 

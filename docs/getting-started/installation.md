@@ -1,34 +1,34 @@
 # Installation
 
-SIM-ONE Alpha supports a packaged installation for normal use and a source
-build for users who need to inspect or modify the product.
+SIM-ONE Alpha `0.1.0 Beta` is in pre-release. The repository supports source
+builds; the packaged release archive and `sim-one.sh` are not published yet.
+See [Pre-Release Status](pre-release-status.md) for the exact release gates.
 
 ## Packaged Installation
 
-Run the release installer from a POSIX shell:
+The published release path installs the self-hosted runtime, terminal
+interface, `sim-one` command, structured-memory engine, and bundled retrieval
+assets under `~/.gorombo/`, then opens onboarding.
+
+Release publication requires versioned assets and checksums. The final install
+procedure downloads a specific release rather than mutable `latest` content,
+verifies the checksum, and only then runs the installer:
 
 ```bash
-curl -fsSL https://github.com/dansasser/sim-one-alpha/releases/latest/download/sim-one.sh | sh
+VERSION=0.1.0
+curl -fLO "https://github.com/dansasser/sim-one-alpha/releases/download/v${VERSION}/sim-one.sh"
+curl -fLO "https://github.com/dansasser/sim-one-alpha/releases/download/v${VERSION}/SHA256SUMS"
+sha256sum --check --ignore-missing SHA256SUMS
+sh sim-one.sh
 ```
 
-The installer:
-
-- installs the self-hosted SIM-ONE Alpha runtime;
-- installs the `sim-one` product command and terminal interface;
-- installs the structured-memory engine and bundled retrieval assets;
-- creates the runtime directories under `~/.gorombo/`;
-- opens the onboarding interface.
-
-Node.js, npm, pnpm, Rust, and `wasm-pack` are not required for a packaged
-installation.
-
-Continue with [Onboarding](onboarding.md) to configure credentials, validate
-the gateway, and start the first conversation.
+Do not run those commands until the corresponding GitHub release assets are
+published. Node.js, npm, pnpm, Rust, and `wasm-pack` are not required for the
+packaged installation.
 
 ## Installed Files
 
-The installer keeps the product runtime and mutable user data under
-`~/.gorombo/`.
+The packaged runtime and mutable user data live under `~/.gorombo/`.
 
 | Path | Purpose |
 | --- | --- |
@@ -41,8 +41,7 @@ The installer keeps the product runtime and mutable user data under
 | `~/.gorombo/.env` | Provider, connector, and service secrets |
 
 Keep `~/.gorombo/.env`, databases, authentication state, and approval records
-private. Back up the runtime data directory before moving the installation to
-another machine.
+private. Back up the runtime data directory before moving an installation.
 
 ## Build From Source
 
@@ -86,41 +85,29 @@ pnpm run build:tui
 pnpm run build:cli
 ```
 
-Start onboarding from the built product command:
-
-```bash
-./.gorombo/sim-one-cli/sim-one install
-```
-
-After onboarding, launch SIM-ONE Alpha with:
+Launch the locally built product command:
 
 ```bash
 ./.gorombo/sim-one-cli/sim-one
 ```
 
 Both build paths produce the Flue runtime, terminal interface, Rust/WebAssembly
-memory helper, bundled embedding assets, and unified product command.
+memory helper, bundled embedding assets, and unified product command. Configure
+the source checkout through `gorombo.config.json` and `.env` as described in the
+[Configuration Reference](../reference/configuration.md).
 
-## Verify The Installation
+## Verify The Source Build
 
-Run:
+A successful build is not enough by itself. Launch the terminal interface,
+submit a prompt, and confirm an end-to-end response from the orchestrator.
 
-```bash
-sim-one doctor
-sim-one status
-```
-
-Then open the terminal interface:
-
-```bash
-sim-one
-```
-
-If a check fails, use the [Troubleshooting Guide](../operations/troubleshooting.md).
+For repository-level verification, use the complete command set in
+[Contributing](../../CONTRIBUTING.md).
 
 ## Next Steps
 
-- [Complete onboarding](onboarding.md)
+- [Review pre-release availability](pre-release-status.md)
+- [Review the onboarding release contract](onboarding.md)
 - [Use the terminal interface and sessions](../guides/terminal-and-sessions.md)
 - [Configure providers and runtime behavior](../reference/configuration.md)
-- [Connect Telegram or another connector](../guides/connectors.md)
+- [Configure Telegram](../guides/connectors.md)

@@ -7,6 +7,7 @@ architecture documentation for SIM-ONE Alpha.
 
 | Goal | Documentation |
 | --- | --- |
+| Check pre-release availability | [Pre-Release Status](getting-started/pre-release-status.md) |
 | Install the product | [Installation](getting-started/installation.md) |
 | Complete first-run setup | [Onboarding](getting-started/onboarding.md) |
 | Use the terminal interface and durable sessions | [Terminal And Session Guide](guides/terminal-and-sessions.md) |
@@ -21,6 +22,8 @@ architecture documentation for SIM-ONE Alpha.
 
 ## Product Guides
 
+- [Pre-Release Status](getting-started/pre-release-status.md) separates
+  source-available behavior from the remaining `0.1.0 Beta` release gates.
 - [Installation](getting-started/installation.md) covers the packaged installer,
   source builds, installed paths, and verification.
 - [Onboarding](getting-started/onboarding.md) covers credentials,
@@ -61,6 +64,8 @@ architecture documentation for SIM-ONE Alpha.
 ## Operations
 
 - [Troubleshooting](operations/troubleshooting.md)
+- [Telegram Connector Operations](operations/telegram-connector.md)
+- [Product TUI Operations](operations/product-tui.md)
 
 ## Framework Documentation
 

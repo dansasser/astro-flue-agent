@@ -6,19 +6,20 @@ event and sends it through the same governed orchestrator.
 
 ## Pair From The Local Terminal
 
-Complete [Onboarding](../getting-started/onboarding.md) and verify the local
-terminal session first. From that authenticated session, ask SIM-ONE Alpha to
-connect Telegram, Discord, or another installed connector.
+The packaged release contract starts connector pairing from the first
+authenticated terminal session after
+[Onboarding](../getting-started/onboarding.md). That conversational setup flow
+is a pre-release gate. The current source checkout includes Telegram and the
+generic Web API; it does not include Discord.
 
 The connector setup flow:
 
-1. Identifies the connector and required credentials.
-2. Stores secrets in the runtime secret store.
-3. Starts or validates the connector.
-4. Receives a pairing request from the external account.
-5. Binds approval to the connector, actor, and conversation.
-6. Records the allow-list or pairing decision outside model context.
-7. Confirms access from the external channel.
+1. Configure connector credentials in the runtime secret store.
+2. Start or validate the connector.
+3. Receive a pairing request from the external account.
+4. Bind approval to the connector, actor, and conversation.
+5. Record the allow-list or pairing decision outside model context.
+6. Confirm access from the external channel.
 
 Connectors normalize and deliver messages. They do not bypass the orchestrator,
 protocol system, approvals, or worker boundaries.
@@ -49,8 +50,8 @@ The default direct-message policy is `pairing`.
 
 1. Send a direct message to the configured bot.
 2. Receive the pairing code or request.
-3. Return to the authenticated local SIM-ONE Alpha session.
-4. Ask SIM-ONE Alpha to approve the pending Telegram pairing.
+3. Approve the pending request through the authenticated Telegram admin API.
+4. Confirm that the request is bound to the expected user and chat.
 5. Send another Telegram message after approval.
 
 Pairing codes expire and are accepted only for the pending request they
@@ -68,8 +69,9 @@ Removing a group or user takes effect at the connector admission layer.
 
 External applications can use the Secure Web API. Non-loopback clients send
 the configured `API_SECRET` in the `x-api-secret` header. The generic chat
-ingress accepts only `web-api` and `tui` connector identities; callers cannot
-claim Telegram or another trusted connector by changing a JSON field.
+ingress accepts `web-api` and `tui`; authenticated callers may select either
+identity and must provide stable ownership fields. Callers cannot claim
+Telegram or another trusted connector by changing a JSON field.
 
 See the [HTTP API Reference](../reference/http-api.md) for routes and request
 requirements.
@@ -94,5 +96,6 @@ Schedule definitions and run history are stored in SQLite.
 - [Onboarding](../getting-started/onboarding.md)
 - [Configuration Reference](../reference/configuration.md)
 - [HTTP API Reference](../reference/http-api.md)
+- [Telegram Operations](../operations/telegram-connector.md)
 - [Architecture Overview](../architecture/overview.md)
 - [Troubleshooting](../operations/troubleshooting.md)

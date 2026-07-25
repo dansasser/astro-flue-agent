@@ -94,39 +94,12 @@ capabilities, credentials, and operational state persist independently.
 
 ## Product Command
 
-With no subcommand, `sim-one` launches the packaged terminal client:
-
-```sh
-sim-one
-```
-
-Current terminal options are:
-
-```text
---port <number>
---base-url <url>
---session <id-or-name>
-```
-
-The same command manages runtime capabilities without opening the terminal UI:
-
-```sh
-sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
-sim-one tool add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
-sim-one worker add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
-sim-one mcp add <id> "<name>" --url <url> \
-  [--transport <streamable-http|sse>] [--token-env <ENV_NAME>] \
-  [--description "<text>"] [--enable]
-```
-
-Each capability kind also supports `list`, `enable`, `disable`, `update`, and
-`remove`. Enabled records are loaded when the orchestrator initializes, so a
-gateway process restart is required after lifecycle changes. The current CLI
-does not register installer, configuration, diagnostic, or gateway-service
-subcommands.
+With no subcommand, `sim-one` launches the packaged terminal client. The same
+command owns user-facing capability lifecycle operations without moving
+registry logic into the terminal interface. Enabled records are loaded when the
+orchestrator initializes, so a gateway process restart is required after
+lifecycle changes. See the [CLI Reference](../reference/cli.md) for executable
+options and subcommands.
 
 ## Capability Activation
 

@@ -51,78 +51,40 @@ CREATE TABLE capabilities (
   PRIMARY KEY (kind, id)
 );
 
-CREATE INDEX idx_capabilities_kind_enabled
+CREATE INDEX IF NOT EXISTS idx_capabilities_kind_enabled
   ON capabilities(kind, enabled);
 
-CREATE UNIQUE INDEX idx_capabilities_id_unique
+CREATE UNIQUE INDEX IF NOT EXISTS idx_capabilities_id_unique
   ON capabilities(id);
 ```
 
 SQLite is authoritative. A config-file mirror (`gorombo.config.json` `capabilities` section) reconciles into SQLite on boot.
 
-## Product CLI
+## Product And Administration Surfaces
 
-The `sim-one` binary is the product interface for capability management. After install, users manage capabilities with:
+The `sim-one` binary is the product interface for capability management. A
+source checkout also includes `scripts/capability-admin.mjs` for repository
+administration. Both surfaces validate and mutate the same registry contract;
+neither bypasses enablement, collision checks, protocol rules, ownership, or
+approval requirements.
 
-```sh
-# Add a skill from GitHub
-sim-one skill add https://github.com/user/my-skill my-skill "My Skill" \
-  --description "Does X" --enable
-
-# Add a skill from local path
-sim-one skill add /path/to/skill-dir my-skill "My Skill" --enable
-
-# Add an MCP server
-sim-one mcp add my-mcp "My MCP Server" --url http://localhost:8080 \
-  --description "Description" --enable
-
-# List all capabilities
-sim-one skill list
-sim-one tool list
-sim-one mcp list
-sim-one worker list
-
-# Enable/disable
-sim-one skill enable my-skill
-sim-one skill disable my-skill
-
-# Update (re-fetch from source)
-sim-one skill update my-skill
-
-# Remove
-sim-one skill remove my-skill
-```
-
-Enabled capability records are read when the orchestrator agent initializes.
-After a lifecycle change, restart the running gateway through the process or
-service manager that launched it. The current `sim-one` command does not
-register a gateway restart subcommand.
-
-### Source-Checkout Administration
-
-A source checkout also includes a standalone administration script with the
-same registry operations:
-
-```sh
-node scripts/capability-admin.mjs add skill /path/to/skill my-skill "My Skill" --enable
-node scripts/capability-admin.mjs list
-node scripts/capability-admin.mjs enable tool my-tool
-node scripts/capability-admin.mjs remove skill my-skill
-```
-
-The installed product interface is `sim-one skill add ...`; the script is for
-repository administration. See the [CLI Reference](../reference/cli.md) for the
-complete capability command syntax.
+Enabled capability records are read when the orchestrator initializes. After a
+lifecycle change, restart the gateway through the process or service manager
+that launched it. See the [CLI Reference](../reference/cli.md) for executable
+product commands.
 
 ## Directory Layout
 
 ```text
-.gorombo/capabilities/
+<configured-capability-directory>/
   skills/<id>/SKILL.md + supporting files
   tools/<id>/index.mjs
   workers/<id>/index.mjs
 ```
 
+The default resolves from the runtime working directory, so source checkouts
+use project-local `.gorombo/capabilities/` and normal installed launchers use
+`~/.gorombo/capabilities/`. `GOROMBO_CAPABILITIES_DIR` overrides the directory.
 Capabilities live outside `dist/` and survive upgrades.
 
 ## Source Code

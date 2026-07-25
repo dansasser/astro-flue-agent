@@ -5,6 +5,12 @@ SIM-ONE Alpha is a governed, multi-purpose AI employee system built by
 [Flue](https://flueframework.com/) agent runtime with the
 [SIM-ONE Framework](https://simoneframework.org/) governance model.
 
+Pre-release boundary: the orchestrator, Protocol Tool, trusted-event lookup,
+SQLite provider, base protocol records, workers, and approval services are
+implemented. The complete release policy set, trusted fail-closed pre-execution
+enforcement, and orchestrator/critic scoring across every path are release
+gates. See [Pre-Release Status](../getting-started/pre-release-status.md).
+
 Flue provides the durable execution architecture. SIM-ONE defines how that
 architecture applies protocols, context, delegation, scoring, approvals, and
 memory. SIM-ONE Alpha is the product implementation of both layers.
@@ -105,8 +111,9 @@ priority
 enabled state
 ```
 
-The orchestrator loads the applicable bundle before final reasoning, tool
-execution, delegation, or response generation.
+Chat ingress and orchestrator instructions require loading the applicable
+bundle before final reasoning, tool execution, delegation, or response
+generation. Trusted runtime enforcement of that ordering is a release gate.
 
 See [Protocol System](protocol-system.md).
 

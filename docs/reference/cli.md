@@ -1,21 +1,20 @@
 # CLI Reference
 
-`sim-one` is the product command for onboarding, terminal access,
-configuration, diagnostics, service control, and runtime capabilities.
+The pre-release `sim-one` command provides terminal access and runtime
+capability management. Packaged onboarding, configuration, diagnostics, and
+service-control commands are listed in
+[Pre-Release Status](../getting-started/pre-release-status.md) and are not part
+of the current CLI parser.
 
 ## Product Commands
 
 | Command | Purpose |
 | --- | --- |
-| `sim-one` | Open the terminal interface in a fresh durable session |
-| `sim-one install` | Open onboarding and integration authorization |
-| `sim-one doctor` | Validate installation, gateway, models, credentials, and runtime assets |
-| `sim-one config get <key>` | Read a runtime configuration value |
-| `sim-one config set <key> <value>` | Set a runtime configuration value |
-| `sim-one status` | Show installed gateway service status |
-| `sim-one start` | Start the installed gateway service |
-| `sim-one restart` | Restart the installed gateway service |
-| `sim-one stop` | Stop the installed gateway service |
+| `sim-one` | Open the terminal interface |
+| `sim-one skill ...` | Manage runtime skills |
+| `sim-one tool ...` | Manage runtime tools |
+| `sim-one worker ...` | Manage runtime workers |
+| `sim-one mcp ...` | Manage runtime MCP servers |
 | `sim-one --help` | Show CLI help |
 
 ## Terminal Options
@@ -98,18 +97,15 @@ sim-one mcp --help
 
 `--url` is required and must use HTTP or HTTPS. The default transport is
 `streamable-http`; `sse` is also supported. `--token-env` stores the
-environment-variable name, not the token.
+environment-variable name, not the token. MCP servers are disabled when added
+unless `--enable` is supplied.
 
 ## Capability Lifecycle
 
-After adding, enabling, disabling, updating, or removing a capability:
-
-```bash
-sim-one restart
-```
-
-The restart reloads enabled capability records. It does not rebuild the
-product.
+After adding, enabling, disabling, updating, or removing a capability, restart
+the gateway through the process or service manager that launched it. Restarting
+reloads enabled capability records; it does not rebuild the product. The
+pre-release CLI does not register a `restart` subcommand.
 
 See [Extending SIM-ONE Alpha](../guides/extending-sim-one.md) for source,
 trust, approval, collision, and persistence behavior.
@@ -139,11 +135,6 @@ Invalid options, missing required arguments, unsafe capability ids, capability
 name collisions, invalid MCP URLs, and invalid token environment-variable
 names fail without changing the runtime registry.
 
-Use:
-
-```bash
-sim-one doctor
-sim-one status
-```
-
-for installation and gateway diagnostics.
+For the current source checkout, verify the build, launch the terminal
+interface, and confirm an end-to-end orchestrator response. The packaged
+diagnostic and service commands become available with the release installer.

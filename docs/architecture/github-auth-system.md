@@ -64,8 +64,11 @@ The browser URL, one-time code, and expiry are temporary authorization capabilit
 
 ## Protocol And Runtime Enforcement
 
-The Protocol Tool derives connector and actor/user selectors from the persisted
-trusted event, so matching SQLite protocol records can govern a GitHub
+`load_protocols` requires the persisted event ID and rehydrates the normalized
+trusted event before selector construction. SQLite filtering receives the full
+selector set: connector, actor or user identity, client ID, project ID,
+workflow, task, and
+message kind. Matching records across that complete context can govern a GitHub
 authentication turn. The current credential, transport, approval, and challenge
 delivery restrictions are also enforced in product-owned runtime code and
 Coding Worker workspace instructions.
