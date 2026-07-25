@@ -91,7 +91,7 @@ Check:
 
 - `TELEGRAM_BOT_TOKEN` is present;
 - `TELEGRAM_WEBHOOK_SECRET_TOKEN` matches the configured webhook;
-- `TELEGRAM_DM_POLICY` is `pairing`, `allowlist`, or `disabled`;
+- the stored Telegram DM policy is `pairing`, `allowlist`, or `disabled`;
 - the user has completed pairing or appears in the allow list;
 - group mention and user restrictions admit the message.
 

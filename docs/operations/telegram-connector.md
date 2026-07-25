@@ -28,7 +28,6 @@ Optional admission settings:
 TELEGRAM_APPROVED_USER_IDS=<comma-separated-user-ids>
 TELEGRAM_ADMIN_USER_IDS=<comma-separated-admin-ids>
 TELEGRAM_BOT_USERNAME=<bot-username>
-TELEGRAM_DM_POLICY=pairing
 TELEGRAM_MENTION_PATTERNS=<comma-separated-patterns>
 TELEGRAM_INBOX_DIR=.gorombo/telegram-inbox
 ```
@@ -44,7 +43,8 @@ Omit `TELEGRAM_BOT_TOKEN` to run without Telegram. When the bot token is set,
 | `allowlist` | Admits only stored or configured users |
 | `disabled` | Rejects direct messages |
 
-The stored policy takes precedence; the default is `pairing`.
+The stored policy is authoritative; the default is `pairing`. Change it through
+`POST /api/connectors/telegram/policy`.
 Pending-pairing storage and the pair/deny admin routes are implemented. The
 current webhook path does not yet create and deliver a pairing code when an
 unknown user is rejected. That release connection is tracked in

@@ -32,13 +32,13 @@ Telegram requires:
 | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | Bot API credential |
 | `TELEGRAM_WEBHOOK_SECRET_TOKEN` | Verifies webhook delivery |
-| `TELEGRAM_DM_POLICY` | Direct-message admission mode |
 | `TELEGRAM_ADMIN_USER_IDS` | Optional connector administrators |
 | `TELEGRAM_APPROVED_USER_IDS` | Optional pre-approved users |
 | `TELEGRAM_BOT_USERNAME` | Optional bot username for mention handling |
 | `TELEGRAM_MENTION_PATTERNS` | Optional group mention patterns |
 
-The default direct-message policy is `pairing`.
+The stored direct-message policy defaults to `pairing` and is changed through
+the authenticated Telegram admin API.
 
 | Policy | Behavior |
 | --- | --- |

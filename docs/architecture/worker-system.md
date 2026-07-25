@@ -134,7 +134,7 @@ boundaries.
 
 ## Progress And Results
 
-Long-running worker activity emits structured progress events for:
+The standalone Coding Worker loop defines structured progress events for:
 
 - task admission and planning;
 - subagent handoffs;
@@ -145,10 +145,13 @@ Long-running worker activity emits structured progress events for:
 - Git and GitHub actions;
 - completion or blocked outcomes.
 
-The Coding Worker returns a structured result containing status, summary,
-plan, subagent results, verification evidence, public events, artifacts, and a
-task checkpoint when applicable. The orchestrator/critic uses that evidence to
-accept, revise, redelegate, or reject the result.
+That loop can return status, summary, plan, subagent results, verification
+evidence, public events, artifacts, and a task checkpoint. The live Flue Coding
+Worker profile currently constructs its tools without a reporter or task id,
+so `coding_progress_emit` reports unavailable and those checkpoint events are
+not forwarded to the active connector. Wiring the reporter into the live
+profile and connector transport is a release gate. The orchestrator still
+receives the Flue task result for final synthesis.
 
 ## Security Boundaries
 

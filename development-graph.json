@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 14,
+  "graph_version": 15,
   "nodes": [
     {
       "acceptance": [
@@ -2905,7 +2905,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve across root release documents, docs, and OpenWiki; every architecture document is indexed; production terminology and README section order match the release contract; current architecture contains no roadmap status language; source-build configuration and storage paths, generated-asset prerequisites, capability paths and overrides, connector environment examples and pairing boundaries, gateway controls and release gaps, protocol-enforcement boundaries, and diagnostics surfaces match source; source references resolve except declared non-live examples; and required Markdown fences and H1 structure are valid.",
+          "criterion": "The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve across root release documents, docs, and OpenWiki; every architecture document is indexed; production terminology and README section order match the release contract; current architecture contains no roadmap status language; source-build configuration and storage paths, generated-asset prerequisites, capability paths and overrides, connector environment examples and pairing boundaries, gateway controls and release gaps, protocol-enforcement and progress-visibility boundaries, changelog claims, and diagnostics surfaces match source; source references resolve except declared non-live examples; and required Markdown fences and H1 structure are valid.",
           "evidence": "runtime:evidence/verify-documentation/result.json",
           "id": "documentation-contract-passed",
           "kind": "test"
@@ -2930,7 +2930,7 @@
         "kind": "deterministic",
         "name": "Verify Production Documentation"
       },
-      "goal": "Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, capability, connector, gateway, protocol-enforcement, and diagnostics guidance, resolvable source references, and valid Markdown structure.",
+      "goal": "Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, and diagnostics guidance, resolvable source references, and valid Markdown structure.",
       "id": "verify-documentation",
       "inputs": [
         {
@@ -4862,7 +4862,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:7e5fb628c63a431960d12e622ee505040d41068b5eba034b9a945a8f7f3d81df",
+    "context_version": "snapshot:sha256:da6f42c9aaf397f2288b4c91397b2820e29cbe6e4228e74f2c71edf798aa5d4a",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",

@@ -162,9 +162,11 @@ application-owned service boundary.
 
 ## Progress And Terminal States
 
-Execution surfaces emit typed progress for handoffs, tools, approvals,
-verification, retries, and completion. A bounded operation ends in an explicit
-state such as:
+The terminal event stream and schedule subsystem emit typed activity for
+operations, tools, approvals, retries, and completion. The standalone Coding
+Worker loop can collect typed checkpoint events, but the live Flue worker
+profile does not yet attach that reporter or forward its events to the active
+connector. A bounded operation ends in an explicit state such as:
 
 ```text
 completed
@@ -189,9 +191,9 @@ Finite workflows make failure boundaries explicit:
 - runtime capability loading reports invalid records;
 - the orchestrator can reject or redelegate insufficient worker output.
 
-Persisted sessions, task checkpoints, schedule runs, and structured progress
-provide recovery context without treating the model's prompt as the system of
-record.
+Persisted sessions, task checkpoints, and schedule runs provide recovery
+context without treating the model's prompt as the system of record. Live
+Coding Worker checkpoint forwarding remains a release gate.
 
 ## Source Map
 

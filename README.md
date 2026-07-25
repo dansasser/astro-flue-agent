@@ -120,7 +120,9 @@ That is the SIM-ONE Alpha difference: security and governance are part of the ru
 - First-class researcher worker for current, external, source-backed, and web research tasks.
 - First-class coding worker with triage, implementation, test/debug, code review, and GitHub workflow support.
 - Worker-local subagents that report back to the orchestrator instead of owning final authority.
-- Progress, validation, and approval events that make long-running work visible through connector surfaces.
+- Live Flue operation, tool, validation, and approval rows in the terminal
+  interface. Dedicated Coding Worker checkpoint forwarding to active
+  connectors remains a release gate.
 
 ### Capabilities And Extensibility
 

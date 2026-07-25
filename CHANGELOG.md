@@ -9,19 +9,21 @@ and SIM-ONE Alpha follows
 
 ### Beta Release
 
-The first beta release of SIM-ONE Alpha provides a self-hosted,
+The planned first beta release of SIM-ONE Alpha provides a self-hosted,
 protocol-governed AI employee runtime built with Flue and the SIM-ONE Framework.
 
 ### Added
 
-- Governing orchestrator/critic that loads SQLite-backed protocols before
-  reasoning, delegation, tool execution, or response generation.
+- Protocol Tool, trusted-event lookup, SQLite protocol provider, and base
+  protocol records attached to the governing orchestrator. Complete release
+  policies and trusted fail-closed pre-execution enforcement remain release
+  gates.
 - Durable sessions, memory, RAG, document retrieval, web research, schedules,
   and Rust/WebAssembly structured task memory.
 - Research and coding workers that perform specialized work and report results
   to the orchestrator for validation.
-- SIM-ONE terminal UI, Web UI, gateway API, Telegram integration, scheduled
-  jobs, and the unified `sim-one` command.
+- SIM-ONE terminal UI, gateway API, Telegram integration, scheduled jobs, and
+  the unified `sim-one` command.
 - Runtime management for user- and agent-added skills, tools, workers, and MCP
   servers without rebuilding the product.
 - Approval-gated mutation paths, capability collision checks, trusted scoping,
