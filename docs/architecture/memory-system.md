@@ -45,9 +45,9 @@ WASM exports (each takes/returns JSON; `Err(String)` prefixes map to `MemoryEngi
 | `reconcile_index` | Rebuild the WASM in-memory index from a snapshot (cold-start hydration). |
 
 Internals:
-- `InMemoryIndex` (`src/index.rs`) — `by_id` map plus `tag_index` and `title_index` inverted indexes. `query_tags` uses the `tag_index` (O(K) over matching records).
-- `Scope` (`src/scope.rs`) — `matches(record, query)` is the trust boundary: a record scoped to `projectId=A` is never returned to a query whose `projectId` is `B` or absent. Global records are visible to all queries.
-- `validate_request` (`src/validate.rs`) — rejects empty required fields and empty scopes (`scope must carry at least one of actorId/conversationId/projectId/threadId/global`).
+- `InMemoryIndex` (`crates/gorombo-memory/src/index.rs`) — `by_id` map plus `tag_index` and `title_index` inverted indexes. `query_tags` uses the `tag_index` (O(K) over matching records).
+- `Scope` (`crates/gorombo-memory/src/scope.rs`) — `matches(record, query)` is the trust boundary: a record scoped to `projectId=A` is never returned to a query whose `projectId` is `B` or absent. Global records are visible to all queries.
+- `validate_request` (`crates/gorombo-memory/src/validate.rs`) — rejects empty required fields and empty scopes (`scope must carry at least one of actorId/conversationId/projectId/threadId/global`).
 
 ## TypeScript shim (`src/engine/memory/rust-memory-engine.ts`)
 
@@ -120,3 +120,10 @@ Session notes are optionally searchable by LanceDB semantic similarity (`Structu
 - Rust crate: `pnpm run cargo:test` (`cargo test -p gorombo-memory`).
 - TS unit tests: `pnpm run test:unit` (uses `InMemoryMemoryEngine` parity; no WASM build required).
 - End-to-end + durability: `pnpm run wasm:build && pnpm run smoke:memory` (drives the real WASM engine + SQLite + `retrieve_memory` + coding-worker path; optional `GOROMBO_SMOKE_REAL_MODEL=1` for a live-model run).
+
+## Related Documentation
+
+- [Architecture Overview](overview.md)
+- [Retrieval And Research](retrieval-and-research.md)
+- [Worker System](worker-system.md)
+- [Execution Workflows](execution-workflows.md)

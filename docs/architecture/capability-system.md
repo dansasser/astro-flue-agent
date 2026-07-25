@@ -21,7 +21,7 @@ Four capability kinds:
 
 ```text
 User/Agent adds capability
--> capability-admin.mjs (CLI) or agent tool (Phase 3)
+-> sim-one CLI or agent capability tool
 -> SQLite capabilities table
 -> Service restart
 -> createAgent(...) init
@@ -36,7 +36,7 @@ User/Agent adds capability
 
 ```sql
 CREATE TABLE capabilities (
-  id            TEXT PRIMARY KEY,
+  id            TEXT NOT NULL,
   kind          TEXT NOT NULL,  -- 'skill' | 'tool' | 'worker' | 'mcp'
   name          TEXT NOT NULL,
   description   TEXT NOT NULL,
@@ -47,8 +47,15 @@ CREATE TABLE capabilities (
   config_json   TEXT NOT NULL DEFAULT '{}',
   installed_at  TEXT NOT NULL,
   updated_at    TEXT NOT NULL,
-  installed_by  TEXT NOT NULL DEFAULT 'cli'
+  installed_by  TEXT NOT NULL DEFAULT 'cli',
+  PRIMARY KEY (kind, id)
 );
+
+CREATE INDEX idx_capabilities_kind_enabled
+  ON capabilities(kind, enabled);
+
+CREATE UNIQUE INDEX idx_capabilities_id_unique
+  ON capabilities(id);
 ```
 
 SQLite is authoritative. A config-file mirror (`gorombo.config.json` `capabilities` section) reconciles into SQLite on boot.
@@ -59,13 +66,15 @@ The `sim-one` binary is the product interface for capability management. After i
 
 ```sh
 # Add a skill from GitHub
-sim-one skill add https://github.com/user/my-skill my-skill "My Skill" "Does X" --enable
+sim-one skill add https://github.com/user/my-skill my-skill "My Skill" \
+  --description "Does X" --enable
 
 # Add a skill from local path
 sim-one skill add /path/to/skill-dir my-skill "My Skill" --enable
 
 # Add an MCP server
-sim-one mcp add my-mcp "My MCP Server" "Description" --url http://localhost:8080 --enable
+sim-one mcp add my-mcp "My MCP Server" --url http://localhost:8080 \
+  --description "Description" --enable
 
 # List all capabilities
 sim-one skill list
@@ -84,11 +93,15 @@ sim-one skill update my-skill
 sim-one skill remove my-skill
 ```
 
-After adding or enabling a capability, restart the service: `sim-one restart`
+Enabled capability records are read when the orchestrator agent initializes.
+After a lifecycle change, restart the running gateway through the process or
+service manager that launched it. The current `sim-one` command does not
+register a gateway restart subcommand.
 
-### Developer-only tool (before `sim-one` binary ships)
+### Source-Checkout Administration
 
-During development, a standalone script provides the same CRUD operations:
+A source checkout also includes a standalone administration script with the
+same registry operations:
 
 ```sh
 node scripts/capability-admin.mjs add skill /path/to/skill my-skill "My Skill" --enable
@@ -97,7 +110,9 @@ node scripts/capability-admin.mjs enable tool my-tool
 node scripts/capability-admin.mjs remove skill my-skill
 ```
 
-This is a dev-time tool. The product interface is `sim-one skill add ...`, not pnpm scripts or standalone `.mjs` files. See `docs/architecture/product-flow.md` for the full product flow.
+The installed product interface is `sim-one skill add ...`; the script is for
+repository administration. See the [CLI Reference](../reference/cli.md) for the
+complete capability command syntax.
 
 ## Directory Layout
 
@@ -129,13 +144,25 @@ src/agents/
                             merges user tools/MCP into tools array, user workers into subagents
 ```
 
-## Restart, Not Rebuild
+## Reload At Initialization
 
-Adding a capability writes to SQLite. The user restarts the running service (`node dist/server.mjs`) to pick it up. On restart, `createAgent(...)` init re-runs, the merge layer re-reads SQLite and re-scans the capability dir. No `flue build` needed — the built artifact in `dist/` doesn't change. User-defined capabilities live in SQLite + `~/.gorombo/capabilities/`, both outside `dist/`.
+Adding a capability writes to SQLite. When the gateway process restarts,
+`createAgent(...)` initialization re-reads SQLite and re-scans the capability
+directory. No product rebuild is required.
+User-defined capabilities live in SQLite and
+`~/.gorombo/capabilities/`, outside the packaged application artifact.
 
-## Approval Gating (Phase 3)
+## Enablement And Approval
 
-Agent-initiated additions of code-exec kinds (tool, worker, MCP) will go through the existing approval service (fail-closed). Skill additions skip approval (markdown only, no code exec). CLI additions skip approval (user is the principal).
+Agent-added skills are enabled automatically because they contain instructions
+and supporting content rather than executable code. Agent-added tools, workers,
+and MCP servers are installed disabled and require user enablement through the
+product control surface before they can enter the runtime. Direct CLI actions
+use the authenticated user as the principal.
+
+After enablement, executable capabilities remain subject to protocols, trusted
+scope, owning-agent attachment, sandbox policy, and action-specific approval
+requirements.
 
 ## Config-File Mirror
 
@@ -158,3 +185,11 @@ Agent-initiated additions of code-exec kinds (tool, worker, MCP) will go through
   ]
 }
 ```
+
+## Related Documentation
+
+- [Architecture Overview](overview.md)
+- [Skill System](skill-system.md)
+- [Worker System](worker-system.md)
+- [Registry System](registry-system.md)
+- [Execution Workflows](execution-workflows.md)

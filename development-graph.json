@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 9,
+  "graph_version": 10,
   "title": "SIM-ONE Alpha Development Lifecycle",
   "purpose": "Govern future SIM-ONE Alpha changes from an authorized request through grounded design, parallel domain implementation, full project verification, approval-gated release, output-level canary and production observation, and bounded repair.",
   "project": {
@@ -10,6 +10,13 @@
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/README.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/overview.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/execution-workflows.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/protocol-system.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/retrieval-and-research.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/skill-system.md",
+      "/opt/ai/sim-one-alpha/docs/architecture/worker-system.md",
       "/opt/ai/sim-one-alpha/docs/architecture/flue-architecture.md",
       "/opt/ai/sim-one-alpha/docs/architecture/gorombo-flue-map.md",
       "/opt/ai/sim-one-alpha/docs/architecture/product-flow.md",
@@ -23,7 +30,7 @@
       "/opt/ai/sim-one-alpha/docs/tui/session-management.md",
       "/opt/ai/sim-one-alpha/.github/workflows/ci.yml"
     ],
-    "context_version": "commit:2a9ca2934d0b4c8d793a1eaeb5528f6aaccfb8f8"
+    "context_version": "snapshot:sha256:e916940f4c81f46aba2f3f4e557fe55e7584071ff17daad19097bb2e346f63d5"
   },
   "status": "validated",
   "templates": [
@@ -1183,7 +1190,25 @@
           "docs/operations/product-tui.md",
           "docs/tui/",
           "README.md",
-          "src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan"
+          "src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan",
+          "package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan",
+          "scripts/check-documentation.py",
+          "AUTHORS.md",
+          "CHANGELOG.md",
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "SECURITY.md",
+          "SUPPORT.md",
+          "THIRD_PARTY_NOTICES.md",
+          "docs/README.md",
+          "docs/getting-started/",
+          "docs/guides/",
+          "docs/reference/",
+          "docs/operations/telegram-connector.md",
+          "docs/operations/troubleshooting.md",
+          "docs/archive/readme-before-release-rewrite.md",
+          "docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan"
         ],
         "external": [],
         "destructive": false
@@ -1276,6 +1301,11 @@
         {
           "name": "unit test report",
           "artifact": "artifact:unit-test-report",
+          "required": false
+        },
+        {
+          "name": "documentation verification report",
+          "artifact": "artifact:documentation-verification-report",
           "required": false
         },
         {
@@ -1488,6 +1518,78 @@
         "verification",
         "deterministic",
         "typescript"
+      ]
+    },
+    {
+      "id": "verify-documentation",
+      "type": "verification",
+      "title": "Verify Production Documentation",
+      "goal": "Prove the release and architecture documentation has valid local links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, resolvable source references, and valid Markdown structure.",
+      "state": "planned",
+      "executor": {
+        "kind": "deterministic",
+        "name": "Verify Production Documentation",
+        "instructions": "Execute the exact repository documentation-check script as an argv array and retain full stdout, stderr, exit status, timing, and the checked documentation snapshot digest."
+      },
+      "inputs": [
+        {
+          "name": "integrated change set",
+          "artifact": "artifact:integrated-change",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "name": "documentation verification report",
+          "artifact": "artifact:documentation-verification-report",
+          "format": "verification-report"
+        }
+      ],
+      "acceptance": [
+        {
+          "id": "documentation-contract-passed",
+          "kind": "test",
+          "criterion": "The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve, every architecture document is indexed, production terminology and README section order match the release contract, current architecture contains no roadmap status language, source references resolve except declared non-live examples, and required Markdown fences and H1 structure are valid.",
+          "evidence": "runtime:evidence/verify-documentation/result.json"
+        }
+      ],
+      "permissions": {
+        "read": [
+          "README.md",
+          "docs/",
+          "package.json",
+          "scripts/check-documentation.py"
+        ],
+        "write": [],
+        "external": [],
+        "destructive": false
+      },
+      "execution": {
+        "max_attempts": 2,
+        "timeout_minutes": 10,
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "command": [
+          "pnpm",
+          "run",
+          "docs:check"
+        ],
+        "working_directory": ".",
+        "environment": [],
+        "capture_limit_bytes": 65536,
+        "timeout_seconds": 600
+      },
+      "side_effects": {
+        "level": "none",
+        "description": "Reads repository documentation and emits validation evidence without changing project state.",
+        "rollback": "none",
+        "approval_required": false
+      },
+      "resources": [],
+      "tags": [
+        "verification",
+        "deterministic",
+        "documentation",
+        "release"
       ]
     },
     {
@@ -2490,6 +2592,11 @@
         {
           "name": "unit test report",
           "artifact": "artifact:unit-test-report",
+          "required": true
+        },
+        {
+          "name": "documentation verification report",
+          "artifact": "artifact:documentation-verification-report",
           "required": true
         },
         {
@@ -3654,6 +3761,18 @@
       "exit_condition": null
     },
     {
+      "id": "integration-to-verify-documentation",
+      "from": "integrate-and-repair",
+      "to": "verify-documentation",
+      "type": "consumes",
+      "condition": "Upstream artifacts are current, accepted, and bound to this run.",
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "max_traversals": null,
+      "exit_condition": null
+    },
+    {
       "id": "integration-to-verify-unit-tests",
       "from": "integrate-and-repair",
       "to": "verify-unit-tests",
@@ -3925,6 +4044,18 @@
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "artifacts": [
         "artifact:typecheck-report"
+      ],
+      "max_traversals": null,
+      "exit_condition": null
+    },
+    {
+      "id": "verify-documentation-to-verification-summary",
+      "from": "verify-documentation",
+      "to": "aggregate-verification",
+      "type": "consumes",
+      "condition": "Upstream artifacts are current, accepted, and bound to this run.",
+      "artifacts": [
+        "artifact:documentation-verification-report"
       ],
       "max_traversals": null,
       "exit_condition": null
@@ -4285,6 +4416,18 @@
       "condition": "The evidence identifies a correctable implementation or integration failure.",
       "artifacts": [
         "artifact:typecheck-report"
+      ],
+      "max_traversals": 3,
+      "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human."
+    },
+    {
+      "id": "verify-documentation-feedback-to-integration",
+      "from": "verify-documentation",
+      "to": "integrate-and-repair",
+      "type": "feedback",
+      "condition": "The evidence identifies a correctable documentation or integration failure.",
+      "artifacts": [
+        "artifact:documentation-verification-report"
       ],
       "max_traversals": 3,
       "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human."
@@ -4679,6 +4822,18 @@
       "exit_condition": null
     },
     {
+      "id": "integration-invalidates-verify-documentation",
+      "from": "integrate-and-repair",
+      "to": "verify-documentation",
+      "type": "invalidates",
+      "condition": "A changed integrated diff invalidates prior documentation verification evidence.",
+      "artifacts": [
+        "artifact:documentation-verification-report"
+      ],
+      "max_traversals": null,
+      "exit_condition": null
+    },
+    {
       "id": "integration-invalidates-verify-unit-tests",
       "from": "integrate-and-repair",
       "to": "verify-unit-tests",
@@ -4736,7 +4891,8 @@
     "Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.",
     "The checked-in definition is deliberately bound to the canonical host checkout /opt/ai/sim-one-alpha under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.",
     "The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/Ratatui session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.",
-    "Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate."
+    "Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate.",
+    "A snapshot:sha256 project context version hashes a newline-delimited manifest of sorted Git-tracked and nonignored untracked files, excluding development-graph.json and development-graph.md; each record contains the project-relative path, a NUL separator, and the file SHA-256."
   ],
   "risks": [
     "Architecture documents or Flue behavior may drift from the context commit; a changed instruction or dependency invalidates downstream evidence.",

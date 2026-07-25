@@ -35,7 +35,7 @@ Croner fire (dispatch is ADMISSION-ONLY — dispatch resolves = admitted, not co
 ### Key Flue constraints (verified against the installed 1.0.0-beta.1 runtime)
 
 - **`dispatch()` is admission-only.** It returns `DispatchReceipt { dispatchId, acceptedAt }` — `dispatchId` is "not a workflow runId." The agent turn runs asynchronously in the agent's continuing durable queue. The terminal status is observed in-process via `observe()` (the same API `src/core/telemetry/flue-telemetry.ts` uses) filtered by `event.dispatchId`/`event.instanceId`. A dispatch promise resolving is NOT the turn completing.
-- **Only `orchestrator` is dispatchable.** `coding-worker` is a subagent profile of the orchestrator ("not a separately addressable agent endpoint"). Schedules always dispatch to `orchestrator`; `targetAgent: 'coding-worker'` is carried in the input and the orchestrator delegates to the coding-worker subagent via its `task` tool per its workspace instructions. Direct subagent dispatch is a Flue constraint; the Flue-native way to run a specific subagent on a schedule without an orchestrator turn is workflow-target schedules (deferred, see below).
+- **Only `orchestrator` is dispatchable.** `coding-worker` is a subagent profile of the orchestrator ("not a separately addressable agent endpoint"). Schedules always dispatch to `orchestrator`; `targetAgent: 'coding-worker'` is carried in the input and the orchestrator delegates to the coding-worker subagent through its `task` tool.
 - **`node:sqlite`, not `better-sqlite3`.** The Flue `sqlite()` adapter in `src/db.ts` stores only Flue-runtime state (sessions, submissions, runs); schedule definitions + run history are application-owned business data (per the Flue database guide) and live in their own `node:sqlite` file, mirroring `GoromboSessionDatabase`.
 
 ### Schedule kinds
@@ -65,14 +65,20 @@ schedules.retry.retryOn: ["rate_limit","overloaded","network","server_error"]
 schedules.runLog.keepRuns: 200
 schedules.sessionRetention: "24h"
 schedules.shutdownGraceSeconds: 60
-schedules.providerPreflight: true   (v1 stub — deferred D9)
+schedules.providerPreflight: true   (the current preflight returns ok without probing a provider)
 ```
 
 Env overrides: `GOROMBO_SCHEDULES_MAX_CONCURRENT_RUNS`, `GOROMBO_SCHEDULES_KEEP_RUNS`, `GOROMBO_SCHEDULES_MAX_ATTEMPTS`, `GOROMBO_SCHEDULES_SHUTDOWN_GRACE_SECONDS`, `GOROMBO_SCHEDULES_PROVIDER_PREFLIGHT`, `GOROMBO_SCHEDULES_SESSION_RETENTION`, `GOROMBO_SCHEDULES_DATABASE_PATH`.
 
 ## Visibility
 
-`src/engine/schedules/schedule-telemetry.ts` emits structured `schedule.*` progress events (fired, dispatched, completed, error, skipped, created, paused, resumed, updated, deleted, shutdown) to a bounded in-memory `ScheduleProgressReporter`. The scheduled turn's actual *output* reaches the user through the orchestrator's response (the same path chat ingress uses). Full durable persistence + connector push of the `schedule.*` lifecycle events is a follow-up; v1 makes them typed + collected + exposable (via the reporter / admin route).
+`src/engine/schedules/schedule-telemetry.ts` emits structured `schedule.*`
+progress events (fired, dispatched, completed, error, skipped, created, paused,
+resumed, updated, deleted, shutdown) to a bounded in-memory
+`ScheduleProgressReporter`. The scheduled turn's actual output reaches the user
+through the orchestrator response. Schedule lifecycle events are currently
+typed, collected in memory, and exposed through the reporter/admin route; they
+are not durably persisted or pushed independently through connectors.
 
 ## Files
 
@@ -90,16 +96,6 @@ src/engine/tools/schedule-tools.ts                      orchestrator schedule_* 
 src/engine/workers/coding-worker/tools/coding-schedule-tools.ts  coding_schedule_* aliases (lead-only)
 src/api/routes/schedules.ts                         admin HTTP route
 ```
-
-## Deferred phases (planned, not built in v1)
-
-- **D1** Distributed / multi-replica coordination — single-process standalone; the manager is a singleton over one store; a leader-election wrapper can sit in front without changing the schema.
-- **D2** Workflow-target schedules — `dispatch` against a Flue workflow (which can call `session.task({ agent: 'coding-worker' })` directly), avoiding the orchestrator turn for subagent-targeted schedules. The `target_agent` column is free-form to support this.
-- **D5** Persistent-session scheduling strategies (custom session keys across runs) — v1 uses isolated per-run instance ids.
-- **D6** `--exact` / stagger for top-of-hour load spikes — Croner supports stagger; add a `stagger` field later.
-- **D7** Failure-destination routing (separate notify target on error) — v1 emits `schedule.error` through the progress path.
-- **D8** Typed `payload` sub-schema — v1 passes `payload_json` through as an escape hatch.
-- **D9** Provider-preflight skip with cached probe — config flag present; implementation is a no-op stub returning ok in v1.
 
 ## Adding to it
 

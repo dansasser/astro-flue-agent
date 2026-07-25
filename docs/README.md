@@ -16,6 +16,7 @@ architecture documentation for SIM-ONE Alpha.
 | Look up product commands | [CLI Reference](reference/cli.md) |
 | Integrate with the gateway | [HTTP API Reference](reference/http-api.md) |
 | Understand governance and execution | [Architecture Overview](architecture/overview.md) |
+| Trace protocols, workers, retrieval, and workflows | [Execution Workflows](architecture/execution-workflows.md) |
 | Diagnose an installed system | [Troubleshooting](operations/troubleshooting.md) |
 
 ## Product Guides
@@ -41,10 +42,21 @@ architecture documentation for SIM-ONE Alpha.
 
 ## Architecture
 
+- [Architecture Index](architecture/README.md)
 - [Architecture Overview](architecture/overview.md)
 - [Flue Architecture Contract](architecture/flue-architecture.md)
 - [Orchestrator Flow](architecture/orchestrator-flow.md)
+- [Protocol System](architecture/protocol-system.md)
+- [Tool System](architecture/tool-system.md)
+- [Skill System](architecture/skill-system.md)
+- [Worker System](architecture/worker-system.md)
+- [Retrieval And Research](architecture/retrieval-and-research.md)
+- [Execution Workflows](architecture/execution-workflows.md)
+- [Capability System](architecture/capability-system.md)
+- [Registry System](architecture/registry-system.md)
 - [Memory System](architecture/memory-system.md)
+- [Model System](architecture/model-system.md)
+- [Schedules System](architecture/schedules-system.md)
 
 ## Operations
 

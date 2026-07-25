@@ -4,7 +4,7 @@
 *Path:* `src/workers/coding-worker/`
 *Updated:* 2026-06-14
 
-These are the capabilities that sit **above** the [Finish the Coding Worker Product](./plan.md) plan. They move the agent from "production-usable" to "top-notch" — comparable to the most capable coding agents.
+These are the capabilities that sit **above** the Finish the Coding Worker Product plan. They move the agent from "production-usable" to "top-notch" — comparable to the most capable coding agents.
 
 Do not start these until the finish plan is complete and the integration test passes with a real model.
 

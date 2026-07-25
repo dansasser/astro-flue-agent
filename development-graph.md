@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 7cfb3c5ee71670ec6489ff8d7116bf34ebea207facb8e160275d5d85df91ded2 -->
+<!-- development-graph-sha256: 07a89219aeb6b99b148d352b922bcc28026271af4f1a912e2465d387812dafcf -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `9` |
+| Graph version | `10` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `commit:2a9ca2934d0b4c8d793a1eaeb5528f6aaccfb8f8` |
+| Context version | `snapshot:sha256:e916940f4c81f46aba2f3f4e557fe55e7584071ff17daad19097bb2e346f63d5` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `7cfb3c5ee71670ec6489ff8d7116bf34ebea207facb8e160275d5d85df91ded2` |
+| Canonical checksum | `07a89219aeb6b99b148d352b922bcc28026271af4f1a912e2465d387812dafcf` |
 
 ## Flow
 
@@ -39,6 +39,7 @@ flowchart TD
     n_implement_product_delivery["Implement Product Surfaces And Delivery\\n(work / planned)"]
     n_integrate_and_repair["Integrate Change And Apply Bounded Repairs\\n(work / planned)"]
     n_verify_typecheck(["Verify TypeScript Types\\n(verification / planned)"])
+    n_verify_documentation(["Verify Production Documentation\\n(verification / planned)"])
     n_verify_unit_tests(["Verify Unit Test Suite\\n(verification / planned)"])
     n_verify_rust_tests(["Verify Rust Project Tests\\n(verification / planned)"])
     n_build_runtime(["Build Flue Runtime\\n(verification / planned)"])
@@ -84,6 +85,7 @@ flowchart TD
     n_fetch_embedding_model -- "consumes" --> n_integrate_and_repair
     n_build_wasm_memory -- "consumes" --> n_integrate_and_repair
     n_integrate_and_repair -- "consumes" --> n_verify_typecheck
+    n_integrate_and_repair -- "consumes" --> n_verify_documentation
     n_integrate_and_repair -- "consumes" --> n_verify_unit_tests
     n_integrate_and_repair -- "consumes" --> n_verify_rust_tests
     n_integrate_and_repair -- "consumes" --> n_build_runtime
@@ -107,6 +109,7 @@ flowchart TD
     n_build_wasm_memory -- "consumes" --> n_verify_memory_smoke
     n_fetch_embedding_model -- "consumes" --> n_verify_memory_smoke
     n_verify_typecheck -- "consumes" --> n_aggregate_verification
+    n_verify_documentation -- "consumes" --> n_aggregate_verification
     n_verify_unit_tests -- "consumes" --> n_aggregate_verification
     n_verify_rust_tests -- "consumes" --> n_aggregate_verification
     n_build_runtime -- "consumes" --> n_aggregate_verification
@@ -137,6 +140,7 @@ flowchart TD
     n_publish_release_candidate -- "consumes" --> n_closeout_release
     n_observe_production -- "consumes" --> n_closeout_release
     n_verify_typecheck -. "feedback <= 3" .-> n_integrate_and_repair
+    n_verify_documentation -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_unit_tests -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_rust_tests -. "feedback <= 3" .-> n_integrate_and_repair
     n_build_runtime -. "feedback <= 3" .-> n_integrate_and_repair
@@ -171,6 +175,7 @@ flowchart TD
     n_plan_implementation -. "invalidates" .-> n_implement_ingress_operations
     n_plan_implementation -. "invalidates" .-> n_implement_product_delivery
     n_integrate_and_repair -. "invalidates" .-> n_verify_typecheck
+    n_integrate_and_repair -. "invalidates" .-> n_verify_documentation
     n_integrate_and_repair -. "invalidates" .-> n_verify_unit_tests
     n_integrate_and_repair -. "invalidates" .-> n_verify_rust_tests
     n_approve_production_release -- "approves" --> n_observe_production
@@ -196,6 +201,7 @@ flowchart TD
 | `implement-product-delivery` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized sim-one command, primary Ratatui TUI, product packaging, install, build, CI, and release documentation changes while preserving capability-management subcommands. | artifact:product-delivery-change |
 | `integrate-and-repair` | `work` | `planned` | hybrid: SIM-ONE Coding Worker integration adapter | Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence. | artifact:integrated-change |
 | `verify-typecheck` | `verification` | `planned` | deterministic: Verify TypeScript Types | Prove the full TypeScript project satisfies its configured no-emit type contract. | artifact:typecheck-report |
+| `verify-documentation` | `verification` | `planned` | deterministic: Verify Production Documentation | Prove the release and architecture documentation has valid local links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, resolvable source references, and valid Markdown structure. | artifact:documentation-verification-report |
 | `verify-unit-tests` | `verification` | `planned` | deterministic: Verify Unit Test Suite | Run the configured SIM-ONE Alpha unit suite with real local embedding assets and WASM available, including agent/workspace ownership, approval/progress routing, connector-scoped session lifecycle, durable transcript projection, product artifact locking, memory scoping, and telemetry-redaction contracts. | artifact:unit-test-report |
 | `verify-rust-tests` | `verification` | `planned` | deterministic: Verify Rust Project Tests | Run the configured Rust project tests for the memory engine and Ratatui crates. | artifact:rust-test-report |
 | `build-runtime` | `verification` | `planned` | deterministic: Build Flue Runtime | Build the Node-target SIM-ONE Alpha Flue runtime and copy configuration, imported built-in Flue skills, registries, persona workspaces, and memory WASM into the product artifact. | artifact:runtime-build |
@@ -246,6 +252,7 @@ flowchart TD
 | `embedding-model-to-integration` | `fetch-embedding-model` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:embedding-model-assets | — |
 | `wasm-to-integration` | `build-wasm-memory` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:memory-wasm | — |
 | `integration-to-verify-typecheck` | `integrate-and-repair` | `consumes` | `verify-typecheck` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
+| `integration-to-verify-documentation` | `integrate-and-repair` | `consumes` | `verify-documentation` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
 | `integration-to-verify-unit-tests` | `integrate-and-repair` | `consumes` | `verify-unit-tests` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
 | `integration-to-verify-rust-tests` | `integrate-and-repair` | `consumes` | `verify-rust-tests` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
 | `integration-to-runtime-build` | `integrate-and-repair` | `consumes` | `build-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
@@ -269,6 +276,7 @@ flowchart TD
 | `wasm-to-memory-smoke` | `build-wasm-memory` | `consumes` | `verify-memory-smoke` | Upstream artifacts are current, accepted, and bound to this run. | artifact:memory-wasm | — |
 | `embedding-model-to-memory-smoke` | `fetch-embedding-model` | `consumes` | `verify-memory-smoke` | Upstream artifacts are current, accepted, and bound to this run. | artifact:embedding-model-assets | — |
 | `verify-typecheck-to-verification-summary` | `verify-typecheck` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:typecheck-report | — |
+| `verify-documentation-to-verification-summary` | `verify-documentation` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:documentation-verification-report | — |
 | `verify-unit-tests-to-verification-summary` | `verify-unit-tests` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:unit-test-report | — |
 | `verify-rust-tests-to-verification-summary` | `verify-rust-tests` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:rust-test-report | — |
 | `build-runtime-to-verification-summary` | `build-runtime` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
@@ -299,6 +307,7 @@ flowchart TD
 | `candidate-to-closeout` | `publish-release-candidate` | `consumes` | `closeout-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:release-candidate | — |
 | `production-observation-to-closeout` | `observe-production` | `consumes` | `closeout-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:production-observation | — |
 | `verify-typecheck-feedback-to-integration` | `verify-typecheck` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:typecheck-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
+| `verify-documentation-feedback-to-integration` | `verify-documentation` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable documentation or integration failure. | artifact:documentation-verification-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-unit-tests-feedback-to-integration` | `verify-unit-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:unit-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-rust-tests-feedback-to-integration` | `verify-rust-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:rust-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `build-runtime-feedback-to-integration` | `build-runtime` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:runtime-build | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
@@ -333,6 +342,7 @@ flowchart TD
 | `plan-invalidates-implement-ingress-operations` | `plan-implementation` | `invalidates` | `implement-ingress-operations` | A changed implementation plan invalidates the affected domain output. | artifact:ingress-operations-change | — |
 | `plan-invalidates-implement-product-delivery` | `plan-implementation` | `invalidates` | `implement-product-delivery` | A changed implementation plan invalidates the affected domain output. | artifact:product-delivery-change | — |
 | `integration-invalidates-verify-typecheck` | `integrate-and-repair` | `invalidates` | `verify-typecheck` | A changed integrated diff invalidates prior verification evidence. | artifact:typecheck-report | — |
+| `integration-invalidates-verify-documentation` | `integrate-and-repair` | `invalidates` | `verify-documentation` | A changed integrated diff invalidates prior documentation verification evidence. | artifact:documentation-verification-report | — |
 | `integration-invalidates-verify-unit-tests` | `integrate-and-repair` | `invalidates` | `verify-unit-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:unit-test-report | — |
 | `integration-invalidates-verify-rust-tests` | `integrate-and-repair` | `invalidates` | `verify-rust-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:rust-test-report | — |
 | `production-approval-to-observation` | `approve-production-release` | `approves` | `observe-production` | The owner approved the exact production target, candidate, observation plan, and recorded rollback authority. | artifact:production-release-approval | — |
@@ -542,7 +552,7 @@ flowchart TD
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
 - Inputs: artifact:implementation-plan
 - Resources: project:product-delivery
-- Permissions: read [artifact:implementation-plan, authorized project files]; write [sim-one-cli/, tui/, scripts/, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, authorized project files]; write [sim-one-cli/, tui/, scripts/, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Changes only the authorized files in this domain workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
@@ -556,7 +566,7 @@ flowchart TD
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-build, artifact:ratatui-product-report, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
+- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-build, artifact:ratatui-product-report, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
 - Permissions: read [authorized project tree, domain change artifacts, verification evidence]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -583,6 +593,20 @@ flowchart TD
 - Approval required: `false`
 - Acceptance:
   - `verification-passed` (test): The configured TypeScript compiler exits zero with no diagnostics. Evidence: `runtime:evidence/verify-typecheck/result.json`
+
+### `verify-documentation` — Verify Production Documentation
+
+- Goal: Prove the release and architecture documentation has valid local links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, resolvable source references, and valid Markdown structure.
+- Executor instructions: Execute the exact repository documentation-check script as an argv array and retain full stdout, stderr, exit status, timing, and the checked documentation snapshot digest.
+- Inputs: artifact:integrated-change
+- Resources: —
+- Permissions: read [README.md, docs/, package.json, scripts/check-documentation.py]; write [—]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `10` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `none` — Reads repository documentation and emits validation evidence without changing project state.
+- Rollback: none
+- Approval required: `false`
+- Acceptance:
+  - `documentation-contract-passed` (test): The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve, every architecture document is indexed, production terminology and README section order match the release contract, current architecture contains no roadmap status language, source references resolve except declared non-live examples, and required Markdown fences and H1 structure are valid. Evidence: `runtime:evidence/verify-documentation/result.json`
 
 ### `verify-unit-tests` — Verify Unit Test Suite
 
@@ -744,7 +768,7 @@ flowchart TD
 
 - Goal: Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact.
 - Executor instructions: Inspect full outputs and target behavior. Reject coverage claims based only on a narrow test, successful command, process, port, or artifact existence.
-- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-product-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
+- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-product-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
 - Resources: —
 - Permissions: read [all verification evidence, artifact:change-contract, Git diff]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -919,6 +943,7 @@ flowchart TD
 - The checked-in definition is deliberately bound to the canonical host checkout /opt/ai/sim-one-alpha under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.
 - The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/Ratatui session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.
 - Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate.
+- A snapshot:sha256 project context version hashes a newline-delimited manifest of sorted Git-tracked and nonignored untracked files, excluding development-graph.json and development-graph.md; each record contains the project-relative path, a NUL separator, and the file SHA-256.
 
 ## Risks
 
@@ -933,12 +958,15 @@ flowchart TD
 
 ## Provenance and validation
 
-Project instructions: /opt/ai/sim-one-alpha/AGENTS.md, /opt/ai/sim-one-alpha/src/AGENTS.md, /opt/ai/sim-one-alpha/docs/architecture/flue-architecture.md, /opt/ai/sim-one-alpha/docs/architecture/gorombo-flue-map.md, /opt/ai/sim-one-alpha/docs/architecture/product-flow.md, /opt/ai/sim-one-alpha/docs/architecture/registry-system.md, /opt/ai/sim-one-alpha/docs/architecture/tool-system.md, /opt/ai/sim-one-alpha/docs/architecture/capability-system.md, /opt/ai/sim-one-alpha/docs/architecture/memory-system.md, /opt/ai/sim-one-alpha/docs/architecture/tui-cli-session-flow.md, /opt/ai/sim-one-alpha/docs/operations/product-tui.md, /opt/ai/sim-one-alpha/docs/tui/ratatui.md, /opt/ai/sim-one-alpha/docs/tui/session-management.md, /opt/ai/sim-one-alpha/.github/workflows/ci.yml
+Project instructions: /opt/ai/sim-one-alpha/AGENTS.md, /opt/ai/sim-one-alpha/src/AGENTS.md, /opt/ai/sim-one-alpha/docs/architecture/README.md, /opt/ai/sim-one-alpha/docs/architecture/overview.md, /opt/ai/sim-one-alpha/docs/architecture/execution-workflows.md, /opt/ai/sim-one-alpha/docs/architecture/protocol-system.md, /opt/ai/sim-one-alpha/docs/architecture/retrieval-and-research.md, /opt/ai/sim-one-alpha/docs/architecture/skill-system.md, /opt/ai/sim-one-alpha/docs/architecture/worker-system.md, /opt/ai/sim-one-alpha/docs/architecture/flue-architecture.md, /opt/ai/sim-one-alpha/docs/architecture/gorombo-flue-map.md, /opt/ai/sim-one-alpha/docs/architecture/product-flow.md, /opt/ai/sim-one-alpha/docs/architecture/registry-system.md, /opt/ai/sim-one-alpha/docs/architecture/tool-system.md, /opt/ai/sim-one-alpha/docs/architecture/capability-system.md, /opt/ai/sim-one-alpha/docs/architecture/memory-system.md, /opt/ai/sim-one-alpha/docs/architecture/tui-cli-session-flow.md, /opt/ai/sim-one-alpha/docs/operations/product-tui.md, /opt/ai/sim-one-alpha/docs/tui/ratatui.md, /opt/ai/sim-one-alpha/docs/tui/session-management.md, /opt/ai/sim-one-alpha/.github/workflows/ci.yml
 
 Canonical source: `development-graph.json`
 
+Run these commands from the `graph-development` skill root after setting `PROJECT_ROOT` to this project's root:
+
 ```bash
-python3 <skill-root>/scripts/validate_graph.py development-graph.json
-python3 <skill-root>/scripts/render_graph.py development-graph.json --output development-graph.md
-python3 <skill-root>/scripts/validate_graph.py development-graph.json --markdown development-graph.md
+: "${PROJECT_ROOT:?set PROJECT_ROOT to this project directory}"
+python3 scripts/validate_graph.py "$PROJECT_ROOT/development-graph.json"
+python3 scripts/render_graph.py "$PROJECT_ROOT/development-graph.json" --output "$PROJECT_ROOT/development-graph.md"
+python3 scripts/validate_graph.py "$PROJECT_ROOT/development-graph.json" --markdown "$PROJECT_ROOT/development-graph.md"
 ```

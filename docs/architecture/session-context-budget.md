@@ -9,10 +9,10 @@ Sources:
 - Flue Agent API: https://flueframework.com/docs/api/agent-api/
 - Flue Data Persistence API: https://flueframework.com/docs/api/data-persistence-api/
 - Flue Database guide: https://flueframework.com/docs/guide/database/
-- Installed runtime types: `node_modules/@flue/runtime/dist/run-registry-PAFvJO48.d.mts`
-- Installed runtime implementation: `node_modules/@flue/runtime/dist/run-store-CkOkvOxX.mjs`
+- Installed public adapter types: `node_modules/@flue/runtime/dist/adapter.d.mts`
+- Version-matched bundled reference: `pnpm exec flue docs read api/data-persistence-api`
 
-Flue persists session state through the configured `PersistenceAdapter`. On Node, the current Flue persistence entrypoint is a source-root `src/db.ts` file that exports an adapter such as `sqlite('./data/flue.db')`. Without `db.ts`, the Node target uses in-memory state that disappears when the process exits. `SessionData` is version 5 and contains `affinityKey`, entries, `leafId`, metadata, and timestamps.
+Flue persists session state through the configured `PersistenceAdapter`. On Node, the current Flue persistence entrypoint is a source-root `src/db.ts` file that exports an adapter such as `sqlite('./data/flue.db')`. Without `db.ts`, the Node target uses in-memory state that disappears when the process exits. `SessionData` is version 6 and contains `affinityKey`, entries, `leafId`, task-session references, metadata, and timestamps.
 
 `session.prompt(...)` appends the user prompt to the active session and runs against the session's current conversation context. The runtime rebuilds the agent harness state from stored session history when opening a session, then syncs newly produced messages back into session history after each prompt.
 
@@ -88,7 +88,10 @@ The SQLite implementation stores:
 - normalized message event context for protocol and memory lookup
 - session-memory FTS chunks extracted from Flue `SessionData`
 
-Session memory does not fork conversation truth into a separate transcript. It indexes text extracted from Flue `SessionData` and returns matching chunks through the memory tool. The future seven-layer SIM-ONE Alpha memory stack remains separate from this session-memory layer.
+Session memory does not fork conversation truth into a separate transcript. It
+indexes text extracted from Flue `SessionData` and returns matching chunks
+through the memory tool. Structured memory, document retrieval, and vector
+indexes remain separate retrieval sources.
 
 ## Budget Inputs
 
@@ -104,7 +107,7 @@ Session memory does not fork conversation truth into a separate transcript. It i
 - current session/history usage estimate
 - current prompt estimate
 - protocol and instruction text inside the prompt
-- future memory and RAG candidate estimates
+- memory and RAG allocation derived from the remaining input budget
 
 The calculator enforces the provider-reported context window first, then the guaranteed window, then the advertised window. Output reserve is capped at 25 percent of the enforced context window so models with very large reported output ceilings still retain a usable input budget.
 
@@ -127,7 +130,9 @@ durable direct-agent session
 
 Flue's own threshold and overflow compaction still run during and after the prompt. The SIM-ONE Alpha layer keeps the budget data available so RAG can receive a real remaining-token budget before retrieved context is injected.
 
-Backup model failover is an availability path, not a way to bypass context budgeting. Current durable chat execution uses the primary configured card; backup cards remain configured metadata for future fallback-capable paths.
+The backup card is configured metadata. Current durable chat execution prompts
+with the primary configured card and does not perform automatic backup-card
+failover. Every active model path must use its own card-derived context budget.
 
 ## RAG Allocation Rule
 
@@ -163,6 +168,7 @@ Slash commands are parsed before the LLM receives the prompt:
 
 The Ratatui TUI also owns local commands that do not require backend slash-command handling: `/session`, `/sessions [limit]`, `/help`, and `/exit`. `/sessions` reads the scope-filtered lifecycle list endpoint; the others are purely local UI behavior. Backend slash commands include `/new`, `/clear`, `/resume`, `/rename`, and `/compact`; `/clear` creates a replacement durable TUI session while preserving the old session for explicit resume. Default TUI startup uses `POST /api/chat/sessions`, while Telegram alone currently retains connector-conversation active-session persistence.
 
-Future commands can accept trailing instruction text through the same parser. Unsupported slash commands are handled by application code and are not sent to the LLM.
+Unsupported slash commands are handled by application code and are not sent to
+the LLM.
 
 See `docs/architecture/tui-cli-session-flow.md` and `docs/tui/session-management.md` for the product TUI command flow.

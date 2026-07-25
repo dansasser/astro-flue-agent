@@ -1,12 +1,14 @@
 # SIM-ONE Alpha
 
-![Status](https://img.shields.io/badge/status-release-blue)
+[![Version](https://img.shields.io/badge/version-0.1.0--beta-blue)](CHANGELOG.md)
+[![CI](https://github.com/dansasser/sim-one-alpha/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/dansasser/sim-one-alpha/actions/workflows/ci.yml)
 [![Gorombo](https://img.shields.io/badge/by-Gorombo-black)](https://gorombo.com)
 ![Node.js](https://img.shields.io/badge/node-%3E%3D22.18-brightgreen)
 ![TypeScript](https://img.shields.io/badge/typescript-6.x-blue)
+![Rust/WASM](https://img.shields.io/badge/Rust-WASM-000000?logo=rust&logoColor=white)
 [![Built with Flue](https://img.shields.io/badge/built%20with-Flue-purple)](https://flueframework.com/)
 [![SIM-ONE Framework](https://img.shields.io/badge/framework-SIM--ONE-blueviolet)](https://simoneframework.org)
-![License](https://img.shields.io/badge/license-MIT-blue)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.com), built with [Flue](https://flueframework.com/) and the [SIM-ONE Framework](https://simoneframework.org). It is the base architecture behind Gorombo's AI Employees: a self-hosted runtime that combines protocols, memory, RAG, workers, tools, schedules, connectors, approvals, and local computer control so AI employees can receive work, learn as they work, and act through governed execution paths.
 
@@ -415,12 +417,21 @@ Keeping those layers distinct lets Flue resume and observe execution while SIM-O
 
 Detailed references:
 
+- [Architecture index](docs/architecture/README.md)
 - [Flue architecture contract](docs/architecture/flue-architecture.md)
 - [SIM-ONE Alpha Flue map](docs/architecture/gorombo-flue-map.md)
 - [Orchestrator flow](docs/architecture/orchestrator-flow.md)
+- [Protocol system](docs/architecture/protocol-system.md)
+- [Tool system](docs/architecture/tool-system.md)
+- [Skill system](docs/architecture/skill-system.md)
+- [Worker system](docs/architecture/worker-system.md)
+- [Retrieval and research](docs/architecture/retrieval-and-research.md)
+- [Execution workflows](docs/architecture/execution-workflows.md)
 - [Capability system](docs/architecture/capability-system.md)
 - [Registry system](docs/architecture/registry-system.md)
 - [Memory system](docs/architecture/memory-system.md)
+- [Model system](docs/architecture/model-system.md)
+- [Schedules system](docs/architecture/schedules-system.md)
 
 ## Extensibility
 
