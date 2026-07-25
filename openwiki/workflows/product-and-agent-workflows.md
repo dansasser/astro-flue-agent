@@ -46,7 +46,10 @@ Session access denial returns 403. Invalid JSON returns 400. Unknown slash comma
 
 ## Protocol-governed orchestration
 
-The orchestrator must call `load_protocols` before final reasoning, tool execution, worker delegation, or response generation. Protocols are SQLite-backed runtime rules, not skills.
+Orchestrator and chat-ingress instructions require `load_protocols` before
+final reasoning, tool execution, worker delegation, or response generation.
+Protocols are SQLite-backed runtime rules, not skills. Trusted fail-closed
+pre-execution enforcement remains a release gate.
 
 When delegating to `coding-worker`, the orchestrator runtime instructions require parsing the `load_protocols` result and including the parsed object as `protocolBundle` in the delegated task input. This keeps worker execution under the same runtime governance model.
 

@@ -133,15 +133,18 @@ See [HTTP API Reference](../reference/http-api.md).
 ## Memory Or Retrieval Problems
 
 Check that the runtime can read the configured databases and bundled retrieval
-assets under:
+assets. Source-build defaults are:
 
 ```text
-~/.gorombo/db/
-~/.gorombo/vector/
+.gorombo/db/
+.gorombo/vector/
+~/.gorombo/db/capabilities.sqlite
 ```
 
-Do not edit the databases directly. Restore related state from a consistent
-backup when recovery is required.
+The first two paths resolve from the checkout working directory; the capability
+store defaults to the user's home directory. Packaged installs will keep their
+runtime data under `~/.gorombo/`. Do not edit the databases directly. Restore
+related state from a consistent backup when recovery is required.
 
 ## Logs And Diagnostics
 

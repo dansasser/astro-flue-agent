@@ -189,7 +189,6 @@ The gateway owns:
 
 - authentication;
 - permissions;
-- rate limits;
 - request validation;
 - trusted connector identity;
 - audit and telemetry handoff;
@@ -198,6 +197,10 @@ The gateway owns:
 
 Connectors normalize external messages and return responses through the
 initiating channel. They do not contain orchestration logic.
+
+Ingress rate limiting is part of the release gateway contract but is not
+implemented in the current source checkout. It remains a
+[pre-release gate](../getting-started/pre-release-status.md).
 
 See:
 
@@ -220,7 +223,8 @@ SIM-ONE Alpha applies security at multiple boundaries:
 
 1. The gateway verifies external access and connector identity.
 2. Session routing enforces actor and conversation ownership.
-3. The orchestrator loads protocols before execution.
+3. Orchestrator instructions require protocol loading before execution; trusted
+   fail-closed enforcement remains a release gate.
 4. Registries expose only enabled and valid capabilities.
 5. Workers receive bounded tasks and return structured results.
 6. Mutating work enters approval-gated paths.

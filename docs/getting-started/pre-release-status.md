@@ -28,6 +28,7 @@ runnable.
 | Web UI | Absent from the source checkout |
 | Discord connector | Absent from the source checkout |
 | Telegram unknown-user pairing request creation and delivery | Pending-pairing storage and approval routes exist; webhook creation/delivery is not wired |
+| Gateway ingress rate limiting | Authentication and validation exist; request throttling is not implemented |
 | Complete release protocol policy records | Base records exist; release policy coverage remains incomplete |
 | Fail-closed protocol enforcement before every reasoning, tool, delegation, and response path | Tool attachment and mandatory orchestration instructions exist; trusted pre-execution enforcement is not activated |
 | Orchestrator/critic protocol scoring for every stage | Release enforcement integration remains incomplete |

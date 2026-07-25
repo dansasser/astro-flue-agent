@@ -72,7 +72,10 @@ Start with:
 - `src/tests/protocol-provider.test.ts`
 - `src/tests/protocol-tool.test.ts`
 
-Protocols are SQLite-backed runtime rules, not skills. The orchestrator must load protocols before final reasoning, tool use, delegation, or response generation.
+Protocols are SQLite-backed runtime rules, not skills. Orchestrator
+instructions require protocol loading before final reasoning, tool use,
+delegation, or response generation; trusted fail-closed pre-execution
+enforcement remains a release gate.
 
 ## Memory and durable task state
 

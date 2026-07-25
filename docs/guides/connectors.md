@@ -90,7 +90,8 @@ Schedule definitions and run history are stored in SQLite.
 - Pairing and allow lists are enforced before model execution.
 - Connector identity comes from verified ingress, not model-selected text.
 - Secrets remain in the runtime environment or secret manager.
-- The orchestrator loads applicable protocols before acting.
+- Orchestrator instructions require applicable protocol loading before acting;
+  trusted fail-closed enforcement remains a release gate.
 - Mutating work still uses approval-gated execution paths.
 - Connector-specific replies return through the initiating channel.
 

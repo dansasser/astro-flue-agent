@@ -281,17 +281,23 @@ surfaces.
 
 ### Runtime Data
 
-The installed runtime keeps durable state under `~/.gorombo/`:
+The pre-release source build uses both checkout-relative and user-level
+durable state:
 
 | Data | Default location |
 | --- | --- |
-| Flue persistence and sessions | `~/.gorombo/db/flue.sqlite`, `~/.gorombo/db/sessions.sqlite` |
-| Protocols, structured memory, schedules, and capabilities | `~/.gorombo/db/` |
-| Vector retrieval data | `~/.gorombo/vector/` |
-| Installed skills, tools, workers, and MCP definitions | `~/.gorombo/capabilities/` |
+| Flue persistence and sessions | `.gorombo/db/flue.sqlite`, `.gorombo/db/sessions.sqlite` |
+| Protocols, structured memory, and schedules | `.gorombo/db/` |
+| Vector retrieval data | `.gorombo/vector/` |
+| Capability registry and installed definitions | `~/.gorombo/db/capabilities.sqlite`, `~/.gorombo/capabilities/` |
 | Approval records and managed GitHub authentication | `~/.gorombo/approvals/`, `~/.gorombo/auth/github/` |
 
-Storage paths can be changed in the `storage`, `memory`, and `schedules` blocks or through their documented `GOROMBO_*` deployment overrides. These locations contain runtime-managed state; back them up as needed, but do not edit the SQLite databases directly.
+Relative paths resolve from the checkout working directory. The packaged
+release will place installed runtime data under `~/.gorombo/`. Storage paths
+can be changed in the `storage`, `memory`, and `schedules` blocks or through
+their documented `GOROMBO_*` deployment overrides. These locations contain
+runtime-managed state; back them up as needed, but do not edit the SQLite
+databases directly.
 
 ### Apply Changes
 

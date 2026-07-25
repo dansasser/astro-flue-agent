@@ -113,18 +113,21 @@ headers are treated as external.
 }
 ```
 
-| Data | Default location |
+| Source-build data | Default location |
 | --- | --- |
-| Flue runtime state | `~/.gorombo/db/flue.sqlite` |
-| Connector and logical session data | `~/.gorombo/db/sessions.sqlite` |
-| Structured memory | `~/.gorombo/db/structured-memory.sqlite` |
-| Protocols | `~/.gorombo/db/protocols.sqlite` |
+| Flue runtime state | `.gorombo/db/flue.sqlite` |
+| Connector and logical session data | `.gorombo/db/sessions.sqlite` |
+| Structured memory | `.gorombo/db/structured-memory.sqlite` |
+| Protocols | `.gorombo/db/protocols.sqlite` |
 | Runtime capabilities | `~/.gorombo/db/capabilities.sqlite` |
-| Schedules and run history | `~/.gorombo/db/schedules.sqlite` |
-| Semantic retrieval data | `~/.gorombo/vector/` |
+| Schedules and run history | `.gorombo/db/schedules.sqlite` |
+| Semantic retrieval data | `.gorombo/vector/` |
 
-These files are runtime-managed. Back them up as a unit and do not edit SQLite
-records directly.
+Relative paths resolve from the source checkout working directory. The
+capability store separately defaults to the user's home directory. The
+packaged release contract places installed runtime data under
+`~/.gorombo/`. These files are runtime-managed; back up every active location
+and do not edit SQLite records directly.
 
 ## Structured Memory
 
