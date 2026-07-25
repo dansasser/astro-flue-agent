@@ -93,8 +93,11 @@ Launch the locally built product command:
 
 Both build paths produce the Flue runtime, terminal interface, Rust/WebAssembly
 memory helper, bundled embedding assets, and unified product command. Configure
-the source checkout through `gorombo.config.json` and `.env` as described in the
-[Configuration Reference](../reference/configuration.md).
+the source seed at `src/core/config/gorombo.config.json` before building and
+place secrets in the checkout `.env` as described in the
+[Configuration Reference](../reference/configuration.md). The build copies the
+seed to `.gorombo/sim-one-alpha/gorombo.config.json`, which is the file loaded
+by the locally built server.
 
 ## Verify The Source Build
 

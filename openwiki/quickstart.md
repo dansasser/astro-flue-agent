@@ -63,6 +63,8 @@ Use `pnpm` with Node `>=22.18.0` as declared in `package.json`.
 
 ```sh
 pnpm install
+pnpm run fetch-embedding-model
+pnpm run wasm:build
 pnpm run typecheck
 pnpm run test:unit
 pnpm run build
@@ -79,7 +81,6 @@ pnpm run build:cli
 pnpm run build:all
 pnpm run test:tui
 pnpm run smoke:http
-pnpm run wasm:build
 pnpm run smoke:memory
 pnpm run cargo:test
 ```

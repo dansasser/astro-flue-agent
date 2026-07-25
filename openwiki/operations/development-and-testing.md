@@ -8,6 +8,8 @@ Typical developer setup:
 
 ```sh
 pnpm install
+pnpm run fetch-embedding-model
+pnpm run wasm:build
 pnpm run typecheck
 pnpm run test:unit
 pnpm run build
@@ -63,6 +65,9 @@ pnpm run wasm:build
 pnpm run smoke:memory
 pnpm run cargo:test
 ```
+
+The embedding model and WASM package are gitignored. Prepare both in every
+fresh checkout before running the complete unit suite.
 
 Targeted scripts:
 

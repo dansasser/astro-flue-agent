@@ -217,16 +217,19 @@ Both source-build paths fetch the bundled embedding model, compile the Rust/WASM
 
 ## Configuration
 
-SIM-ONE Alpha keeps runtime behavior separate from secrets. Pre-release source
-builds configure these files directly; the packaged onboarding flow owns this
-setup after release:
+SIM-ONE Alpha keeps runtime behavior separate from secrets. The pre-release
+source build uses these checkout-local files:
 
 | File | Purpose |
 | --- | --- |
-| `~/.gorombo/sim-one-alpha/gorombo.config.json` | Model selection, storage, memory, schedules, gateway settings, and seeded capabilities |
-| `~/.gorombo/.env` | Provider API keys, connector tokens, service credentials, and operational overrides |
+| `src/core/config/gorombo.config.json` | Source configuration seed copied by the runtime build |
+| `.gorombo/sim-one-alpha/gorombo.config.json` | Generated configuration loaded by the locally built server |
+| `.env` | Provider API keys, connector tokens, service credentials, and operational overrides |
 
-Keep secrets in `.env` or your deployment secret manager. Do not commit `.env` or place credentials in `gorombo.config.json`.
+Edit the source seed before building; rebuilding replaces the generated copy.
+The packaged onboarding flow will own the installed files under
+`~/.gorombo/`. Keep secrets in `.env` or your deployment secret manager. Do
+not commit `.env` or place credentials in `gorombo.config.json`.
 
 ### Select Models
 
@@ -259,7 +262,7 @@ Ollama Cloud uses `https://ollama.com/v1` unless `OLLAMA_CLOUD_BASE_URL` is set.
 
 The runtime validates credentials for both selected cards at startup. The shipped primary and backup therefore require an Ollama Cloud key plus both Codex Brain values. Remove `models.backup` or select another configured backup when only one provider is available.
 
-Model selection belongs in `gorombo.config.json`. Raw provider/model specifiers and the legacy `GOROMBO_MODEL`, `GOROMBO_MODEL_BACKUP`, and `GOROMBO_CONFIG_PATH` environment variables are not supported.
+Model selection belongs in the source seed and its generated runtime copy. Raw provider/model specifiers and the legacy `GOROMBO_MODEL`, `GOROMBO_MODEL_BACKUP`, and `GOROMBO_CONFIG_PATH` environment variables are not supported.
 
 ### Configure Services
 

@@ -3,15 +3,19 @@
 SIM-ONE Alpha separates non-secret runtime configuration from credentials and
 service secrets.
 
-## Configuration Files
+## Source-Build Configuration Files
 
 | File | Purpose |
 | --- | --- |
-| `~/.gorombo/sim-one-alpha/gorombo.config.json` | Models, storage, memory, schedules, gateway settings, and seeded capabilities |
-| `~/.gorombo/.env` | Provider keys, connector tokens, service credentials, and deployment overrides |
+| `src/core/config/gorombo.config.json` | Source seed for models, storage, memory, schedules, gateway settings, and capabilities |
+| `.gorombo/sim-one-alpha/gorombo.config.json` | Generated copy loaded by the built server |
+| `.env` | Provider keys, connector tokens, service credentials, and deployment overrides |
 
 Keep secrets out of `gorombo.config.json`. Do not commit `.env` or copy secret
-values into an agent workspace, issue, or chat transcript.
+values into an agent workspace, issue, or chat transcript. Run the runtime
+build after changing the source seed; the build replaces the generated copy.
+The packaged onboarding flow will manage installed configuration under
+`~/.gorombo/` when release assets are published.
 
 ## Applying Configuration
 
