@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 98fdf22caeda95de804ad2da7b0cf27d118bf01555eeefcb3c551ebe518a8b24 -->
+<!-- development-graph-sha256: 08bbc6559cde892758192f4e225ed98380bfad110945c7ad981c926eda903350 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `15` |
+| Graph version | `17` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `snapshot:sha256:da6f42c9aaf397f2288b4c91397b2820e29cbe6e4228e74f2c71edf798aa5d4a` |
+| Context version | `snapshot:sha256:9682665a18f53ea20ae31fbe2a2c1f6596b14e70a3f8305a38907b76ca437719` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `98fdf22caeda95de804ad2da7b0cf27d118bf01555eeefcb3c551ebe518a8b24` |
+| Canonical checksum | `08bbc6559cde892758192f4e225ed98380bfad110945c7ad981c926eda903350` |
 
 ## Flow
 
@@ -201,7 +201,7 @@ flowchart TD
 | `implement-product-delivery` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized sim-one command, primary Ratatui TUI, product packaging, install, build, CI, and release documentation changes while preserving capability-management subcommands. | artifact:product-delivery-change |
 | `integrate-and-repair` | `work` | `planned` | hybrid: SIM-ONE Coding Worker integration adapter | Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence. | artifact:integrated-change |
 | `verify-typecheck` | `verification` | `planned` | deterministic: Verify TypeScript Types | Prove the full TypeScript project satisfies its configured no-emit type contract. | artifact:typecheck-report |
-| `verify-documentation` | `verification` | `planned` | deterministic: Verify Production Documentation | Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, and diagnostics guidance, resolvable source references, and valid Markdown structure. | artifact:documentation-verification-report |
+| `verify-documentation` | `verification` | `planned` | deterministic: Verify Production Documentation | Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, model-selection, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, diagnostics, installer-integrity, and third-party-notice guidance, resolvable source references, and valid Markdown structure. | artifact:documentation-verification-report |
 | `verify-unit-tests` | `verification` | `planned` | deterministic: Verify Unit Test Suite | Run the configured SIM-ONE Alpha unit suite with real local embedding assets and WASM available, including agent/workspace ownership, approval/progress routing, connector-scoped session lifecycle, durable transcript projection, product artifact locking, memory scoping, and telemetry-redaction contracts. | artifact:unit-test-report |
 | `verify-rust-tests` | `verification` | `planned` | deterministic: Verify Rust Project Tests | Run the configured Rust project tests for the memory engine and Ratatui crates. | artifact:rust-test-report |
 | `build-runtime` | `verification` | `planned` | deterministic: Build Flue Runtime | Build the Node-target SIM-ONE Alpha Flue runtime and copy configuration, imported built-in Flue skills, registries, persona workspaces, and memory WASM into the product artifact. | artifact:runtime-build |
@@ -552,7 +552,7 @@ flowchart TD
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
 - Inputs: artifact:implementation-plan
 - Resources: project:product-delivery
-- Permissions: read [artifact:implementation-plan, authorized project files]; write [sim-one-cli/, tui/, scripts/, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, authorized project files]; write [sim-one-cli/, tui/, scripts/, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan, openwiki/]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Changes only the authorized files in this domain workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
@@ -596,7 +596,7 @@ flowchart TD
 
 ### `verify-documentation` — Verify Production Documentation
 
-- Goal: Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, and diagnostics guidance, resolvable source references, and valid Markdown structure.
+- Goal: Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, model-selection, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, diagnostics, installer-integrity, and third-party-notice guidance, resolvable source references, and valid Markdown structure.
 - Executor instructions: Execute the configured pnpm run docs:check command exactly as the declared argv array and retain full stdout, stderr, exit status, timing, and the complete checked-documentation snapshot digest.
 - Inputs: artifact:integrated-change
 - Resources: —
@@ -606,7 +606,7 @@ flowchart TD
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `documentation-contract-passed` (test): The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve across root release documents, docs, and OpenWiki; every architecture document is indexed; production terminology and README section order match the release contract; current architecture contains no roadmap status language; source-build configuration and storage paths, generated-asset prerequisites, capability paths and overrides, connector environment examples and pairing boundaries, gateway controls and release gaps, protocol-enforcement and progress-visibility boundaries, changelog claims, and diagnostics surfaces match source; source references resolve except declared non-live examples; and required Markdown fences and H1 structure are valid. Evidence: `runtime:evidence/verify-documentation/result.json`
+  - `documentation-contract-passed` (test): The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve across root release documents, docs, and OpenWiki; every architecture document is indexed; production terminology and README section order match the release contract; current architecture contains no roadmap status language; source-build configuration and storage paths, generated-asset prerequisites, capability paths and overrides, model backup semantics, connector environment examples and pairing boundaries, Telegram disabled-policy scope, gateway controls and release gaps, protocol-enforcement and progress-visibility boundaries, checksum-only installer integrity, exact third-party notices, changelog claims, and diagnostics surfaces match source; source references resolve except declared non-live examples; and required Markdown fences and H1 structure are valid. Evidence: `runtime:evidence/verify-documentation/result.json`
 
 ### `verify-unit-tests` — Verify Unit Test Suite
 

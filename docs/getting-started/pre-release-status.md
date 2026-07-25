@@ -28,6 +28,7 @@ runnable.
 | Web UI | Absent from the source checkout |
 | Discord connector | Absent from the source checkout |
 | Telegram unknown-user pairing request creation and delivery | Pending-pairing storage and approval routes exist; webhook creation/delivery is not wired |
+| Telegram `disabled` policy scope | The setting is named `dmPolicy`, but current ingress rejects both direct and group messages |
 | Gateway ingress rate limiting | Authentication and validation exist; request throttling is not implemented |
 | Live Coding Worker checkpoint progress over active connectors | Event types and standalone reporter exist; the live Flue worker profile does not attach or forward them |
 | Complete release protocol policy records | Base records exist; release policy coverage remains incomplete |

@@ -152,7 +152,7 @@ launch the locally built `sim-one` command. The packaged first-run experience,
 including credential collection, onboarding, first chat, and conversational
 connector pairing, is documented in
 [Pre-Release Status](docs/getting-started/pre-release-status.md) until the
-signed release assets are available.
+versioned, checksum-verified release assets are available.
 
 ## Installation
 

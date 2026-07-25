@@ -44,7 +44,10 @@ the authenticated Telegram admin API.
 | --- | --- |
 | `pairing` | Unknown users receive a time-limited pairing flow |
 | `allowlist` | Only stored or configured allowed users are admitted |
-| `disabled` | Direct messages are rejected |
+| `disabled` | All Telegram messages are rejected by the current connector |
+
+Although the stored setting is named `dmPolicy`, the current source applies
+`disabled` before distinguishing direct messages from groups.
 
 ### Pair A Telegram User
 

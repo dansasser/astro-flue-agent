@@ -64,7 +64,10 @@ capability fields.
 ## Models
 
 `models.primary` is required. `models.backup` is optional and must select a
-different model card.
+different model card. The registry validates both selected cards and their
+credentials at startup. The backup card is currently configuration metadata;
+the runtime does not automatically fail over to it when the primary model
+fails.
 
 | Model card | Required credentials |
 | --- | --- |

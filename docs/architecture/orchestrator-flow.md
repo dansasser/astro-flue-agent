@@ -29,6 +29,7 @@ flowchart TD
     Result["Structured result and evidence"]
     Critic{"Protocol and result validation"}
     Approval["Approval path"]
+    ApprovedAction["Approved action execution"]
     Revision["Revision or redelegation"]
     Rejection["Rejection"]
     Response["Final root response"]
@@ -55,12 +56,14 @@ flowchart TD
     Internal --> Coding
     Coding --> Result
     Result --> Critic
-    Critic --> Approval
+    Critic -->|approval required| Approval
     Critic --> Revision
     Revision --> Route
     Critic --> Rejection
-    Critic --> Response
-    Approval --> Response
+    Critic -->|accepted| Response
+    Approval -->|approved| ApprovedAction
+    ApprovedAction --> Result
+    Approval -->|denied| Rejection
     Response --> Gateway
 ```
 

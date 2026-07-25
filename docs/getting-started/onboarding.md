@@ -7,8 +7,9 @@ available in the pre-release source checkout. See
 
 ## Release Entry Point
 
-The signed packaged installer opens onboarding automatically. The release
-command can reopen it when an integration needs interactive authorization:
+The version-pinned, checksum-verified packaged installer opens onboarding
+automatically. The release command can reopen it when an integration needs
+interactive authorization:
 
 ```bash
 sim-one install
@@ -23,7 +24,7 @@ directly.
 The release onboarding interface:
 
 1. Validates the runtime location and installed assets.
-2. Selects primary and optional backup models.
+2. Selects a primary model and optionally configures a backup model card.
 3. Collects model-provider API keys.
 4. Collects agent and service tokens for enabled integrations.
 5. Completes Gmail application authorization when Gmail is enabled.
@@ -35,6 +36,10 @@ Secrets are written to `~/.gorombo/.env` or the configured deployment secret
 store. Model selection and non-secret runtime behavior are written to
 `~/.gorombo/sim-one-alpha/gorombo.config.json`. Secrets are not written into
 the agent workspace or stored as conversation text.
+
+The current model registry validates credentials for both selected cards.
+Selecting a backup card does not currently enable automatic provider or model
+failover.
 
 ## First Conversation
 

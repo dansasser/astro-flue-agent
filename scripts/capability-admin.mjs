@@ -303,7 +303,7 @@ Commands:
 
 Environment:
   GOROMBO_CAPABILITY_DB_PATH   Path to SQLite database (default: ${defaultDbPath})
-  GOROMBO_CAPABILITIES_DIR     Path to capability files (default: .gorombo/capabilities/)
+  GOROMBO_CAPABILITIES_DIR     Path to capability files (default: ${resolve(homedir(), '.gorombo', 'capabilities')})
 `);
 }
 

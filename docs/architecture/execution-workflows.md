@@ -4,9 +4,12 @@ SIM-ONE Alpha combines durable agent sessions with finite Flue workflows.
 Agents maintain conversational context. Workflows perform bounded operations
 with explicit inputs, outputs, budgets, and completion states.
 
-Both run inside the same governed execution envelope.
+Both run inside the same orchestration envelope. Protocol loading and
+approval-gated mutation paths are implemented. Complete critic scoring and a
+trusted fail-closed pre-execution boundary across every path remain release
+gates.
 
-## Governed Execution Envelope
+## Execution Envelope
 
 ```text
 Connector, TUI, Web API, or schedule
@@ -17,12 +20,14 @@ Connector, TUI, Web API, or schedule
 -> Memory or retrieval when needed
 -> Tool, workflow, or worker delegation
 -> Progress and evidence
--> Orchestrator/critic validation
+-> Orchestrator synthesis and implemented approval checks
 -> Response or approved side effect
 ```
 
-Ingress, protocols, delegated execution, and final validation remain present
-regardless of which interface started the work.
+Ingress, protocol-loading instructions, delegated execution, and orchestrator
+synthesis remain present regardless of which interface started the work.
+Complete protocol scoring before every response or side effect is the release
+contract, not current-source behavior.
 
 ## Agents And Workflows
 
@@ -47,7 +52,7 @@ User message
 -> Orchestrator session
 -> load_protocols
 -> Memory, tools, or worker delegation
--> Critic validation
+-> Orchestrator synthesis
 -> Connector response
 ```
 
@@ -98,7 +103,7 @@ Coding request
 -> Code review
 -> Approved Git or GitHub action when requested
 -> Structured result
--> Orchestrator/critic validation
+-> Orchestrator synthesis
 ```
 
 The Coding Worker owns its internal subagents and execution tools. File edits,

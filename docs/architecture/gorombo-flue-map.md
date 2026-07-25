@@ -341,9 +341,10 @@ src/engine/capabilities/
 
 scripts/capability-admin.mjs
   CLI admin script for capability CRUD (add/list/enable/disable/remove/update).
-  Follows the `protocol-admin.mjs` pattern. Writes to SQLite at
-  `.gorombo/db/capabilities.sqlite` and materializes skill/tool/worker
-  files under `.gorombo/capabilities/`.
+  Follows the `protocol-admin.mjs` pattern. By default, writes to SQLite at
+  `~/.gorombo/db/capabilities.sqlite` and materializes skill/tool/worker
+  files under `~/.gorombo/capabilities/`. Environment overrides may select
+  other locations.
 
 src/engine/tools/memory-tool.ts
   Orchestrator-safe memory lookup tool.

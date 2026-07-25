@@ -19,7 +19,9 @@ For a source build, compare prerequisites and commands with
 
 Confirm:
 
-- `~/.gorombo/sim-one-alpha/gorombo.config.json` is valid JSON;
+- `src/core/config/gorombo.config.json` is valid JSON before a source build,
+  or `~/.gorombo/sim-one-alpha/gorombo.config.json` is valid JSON in a
+  packaged installation;
 - `gateway.port` is an integer from 1 to 65535;
 - the port is not occupied by another service;
 - selected model cards have their required credentials;
@@ -48,8 +50,13 @@ API and that external requests include the configured API secret.
 ## Model Or Credential Failure
 
 Read `models.primary` and optional `models.backup` from
-`~/.gorombo/sim-one-alpha/gorombo.config.json`, then verify the matching
-credentials in `~/.gorombo/.env`.
+the active configuration file, then verify the matching credentials in the
+active secret environment.
+
+For a source checkout, edit `src/core/config/gorombo.config.json`, rebuild to
+refresh `.gorombo/sim-one-alpha/gorombo.config.json`, and keep credentials in
+the checkout `.env`. A packaged installation will use
+`~/.gorombo/sim-one-alpha/gorombo.config.json` and `~/.gorombo/.env`.
 
 | Model family | Credentials |
 | --- | --- |
@@ -57,7 +64,9 @@ credentials in `~/.gorombo/.env`.
 | Codex Brain | `CODEX_BRAIN_LOCAL_API_URL` and `CODEX_BRAIN_LOCAL_API_KEY` |
 
 The Codex Brain URL must include `/v1`. Remove an unused backup card when its
-provider is intentionally not configured.
+provider is intentionally not configured. The current runtime validates backup
+metadata and credentials but does not automatically fail over from the primary
+card.
 
 After changes, restart the gateway through its launcher and verify a real model
 response.
