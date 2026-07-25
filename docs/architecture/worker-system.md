@@ -119,10 +119,9 @@ under:
 <configured-capability-directory>/workers/<id>/
 ```
 
-The configured capability directory defaults to project-local
-`.gorombo/capabilities/` in a source checkout and
-`~/.gorombo/capabilities/` for a normal installed launcher.
-`GOROMBO_CAPABILITIES_DIR` overrides it.
+The configured capability directory defaults to `~/.gorombo/capabilities/`.
+`GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
+fallback override.
 
 Installed workers are disabled until explicitly enabled. At startup, enabled
 worker records are validated and attached through the same Flue subagent

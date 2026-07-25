@@ -78,9 +78,9 @@ Enabled skill files are materialized under:
 <configured-capability-directory>/skills/<id>/
 ```
 
-The directory defaults to project-local `.gorombo/capabilities/` in source
-checkouts and `~/.gorombo/capabilities/` for a normal installed launcher.
-`GOROMBO_CAPABILITIES_DIR` overrides it.
+The directory defaults to `~/.gorombo/capabilities/`.
+`GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
+fallback override.
 
 Sources can be HTTPS Git repositories, other supported Git remotes, or local
 directories. A version can pin a remote tag, branch, or revision. Local

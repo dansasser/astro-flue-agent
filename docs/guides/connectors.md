@@ -48,14 +48,17 @@ The default direct-message policy is `pairing`.
 
 ### Pair A Telegram User
 
-1. Send a direct message to the configured bot.
-2. Receive the pairing code or request.
-3. Approve the pending request through the authenticated Telegram admin API.
-4. Confirm that the request is bound to the expected user and chat.
-5. Send another Telegram message after approval.
+The packaged release contract creates and delivers a time-limited pairing code
+when an unknown user messages the bot, then approves that request through the
+authenticated Telegram admin API. The current source includes pending-pairing
+storage and the pair/deny routes, but webhook ingress does not yet create and
+deliver the pending request. That final connection is tracked in
+[Pre-Release Status](../getting-started/pre-release-status.md).
 
-Pairing codes expire and are accepted only for the pending request they
-identify. Approval creates an allow-list record for the Telegram user and chat.
+For the current source checkout, add the expected user and chat through the
+authenticated `/api/connectors/telegram/allow` route, then send a Telegram
+message and verify the admitted request reaches the orchestrator. See
+[Telegram Operations](../operations/telegram-connector.md).
 
 ### Telegram Groups
 

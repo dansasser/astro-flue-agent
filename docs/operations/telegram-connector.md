@@ -45,6 +45,11 @@ Omit `TELEGRAM_BOT_TOKEN` to run without Telegram. When the bot token is set,
 | `disabled` | Rejects direct messages |
 
 The stored policy takes precedence; the default is `pairing`.
+Pending-pairing storage and the pair/deny admin routes are implemented. The
+current webhook path does not yet create and deliver a pairing code when an
+unknown user is rejected. That release connection is tracked in
+[Pre-Release Status](../getting-started/pre-release-status.md). Use the
+authenticated `allow` route for current source deployments.
 
 ## Group Admission
 
@@ -61,7 +66,7 @@ the [HTTP API Reference](../reference/http-api.md).
 | --- | --- | --- |
 | `GET` | `/api/connectors/telegram/status` | List policy, users, pending pairings, and groups |
 | `GET` | `/api/connectors/telegram/health` | Return connector counters and last-update state |
-| `POST` | `/api/connectors/telegram/pair` | Approve a pending pairing code |
+| `POST` | `/api/connectors/telegram/pair` | Approve an existing pending pairing code |
 | `POST` | `/api/connectors/telegram/deny` | Deny a pending pairing code |
 | `POST` | `/api/connectors/telegram/allow` | Add an allowed user |
 | `POST` | `/api/connectors/telegram/remove` | Remove an allowed user |
@@ -78,6 +83,18 @@ x-api-secret: <API_SECRET>
 content-type: application/json
 
 {"code":"a4f91c"}
+```
+
+This request succeeds only for a pending record that already exists. Automatic
+creation and delivery of that record from webhook ingress is a release gate.
+For current source deployments, admit a user directly:
+
+```http
+POST /api/connectors/telegram/allow
+x-api-secret: <API_SECRET>
+content-type: application/json
+
+{"userId":"123456789","chatId":"123456789"}
 ```
 
 ## Functional Verification

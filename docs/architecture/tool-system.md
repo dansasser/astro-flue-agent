@@ -92,10 +92,9 @@ export, or named exports that resolve to Flue tool definitions. A failed import
 or invalid export is reported and omitted rather than granting a partially
 loaded capability.
 
-The configured capability directory defaults to project-local
-`.gorombo/capabilities/` in a source checkout and
-`~/.gorombo/capabilities/` for a normal installed launcher.
-`GOROMBO_CAPABILITIES_DIR` overrides it.
+The configured capability directory defaults to `~/.gorombo/capabilities/`.
+`GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
+fallback override.
 
 ## Enablement And Authority
 
