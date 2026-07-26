@@ -1,0 +1,29 @@
+README.md
+  s_a3b1aea6901a1b::t_2e4e444be1dcc8 486,504,521,538,565
+docs/guides/extending-sim-one.md
+  s_a3b1aea6901a1b::t_2e4e444be1dcc8 59-62,71,81,90,119-122
+docs/getting-started/pre-release-status.md
+  s_a3b1aea6901a1b::t_2e4e444be1dcc8 35-36
+docs/reference/cli.md
+  s_a3b1aea6901a1b::t_2e4e444be1dcc8 47,63,78,89-93,111-113
+development-graph.json
+  s_a3b1aea6901a1b::t_f17bddf22b197b 1430,4168-4172,4174-4175,4177,4183-4184,4888
+development-graph.md
+  s_a3b1aea6901a1b::t_a480fd8bf30c0d 1,12,17,21,789
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "0c2f51ed1c49b0acccfedcc1321274b4d4664934",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
