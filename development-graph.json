@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 18,
+  "graph_version": 19,
   "nodes": [
     {
       "acceptance": [
@@ -4119,6 +4119,12 @@
           "evidence": "runtime:evidence/review-architecture-security/probe-claim-map.json",
           "id": "verification-claims-match-probes",
           "kind": "review"
+        },
+        {
+          "criterion": "Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior from release gates without presenting a roadmap.",
+          "evidence": "runtime:evidence/review-architecture-security/release-documentation.json",
+          "id": "release-documentation-reviewed",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -4127,11 +4133,11 @@
         "timeout_minutes": 90
       },
       "executor": {
-        "instructions": "Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, and documented rollback.",
+        "instructions": "Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, documented rollback, and release-document accuracy and readability.",
         "kind": "agent",
         "name": "SIM-ONE review adapter"
       },
-      "goal": "Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, and secret boundaries.",
+      "goal": "Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability.",
       "id": "review-architecture-security",
       "inputs": [
         {
@@ -4159,7 +4165,13 @@
           "artifact:integrated-change",
           "artifact:verification-summary",
           "AGENTS.md",
+          "README.md",
+          "THIRD_PARTY_NOTICES.md",
           "docs/architecture/",
+          "docs/getting-started/",
+          "docs/guides/",
+          "docs/operations/",
+          "docs/reference/",
           "src/AGENTS.md",
           "src/workspace-loader.ts",
           "src/agents/orchestrator.ts",
@@ -4863,7 +4875,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:29f54c36f464c9aa89a44b038c78683b8026d6d08384bdc457e50d0308d066f8",
+    "context_version": "snapshot:sha256:fc86c18028d2764b8f07ad3011599230b896a5a5a73fcaeeb91d31ea775eb241",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
