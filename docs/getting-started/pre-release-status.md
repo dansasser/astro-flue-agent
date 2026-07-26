@@ -26,8 +26,8 @@ no per-run deferral path.
 
 | ID | Release dependency | Pre-release status | Graph owner | Scope |
 | --- | --- | --- | --- | --- |
-| `REL-PKG-001` | Release archive, `sim-one.sh`, and checksums | Not published | `implement-sim-one-onboarding-distribution` | Required |
-| `REL-PKG-002` | Integrity-verified packaged installation | Awaits versioned release assets | `implement-sim-one-onboarding-distribution` | Required |
+| `REL-PKG-001` | Release archive, `sim-one.sh`, and checksums | Not published | `verify-published-release-assets` | Required |
+| `REL-PKG-002` | Integrity-verified packaged installation | Awaits versioned release assets | `verify-published-release-assets` | Required |
 | `REL-ONB-001` | Packaged onboarding interface and `sim-one install` | Unavailable in the current CLI | `implement-sim-one-onboarding-distribution` | Required |
 | `REL-OPS-001` | `sim-one config`, `doctor`, `status`, `start`, `restart`, and `stop` | Unavailable in the current CLI | `implement-sim-one-onboarding-distribution` | Required |
 | `TUI-WORK-001` | Responsive right-side work pane with independently scrollable task checklist, usage and cost, Git state, and runtime status | Planned | `implement-sim-one-tui-work-pane` | Required |
@@ -45,7 +45,7 @@ no per-run deferral path.
 | `REL-PROTO-001` | Complete release protocol policy records | Base records exist; release policy coverage remains incomplete | `implement-capabilities-security` | Required |
 | `REL-PROTO-002` | Fail-closed protocol enforcement before every reasoning, tool, delegation, and response path | Tool attachment and mandatory orchestration instructions exist; trusted pre-execution enforcement is not activated | `implement-capabilities-security` | Required |
 | `REL-PROTO-003` | Orchestrator/critic protocol scoring for every stage | Release enforcement integration remains incomplete | `implement-agent-runtime` | Required |
-| `REL-REL-001` | Release date | Set by `release-production` when `0.1.0 Beta` is published | `release-production` | Required publication step |
+| `REL-REL-001` | Release date | Set by `update-release-ledger` after verified publication and production observation | `update-release-ledger` | Required publication step |
 
 ## Plan Lineage
 
