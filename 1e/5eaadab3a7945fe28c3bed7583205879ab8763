@@ -1,0 +1,27 @@
+development-graph.json
+  s_a81fff26d52223::t_5c4c89efec4287 681,683,685-686
+  s_a81fff26d52223::t_ae3a849d0b123f 2215,3993-3995
+  s_a81fff26d52223::t_dbd01596ca9c98 5710,5722,5726
+  s_a81fff26d52223::t_996e9559a42101 3997,5776,5782,5786-5791,5800,5804,5821-5822,5829-5830,5839-5840,5848,5850,5859
+  s_a81fff26d52223::t_3fb04fb01b791a 4732,4738,4750,4754,4758-4759,4794
+  s_a81fff26d52223::t_25222551481e76 5461,5467,5483
+  s_a81fff26d52223::t_d06fc9542f4f83 3996
+development-graph.md
+  s_a81fff26d52223::t_a0e7e842fab4df 1,12,21,61,129,289,296,298-299,372,791,913-915,917,923-924,1025,1027,1037-1038,1063-1064,1073,1075,1077-1078,1081,1083-1084,1087-1089
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "1e5eaadab3a7945fe28c3bed7583205879ab8763",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
