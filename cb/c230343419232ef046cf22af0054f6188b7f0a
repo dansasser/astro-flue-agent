@@ -1,0 +1,84 @@
+docs/architecture/skill-system.md
+  s_a3b1aea6901a1b::t_074c7c1ead9b99 155-159
+docs/guides/extending-sim-one.md
+  s_a3b1aea6901a1b::t_f1c483fcb8f53f 139
+docs/architecture/overview.md
+  s_a3b1aea6901a1b::t_e3f3b2e2329ece 137-139
+  s_a3b1aea6901a1b::t_31096d5024a3f7 31-33,233-236
+docs/guides/terminal-and-sessions.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 20-21,28-30
+docs/architecture/product-flow.md
+  s_a3b1aea6901a1b::t_31096d5024a3f7 4,6-7,35,50,55-56,63-67
+docs/architecture/execution-workflows.md
+  s_a3b1aea6901a1b::t_e3f3b2e2329ece 72
+  s_a3b1aea6901a1b::t_0f0676ec56700c 8-10
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 109-113
+docs/architecture/retrieval-and-research.md
+  s_a3b1aea6901a1b::t_31096d5024a3f7 21,123,126-127
+  s_a3b1aea6901a1b::t_b74d3121437623 128
+openwiki/workflows/product-and-agent-workflows.md
+  s_a3b1aea6901a1b::t_88d162cb9613f1 104,116
+  s_a3b1aea6901a1b::t_33653f19f8a056 105-108
+openwiki/quickstart.md
+  s_a3b1aea6901a1b::t_88d162cb9613f1 83
+docs/architecture/orchestrator-flow.md
+  s_a3b1aea6901a1b::t_31096d5024a3f7 10-14
+docs/tui/ratatui.md
+  s_a3b1aea6901a1b::t_88d162cb9613f1 36-39
+docs/operations/troubleshooting.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 47-50
+docs/architecture/worker-system.md
+  s_a3b1aea6901a1b::t_31096d5024a3f7 21,169,174-176
+  s_a3b1aea6901a1b::t_e3f3b2e2329ece 60-61,75-78
+  s_a3b1aea6901a1b::t_1fa7ddf5f89910 177
+openwiki/operations/development-and-testing.md
+  s_a3b1aea6901a1b::t_88d162cb9613f1 59,125-126
+CONTRIBUTING.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 163,176,191
+docs/architecture/tool-system.md
+  s_a3b1aea6901a1b::t_074c7c1ead9b99 112-116
+  s_a3b1aea6901a1b::t_0f0676ec56700c 124-125
+docs/architecture/tui-cli-session-flow.md
+  s_a3b1aea6901a1b::t_88d162cb9613f1 123
+docs/reference/cli.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 26,38-41
+  s_b78da567cdc8f0::t_da40b89cb0c0c6 42
+docs/architecture/protocol-system.md
+  s_a3b1aea6901a1b::t_e3f3b2e2329ece 42-43,54-55
+  s_a3b1aea6901a1b::t_1e7e7d2cba2c1a 56
+docs/guides/connectors.md
+  s_a3b1aea6901a1b::t_074c7c1ead9b99 98-99
+README.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 47,342
+  s_a3b1aea6901a1b::t_0f0676ec56700c 494-496
+docs/getting-started/pre-release-status.md
+  s_a3b1aea6901a1b::t_5c0a30da0b1ef9 33
+development-graph.json
+  s_a3b1aea6901a1b::t_f1d89b159a5f9d 1430,4878,4914-4915
+development-graph.md
+  s_a3b1aea6901a1b::t_dd5d1671d22406 1,12,17,21,959
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "cbc230343419232ef046cf22af0054f6188b7f0a",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    },
+    "s_b78da567cdc8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f964c-f1ee-7370-8fb9-7f50bca1616b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
