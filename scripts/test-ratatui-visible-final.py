@@ -128,6 +128,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
             return
 
         offset = query.get("offset", ["-1"])[0]
+        offset = offset.replace("\r", "").replace("\n", "")
         if query.get("live") == ["sse"]:
             global LIVE_CONNECTION_COUNT
             with STATE_LOCK:
