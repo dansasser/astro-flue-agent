@@ -1,0 +1,31 @@
+docs/architecture/execution-workflows.md
+  s_a3b1aea6901a1b::t_4018e8cc1e7613 135-141
+README.md
+  s_a3b1aea6901a1b::t_4018e8cc1e7613 75
+docs/getting-started/pre-release-status.md
+  s_a3b1aea6901a1b::t_4018e8cc1e7613 36
+docs/guides/connectors.md
+  s_a3b1aea6901a1b::t_4018e8cc1e7613 92-95
+docs/architecture/schedules-system.md
+  s_a3b1aea6901a1b::t_4018e8cc1e7613 84-91
+development-graph.json
+  s_a3b1aea6901a1b::t_29a18665e91bf9 1430,4888,4925
+development-graph.md
+  s_a3b1aea6901a1b::t_49a67cc8aef277 1,12,17,21,959
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "e3d57c0c3f6f4b8ddde02f788f9fe91951272726",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
