@@ -56,8 +56,10 @@ Skills, tools, and workers accept:
 - another supported Git remote;
 - a local directory path.
 
-`--version` pins a remote branch, tag, or version reference. Local directory
-sources ignore version pins.
+The pre-release CLI accepts and stores `--version`, but materialization
+shallow-clones the remote default branch. Reliable branch, tag, and commit
+pinning remains a release gate. Local directory sources ignore the recorded
+version.
 
 Capability ids must be safe slugs and cannot collide with built-in or existing
 runtime capability names.
@@ -66,7 +68,7 @@ runtime capability names.
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 ```
 
 Skills are enabled when added because they contain workflow knowledge rather
@@ -76,7 +78,7 @@ than executable capability.
 
 ```bash
 sim-one tool add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 ```
 
 Tools remain disabled unless explicitly enabled.
@@ -85,7 +87,7 @@ Tools remain disabled unless explicitly enabled.
 
 ```bash
 sim-one worker add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 ```
 
 Workers remain disabled unless explicitly enabled.
@@ -114,8 +116,10 @@ remove <id>
 ```
 
 Updating a skill, tool, or worker re-fetches its recorded source. Removing it
-deletes the registry record and managed files. MCP update refreshes stored
-connection metadata; MCP removal deletes the connection record.
+deletes the registry record and managed files. In the pre-release CLI, MCP
+update changes only the record's update timestamp. Change an MCP connection,
+name, or description by removing and re-adding it. MCP removal deletes the
+connection record.
 
 Apply lifecycle changes by restarting the gateway through the process or
 service manager that launched it.

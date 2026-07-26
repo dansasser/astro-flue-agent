@@ -44,7 +44,7 @@ an SSH tunnel to a local port.
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one skill list
 sim-one skill enable <id>
 sim-one skill disable <id>
@@ -60,7 +60,7 @@ when added.
 
 ```bash
 sim-one tool add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one tool list
 sim-one tool enable <id>
 sim-one tool disable <id>
@@ -75,7 +75,7 @@ Tools are disabled when added unless `--enable` is supplied.
 
 ```bash
 sim-one worker add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one worker list
 sim-one worker enable <id>
 sim-one worker disable <id>
@@ -85,6 +85,11 @@ sim-one worker --help
 ```
 
 Workers are disabled when added unless `--enable` is supplied.
+
+For Git sources, the pre-release CLI accepts and stores `--version`, but
+materialization shallow-clones the remote default branch. Reliable branch, tag,
+and commit pinning is a release gate. Local directory sources ignore the
+recorded version.
 
 ## MCP Commands
 
@@ -103,7 +108,9 @@ sim-one mcp --help
 `--url` is required and must use HTTP or HTTPS. The default transport is
 `streamable-http`; `sse` is also supported. `--token-env` stores the
 environment-variable name, not the token. MCP servers are disabled when added
-unless `--enable` is supplied.
+unless `--enable` is supplied. The pre-release `mcp update` command changes
+only the record's update timestamp. To change connection fields, name, or
+description, remove and re-add the MCP server.
 
 ## Capability Lifecycle
 

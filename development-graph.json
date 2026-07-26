@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 22,
+  "graph_version": 23,
   "nodes": [
     {
       "acceptance": [
@@ -4165,13 +4165,23 @@
           "artifact:integrated-change",
           "artifact:verification-summary",
           "AGENTS.md",
+          "AUTHORS.md",
+          "CHANGELOG.md",
+          "CODE_OF_CONDUCT.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
           "README.md",
+          "SECURITY.md",
+          "SUPPORT.md",
           "THIRD_PARTY_NOTICES.md",
+          "docs/README.md",
           "docs/architecture/",
           "docs/getting-started/",
           "docs/guides/",
           "docs/operations/",
           "docs/reference/",
+          "docs/tui/",
+          "openwiki/",
           "src/AGENTS.md",
           "src/workspace-loader.ts",
           "src/agents/orchestrator.ts",
@@ -4875,7 +4885,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:72f24d0df865307d993443ddea5223b49b49ea36d94a42cb4ab5804e3129fbb2",
+    "context_version": "snapshot:sha256:7980e700c7837dc5e5db083bfff24ab0e7afdec70414f3019b53002fd7c080d5",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",

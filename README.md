@@ -483,7 +483,7 @@ User or agent requests a capability
 
 File-backed skills, tools, and workers are materialized under `~/.gorombo/capabilities/`. MCP server URLs, transports, and token environment-variable names remain in SQLite; authentication tokens remain in the environment. Capabilities survive product upgrades because their records and managed files live outside the built artifact.
 
-Skill, tool, and worker sources can be Git repository URLs or local directories. Capability ids must be safe slugs rather than filesystem paths, and ids cannot collide with built-in or existing runtime capabilities. `--version` pins a remote version or Git ref; local directory sources ignore version pins. Updating re-fetches file-backed sources, while removal deletes the registry record and any managed files. A gateway restart reloads capability changes without rebuilding SIM-ONE Alpha.
+Skill, tool, and worker sources can be Git repository URLs or local directories. Capability ids must be safe slugs rather than filesystem paths, and ids cannot collide with built-in or existing runtime capabilities. The pre-release CLI accepts and records `--version`, but file materialization shallow-clones the remote default branch; reliable branch, tag, and commit pinning remains a release gate. Local directory sources ignore the recorded version. Updating re-fetches file-backed sources, while removal deletes the registry record and any managed files. A gateway restart reloads capability changes without rebuilding SIM-ONE Alpha.
 
 ### Trust And Governance
 
@@ -501,7 +501,7 @@ Add skills from a Git repository URL or local directory. Skills are enabled when
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one skill list
 sim-one skill enable <id>
 sim-one skill disable <id>
@@ -518,7 +518,7 @@ Add tools from a Git repository URL or local directory. Tools are disabled when 
 
 ```bash
 sim-one tool add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one tool list
 sim-one tool enable <id>
 sim-one tool disable <id>
@@ -535,7 +535,7 @@ Add specialized workers from a Git repository URL or local directory. Workers ar
 
 ```bash
 sim-one worker add <source> <id> "<name>" \
-  [--description "<text>"] [--version <version-or-git-ref>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one worker list
 sim-one worker enable <id>
 sim-one worker disable <id>
@@ -562,7 +562,7 @@ sim-one mcp remove <id>
 sim-one mcp --help
 ```
 
-`--url` is required. The default transport is `streamable-http`; `sse` is also supported. `--token-env` records the name of an environment variable containing the authentication token, not the token itself; names must start with a letter or underscore and contain only letters, numbers, and underscores. `mcp update` refreshes the stored connection metadata. Removing an MCP server deletes its connection record.
+`--url` is required. The default transport is `streamable-http`; `sse` is also supported. `--token-env` records the name of an environment variable containing the authentication token, not the token itself; names must start with a letter or underscore and contain only letters, numbers, and underscores. In the pre-release CLI, `mcp update` changes only the record's update timestamp. To change the URL, transport, token environment-variable name, name, or description, remove and re-add the MCP server. Removing an MCP server deletes its connection record.
 
 After adding, enabling, disabling, updating, or removing a capability, restart
 the gateway through the process or service manager that launched it. This

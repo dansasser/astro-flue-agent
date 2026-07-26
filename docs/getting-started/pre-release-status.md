@@ -32,6 +32,8 @@ runnable.
 | Gateway ingress rate limiting | Authentication and validation exist; request throttling is not implemented |
 | Coding Worker file-edit approval enforcement | Workspace and sandbox boundaries exist; current write/patch tools do not call the approval service |
 | Live Coding Worker checkpoint progress over active connectors | Event types and standalone reporter exist; the live Flue worker profile does not attach or forward them |
+| Reliable capability source version pinning | `--version` is stored, but current materialization shallow-clones the remote default branch and cannot reliably select another branch, tag, or commit |
+| In-place MCP connection updates | `mcp update` changes only `updated_at`; connection, name, and description changes require remove and re-add |
 | Complete release protocol policy records | Base records exist; release policy coverage remains incomplete |
 | Fail-closed protocol enforcement before every reasoning, tool, delegation, and response path | Tool attachment and mandatory orchestration instructions exist; trusted pre-execution enforcement is not activated |
 | Orchestrator/critic protocol scoring for every stage | Release enforcement integration remains incomplete |

@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: cd3229b0263e009b993253daf6bec3b942eb8eafb06a693cf95a0077cb9a2e75 -->
+<!-- development-graph-sha256: 77d49031520322d488942d3c8ffc552f29f8e9d2169eb43595cc99d2676dc24a -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `22` |
+| Graph version | `23` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `snapshot:sha256:72f24d0df865307d993443ddea5223b49b49ea36d94a42cb4ab5804e3129fbb2` |
+| Context version | `snapshot:sha256:7980e700c7837dc5e5db083bfff24ab0e7afdec70414f3019b53002fd7c080d5` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `cd3229b0263e009b993253daf6bec3b942eb8eafb06a693cf95a0077cb9a2e75` |
+| Canonical checksum | `77d49031520322d488942d3c8ffc552f29f8e9d2169eb43595cc99d2676dc24a` |
 
 ## Flow
 
@@ -786,7 +786,7 @@ flowchart TD
 - Executor instructions: Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, documented rollback, and release-document accuracy and readability.
 - Inputs: artifact:integrated-change, artifact:verification-summary
 - Resources: —
-- Permissions: read [artifact:integrated-change, artifact:verification-summary, AGENTS.md, README.md, THIRD_PARTY_NOTICES.md, docs/architecture/, docs/getting-started/, docs/guides/, docs/operations/, docs/reference/, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts]; write [—]; external [—]; destructive `false`
+- Permissions: read [artifact:integrated-change, artifact:verification-summary, AGENTS.md, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, README.md, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/architecture/, docs/getting-started/, docs/guides/, docs/operations/, docs/reference/, docs/tui/, openwiki/, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `90` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `none` — Produces evidence without mutating project or external state.
 - Rollback: none
