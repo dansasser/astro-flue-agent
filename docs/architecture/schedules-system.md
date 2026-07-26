@@ -32,6 +32,12 @@ Croner fire (dispatch is ADMISSION-ONLY — dispatch resolves = admitted, not co
   -> if deleteAfterRun and kind='at' -> delete the schedule row (cascade removes run history)
 ```
 
+Current schedule input carries the prompt, schedule and run identifiers,
+target, and optional payload, but no trusted normalized-event id. The protocol
+and scoped-memory tools require an event id already persisted by trusted
+ingress, so they are unavailable during scheduled turns. Persisting a synthetic
+trusted schedule event and passing its id is a release gate.
+
 ### Key Flue constraints (verified against the installed 1.0.0-beta.1 runtime)
 
 - **`dispatch()` is admission-only.** It returns `DispatchReceipt { dispatchId, acceptedAt }` — `dispatchId` is "not a workflow runId." The agent turn runs asynchronously in the agent's continuing durable queue. The terminal status is observed in-process via `observe()` (the same API `src/core/telemetry/flue-telemetry.ts` uses) filtered by `event.dispatchId`/`event.instanceId`. A dispatch promise resolving is NOT the turn completing.

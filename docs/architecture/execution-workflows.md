@@ -130,9 +130,11 @@ Schedules support cron expressions, recurring intervals, one-time timestamps,
 and manual runs. Ownership is derived from trusted event context for user
 operations. Schedule definitions and run history are stored in SQLite.
 
-A scheduled prompt does not bypass normal execution boundaries. It enters the
-agent runtime through admission dispatch and is observed through structured
-progress.
+A scheduled prompt enters the agent runtime through admission dispatch and is
+observed through structured progress. Current dispatch does not persist or pass
+a trusted normalized-event id, so scheduled turns cannot call
+`load_protocols` or scoped memory retrieval successfully. Trusted event
+handoff for those controls remains a release gate.
 
 ## Runtime Capability Lifecycle
 

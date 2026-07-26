@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 77d49031520322d488942d3c8ffc552f29f8e9d2169eb43595cc99d2676dc24a -->
+<!-- development-graph-sha256: fec6c2cc1b356cacd0226107d052b21cfee89b3fb70bb2b3d2ae2b7e47cce44d -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `23` |
+| Graph version | `24` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `snapshot:sha256:7980e700c7837dc5e5db083bfff24ab0e7afdec70414f3019b53002fd7c080d5` |
+| Context version | `snapshot:sha256:c077ed5c05a15fe1f13101ca95db48dff990183bc358222b9e87630dfbc706f7` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `77d49031520322d488942d3c8ffc552f29f8e9d2169eb43595cc99d2676dc24a` |
+| Canonical checksum | `fec6c2cc1b356cacd0226107d052b21cfee89b3fb70bb2b3d2ae2b7e47cce44d` |
 
 ## Flow
 
@@ -956,7 +956,7 @@ flowchart TD
 - The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.
 - Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.
 - Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.
-- Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, and configured test command while labeling unimplemented release contracts explicitly.
+- Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, scheduled trusted-event context, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, trusted-context handoff, and configured test command while labeling unimplemented release contracts explicitly.
 
 ## Provenance and validation
 

@@ -84,8 +84,11 @@ requirements.
 
 ## Scheduled Execution
 
-Scheduled jobs enter through the orchestrator and use the same protocols,
-memory, capability boundaries, and progress reporting as interactive work.
+Scheduled jobs enter through durable orchestrator dispatch and retain the
+runtime's capability boundaries and run observation. Current schedule dispatch
+does not persist or pass a trusted normalized-event id, so `load_protocols` and
+scoped memory retrieval are unavailable during scheduled turns. Trusted event
+handoff for scheduled protocol and memory access remains a release gate.
 Schedule definitions and run history are stored in SQLite.
 
 ## Connector Security
