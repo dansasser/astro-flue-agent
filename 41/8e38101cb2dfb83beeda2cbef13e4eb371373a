@@ -1,0 +1,31 @@
+docs/guides/extending-sim-one.md
+  s_a3b1aea6901a1b::t_29e23218f2fe5c 141-143
+  s_a3b1aea6901a1b::t_22b2f1d1e90820 144
+docs/operations/telegram-connector.md
+  s_a3b1aea6901a1b::t_29e23218f2fe5c 36-37
+README.md
+  s_a3b1aea6901a1b::t_29e23218f2fe5c 492-496
+docs/reference/configuration.md
+  s_a3b1aea6901a1b::t_29e23218f2fe5c 191-193
+  s_a3b1aea6901a1b::t_fbde55d57603bc 194
+development-graph.json
+  s_a3b1aea6901a1b::t_fe74e31ac7576d 1430,2909,2930,2934,4866
+development-graph.md
+  s_a3b1aea6901a1b::t_0929c18050a2a5 1,12,17,21,204,599-600,609
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "418e38101cb2dfb83beeda2cbef13e4eb371373a",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
