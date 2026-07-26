@@ -678,12 +678,12 @@
     },
     {
       "artifacts": [
-        "artifact:integrated-change"
+        "artifact:release-candidate"
       ],
-      "condition": "The integrated packaging implementation is current and assigned to the exact release-package build.",
+      "condition": "The candidate pull request has passed required checks, merged to main, and been read back as the immutable source of the release-package build.",
       "exit_condition": null,
-      "from": "integrate-and-repair",
-      "id": "integration-to-release-package-build",
+      "from": "publish-release-candidate",
+      "id": "merged-candidate-to-release-package-build",
       "max_traversals": null,
       "to": "build-release-package",
       "type": "consumes"
@@ -960,18 +960,6 @@
       "exit_condition": null,
       "from": "verify-sim-one-tui",
       "id": "verify-sim-one-tui-to-verification-summary",
-      "max_traversals": null,
-      "to": "aggregate-verification",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
-        "artifact:onboarding-distribution-report"
-      ],
-      "condition": "The isolated packaged onboarding and distribution verification is complete.",
-      "exit_condition": null,
-      "from": "verify-onboarding-distribution",
-      "id": "verify-onboarding-distribution-to-verification-summary",
       "max_traversals": null,
       "to": "aggregate-verification",
       "type": "consumes"
@@ -2224,7 +2212,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 30,
+  "graph_version": 31,
   "nodes": [
     {
       "acceptance": [
@@ -4003,6 +3991,11 @@
           "required": false
         },
         {
+          "artifact": "artifact:release-package",
+          "name": "release package record",
+          "required": false
+        },
+        {
           "artifact": "artifact:cli-build",
           "name": "cli build",
           "required": false
@@ -4736,13 +4729,13 @@
     {
       "acceptance": [
         {
-          "criterion": "The exact versioned release-candidate archive contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets.",
+          "criterion": "The exact versioned release-candidate archive is rebuilt from the immutable merged main-branch commit and contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets.",
           "evidence": "runtime:evidence/build-release-package/archive.json",
           "id": "release-package-assembled",
           "kind": "artifact"
         },
         {
-          "criterion": "The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact candidate commit and version, and is recorded together with archive paths, sizes, executable modes, and platform scope.",
+          "criterion": "The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact merged main-branch candidate commit, tree digest, and version, and is recorded together with archive paths, sizes, executable modes, and platform scope.",
           "evidence": "runtime:evidence/build-release-package/checksums.json",
           "id": "release-package-checksums-bound",
           "kind": "policy"
@@ -4754,16 +4747,16 @@
         "timeout_minutes": 30
       },
       "executor": {
-        "instructions": "Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Assemble only the current artifact:runtime-build, artifact:sim-one-tui-build, and artifact:cli-build outputs; create sim-one.sh and the versioned archive; generate the checksum manifest from final bytes; and record candidate commit, paths, sizes, modes, and SHA-256 digests. Refuse undeclared files, mutable runtime state, configuration, databases, and secrets.",
+        "instructions": "Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Check out the immutable merged main-branch commit recorded by artifact:release-candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.",
         "kind": "hybrid",
         "name": "SIM-ONE release package build adapter"
       },
-      "goal": "Produce the exact typed versioned SIM-ONE release package and checksum manifest consumed by pre-publication verification and approved GitHub release publication.",
+      "goal": "Rebuild the exact typed versioned SIM-ONE release package and checksum manifest from the immutable merged main-branch candidate consumed by pre-publication verification and approved GitHub release publication.",
       "id": "build-release-package",
       "inputs": [
         {
-          "artifact": "artifact:integrated-change",
-          "name": "integrated change set",
+          "artifact": "artifact:release-candidate",
+          "name": "merged release candidate",
           "required": true
         },
         {
@@ -4798,7 +4791,7 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:integrated-change",
+          "artifact:release-candidate",
           "artifact:runtime-build",
           "artifact:sim-one-tui-build",
           "artifact:cli-build",
@@ -5465,13 +5458,13 @@
           "kind": "policy"
         },
         {
-          "criterion": "The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them.",
+          "criterion": "The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and post-merge isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them.",
           "evidence": "runtime:evidence/aggregate-verification/product-evidence-scope.json",
           "id": "product-evidence-scopes-separated",
           "kind": "review"
         },
         {
-          "criterion": "Every required release and planned-work ID has fresh implementation and behavioral evidence from its owning graph member; no ID may pass through a deferred, optional, or not-applicable branch.",
+          "criterion": "Every required release and planned-work ID maps to one producing member and mandatory verification path. Candidate merge requires complete pre-merge evidence, while REL-PKG-001, REL-PKG-002, REL-ONB-001, and REL-OPS-001 remain fail-closed on the explicit post-merge package build and onboarding/distribution verification path before production approval.",
           "evidence": "runtime:evidence/aggregate-verification/release-ledger-coverage.json",
           "id": "release-ledger-coverage-complete",
           "kind": "review"
@@ -5487,7 +5480,7 @@
         "kind": "hybrid",
         "name": "SIM-ONE verification aggregator"
       },
-      "goal": "Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact.",
+      "goal": "Map fresh pre-merge project verification evidence to the candidate contract, preserve explicit mandatory post-merge package and onboarding gates, and identify any unproved behavior, skipped requirement, or stale artifact.",
       "id": "aggregate-verification",
       "inputs": [
         {
@@ -5518,11 +5511,6 @@
         {
           "artifact": "artifact:sim-one-tui-product-report",
           "name": "SIM-ONE TUI product report",
-          "required": true
-        },
-        {
-          "artifact": "artifact:onboarding-distribution-report",
-          "name": "onboarding and distribution report",
           "required": true
         },
         {
@@ -5719,7 +5707,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The owner explicitly approves or rejects the exact candidate, evidence digest, rollback, and GitHub mutation scope.",
+          "criterion": "The owner explicitly approves or rejects the exact candidate tree and diff, evidence digest, target main branch, commit creation, non-draft pull request, required-check policy, merge strategy, main-branch readback, and rollback.",
           "evidence": "runtime:approval/approve-release-candidate",
           "id": "owner-decision-recorded",
           "kind": "manual"
@@ -5731,11 +5719,11 @@
         "timeout_minutes": 1440
       },
       "executor": {
-        "instructions": "Review the exact candidate evidence. Approval is bound to this run, graph checksum, candidate target, evidence digest, approver, and time.",
+        "instructions": "Review the exact candidate tree and diff, evidence, target main branch, required checks, merge strategy, and rollback. Approval is bound to this run, graph checksum, candidate tree digest, GitHub mutation scope, approver, and time.",
         "kind": "human",
         "name": "SIM-ONE project owner"
       },
-      "goal": "Let the project owner approve or reject the exact diff, verification summary, architecture/security review, rollback, and proposed GitHub effects.",
+      "goal": "Let the project owner approve or reject the exact diff, verification summary, architecture/security review, commit, pull request, required-check, merge, main-readback, rollback, and GitHub effects.",
       "id": "approve-release-candidate",
       "inputs": [
         {
@@ -5785,15 +5773,21 @@
     {
       "acceptance": [
         {
-          "criterion": "The commit contains only authorized files and generated/source artifacts intended for review.",
+          "criterion": "The candidate commit contains only authorized files and generated/source artifacts intended for review, and its tree digest exactly matches the owner-approved diff.",
           "evidence": "runtime:evidence/publish-release-candidate/commit-scope.json",
           "id": "commit-scope-correct",
           "kind": "policy"
         },
         {
-          "criterion": "gh pr view proves the PR is open, non-draft, targets main, uses the expected head branch, and exposes a stable URL.",
+          "criterion": "The candidate pull request is non-draft, targets main, uses the expected head branch and approved merge strategy, exposes a stable URL, and has every required check completed successfully before merge.",
           "evidence": "runtime:evidence/publish-release-candidate/pr-view.json",
           "id": "pull-request-verified",
+          "kind": "probe"
+        },
+        {
+          "criterion": "The candidate pull request is merged only after required checks pass, and a fresh main-branch readback binds the immutable merged commit, tree digest, PR URL, merge strategy, and approval without relying on an open PR or submitted merge request as success.",
+          "evidence": "runtime:evidence/publish-release-candidate/main-readback.json",
+          "id": "candidate-merged-and-read-back",
           "kind": "probe"
         }
       ],
@@ -5803,11 +5797,11 @@
         "timeout_minutes": 30
       },
       "executor": {
-        "instructions": "Use non-interactive Git and GitHub commands only after current graph-bound approval. Verify commit scope, remote branch, PR base, head, state, draft status, and URL.",
+        "instructions": "Use non-interactive Git and GitHub commands only after current graph-bound approval. Create the exact approved commit, push its branch, open a non-draft pull request to main, verify base, head, tree digest, required checks, merge strategy, and URL, merge only after all required checks pass, then fetch and read main back to bind the immutable merged commit and tree digest. Stop on drift, failed checks, approval mismatch, or an unexpected merge result.",
         "kind": "hybrid",
         "name": "approval-gated Git and GitHub adapter"
       },
-      "goal": "Commit the authorized change, push its branch, open a non-draft pull request to main, and verify the resulting GitHub state.",
+      "goal": "Commit the authorized change, push its branch, open and verify a non-draft pull request to main, merge it only after required checks pass, and prove the immutable candidate exists on main.",
       "id": "publish-release-candidate",
       "inputs": [
         {
@@ -5824,15 +5818,16 @@
       "outputs": [
         {
           "artifact": "artifact:release-candidate",
-          "format": "github-pull-request-record",
-          "name": "published release candidate"
+          "format": "github-merged-pull-request-record",
+          "name": "merged release candidate"
         }
       ],
       "permissions": {
         "destructive": false,
         "external": [
           "Git remote push",
-          "GitHub API pull request write"
+          "GitHub API pull request write",
+          "GitHub API approval-bound pull request merge after required checks"
         ],
         "read": [
           "authorized worktree",
@@ -5841,7 +5836,8 @@
         ],
         "write": [
           "authorized Git branch",
-          "GitHub pull request"
+          "GitHub pull request",
+          "approved main-branch merge of the exact candidate"
         ]
       },
       "resources": [
@@ -5849,9 +5845,9 @@
       ],
       "side_effects": {
         "approval_required": true,
-        "description": "Creates a Git commit, remote branch update, and pull request.",
+        "description": "Creates the approved Git commit, remote branch, pull request, and required-check-gated main-branch merge.",
         "level": "reversible",
-        "rollback": "Revert the candidate commit or close the pull request while preserving Git and review history."
+        "rollback": "Before merge, close the pull request; after merge, use a separately approved revert pull request while preserving Git and review history."
       },
       "state": "planned",
       "tags": [
@@ -5860,7 +5856,7 @@
         "github",
         "approval"
       ],
-      "title": "Publish Branch And Pull Request",
+      "title": "Publish And Merge Release Candidate",
       "type": "operation"
     },
     {

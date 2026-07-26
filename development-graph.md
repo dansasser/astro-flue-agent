@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 93d36e42285e1411728dd39c0989bc47a04c48baea47d293f0098bf00e712f5d -->
+<!-- development-graph-sha256: 7a91bb9d6627f8e7f510ed9adeaaf50f033f4394794c1b2b14c85761d41358f7 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,7 +9,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `30` |
+| Graph version | `31` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
@@ -18,7 +18,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `93d36e42285e1411728dd39c0989bc47a04c48baea47d293f0098bf00e712f5d` |
+| Canonical checksum | `7a91bb9d6627f8e7f510ed9adeaaf50f033f4394794c1b2b14c85761d41358f7` |
 
 ## Flow
 
@@ -58,7 +58,7 @@ flowchart TD
     n_aggregate_verification(["Aggregate Verification Evidence\\n(verification / planned)"])
     n_review_architecture_security(["Review Architecture, Security, And Product Boundaries\\n(verification / planned)"])
     n_approve_release_candidate{{"Approve Release Candidate Publication\\n(human_gate / planned)"}}
-    n_publish_release_candidate[["Publish Branch And Pull Request\\n(operation / planned)"]]
+    n_publish_release_candidate[["Publish And Merge Release Candidate\\n(operation / planned)"]]
     n_approve_canary{{"Approve Canary Deployment\\n(human_gate / planned)"}}
     n_deploy_canary[["Deploy Approved Canary\\n(operation / planned)"]]
     n_verify_canary_behavior(["Verify Canary Behavior\\n(observation / planned)"])
@@ -126,7 +126,7 @@ flowchart TD
     n_build_runtime -- "consumes" --> n_verify_http_integration
     n_build_runtime -- "consumes" --> n_verify_sim_one_tui
     n_approve_beta_release_contract -- "consumes" --> n_verify_sim_one_tui
-    n_integrate_and_repair -- "consumes" --> n_build_release_package
+    n_publish_release_candidate -- "consumes" --> n_build_release_package
     n_build_runtime -- "consumes" --> n_build_release_package
     n_build_sim_one_tui -- "consumes" --> n_build_release_package
     n_build_cli -- "consumes" --> n_build_release_package
@@ -150,7 +150,6 @@ flowchart TD
     n_verify_rust_tests -- "consumes" --> n_aggregate_verification
     n_build_runtime -- "consumes" --> n_aggregate_verification
     n_verify_sim_one_tui -- "consumes" --> n_aggregate_verification
-    n_verify_onboarding_distribution -- "consumes" --> n_aggregate_verification
     n_verify_cli_behavior -- "consumes" --> n_aggregate_verification
     n_verify_http_integration -- "consumes" --> n_aggregate_verification
     n_verify_tui_e2e -- "consumes" --> n_aggregate_verification
@@ -287,17 +286,17 @@ flowchart TD
 | `build-runtime` | `verification` | `planned` | deterministic: Build Flue Runtime | Build the Node-target SIM-ONE Alpha Flue runtime and copy configuration, imported built-in Flue skills, registries, persona workspaces, and memory WASM into the product artifact. | artifact:runtime-build |
 | `build-sim-one-tui` | `verification` | `planned` | deterministic: Build SIM-ONE TUI | Build the release-mode SIM-ONE TUI binary and copy it into the product artifact. | artifact:sim-one-tui-build |
 | `build-cli` | `verification` | `planned` | deterministic: Build SIM-ONE CLI | Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged SIM-ONE TUI by default. | artifact:cli-build |
-| `build-release-package` | `verification` | `planned` | hybrid: SIM-ONE release package build adapter | Produce the exact typed versioned SIM-ONE release package and checksum manifest consumed by pre-publication verification and approved GitHub release publication. | artifact:release-package |
+| `build-release-package` | `verification` | `planned` | hybrid: SIM-ONE release package build adapter | Rebuild the exact typed versioned SIM-ONE release package and checksum manifest from the immutable merged main-branch candidate consumed by pre-publication verification and approved GitHub release publication. | artifact:release-package |
 | `verify-cli-behavior` | `verification` | `planned` | deterministic: Verify CLI Behavior | Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built SIM-ONE TUI product path. | artifact:cli-behavior-report |
 | `verify-http-integration` | `verification` | `planned` | deterministic: Verify Built HTTP Runtime | Exercise the built HTTP server routes, authentication boundaries, connector-scoped session lifecycle, durable transcript projection, and chat/runtime behavior. | artifact:http-test-report |
 | `verify-sim-one-tui` | `verification` | `planned` | deterministic: Verify Packaged SIM-ONE TUI | Prove the packaged sim-one command launches the SIM-ONE TUI, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response. | artifact:sim-one-tui-product-report |
 | `verify-onboarding-distribution` | `verification` | `planned` | hybrid: SIM-ONE packaged onboarding verification adapter | Prove the versioned SIM-ONE release candidate installs with integrity, onboards from a clean user environment, manages its runtime, and launches the finished product without a source checkout before publication. | artifact:onboarding-distribution-report |
 | `verify-tui-e2e` | `verification` | `planned` | deterministic: Verify Gateway And CLI Smoke | Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged SIM-ONE TUI end-to-end evidence. | artifact:tui-e2e-report |
 | `verify-memory-smoke` | `verification` | `planned` | deterministic: Verify Real Memory Runtime | Exercise the real WASM memory engine, SQLite durability, retrieval, and Coding Worker memory path end to end. | artifact:memory-smoke-report |
-| `aggregate-verification` | `verification` | `planned` | hybrid: SIM-ONE verification aggregator | Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact. | artifact:verification-summary |
+| `aggregate-verification` | `verification` | `planned` | hybrid: SIM-ONE verification aggregator | Map fresh pre-merge project verification evidence to the candidate contract, preserve explicit mandatory post-merge package and onboarding gates, and identify any unproved behavior, skipped requirement, or stale artifact. | artifact:verification-summary |
 | `review-architecture-security` | `verification` | `planned` | agent: SIM-ONE review adapter | Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability. | artifact:architecture-security-review |
-| `approve-release-candidate` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve or reject the exact diff, verification summary, architecture/security review, rollback, and proposed GitHub effects. | artifact:release-candidate-approval |
-| `publish-release-candidate` | `operation` | `planned` | hybrid: approval-gated Git and GitHub adapter | Commit the authorized change, push its branch, open a non-draft pull request to main, and verify the resulting GitHub state. | artifact:release-candidate |
+| `approve-release-candidate` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve or reject the exact diff, verification summary, architecture/security review, commit, pull request, required-check, merge, main-readback, rollback, and GitHub effects. | artifact:release-candidate-approval |
+| `publish-release-candidate` | `operation` | `planned` | hybrid: approval-gated Git and GitHub adapter | Commit the authorized change, push its branch, open and verify a non-draft pull request to main, merge it only after required checks pass, and prove the immutable candidate exists on main. | artifact:release-candidate |
 | `approve-canary` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve the exact release candidate, canary target, probe plan, rollback, and observation window. | artifact:canary-approval |
 | `deploy-canary` | `operation` | `planned` | hybrid: project-specific deployment adapter | Deploy the exact approved release candidate to the declared canary environment with idempotency fencing and a concrete rollback path. | artifact:canary-deployment |
 | `verify-canary-behavior` | `observation` | `planned` | hybrid: SIM-ONE canary probe adapter | Prove the canary produces correct user-visible and system-visible behavior across gateway, orchestrator, protocols, memory, workers, progress, and changed product surfaces. | artifact:canary-behavior-report |
@@ -370,7 +369,7 @@ flowchart TD
 | `runtime-to-http-tests` | `build-runtime` | `consumes` | `verify-http-integration` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `runtime-to-sim-one-tui-product` | `build-runtime` | `consumes` | `verify-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `beta-release-contract-to-verify-sim-one-tui` | `approve-beta-release-contract` | `consumes` | `verify-sim-one-tui` | The required TUI work-pane contract is current and bound to the packaged-product probe. | artifact:beta-release-contract | — |
-| `integration-to-release-package-build` | `integrate-and-repair` | `consumes` | `build-release-package` | The integrated packaging implementation is current and assigned to the exact release-package build. | artifact:integrated-change | — |
+| `merged-candidate-to-release-package-build` | `publish-release-candidate` | `consumes` | `build-release-package` | The candidate pull request has passed required checks, merged to main, and been read back as the immutable source of the release-package build. | artifact:release-candidate | — |
 | `runtime-to-release-package-build` | `build-runtime` | `consumes` | `build-release-package` | The reviewed packaged runtime is current and included in the exact versioned release package. | artifact:runtime-build | — |
 | `sim-one-tui-to-release-package-build` | `build-sim-one-tui` | `consumes` | `build-release-package` | The reviewed packaged SIM-ONE TUI is current and included in the exact versioned release package. | artifact:sim-one-tui-build | — |
 | `cli-to-release-package-build` | `build-cli` | `consumes` | `build-release-package` | The reviewed sim-one command and platform launchers are current and included in the exact versioned release package. | artifact:cli-build | — |
@@ -394,7 +393,6 @@ flowchart TD
 | `verify-rust-tests-to-verification-summary` | `verify-rust-tests` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:rust-test-report | — |
 | `build-runtime-to-verification-summary` | `build-runtime` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `verify-sim-one-tui-to-verification-summary` | `verify-sim-one-tui` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:sim-one-tui-product-report | — |
-| `verify-onboarding-distribution-to-verification-summary` | `verify-onboarding-distribution` | `consumes` | `aggregate-verification` | The isolated packaged onboarding and distribution verification is complete. | artifact:onboarding-distribution-report | — |
 | `verify-cli-behavior-to-verification-summary` | `verify-cli-behavior` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-behavior-report | — |
 | `verify-http-integration-to-verification-summary` | `verify-http-integration` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:http-test-report | — |
 | `verify-tui-e2e-to-verification-summary` | `verify-tui-e2e` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:tui-e2e-report | — |
@@ -790,7 +788,7 @@ flowchart TD
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
+- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
 - Permissions: read [authorized project tree, domain change artifacts, verification evidence]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -912,18 +910,18 @@ flowchart TD
 
 ### `build-release-package` — Build Versioned Release Package
 
-- Goal: Produce the exact typed versioned SIM-ONE release package and checksum manifest consumed by pre-publication verification and approved GitHub release publication.
-- Executor instructions: Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Assemble only the current artifact:runtime-build, artifact:sim-one-tui-build, and artifact:cli-build outputs; create sim-one.sh and the versioned archive; generate the checksum manifest from final bytes; and record candidate commit, paths, sizes, modes, and SHA-256 digests. Refuse undeclared files, mutable runtime state, configuration, databases, and secrets.
-- Inputs: artifact:integrated-change, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
+- Goal: Rebuild the exact typed versioned SIM-ONE release package and checksum manifest from the immutable merged main-branch candidate consumed by pre-publication verification and approved GitHub release publication.
+- Executor instructions: Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Check out the immutable merged main-branch commit recorded by artifact:release-candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.
+- Inputs: artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
 - Resources: project:release-package-output
-- Permissions: read [artifact:integrated-change, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Writes only generated release-package staging files and checksum evidence.
 - Rollback: Remove the generated staging files and rebuild the package from the same reviewed commit and typed build artifacts.
 - Approval required: `false`
 - Acceptance:
-  - `release-package-assembled` (artifact): The exact versioned release-candidate archive contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets. Evidence: `runtime:evidence/build-release-package/archive.json`
-  - `release-package-checksums-bound` (policy): The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact candidate commit and version, and is recorded together with archive paths, sizes, executable modes, and platform scope. Evidence: `runtime:evidence/build-release-package/checksums.json`
+  - `release-package-assembled` (artifact): The exact versioned release-candidate archive is rebuilt from the immutable merged main-branch commit and contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets. Evidence: `runtime:evidence/build-release-package/archive.json`
+  - `release-package-checksums-bound` (policy): The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact merged main-branch candidate commit, tree digest, and version, and is recorded together with archive paths, sizes, executable modes, and platform scope. Evidence: `runtime:evidence/build-release-package/checksums.json`
 
 ### `verify-cli-behavior` — Verify CLI Behavior
 
@@ -1024,9 +1022,9 @@ flowchart TD
 
 ### `aggregate-verification` — Aggregate Verification Evidence
 
-- Goal: Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact.
+- Goal: Map fresh pre-merge project verification evidence to the candidate contract, preserve explicit mandatory post-merge package and onboarding gates, and identify any unproved behavior, skipped requirement, or stale artifact.
 - Executor instructions: Inspect full outputs and target behavior. Reject coverage claims based only on a narrow test, successful command, process, port, or artifact existence.
-- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
+- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-product-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
 - Resources: —
 - Permissions: read [all verification evidence, artifact:change-contract, Git diff]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1036,8 +1034,8 @@ flowchart TD
 - Acceptance:
   - `all-criteria-mapped` (review): Every change-contract criterion names current direct evidence or is explicitly marked unproved and blocks release. Evidence: `runtime:evidence/aggregate-verification/coverage-map.json`
   - `no-false-positive-status` (policy): Positive status claims rely on correct current output or target-system effects, not process, port, session, file, or command existence. Evidence: `runtime:evidence/aggregate-verification/output-proof-review.json`
-  - `product-evidence-scopes-separated` (review): The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them. Evidence: `runtime:evidence/aggregate-verification/product-evidence-scope.json`
-  - `release-ledger-coverage-complete` (review): Every required release and planned-work ID has fresh implementation and behavioral evidence from its owning graph member; no ID may pass through a deferred, optional, or not-applicable branch. Evidence: `runtime:evidence/aggregate-verification/release-ledger-coverage.json`
+  - `product-evidence-scopes-separated` (review): The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and post-merge isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them. Evidence: `runtime:evidence/aggregate-verification/product-evidence-scope.json`
+  - `release-ledger-coverage-complete` (review): Every required release and planned-work ID maps to one producing member and mandatory verification path. Candidate merge requires complete pre-merge evidence, while REL-PKG-001, REL-PKG-002, REL-ONB-001, and REL-OPS-001 remain fail-closed on the explicit post-merge package build and onboarding/distribution verification path before production approval. Evidence: `runtime:evidence/aggregate-verification/release-ledger-coverage.json`
 
 ### `review-architecture-security` — Review Architecture, Security, And Product Boundaries
 
@@ -1062,8 +1060,8 @@ flowchart TD
 
 ### `approve-release-candidate` — Approve Release Candidate Publication
 
-- Goal: Let the project owner approve or reject the exact diff, verification summary, architecture/security review, rollback, and proposed GitHub effects.
-- Executor instructions: Review the exact candidate evidence. Approval is bound to this run, graph checksum, candidate target, evidence digest, approver, and time.
+- Goal: Let the project owner approve or reject the exact diff, verification summary, architecture/security review, commit, pull request, required-check, merge, main-readback, rollback, and GitHub effects.
+- Executor instructions: Review the exact candidate tree and diff, evidence, target main branch, required checks, merge strategy, and rollback. Approval is bound to this run, graph checksum, candidate tree digest, GitHub mutation scope, approver, and time.
 - Inputs: artifact:verification-summary, artifact:architecture-security-review
 - Resources: —
 - Permissions: read [artifact:verification-summary, artifact:architecture-security-review, Git diff]; write [—]; external [—]; destructive `false`
@@ -1072,22 +1070,23 @@ flowchart TD
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `owner-decision-recorded` (manual): The owner explicitly approves or rejects the exact candidate, evidence digest, rollback, and GitHub mutation scope. Evidence: `runtime:approval/approve-release-candidate`
+  - `owner-decision-recorded` (manual): The owner explicitly approves or rejects the exact candidate tree and diff, evidence digest, target main branch, commit creation, non-draft pull request, required-check policy, merge strategy, main-branch readback, and rollback. Evidence: `runtime:approval/approve-release-candidate`
 
-### `publish-release-candidate` — Publish Branch And Pull Request
+### `publish-release-candidate` — Publish And Merge Release Candidate
 
-- Goal: Commit the authorized change, push its branch, open a non-draft pull request to main, and verify the resulting GitHub state.
-- Executor instructions: Use non-interactive Git and GitHub commands only after current graph-bound approval. Verify commit scope, remote branch, PR base, head, state, draft status, and URL.
+- Goal: Commit the authorized change, push its branch, open and verify a non-draft pull request to main, merge it only after required checks pass, and prove the immutable candidate exists on main.
+- Executor instructions: Use non-interactive Git and GitHub commands only after current graph-bound approval. Create the exact approved commit, push its branch, open a non-draft pull request to main, verify base, head, tree digest, required checks, merge strategy, and URL, merge only after all required checks pass, then fetch and read main back to bind the immutable merged commit and tree digest. Stop on drift, failed checks, approval mismatch, or an unexpected merge result.
 - Inputs: artifact:release-candidate-approval, artifact:architecture-security-review
 - Resources: external:github-repository
-- Permissions: read [authorized worktree, artifact:release-candidate-approval, GitHub repository metadata]; write [authorized Git branch, GitHub pull request]; external [Git remote push, GitHub API pull request write]; destructive `false`
+- Permissions: read [authorized worktree, artifact:release-candidate-approval, GitHub repository metadata]; write [authorized Git branch, GitHub pull request, approved main-branch merge of the exact candidate]; external [Git remote push, GitHub API pull request write, GitHub API approval-bound pull request merge after required checks]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Creates a Git commit, remote branch update, and pull request.
-- Rollback: Revert the candidate commit or close the pull request while preserving Git and review history.
+- Side effects: `reversible` — Creates the approved Git commit, remote branch, pull request, and required-check-gated main-branch merge.
+- Rollback: Before merge, close the pull request; after merge, use a separately approved revert pull request while preserving Git and review history.
 - Approval required: `true`
 - Acceptance:
-  - `commit-scope-correct` (policy): The commit contains only authorized files and generated/source artifacts intended for review. Evidence: `runtime:evidence/publish-release-candidate/commit-scope.json`
-  - `pull-request-verified` (probe): gh pr view proves the PR is open, non-draft, targets main, uses the expected head branch, and exposes a stable URL. Evidence: `runtime:evidence/publish-release-candidate/pr-view.json`
+  - `commit-scope-correct` (policy): The candidate commit contains only authorized files and generated/source artifacts intended for review, and its tree digest exactly matches the owner-approved diff. Evidence: `runtime:evidence/publish-release-candidate/commit-scope.json`
+  - `pull-request-verified` (probe): The candidate pull request is non-draft, targets main, uses the expected head branch and approved merge strategy, exposes a stable URL, and has every required check completed successfully before merge. Evidence: `runtime:evidence/publish-release-candidate/pr-view.json`
+  - `candidate-merged-and-read-back` (probe): The candidate pull request is merged only after required checks pass, and a fresh main-branch readback binds the immutable merged commit, tree digest, PR URL, merge strategy, and approval without relying on an open PR or submitted merge request as success. Evidence: `runtime:evidence/publish-release-candidate/main-readback.json`
 
 ### `approve-canary` — Approve Canary Deployment
 
