@@ -1,0 +1,29 @@
+docs/getting-started/pre-release-status.md
+  s_a81fff26d52223::t_7c3f55f7ba3b7d 29-30,48
+development-graph.json
+  s_a81fff26d52223::t_3aa89f9af0f602 1124-1194,1219-1230,1267-1362,1375-1383,1385
+  s_a81fff26d52223::t_0714fcf9df6d79 1123,1386,6215-6392,6427-6431
+  s_a81fff26d52223::t_7422602a53d665 6478
+  s_a81fff26d52223::t_7c3f55f7ba3b7d 5,4872,4906,4945,4951,5800,5812,5816,5828-5832,5848,5864-5865,5867,6046-6051,6058,6079-6083,6100-6101
+  s_a81fff26d52223::t_7902cde95d8f98 2047,6393
+  s_a81fff26d52223::t_24e1686d60a3ee 5873-5875,5879-5881,5885-6045
+  s_a81fff26d52223::t_b45a734410407e 1384
+development-graph.md
+  s_a81fff26d52223::t_0d7db926ce34ab 1,12,17,21,64-66,69-70,164-169,172,176-183,185,276,286-288,291-292,391-396,399,403-410,412,931,935,941,1088,1090-1092,1094,1100-1131,1136-1137,1139,1145,1163-1192,1197,1205,1212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fe20ce434225d4dcebab72330da760bec485e6cd",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
