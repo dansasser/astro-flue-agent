@@ -1,0 +1,126 @@
+name: Bug report
+description: Report a reproducible problem with SIM-ONE Alpha
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve SIM-ONE Alpha.
+
+        Use this form for reproducible software defects. For installation or usage help, review the [support guide](https://github.com/dansasser/sim-one-alpha/blob/main/SUPPORT.md). Do not report vulnerabilities or sensitive information here; follow the [security policy](https://github.com/dansasser/sim-one-alpha/security/policy) instead.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched open and closed issues for an existing report.
+          required: true
+        - label: This report covers one specific, reproducible problem.
+          required: true
+        - label: This is not a security vulnerability, and I removed credentials, private data, and other secrets.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: SIM-ONE Alpha version
+      description: Provide the release version or full commit SHA where the problem occurs.
+      placeholder: "0.1.0-beta or 0123456789abcdef..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-method
+    attributes:
+      label: Installation method
+      options:
+        - Source checkout using npm
+        - Source checkout using pnpm
+        - Release package or sim-one.sh
+        - Existing installation or upgrade
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating environment
+      description: Include the operating system, version, and architecture. Include the Node.js version for source builds.
+      placeholder: "Ubuntu 24.04 x86_64; Node.js 22.22.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Installation or onboarding
+        - sim-one CLI
+        - SIM-ONE terminal UI
+        - Gateway or HTTP API
+        - Telegram or another connector
+        - Authentication, permissions, or approvals
+        - Protocol system
+        - Tools, skills, workers, or registries
+        - Memory, RAG, or document indexing
+        - Scheduling
+        - Build, packaging, or dependencies
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem description
+      description: Clearly describe the problem and when it occurs.
+      placeholder: Describe what went wrong and the workflow you were performing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reliable sequence that reproduces the problem.
+      placeholder: |
+        1. Start SIM-ONE Alpha with...
+        2. Run or select...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Describe the result you expected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: Describe the observed result, including whether it is consistent or intermittent.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: Include only the minimum relevant output. Remove API keys, tokens, credentials, private data, and identifying information.
+      render: shell
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add sanitized configuration details, screenshots, workarounds, or other information that may help reproduce the problem.
