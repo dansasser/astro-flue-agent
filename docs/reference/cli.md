@@ -1,0 +1,152 @@
+# CLI Reference
+
+The pre-release `sim-one` command provides terminal access and runtime
+capability management. Packaged onboarding, configuration, diagnostics, and
+service-control commands are listed in
+[Pre-Release Status](../getting-started/pre-release-status.md) and are not part
+of the current CLI parser.
+
+## Product Commands
+
+| Command | Purpose |
+| --- | --- |
+| `sim-one` | Open the terminal interface |
+| `sim-one skill ...` | Manage runtime skills |
+| `sim-one tool ...` | Manage runtime tools |
+| `sim-one worker ...` | Manage runtime workers |
+| `sim-one mcp ...` | Manage runtime MCP servers |
+| `sim-one --help` | Show CLI help |
+
+## Terminal Options
+
+| Option | Purpose |
+| --- | --- |
+| `--session <selector>` | Resume an owned session by exact id or explicit name |
+| `--port <number>` | Use a local gateway port from 1 to 65535 |
+| `--base-url <url>` | Connect to an existing loopback HTTP gateway or local SSH tunnel; overrides `--port` |
+| `-h`, `--help` | Show command help |
+
+Examples:
+
+```bash
+sim-one
+sim-one --session "Quarterly planning"
+sim-one --port 3940
+sim-one --base-url http://127.0.0.1:3940
+```
+
+The current terminal client sends no `x-api-secret` header and supports plain
+HTTP transport. A direct non-loopback gateway therefore fails external API
+authentication. Use a loopback endpoint or forward the remote gateway through
+an SSH tunnel to a local port.
+
+## Skill Commands
+
+```bash
+sim-one skill add <source> <id> "<name>" \
+  [--description "<text>"] [--version <requested-version>] [--enable]
+sim-one skill list
+sim-one skill enable <id>
+sim-one skill disable <id>
+sim-one skill update <id>
+sim-one skill remove <id>
+sim-one skill --help
+```
+
+Skills accept a Git repository URL or local directory source and are enabled
+when added.
+
+## Tool Commands
+
+```bash
+sim-one tool add <source> <id> "<name>" \
+  [--description "<text>"] [--version <requested-version>] [--enable]
+sim-one tool list
+sim-one tool enable <id>
+sim-one tool disable <id>
+sim-one tool update <id>
+sim-one tool remove <id>
+sim-one tool --help
+```
+
+Tools are disabled when added unless `--enable` is supplied.
+
+## Worker Commands
+
+```bash
+sim-one worker add <source> <id> "<name>" \
+  [--description "<text>"] [--version <requested-version>] [--enable]
+sim-one worker list
+sim-one worker enable <id>
+sim-one worker disable <id>
+sim-one worker update <id>
+sim-one worker remove <id>
+sim-one worker --help
+```
+
+Workers are disabled when added unless `--enable` is supplied.
+
+For Git sources, the pre-release CLI accepts and stores `--version`, but
+materialization shallow-clones the remote default branch. Reliable branch, tag,
+and commit pinning is a release gate. Local directory sources ignore the
+recorded version.
+
+## MCP Commands
+
+```bash
+sim-one mcp add <id> "<name>" --url <url> \
+  [--transport <streamable-http|sse>] [--token-env <ENV_NAME>] \
+  [--description "<text>"] [--enable]
+sim-one mcp list
+sim-one mcp enable <id>
+sim-one mcp disable <id>
+sim-one mcp update <id>
+sim-one mcp remove <id>
+sim-one mcp --help
+```
+
+`--url` is required and must use HTTP or HTTPS. The default transport is
+`streamable-http`; `sse` is also supported. `--token-env` stores the
+environment-variable name, not the token. MCP servers are disabled when added
+unless `--enable` is supplied. The pre-release `mcp update` command changes
+only the record's update timestamp. To change connection fields, name, or
+description, remove and re-add the MCP server.
+
+## Capability Lifecycle
+
+After adding, enabling, disabling, updating, or removing a capability, restart
+the gateway through the process or service manager that launched it. Restarting
+reloads enabled capability records; it does not rebuild the product. The
+pre-release CLI does not register a `restart` subcommand.
+
+See [Extending SIM-ONE Alpha](../guides/extending-sim-one.md) for source,
+trust, approval, collision, and persistence behavior.
+
+## Terminal Slash Commands
+
+Slash commands are entered inside the terminal interface, not in the shell.
+
+| Command | Purpose |
+| --- | --- |
+| `/new [title]` | Create and enter a new durable session |
+| `/clear [title]` | Replace the active thread with a new session |
+| `/resume <session-id-or-name>` | Resume an owned session |
+| `/sessions [limit]` | List recent sessions |
+| `/session` | Print the active session id |
+| `/rename <title>` | Rename the active session |
+| `/compact` | Compact the active durable session |
+| `/help` | Show terminal commands |
+| `/exit` | Exit and print the active session id |
+
+See [Terminal And Session Guide](../guides/terminal-and-sessions.md) for session
+semantics and restored history.
+
+## Exit Status And Errors
+
+Invalid options, missing required arguments, unsafe capability ids, capability
+name collisions, invalid MCP URLs, and invalid token environment-variable
+names fail without changing the runtime registry.
+
+For the current source checkout, verify the build, launch the terminal
+interface, and confirm an end-to-end orchestrator response. The packaged
+diagnostic and service commands become available with the release installer.

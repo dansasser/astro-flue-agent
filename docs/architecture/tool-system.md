@@ -1,50 +1,180 @@
 # Tool System
 
-Tools are executable, model-callable capabilities in SIM-ONE Alpha. They are implemented with Flue's `defineTool(...)` and attached only to the agents that should own them.
+Tools are typed, executable capabilities exposed to a specific Flue agent.
+They are implemented with `defineTool(...)`, validate model-supplied arguments,
+perform one bounded operation, and return structured results.
 
-Tools live in `src/engine/tools/`. Each tool is a focused capability with a typed parameter schema, a description, and an `execute` function that returns structured output. Tools are not protocols, skills, or workers. They do what they are told and return results.
+Tools are not protocols, skills, workers, or registries:
 
-## Tool Ownership
+- protocols are mandatory SQLite-backed rules;
+- skills are reusable workflow knowledge;
+- workers are delegated specialist agents;
+- registries describe or load available capabilities;
+- tools execute capabilities.
 
-- The main orchestrator owns orchestration-support tools such as `load_protocols`, `retrieve_memory`, and image generation tools.
-- The researcher subagent owns web-research tools.
-- The coding worker owns worker-local tools under `src/engine/workers/coding-worker/tools/`.
-- Internal worker subagents must not be exposed as top-level orchestrator tools.
+## Tool Layers
 
-## Discoverability
+| Layer | Registration | Examples |
+| --- | --- | --- |
+| Product built-ins | Explicit imports and the owning agent's `tools` array | Protocol lookup, memory, schedules, capability administration, image generation |
+| Worker-local tools | Explicitly attached by a worker profile | Coding repository, shell, verification, approval, and GitHub tools |
+| Runtime tools | Enabled SQLite capability records loaded with dynamic `import()` | User- or agent-added `defineTool(...)` modules |
+| MCP tools | Returned by built-in or runtime MCP connections and attached to an owner | Astro Docs MCP and enabled user MCP servers |
 
-Tools are discovered at build time by Flue and wired into the owning agent's `tools` array. Runtime-extensible tools should eventually be exposed through a registry wrapper or gateway rather than hardcoded into the orchestrator.
+Flue does not discover arbitrary product tools from the filesystem. Built-in
+tools are imported and attached explicitly. Runtime tools become discoverable
+through the SIM-ONE capability loader during orchestrator initialization.
 
-## Adding a Tool
+## Ownership
 
-1. Create the tool file under `src/engine/tools/` or a focused subdirectory such as `src/engine/tools/runpod-image/`.
-2. Define Valibot/Flue parameter schemas and a clear `description`.
-3. Implement `execute` to perform the capability and return structured JSON or a string.
-4. Export the tool from `src/engine/tools/index.ts`.
-5. Attach the tool to the owning agent in `src/agents/orchestrator.ts` or a worker entrypoint.
-6. Update `src/workspace/TOOLS.md` to document when and how the tool should be used.
-7. Update `docs/architecture/gorombo-flue-map.md` if the new tool introduces a new directory or cross-cutting concern.
+### Orchestrator
 
-## Tool Boundaries
+The orchestrator owns tools that support coordination or bounded product
+capabilities, including:
 
-- Tools must not silently mutate global state outside their documented scope.
-- Tools should fail closed when required configuration is missing.
-- Tools should return structured errors instead of throwing raw SDK exceptions into the agent context.
-- Tools that perform side effects should be attached to the agent that is accountable for the side effect.
+- `load_protocols`;
+- memory, checklist, todo, and session-note tools;
+- knowledge ingestion;
+- schedules;
+- image generation and artifact recording;
+- Telegram replies;
+- runtime capability administration;
+- MCP tools attached to the orchestrator.
 
-## Example: Image Generation Tools
+The orchestrator does not own web search or Coding Worker repository tools.
 
-The Runpod Public Endpoints image tools demonstrate the pattern:
+### Researcher
+
+The researcher owns `web_research` and its lower-level retrieval machinery.
+General web, current, external, and source-backed research stays inside this
+worker boundary.
+
+### Coding Worker
+
+The Coding Worker lead owns repository, file, shell, test, Git, GitHub,
+approval, schedule, memory-task, and code-intelligence tools. Internal coding
+subagents receive only the tools assigned by the Coding Worker lead and are not
+exposed to the orchestrator.
+
+## Built-In Registration
+
+Built-in product tools follow this path:
+
+```text
+defineTool(...)
+-> export from the owning tool module
+-> import into the owning agent or worker
+-> attach to that profile's tools array
+-> include the name in the generated built-in capability manifest
+```
+
+The generated manifest reserves names for collision checking. It does not
+attach tools to an agent.
+
+## Runtime Tool Loading
+
+Runtime-added tools follow this path:
+
+```text
+sim-one CLI or agent capability tool
+-> validate id and cross-kind collisions
+-> write disabled or enabled SQLite record
+-> materialize source under <configured-capability-directory>/tools/<id>/
+-> gateway process restart
+-> read enabled capability records
+-> dynamic import of index.mjs
+-> validate exported defineTool(...) definitions
+-> merge loaded tools into the orchestrator tools array
+```
+
+`src/engine/capabilities/tool-loader.ts` accepts a default export, an array
+export, or named exports that resolve to Flue tool definitions. A failed import
+or invalid export is reported and omitted rather than granting a partially
+loaded capability.
+
+The configured capability directory defaults to `~/.gorombo/capabilities/`.
+`GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
+fallback override.
+
+## Enablement And Authority
+
+Agent-added runtime tools are installed disabled. An explicit user action can
+enable them through the product CLI or control surface. CLI additions may use
+`--enable` because the authenticated user is the principal.
+
+Enablement means the tool may be loaded and attached. It does not grant
+unrestricted authority. A loaded tool remains constrained by:
+
+- trusted connector, actor, conversation, client, and project scope;
+- the owning agent's instructions;
+- argument validation;
+- sandbox and filesystem boundaries;
+- implemented tool-specific approval requirements.
+
+The release contract adds active protocol scoring and orchestrator/critic
+result validation across every tool path. Complete enforcement remains a
+release gate.
+
+Tools must derive sensitive scope from trusted runtime state rather than
+accepting model-selected authority fields.
+
+## Side Effects And Failure
+
+- Read-only tools return bounded structured data.
+- Git and GitHub mutation tools use the approval service; file write and patch
+  approval remains a release gate.
+- Missing configuration fails closed.
+- Provider errors are normalized before they enter agent context.
+- Tools do not silently mutate global state outside their documented scope.
+- A successful tool call is evidence of its returned operation, not automatic
+  evidence that the entire user task is complete.
+
+## Adding A Built-In Tool
+
+1. Add the tool under the owning subsystem.
+2. Define a precise description and Valibot parameter schema.
+3. Derive trusted scope outside model-selected arguments.
+4. Return a structured result or bounded string.
+5. Export and attach the tool only to the owning agent.
+6. Add focused tests for validation, authorization, side effects, and failures.
+7. Update the generated built-in registry through the normal build.
+8. Update the relevant architecture and user reference.
+
+## Example: Image Generation
 
 ```text
 src/engine/tools/runpod-image/
-  generate-image-tool.ts       # generate_image
-  record-image-artifact-tool.ts # record_image_artifact
-  list-image-artifacts-tool.ts  # list_image_artifacts
-  catalog.ts                    # YAML model catalog loader
-  runpod-client.ts              # thin Runpod AI SDK wrapper
-  artifact-store.ts             # SQLite persistence + memory indexing
-  models.yaml                   # human-editable model catalog
+  generate-image-tool.ts
+  record-image-artifact-tool.ts
+  list-image-artifacts-tool.ts
+  catalog.ts
+  runpod-client.ts
+  artifact-store.ts
+  models.yaml
 ```
 
-The orchestrator has direct access to all three tools without delegating to a worker, because image generation is a bounded, output-producing capability that fits tool semantics.
+These tools are attached directly to the orchestrator because image generation
+is a bounded product capability. Artifact recording derives trusted event scope
+and persists metadata separately from the generated binary.
+
+## Source Map
+
+| Responsibility | Source |
+| --- | --- |
+| Orchestrator tool attachment | `src/agents/orchestrator.ts` |
+| Product built-in tools | `src/engine/tools/` |
+| Runtime tool loader | `src/engine/capabilities/tool-loader.ts` |
+| Capability records | `src/engine/capabilities/capability-store.ts` |
+| Materialization | `src/engine/capabilities/skill-materializer.ts` |
+| Built-in name manifest | `scripts/generate-builtin-registry.mjs` |
+| Research tools | `src/engine/workers/researcher/` |
+| Coding Worker tools | `src/engine/workers/coding-worker/tools/` |
+
+## Related Documentation
+
+- [Architecture Overview](overview.md)
+- [Protocol System](protocol-system.md)
+- [Capability System](capability-system.md)
+- [Registry System](registry-system.md)
+- [Skill System](skill-system.md)
+- [Worker System](worker-system.md)

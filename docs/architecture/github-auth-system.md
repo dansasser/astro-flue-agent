@@ -62,6 +62,18 @@ If approval finishes after the initiating response, the next trusted event may p
 
 The browser URL, one-time code, and expiry are temporary authorization capabilities. They are not returned by worker tools or workflows, not written to progress events, and not persisted in task records or telemetry. The in-memory relay releases a challenge only once to the matching connector, actor, and conversation, and notifies trusted connector listeners only after storing it. A later authenticated event in that same conversation may consume a challenge created before approval completed; a different actor or conversation cannot. Malformed and expired challenges fail closed, and replacement-safe timers remove abandoned challenges.
 
-## Deferred Protocol Migration
+## Protocol And Runtime Enforcement
 
-Workspace guidance is human-readable operating context today. Once the Protocol Tool can evaluate connector/actor-bound policy, migrate these enforceable directives to SQLite protocol records: auth-initiation approval, HTTPS-only transport, no-secret output, audience-bound delivery, and capability-versus-readiness wording. Do not remove runtime enforcement when adding those records.
+`load_protocols` requires the persisted event ID and rehydrates the normalized
+trusted event before selector construction. SQLite filtering receives the full
+selector set: connector, actor or user identity, client ID, project ID,
+workflow, task, and
+message kind. Matching records across that complete context can govern a GitHub
+authentication turn. The current credential, transport, approval, and challenge
+delivery restrictions are also enforced in product-owned runtime code and
+Coding Worker workspace instructions.
+
+Protocol rules do not replace those runtime checks. Managed credential
+isolation, HTTPS-only command construction, trusted-event admission,
+audience-bound challenge delivery, and approval validation remain fail-closed
+even when no narrower GitHub-specific protocol record matches.

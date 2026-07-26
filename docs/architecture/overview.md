@@ -1,0 +1,261 @@
+# Architecture Overview
+
+SIM-ONE Alpha is a governed, multi-purpose AI employee system built by
+[Gorombo](https://gorombo.com). It combines the
+[Flue](https://flueframework.com/) agent runtime with the
+[SIM-ONE Framework](https://simoneframework.org/) governance model.
+
+Pre-release boundary: the orchestrator, Protocol Tool, trusted-event lookup,
+SQLite provider, base protocol records, workers, and approval services are
+implemented. The complete release policy set, trusted fail-closed pre-execution
+enforcement, and orchestrator/critic scoring across every path are release
+gates. See [Pre-Release Status](../getting-started/pre-release-status.md).
+
+Flue provides the durable execution architecture. SIM-ONE defines how that
+architecture applies protocols, context, delegation, scoring, approvals, and
+memory. SIM-ONE Alpha is the product implementation of both layers.
+
+## Product Identity
+
+```text
+Gorombo       company
+SIM-ONE Alpha product and AI employee system
+SIM-ONE       governance and execution framework
+Flue          TypeScript agent runtime and harness
+sim-one       product command
+```
+
+Workers are internal SIM-ONE Alpha executors, not independent products or
+public agent endpoints.
+
+## Release Governance Contract
+
+The complete release flow is:
+
+```text
+Terminal / connector / Web API / schedule
+-> Secure gateway
+-> Trusted normalized event
+-> Durable Flue orchestrator session
+-> SQLite protocol lookup
+-> Orchestrator/critic admission
+-> Memory, RAG, tools, workers, workflows, or MCP
+-> Structured result returned to orchestrator/critic
+-> Protocol scoring and response validation
+-> Approval, revision, rejection, or response
+```
+
+The orchestrator is the middleman for every agent action and flow. It owns
+security, protocol application, governance, delegation, and final validation.
+Workers perform bounded work and report results back; they do not approve their
+own work or bypass the orchestrator.
+
+## Flue Runtime Foundation
+
+Flue supplies:
+
+- durable agents and sessions;
+- workflows and actions;
+- tools and MCP connections;
+- skills;
+- workers through subagent profiles;
+- persistence and compaction;
+- streaming events and observability;
+- routing and deployable Node runtimes;
+- sandbox adapters for bounded execution.
+
+SIM-ONE Alpha mounts the Flue runtime behind its gateway and keeps application
+orchestration out of the HTTP entrypoint.
+
+See:
+
+- [Flue Architecture Contract](flue-architecture.md)
+- [Orchestrator Flow](orchestrator-flow.md)
+- [Flue documentation](https://flueframework.com/)
+
+## SIM-ONE Governance Layer
+
+The SIM-ONE Framework adds the control plane applied around Flue execution:
+
+- runtime protocols;
+- governing orchestrator/critic behavior;
+- intent and flow admission;
+- worker and tool selection;
+- structured scoring and validation;
+- approval boundaries;
+- retrieval and memory policy;
+- trusted connector and actor scope;
+- final response authority.
+
+The protocol database is outside model context. The model receives the
+applicable protocol bundle through a tool call; it does not author or silently
+change the governing rules.
+
+See the [SIM-ONE Framework](https://simoneframework.org/) for the framework
+model and protocols.
+
+## Protocols
+
+Protocols are mandatory runtime rules stored in SQLite. They are not skills,
+prompts, or optional capability instructions.
+
+Protocol matching can use:
+
+```text
+connector
+actor and user
+client
+project
+task
+workflow
+message type
+priority
+enabled state
+```
+
+Chat ingress and orchestrator instructions require loading the applicable
+bundle before final reasoning, tool execution, delegation, or response
+generation. Trusted runtime enforcement of that ordering is a release gate.
+
+See [Protocol System](protocol-system.md).
+
+## Orchestrator And Workers
+
+The orchestrator is responsible for:
+
+- intent detection;
+- protocol loading;
+- planning and routing;
+- context retrieval;
+- tool and workflow selection;
+- worker delegation;
+- result evaluation;
+- response synthesis.
+
+Workers are specialized executors. The built-in researcher owns source-backed
+web research. The Coding Worker owns code planning, editing, testing, review,
+and approval-gated Git and GitHub actions. Internal worker subagents remain
+private to their owning worker. File-edit approval enforcement is a release
+gate.
+
+Progress from tool calls, worker handoffs, verification, approvals, and state
+transitions is emitted as structured runtime activity rather than hidden
+background work.
+
+See [Worker System](worker-system.md) and
+[Execution Workflows](execution-workflows.md).
+
+## Tools, Skills, Workers, And MCP
+
+SIM-ONE Alpha exposes two capability layers:
+
+| Layer | Contents |
+| --- | --- |
+| Built-in Flue layer | Product-shipped skills, tools, workers, workflows, and MCP connections |
+| Runtime registry | User- or agent-added skills, tools, workers, and MCP servers |
+
+Enabled runtime capabilities merge into the same governed Flue surfaces as
+built-ins. They do not override protocols, trusted scope, approvals, or
+orchestrator validation.
+
+See:
+
+- [Extending SIM-ONE Alpha](../guides/extending-sim-one.md)
+- [Capability System](capability-system.md)
+- [Skill System](skill-system.md)
+- [Registry System](registry-system.md)
+
+## Memory And Retrieval
+
+Protocols tell the system which rules apply. Memory and RAG provide the context
+needed to perform the work.
+
+SIM-ONE Alpha separates:
+
+- durable Flue session state;
+- connector and logical session metadata;
+- Rust/WebAssembly structured memory for checklists, todos, and notes;
+- semantic retrieval and embeddings;
+- indexed knowledge;
+- web research;
+- task and project context.
+
+Structured-memory scope comes from trusted connector, actor, conversation,
+thread, and project data, not model-selected arguments.
+
+See [Memory System](memory-system.md) and
+[Retrieval And Research](retrieval-and-research.md).
+
+## Gateway And Connectors
+
+The gateway owns:
+
+- authentication;
+- permissions;
+- request validation;
+- trusted connector identity;
+- audit and telemetry handoff;
+- session ownership;
+- orchestrator admission.
+
+Connectors normalize external messages and return responses through the
+initiating channel. They do not contain orchestration logic.
+
+Ingress rate limiting is part of the release gateway contract but is not
+implemented in the current source checkout. It remains a
+[pre-release gate](../getting-started/pre-release-status.md).
+
+See:
+
+- [Connectors And Pairing](../guides/connectors.md)
+- [HTTP API Reference](../reference/http-api.md)
+
+## Persistence
+
+Flue SQLite stores durable runtime state such as sessions, submissions, runs,
+and event streams. SIM-ONE application databases store protocols, logical
+session metadata, structured memory, schedules, capabilities, retrieval data,
+and approvals.
+
+Keeping these stores distinct allows Flue to resume execution while SIM-ONE
+Alpha controls rules, context, identity, and product-owned state.
+
+## Security Boundaries
+
+SIM-ONE Alpha applies security at multiple boundaries:
+
+1. The gateway verifies external access and connector identity.
+2. Session routing enforces actor and conversation ownership.
+3. Orchestrator instructions require protocol loading before execution; trusted
+   fail-closed enforcement remains a release gate.
+4. Registries expose only enabled and valid capabilities.
+5. Workers receive bounded tasks and return structured results.
+6. Git and GitHub mutations enter approval-gated paths; file-edit approval is
+   a release gate.
+7. Current source returns worker and tool results to orchestrator synthesis;
+   complete critic evaluation remains a release gate.
+8. Credentials and protocol records remain outside model context.
+
+DM pairing, allow lists, API authentication, and connector permissions protect
+ingress. The architectural difference is that the orchestrator remains the
+governing authority between every admitted request and every executable action.
+
+## Related Documentation
+
+- [Documentation Hub](../README.md)
+- [Architecture Index](README.md)
+- [Configuration Reference](../reference/configuration.md)
+- [Terminal And Session Guide](../guides/terminal-and-sessions.md)
+- [HTTP API Reference](../reference/http-api.md)
+- [Flue Architecture Contract](flue-architecture.md)
+- [Protocol System](protocol-system.md)
+- [Capability System](capability-system.md)
+- [Tool System](tool-system.md)
+- [Skill System](skill-system.md)
+- [Worker System](worker-system.md)
+- [Retrieval And Research](retrieval-and-research.md)
+- [Model System](model-system.md)
+- [Session Context Budget](session-context-budget.md)
+- [Schedules System](schedules-system.md)
+- [Managed GitHub Authentication](github-auth-system.md)
+- [Execution Workflows](execution-workflows.md)

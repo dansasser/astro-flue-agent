@@ -4,7 +4,7 @@ This document describes how runtime schemas are organized in `sim-one-alpha`, wh
 
 ## Why we need a schema layer
 
-Types alone cannot validate data at runtime. Flue supports structured output via `session.task(..., { result: Schema })`, tools receive untrusted arguments from the model, and persisted data in SQLite/MongoDB/Postgres must be validated on read and write. A single source of truth for each shape prevents the TypeScript type and the runtime validator from drifting apart.
+Types alone cannot validate data at runtime. Flue supports structured output via `session.task(..., { result: Schema })`, tools receive untrusted arguments from the model, and records in the repository's SQLite and LanceDB stores must be validated at their read and write boundaries. The same rule applies when another persistence backend is added. A single source of truth for each shape prevents the TypeScript type and the runtime validator from drifting apart.
 
 ## Schema library: Valibot
 
@@ -44,7 +44,7 @@ Example: a one-off validation schema inside a single tool file.
 ### Promote a schema to `src/core/schemas/` when:
 
 - It is reused by more than one file.
-- It represents a cross-subsystem contract (orchestrator ? worker, worker ? memory, worker ? DB).
+- It represents a cross-subsystem contract (orchestrator to worker, worker to memory, or worker to database).
 - It is used for Flue structured output (`session.task(..., { result: ... })`) and the type is referenced in a shared type contract.
 - It needs to be converted to JSON Schema or used for database validation.
 
@@ -117,7 +117,7 @@ return {
 };
 ```
 
-## Future growth
+## Schema Promotion Rules
 
 - Add one file per domain to `src/core/schemas/` as contracts stabilize.
 - If a domain becomes large, split it into `src/core/schemas/<domain>/*.ts` with an `index.ts` barrel.
@@ -129,5 +129,5 @@ return {
 SIM-ONE governs memory, security, and development process. The schema layer supports SIM-ONE by:
 
 - Enforcing validated boundaries at worker handoff points.
-- Keeping persisted memory/event shapes typed and tamper-evident on read.
+- Rejecting persisted memory or event records that do not satisfy the expected schema on read.
 - Providing a single source of truth that security-sensitive tools can reference instead of redefining shapes.

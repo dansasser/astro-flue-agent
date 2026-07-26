@@ -120,7 +120,7 @@ The Ratatui launcher checks gateway health before starting anything:
 
 ```text
 Ratatui binary starts
--> if --base-url is provided, use that gateway
+-> if --base-url is provided, use that loopback HTTP gateway or local tunnel
 -> otherwise resolve port from CLI/config/default
 -> probe /health
 -> if healthy, connect without spawning a server

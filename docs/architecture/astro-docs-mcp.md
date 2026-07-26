@@ -1,45 +1,72 @@
-# Astro Docs MCP — Built-in and Coding Agent Integration
+# Astro Docs MCP
 
-## Built-in MCP for the Orchestrator
+SIM-ONE Alpha includes a built-in connection to the public Astro Docs MCP
+server:
 
-SIM-ONE Alpha includes a built-in MCP connection to the Astro docs MCP server (`https://mcp.docs.astro.build/mcp`). This is wired in `src/engine/capabilities/builtin-mcp.ts` and connected at orchestrator init alongside user-defined MCP servers.
+```text
+https://mcp.docs.astro.build/mcp
+```
 
-The built-in MCP gives the orchestrator access to the `mcp__astro-docs__search_astro_docs` tool, which searches Astro framework documentation. This is useful because:
-- Flue is built by the Astro team — the agent can look up Flue-adjacent framework docs
-- The gorombo.com website is built with Astro — the agent can help with Astro development
-- It serves as a working example of Flue's MCP integration out of the box
-- It fills the `mcpServers` array in `builtin-capabilities.json` so the builtin registry is complete
+## Runtime Ownership
 
-The `astro-docs` name is reserved in the builtin registry — users cannot add a capability with that name.
+`src/engine/capabilities/builtin-mcp.ts` connects the server during
+orchestrator initialization and returns the available MCP tools. The
+orchestrator merges those tools with explicitly attached product tools and
+enabled user MCP tools.
 
-## Coding Agent Workflow (planned)
+The built-in server exposes:
 
-The coding worker should also have access to the Astro docs MCP. When the coding agent is working on:
-- The gorombo.com website (Astro-based)
-- Flue integration code (Astro team framework)
-- Any Astro component or page
+```text
+mcp__astro-docs__search_astro_docs
+```
 
-...it should be able to search the Astro docs directly from its workflow without delegating to the researcher subagent.
+This is a focused framework-document lookup tool. It supports Astro development
+and provides a built-in example of Flue MCP integration.
 
-### How to wire it
+## Registry And Collision Behavior
 
-The coding worker is created in `src/agents/orchestrator.ts` via `createCodingWorkerSubagent()`. To give the coding worker access to the Astro docs MCP:
+The build-generated `builtin-capabilities.json` manifest reserves the
+`astro-docs` name under `mcpServers`. Runtime capabilities cannot reuse that id
+for a skill, tool, worker, or MCP server.
 
-1. Call `connectBuiltinMcpServers()` during coding worker creation (same as the orchestrator does)
-2. Pass the resulting tools to the coding worker's `tools` array
-3. The coding worker's workspace should document that `mcp__astro-docs__search_astro_docs` is available for Astro-related questions
+The built-in MCP connection is separate from runtime-added MCP records:
 
-This keeps the MCP connection shared (one connection per process, not per agent) while giving the coding worker direct access to the search tool.
+```text
+built-in astro-docs definition
+-> connectBuiltinMcpServers()
+-> MCP tools attached to orchestrator
 
-### Important boundaries
-- The coding worker should NOT get access to user-defined MCP servers (those are orchestrator-only unless explicitly configured)
-- The built-in Astro docs MCP is safe to share with the coding worker (read-only, public, no secrets)
-- The researcher subagent does NOT need this MCP (it has its own web research tools that are more capable)
+enabled runtime MCP record
+-> connectUserMcpServers()
+-> authenticated MCP connection
+-> MCP tools attached to orchestrator
+```
 
-## Related
+## Security Boundary
 
-- `src/engine/capabilities/builtin-mcp.ts` — built-in MCP connection implementation
-- `src/agents/orchestrator.ts` — where the built-in MCP is wired into the orchestrator
-- `scripts/generate-builtin-registry.mjs` — includes `astro-docs` in the `mcpServers` array
-- `docs/architecture/capability-system.md` — full capability system documentation
-- `docs/architecture/product-flow.md` — product flow including MCP as a capability kind
+- The built-in endpoint is fixed in product source.
+- A failed connection is reported and contributes no tools.
+- User-defined MCP servers require a capability record and enablement.
+- MCP tool attachment does not override protocols, trusted scope, or
+  action-specific approval requirements.
+- The Researcher remains the owner of general web, current, external, and
+  source-backed research.
+- The Coding Worker and its internal subagents do not receive this MCP
+  connection in the current runtime.
+
+## Source Map
+
+| Responsibility | Source |
+| --- | --- |
+| Built-in MCP connection | `src/engine/capabilities/builtin-mcp.ts` |
+| User MCP broker | `src/engine/capabilities/mcp-broker.ts` |
+| Orchestrator attachment | `src/agents/orchestrator.ts` |
+| Built-in manifest generation | `scripts/generate-builtin-registry.mjs` |
+| Collision checks | `src/engine/capabilities/collision-check.ts` |
+
+## Related Documentation
+
+- [Capability System](capability-system.md)
+- [Registry System](registry-system.md)
+- [Tool System](tool-system.md)
+- [Worker System](worker-system.md)

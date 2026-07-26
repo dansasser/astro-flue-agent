@@ -49,8 +49,8 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 | `src/engine/commands/` | Pre-LLM command parsing | Slash command definitions and parsing that run before prompts reach the LLM. |
 | `src/engine/embeddings/` | Bundled local embedding model | In-process ONNX + tokenizer path used by the RAG embedding fallback. |
 | `src/engine/memory/` | Shared memory subsystem | Memory retrieval interfaces and routing shared by agents/tools/workflows. Hosts `rust-memory-engine.ts`, the TypeScript shim for the `gorombo-memory` WASM engine (structured memory: checklists, todos, session notes), and `checklist-memory-provider.ts`, the structured-memory RAG provider. Also hosts `knowledge-service.ts` (the shared service module folded in from the removed `src/services/` directory). |
-| `src/engine/rag/` | Shared retrieval subsystem | Retrieval provider interfaces and routing. This name is pending a user-selected rename, but the concept remains top-level because it is shared architecture. |
-| `src/engine/registries/` | Registry subsystem | Typed registries for tools, skills, agents, protocols, and future discoverable capabilities. |
+| `src/engine/rag/` | Shared retrieval subsystem | Retrieval provider interfaces, document indexing, vector storage, embedding routing, and result packing shared across retrieval workflows. |
+| `src/engine/registries/` | Registry subsystem | Typed source-defined registries for base tools, skills, agents, and protocol metadata. Runtime capability authority remains in `src/engine/capabilities/`. |
 | `src/engine/schedules/` | Scheduled execution subsystem | Standalone scheduled/recurring/one-shot agent execution: schedule definitions + run history durable in SQLite (`node:sqlite`, `.gorombo/db/schedules.sqlite`), firing via Croner in-process, rehydrated on restart. Dispatch is admission-only (`dispatch(...)` to the orchestrator); terminal status observed in-process via `observe()`. Exposed via orchestrator `schedule_*` tools, coding-worker `coding_schedule_*` aliases (lead-only), and the `/api/schedules/*` admin route. See `docs/architecture/schedules-system.md`. |
 | `src/engine/session/` | Session/context subsystem | Flue session persistence, connector prompt delivery correlation, ownership-scoped lifecycle routing, semantic transcript projection, compaction policy, context budget, and usage tracking. |
 | `src/engine/tools/` | Model-callable tools | `defineTool(...)` capabilities attached only to owning agents. |
@@ -341,9 +341,10 @@ src/engine/capabilities/
 
 scripts/capability-admin.mjs
   CLI admin script for capability CRUD (add/list/enable/disable/remove/update).
-  Follows the `protocol-admin.mjs` pattern. Writes to SQLite at
-  `.gorombo/db/capabilities.sqlite` and materializes skill/tool/worker
-  files under `.gorombo/capabilities/`.
+  Follows the `protocol-admin.mjs` pattern. By default, writes to SQLite at
+  `~/.gorombo/db/capabilities.sqlite` and materializes skill/tool/worker
+  files under `~/.gorombo/capabilities/`. Environment overrides may select
+  other locations.
 
 src/engine/tools/memory-tool.ts
   Orchestrator-safe memory lookup tool.
@@ -417,7 +418,10 @@ Allowed orchestrator capabilities:
 ```text
 load_protocols
 retrieve_memory
-task delegation to researcher/coding/future workers
+task delegation to researcher and Coding Worker
+task delegation to enabled runtime workers only when attached to the owning
+agent and admitted by active protocols, trusted scope, sandbox policy, and
+action-specific approvals
 final synthesis
 ```
 
@@ -452,32 +456,24 @@ The researcher may implement that behavior through tools, skills, and workflow f
 
 ## app.ts Contract
 
-`src/app.ts` must stay close to:
+`src/app.ts` must stay close to a thin composition root. Its current
+responsibilities are:
 
-```ts
-import { flue } from '@flue/runtime/routing';
-import { Hono } from 'hono';
-import './core/models/runtime.js';
-import { requireApiSecret } from './api/middleware/api-secret.js';
-import { registerChatEventRoutes } from './api/routes/chat-events.js';
-import { registerTelemetryRoutes } from './api/routes/telemetry.js';
-import { registerFlueTelemetryObserver } from './core/telemetry/flue-telemetry.js';
-
-registerFlueTelemetryObserver();
-
-const app = new Hono();
-
-app.get('/health', (c) => c.json({ ok: true }));
-
-app.use('/agents/*', requireApiSecret);
-app.use('/workflows/*', requireApiSecret);
-app.use('/runs/*', requireApiSecret);
-registerChatEventRoutes(app);
-registerTelemetryRoutes(app);
-app.route('/', flue());
-
-export default app;
+```text
+import model-provider and schedule boot modules
+register the Flue telemetry observer
+create the Hono application
+register /health
+apply API-secret middleware to protected Flue and schedule route families
+register chat-event and chat-session routes
+register knowledge, schedule, telemetry, approval, and Telegram admin routes
+mount Flue with app.route('/', flue())
+export the Hono application
 ```
+
+The exact route list is verified against `src/app.ts`. Orchestration, protocol
+matching, retrieval, worker execution, and model selection remain outside this
+composition root.
 
 Custom ingress may be added only if it enters the Flue agent/workflow path.
 

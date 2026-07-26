@@ -62,8 +62,8 @@ Runtime data:
 ```text
 .gorombo/db/flue.sqlite
 .gorombo/db/sessions.sqlite
-.gorombo/db/capabilities.sqlite
 .gorombo/db/structured-memory.sqlite
+~/.gorombo/db/capabilities.sqlite
 ```
 
 Normal no-argument launch starts without an agent session id. The TUI creates a fresh durable session through `POST /api/chat/sessions`, stores the returned `tui-*` id, then attaches its live stream. There is no default `primary` session and no implicit last-TUI-session reuse. Passing `--session <selector>` validates and resumes an exact owned id or explicit name before stream attachment. A missing selector creates a fresh session and greeting; forbidden or ambiguous selectors fail startup. TUI session commands can then clear, create, resume, or switch durable sessions inside the running app.

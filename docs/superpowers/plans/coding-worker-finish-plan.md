@@ -8,7 +8,7 @@
 
 Turn the isolated, tested Phase 2 coding worker into a real hands-off coding agent comparable to Claude Code, Codex, and similar tools. The user must be able to send a natural-language coding task via Telegram or TUI and have the agent triage, implement, test, debug, review, commit, push, and open a PR — with human approval surfaced over the active connector, real-time progress, protocol-driven project rules, and durable project memory.
 
-This plan sits on top of the completed [Phase 2 Execution Plan](../coding-worker/phase2-execution-plan.md). Phase 2 built the skeleton and the loop. This finishes the product.
+This plan sits on top of the completed Phase 2 Execution Plan. Phase 2 built the skeleton and the loop. This finishes the product.
 
 ## Definition of Done
 

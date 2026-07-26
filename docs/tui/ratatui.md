@@ -33,6 +33,10 @@ Useful launch flags:
 ./.gorombo/sim-one-cli/sim-one --base-url http://127.0.0.1:3940
 ```
 
+The current terminal client sends no `x-api-secret` header and uses plain HTTP.
+Use `--base-url` only with loopback or an SSH tunnel exposing the gateway on a
+local port.
+
 Use `--session <selector>` only when you intentionally want to validate, attach to, and stream an existing TUI session by canonical id or exact explicit name. A successful resume restores the canonical id, name, and history without adding another startup greeting. A missing selector creates a fresh session and greeting; denied or duplicate-name selectors fail closed.
 
 ## Layout

@@ -49,23 +49,34 @@ Cloud model cards use the direct Ollama Cloud model IDs, such as `minimax-m3` an
 
 ## Current Cards
 
-```text
-minimax-m3-cloud       -> ollama-cloud/minimax-m3
-deepseek-v4-pro-cloud  -> ollama-cloud/deepseek-v4-pro
-qwen3-5-cloud          -> ollama-cloud/qwen3.5:397b
-codex-brain            -> codex-brain/gpt-5.5
-```
+`src/core/models/catalog.ts` aggregates eight enabled cards:
 
-`minimax-m3-cloud` is the default agentic chat model card.
+| Card key | Flue specifier | Role |
+| --- | --- | --- |
+| `minimax-m3-cloud` | `ollama-cloud/minimax-m3` | Agentic chat |
+| `deepseek-v4-pro-cloud` | `ollama-cloud/deepseek-v4-pro` | Agentic chat |
+| `qwen3-5-cloud` | `ollama-cloud/qwen3.5:397b` | Agentic chat |
+| `kimi-k2.7-code-cloud` | `ollama-cloud/kimi-k2.7-code:cloud` | Agentic chat |
+| `codex-brain` | `codex-brain/gpt-5.5` | Agentic chat |
+| `nomic-embed-text-cloud` | `ollama-cloud/nomic-embed-text` | Embedding |
+| `nomic-embed-text-local` | `ollama-local/nomic-embed-text` | Embedding |
+| `all-minilm-l6-v2-onnx` | `onnx-local/all-minilm-l6-v2` | Embedding |
 
-The current card context limits are:
+`minimax-m3-cloud` is the default agentic-chat card. The runtime chat registry
+uses the seven provider-backed chat and embedding cards from
+`createModelCards()`. The embedding chain reads the complete catalog so the
+bundled ONNX card participates in cloud-to-local fallback.
 
-```text
-minimax-m3-cloud       advertised=1,000,000  guaranteed=512,000  ollama-reported=524,288  max-output=131,072
-deepseek-v4-pro-cloud  context=1,048,576     max-output=1,048,576
-qwen3-5-cloud          context=262,144       max-output=65,536
-codex-brain            context=128,000       max-output=32,000
-```
+| Card key | Advertised context | Guaranteed or provider-reported context | Output limit or embedding dimensions |
+| --- | ---: | ---: | ---: |
+| `minimax-m3-cloud` | 1,000,000 | guaranteed 512,000; provider 524,288 | 131,072 |
+| `deepseek-v4-pro-cloud` | 1,048,576 | provider 1,048,576 | 1,048,576 |
+| `qwen3-5-cloud` | 262,144 | provider 262,144 | 65,536 |
+| `kimi-k2.7-code-cloud` | 1,000,000 | guaranteed 256,000; provider 262,144 | 32,768 |
+| `codex-brain` | 128,000 | not separately reported | 32,000 |
+| `nomic-embed-text-cloud` | 8,192 | not separately reported | 768 dimensions |
+| `nomic-embed-text-local` | 8,192 | not separately reported | 768 dimensions |
+| `all-minilm-l6-v2-onnx` | 256 | not separately reported | 384 dimensions |
 
 MiniMax M3 intentionally tracks more than one limit because MiniMax advertises 1M context with a guaranteed 512K minimum, while Ollama Cloud currently reports 524288 for both direct `/api/show` and local `minimax-m3:cloud` metadata.
 
@@ -74,7 +85,7 @@ MiniMax M3 intentionally tracks more than one limit because MiniMax advertises 1
 1. The shipped `gorombo.config.json` runtime file is the source of truth for model choice.
 2. `models.primary` selects the primary project-owned model card key.
 3. `models.backup` optionally selects a different backup model card key.
-4. `GOROMBO_MODEL`, `GOROMBO_MODEL_BACKUP`, and `GOROMBO_CONFIG_PATH` are rejected.
+4. `GOROMBO_MODEL` and `GOROMBO_MODEL_BACKUP` are rejected.
 5. Raw Flue model specifiers are not accepted as configuration.
 6. If a requested card key is missing, startup fails instead of choosing an unreviewed fallback.
 
@@ -106,7 +117,9 @@ Add a card file under the provider that owns the model, such as `src/core/models
 
 Provider transport belongs in `src/core/models/providers/<provider>/provider.ts`. Register custom providers from `src/app.ts` through the model runtime bootstrap before any agent uses the card specifier.
 
-As of June 7, 2026, Ollama Cloud's live model list did not expose a dedicated embedding model, so no embedding card is added yet.
+Embedding selection is role-based. The current chain tries
+`nomic-embed-text-cloud`, then the bundled `all-minilm-l6-v2-onnx`, then
+`nomic-embed-text-local`.
 
 ## Budget Policy
 
@@ -120,10 +133,19 @@ The session-management layer uses cards in this order:
 6. Trigger `session.compact()` before Flue or the provider rejects the prompt.
 7. Give RAG only the remaining context budget after system instructions, protocol context, memory, current user input, and output reserve are accounted for.
 
-The durable orchestrator agent prompts with the primary card. Backup cards remain explicit model metadata for future fallback-capable paths; they are not a reason to bypass context budgeting.
+The durable orchestrator agent prompts with the primary card. Backup cards
+remain explicit model metadata and are not a reason to bypass context
+budgeting.
 
 RAG should come after this budget layer because retrieved context must fit into the selected card's remaining budget.
 
 The default web retrieval provider is Ollama Search through `POST https://ollama.com/api/web_search`, authenticated with the existing Ollama key resolved from model-card/provider env bindings. Web search is owned by the researcher subagent. The researcher-facing `web_research` tool calls the `web-research` Flue workflow boundary, which plans searches, uses cache, optionally expands top web results through fetch, packs contexts to a token budget, and records non-fatal provider failures. Other providers can be added behind the same RAG provider interface.
 
 The main orchestrator registers a Flue subagent named `researcher`. The orchestrator must not call web search or web-capable retrieval directly. It delegates current, external, source-backed, or research tasks through Flue `task` with `agent: "researcher"`. The researcher may use workflows and tools to decide whether one search, many searches, page fetches, or cache hits are enough.
+
+## Related Documentation
+
+- [Architecture Overview](overview.md)
+- [Retrieval And Research](retrieval-and-research.md)
+- [Worker System](worker-system.md)
+- [Flue Architecture Contract](flue-architecture.md)
