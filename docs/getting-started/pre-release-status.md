@@ -26,8 +26,8 @@ no per-run deferral path.
 
 | ID | Release dependency | Pre-release status | Graph owner | Scope |
 | --- | --- | --- | --- | --- |
-| `REL-PKG-001` | Release archive, `sim-one.sh`, and checksums | Not published | `verify-published-release-assets` | Required |
-| `REL-PKG-002` | Integrity-verified packaged installation | Awaits versioned release assets | `verify-published-release-assets` | Required |
+| `REL-PKG-001` | Release archive, `sim-one.sh`, and checksums | Not published | `implement-sim-one-onboarding-distribution` | Required |
+| `REL-PKG-002` | Integrity-verified packaged installation | Awaits versioned release assets | `implement-sim-one-onboarding-distribution` | Required |
 | `REL-ONB-001` | Packaged onboarding interface and `sim-one install` | Unavailable in the current CLI | `implement-sim-one-onboarding-distribution` | Required |
 | `REL-OPS-001` | `sim-one config`, `doctor`, `status`, `start`, `restart`, and `stop` | Unavailable in the current CLI | `implement-sim-one-onboarding-distribution` | Required |
 | `TUI-WORK-001` | Responsive right-side work pane with independently scrollable task checklist, usage and cost, Git state, and runtime status | Planned | `implement-sim-one-tui-work-pane` | Required |

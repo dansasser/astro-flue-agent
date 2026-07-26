@@ -680,10 +680,82 @@
       "artifacts": [
         "artifact:integrated-change"
       ],
+      "condition": "The integrated packaging implementation is current and assigned to the exact release-package build.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:runtime-build"
+      ],
+      "condition": "The reviewed packaged runtime is current and included in the exact versioned release package.",
+      "exit_condition": null,
+      "from": "build-runtime",
+      "id": "runtime-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-build"
+      ],
+      "condition": "The reviewed packaged SIM-ONE TUI is current and included in the exact versioned release package.",
+      "exit_condition": null,
+      "from": "build-sim-one-tui",
+      "id": "sim-one-tui-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:cli-build"
+      ],
+      "condition": "The reviewed sim-one command and platform launchers are current and included in the exact versioned release package.",
+      "exit_condition": null,
+      "from": "build-cli",
+      "id": "cli-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The fixed 0.1.0 Beta packaging and integrity contract is current and bound to the release-package build.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
       "condition": "The integrated product includes the required onboarding and distribution contract.",
       "exit_condition": null,
       "from": "integrate-and-repair",
       "id": "integration-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The exact typed versioned archive, sim-one.sh entrypoint, checksum manifest, paths, sizes, modes, and digests are current and bound to the isolated onboarding probe.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-verify-onboarding-distribution",
       "max_traversals": null,
       "to": "verify-onboarding-distribution",
       "type": "consumes"
@@ -1110,6 +1182,18 @@
     },
     {
       "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The owner approval binds the exact typed archive, installer, checksum manifest, candidate commit, paths, sizes, modes, and digests.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-production-approval",
+      "max_traversals": null,
+      "to": "approve-production-release",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
         "artifact:canary-behavior-report"
       ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
@@ -1140,6 +1224,18 @@
       "exit_condition": null,
       "from": "publish-release-candidate",
       "id": "candidate-to-release-assets",
+      "max_traversals": null,
+      "to": "publish-release-assets",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "GitHub release publication uploads only the exact typed package bytes and checksum manifest approved for this run.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-release-assets",
       "max_traversals": null,
       "to": "publish-release-assets",
       "type": "consumes"
@@ -1268,10 +1364,58 @@
       "artifacts": [
         "artifact:published-release-assets-report"
       ],
+      "condition": "The non-mutating ledger proposal derives release fields from the verified immutable asset record.",
+      "exit_condition": null,
+      "from": "verify-published-release-assets",
+      "id": "published-release-assets-verification-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:production-release"
+      ],
+      "condition": "The non-mutating ledger proposal binds the immutable production release record.",
+      "exit_condition": null,
+      "from": "release-production",
+      "id": "production-release-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:production-observation"
+      ],
+      "condition": "The non-mutating ledger proposal is created only after successful production observation.",
+      "exit_condition": null,
+      "from": "observe-production",
+      "id": "production-observation-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:published-release-assets-report"
+      ],
       "condition": "The release-ledger approval must bind the verified immutable asset record.",
       "exit_condition": null,
       "from": "verify-published-release-assets",
       "id": "published-release-assets-verification-to-ledger-approval",
+      "max_traversals": null,
+      "to": "approve-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-ledger-proposal"
+      ],
+      "condition": "The owner approves the exact precomputed single-file diff, expected base commit, immutable release fields, and proposal digest without authoring new content.",
+      "exit_condition": null,
+      "from": "prepare-release-ledger-update",
+      "id": "release-ledger-proposal-to-approval",
       "max_traversals": null,
       "to": "approve-release-ledger-update",
       "type": "consumes"
@@ -1320,6 +1464,18 @@
       "exit_condition": null,
       "from": "approve-release-ledger-update",
       "id": "release-ledger-approval-artifact-to-update",
+      "max_traversals": null,
+      "to": "update-release-ledger",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-ledger-proposal"
+      ],
+      "condition": "The repository updater applies only the exact proposal digest reviewed by the owner and recorded in the approval artifact.",
+      "exit_condition": null,
+      "from": "prepare-release-ledger-update",
+      "id": "release-ledger-proposal-to-update",
       "max_traversals": null,
       "to": "update-release-ledger",
       "type": "consumes"
@@ -1404,6 +1560,18 @@
       "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
       "from": "verify-typecheck",
       "id": "verify-typecheck-feedback-to-integration",
+      "max_traversals": 3,
+      "to": "integrate-and-repair",
+      "type": "feedback"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The release-package evidence identifies a correctable packaging, archive-scope, checksum, mode, or integration failure.",
+      "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
+      "from": "build-release-package",
+      "id": "build-release-package-feedback-to-integration",
       "max_traversals": 3,
       "to": "integrate-and-repair",
       "type": "feedback"
@@ -2017,6 +2185,18 @@
     },
     {
       "artifacts": [
+        "artifact:sim-one-tui-product-report"
+      ],
+      "condition": "A changed integrated diff invalidates prior packaged SIM-ONE TUI session, transcript, interaction, prompt, and visible-final evidence.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-verify-sim-one-tui",
+      "max_traversals": null,
+      "to": "verify-sim-one-tui",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
         "artifact:production-release-approval"
       ],
       "condition": "The owner approved the exact production target, candidate, observation plan, and recorded rollback authority.",
@@ -2044,7 +2224,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 29,
+  "graph_version": 30,
   "nodes": [
     {
       "acceptance": [
@@ -3448,7 +3628,7 @@
     {
       "acceptance": [
         {
-          "criterion": "REL-PKG-001: a versioned release archive contains the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and published checksums.",
+          "criterion": "REL-PKG-001: the packaging implementation can assemble a versioned release archive containing the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and checksum manifest.",
           "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-001-release-archive.json",
           "id": "rel-pkg-001-release-archive",
           "kind": "artifact"
@@ -4556,6 +4736,102 @@
     {
       "acceptance": [
         {
+          "criterion": "The exact versioned release-candidate archive contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets.",
+          "evidence": "runtime:evidence/build-release-package/archive.json",
+          "id": "release-package-assembled",
+          "kind": "artifact"
+        },
+        {
+          "criterion": "The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact candidate commit and version, and is recorded together with archive paths, sizes, executable modes, and platform scope.",
+          "evidence": "runtime:evidence/build-release-package/checksums.json",
+          "id": "release-package-checksums-bound",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 2,
+        "timeout_minutes": 30
+      },
+      "executor": {
+        "instructions": "Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Assemble only the current artifact:runtime-build, artifact:sim-one-tui-build, and artifact:cli-build outputs; create sim-one.sh and the versioned archive; generate the checksum manifest from final bytes; and record candidate commit, paths, sizes, modes, and SHA-256 digests. Refuse undeclared files, mutable runtime state, configuration, databases, and secrets.",
+        "kind": "hybrid",
+        "name": "SIM-ONE release package build adapter"
+      },
+      "goal": "Produce the exact typed versioned SIM-ONE release package and checksum manifest consumed by pre-publication verification and approved GitHub release publication.",
+      "id": "build-release-package",
+      "inputs": [
+        {
+          "artifact": "artifact:integrated-change",
+          "name": "integrated change set",
+          "required": true
+        },
+        {
+          "artifact": "artifact:runtime-build",
+          "name": "runtime build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:sim-one-tui-build",
+          "name": "SIM-ONE TUI build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:cli-build",
+          "name": "CLI build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:release-package",
+          "format": "release-package-record",
+          "name": "versioned release package"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:integrated-change",
+          "artifact:runtime-build",
+          "artifact:sim-one-tui-build",
+          "artifact:cli-build",
+          "artifact:beta-release-contract",
+          "release packaging files assigned exclusively by artifact:implementation-plan"
+        ],
+        "write": [
+          "release-package staging files assigned exclusively by artifact:implementation-plan"
+        ]
+      },
+      "resources": [
+        "project:release-package-output"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Writes only generated release-package staging files and checksum evidence.",
+        "level": "reversible",
+        "rollback": "Remove the generated staging files and rebuild the package from the same reviewed commit and typed build artifacts."
+      },
+      "state": "planned",
+      "tags": [
+        "verification",
+        "build",
+        "packaging",
+        "release-assets",
+        "integrity"
+      ],
+      "title": "Build Versioned Release Package",
+      "type": "verification"
+    },
+    {
+      "acceptance": [
+        {
           "criterion": "The platform sim-one launcher exits zero for --help, prints the documented SIM-ONE Alpha capability-management surface, and completes --smoke-startup through the packaged SIM-ONE TUI launcher rather than merely proving cli.js exists.",
           "evidence": "runtime:evidence/verify-cli-behavior/result.json",
           "id": "verification-passed",
@@ -4930,6 +5206,11 @@
           "artifact": "artifact:beta-release-contract",
           "name": "0.1.0 Beta release contract approval",
           "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
         }
       ],
       "outputs": [
@@ -4947,8 +5228,9 @@
         "read": [
           "authorized project tree",
           "artifact:beta-release-contract",
+          "artifact:release-package",
           "node_modules/",
-          "versioned release-candidate archive and checksum manifest"
+          "release-package paths and digests declared by artifact:release-package"
         ],
         "write": [
           "/tmp SIM-ONE onboarding test home",
@@ -5830,6 +6112,11 @@
           "artifact": "artifact:onboarding-distribution-report",
           "name": "release-candidate onboarding and distribution report",
           "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
         }
       ],
       "outputs": [
@@ -5846,6 +6133,7 @@
           "artifact:release-candidate",
           "artifact:canary-behavior-report",
           "artifact:onboarding-distribution-report",
+          "artifact:release-package",
           "production release contract"
         ],
         "write": []
@@ -5909,6 +6197,11 @@
           "artifact": "artifact:production-release-approval",
           "name": "release asset and production approval",
           "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
         }
       ],
       "outputs": [
@@ -5928,7 +6221,7 @@
           "artifact:release-candidate",
           "artifact:onboarding-distribution-report",
           "artifact:production-release-approval",
-          "approved versioned release-candidate archive and checksum manifest",
+          "artifact:release-package",
           "GitHub repository, tag, and release metadata"
         ],
         "write": [
@@ -6212,7 +6505,86 @@
     {
       "acceptance": [
         {
-          "criterion": "The owner explicitly approves or rejects the exact post-publication ledger mutation, including the 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback.",
+          "criterion": "The proposal contains the exact docs/getting-started/pre-release-status.md patch, expected base commit, target main branch, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release identifier, and proposal SHA-256.",
+          "evidence": "runtime:evidence/prepare-release-ledger-update/proposal.json",
+          "id": "release-ledger-proposal-bound",
+          "kind": "artifact"
+        },
+        {
+          "criterion": "The proposal changes only the repository-owned release ledger, derives every release field from the accepted immutable records, performs no repository or GitHub mutation, and is independently consumable without being regenerated by the approver or updater.",
+          "evidence": "runtime:evidence/prepare-release-ledger-update/scope.json",
+          "id": "release-ledger-proposal-non-mutating",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 2,
+        "timeout_minutes": 30
+      },
+      "executor": {
+        "instructions": "Read the verified published-release, production-release, and production-observation records plus the current main-branch release ledger. Construct the exact single-file patch and canonical proposal record with expected base commit and SHA-256. Do not modify the worktree, Git state, GitHub state, or release ledger.",
+        "kind": "hybrid",
+        "name": "non-mutating release ledger proposal adapter"
+      },
+      "goal": "Produce the exact immutable release-ledger diff that the owner can approve and the repository updater can apply without authoring new content after approval.",
+      "id": "prepare-release-ledger-update",
+      "inputs": [
+        {
+          "artifact": "artifact:published-release-assets-report",
+          "name": "published release assets verification",
+          "required": true
+        },
+        {
+          "artifact": "artifact:production-release",
+          "name": "immutable production release record",
+          "required": true
+        },
+        {
+          "artifact": "artifact:production-observation",
+          "name": "production observation",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:release-ledger-proposal",
+          "format": "repository-patch-proposal",
+          "name": "exact release ledger proposal"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:published-release-assets-report",
+          "artifact:production-release",
+          "artifact:production-observation",
+          "docs/getting-started/pre-release-status.md at the recorded main-branch commit"
+        ],
+        "write": []
+      },
+      "resources": [],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Produces a proposal artifact without mutating project or external state.",
+        "level": "none",
+        "rollback": "none"
+      },
+      "state": "planned",
+      "tags": [
+        "release-ledger",
+        "proposal",
+        "repository",
+        "non-mutating"
+      ],
+      "title": "Prepare Release Ledger Update",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The owner explicitly approves or rejects artifact:release-ledger-proposal by its exact proposal SHA-256, expected base commit, single-file diff, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback.",
           "evidence": "runtime:approval/approve-release-ledger-update",
           "id": "release-ledger-authority-recorded",
           "kind": "manual"
@@ -6224,7 +6596,7 @@
         "timeout_minutes": 1440
       },
       "executor": {
-        "instructions": "Review the immutable published-release, production-release, and production-observation records together with the exact proposed docs/getting-started/pre-release-status.md diff. Approval is repository-specific, file-specific, diff-bound, release-record-bound, and time-bound.",
+        "instructions": "Review artifact:release-ledger-proposal and compare its expected base commit, canonical diff, proposal SHA-256, and release fields with the immutable published-release, production-release, and production-observation records. Approval is repository-specific, file-specific, proposal-digest-bound, release-record-bound, and time-bound. Do not author or alter the diff in this gate.",
         "kind": "human",
         "name": "SIM-ONE project owner"
       },
@@ -6245,6 +6617,11 @@
           "artifact": "artifact:production-observation",
           "name": "production observation",
           "required": true
+        },
+        {
+          "artifact": "artifact:release-ledger-proposal",
+          "name": "exact release ledger proposal",
+          "required": true
         }
       ],
       "outputs": [
@@ -6261,8 +6638,9 @@
           "artifact:published-release-assets-report",
           "artifact:production-release",
           "artifact:production-observation",
+          "artifact:release-ledger-proposal",
           "docs/getting-started/pre-release-status.md",
-          "exact proposed release-ledger diff"
+          "release-ledger diff and digest declared by artifact:release-ledger-proposal"
         ],
         "write": []
       },
@@ -6292,7 +6670,7 @@
           "kind": "probe"
         },
         {
-          "criterion": "The repository mutation exactly matches artifact:release-ledger-update-approval, changes only the authorized release ledger, is committed on an authorized branch, passes required checks in a non-draft pull request to main, and is merged before completion.",
+          "criterion": "The repository mutation applies artifact:release-ledger-proposal byte-for-byte at its approved base and exactly matches the proposal SHA-256 recorded by artifact:release-ledger-update-approval; it changes only the authorized release ledger, is committed on an authorized branch, passes required checks in a non-draft pull request to main, and is merged before completion.",
           "evidence": "runtime:evidence/update-release-ledger/repository-mutation.json",
           "id": "release-ledger-mutation-verified",
           "kind": "policy"
@@ -6310,7 +6688,7 @@
         "timeout_minutes": 120
       },
       "executor": {
-        "instructions": "Apply only the exact ledger diff authorized by artifact:release-ledger-update-approval. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to compare the recorded date, tag, URL, commit, and digests with the immutable release records. Stop on any drift or approval mismatch.",
+        "instructions": "Verify artifact:release-ledger-proposal matches the proposal SHA-256 and base commit authorized by artifact:release-ledger-update-approval, then apply that diff byte-for-byte without regeneration. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to compare the recorded date, tag, URL, commit, and digests with the immutable release records. Stop on any drift or approval mismatch.",
         "kind": "hybrid",
         "name": "approval-gated release ledger repository adapter"
       },
@@ -6336,6 +6714,11 @@
           "artifact": "artifact:release-ledger-update-approval",
           "name": "release ledger update approval",
           "required": true
+        },
+        {
+          "artifact": "artifact:release-ledger-proposal",
+          "name": "exact release ledger proposal",
+          "required": true
         }
       ],
       "outputs": [
@@ -6357,6 +6740,7 @@
           "artifact:production-release",
           "artifact:production-observation",
           "artifact:release-ledger-update-approval",
+          "artifact:release-ledger-proposal",
           "docs/getting-started/pre-release-status.md",
           "Git and GitHub repository metadata"
         ],
@@ -6475,7 +6859,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:664f5af6ddde5038f385e7bb832f5ad5e043e11a02de867490ce112c731bcc63",
+    "context_version": "snapshot:sha256:618a856c6a6fe054934a0db457566722105ab4a78d1bb9f32e1a6848113d3600",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
