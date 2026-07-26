@@ -29,11 +29,12 @@ TELEGRAM_APPROVED_USER_IDS=<comma-separated-user-ids>
 TELEGRAM_ADMIN_USER_IDS=<comma-separated-admin-ids>
 TELEGRAM_BOT_USERNAME=<bot-username>
 TELEGRAM_MENTION_PATTERNS=<comma-separated-patterns>
-TELEGRAM_INBOX_DIR=.gorombo/telegram-inbox
 ```
 
 Omit `TELEGRAM_BOT_TOKEN` to run without Telegram. When the bot token is set,
 `TELEGRAM_WEBHOOK_SECRET_TOKEN` is required and startup fails without it.
+The current connector normalizes message metadata but does not download
+Telegram attachments into a local inbox.
 
 ## Direct-Message Policies
 

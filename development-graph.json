@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 17,
+  "graph_version": 18,
   "nodes": [
     {
       "acceptance": [
@@ -2906,7 +2906,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The exact pnpm run docs:check command passes and its report proves all discovered local Markdown links resolve across root release documents, docs, and OpenWiki; every architecture document is indexed; production terminology and README section order match the release contract; current architecture contains no roadmap status language; source-build configuration and storage paths, generated-asset prerequisites, capability paths and overrides, model backup semantics, connector environment examples and pairing boundaries, Telegram disabled-policy scope, gateway controls and release gaps, protocol-enforcement and progress-visibility boundaries, checksum-only installer integrity, exact third-party notices, changelog claims, and diagnostics surfaces match source; source references resolve except declared non-live examples; and required Markdown fences and H1 structure are valid.",
+          "criterion": "The exact pnpm run docs:check command passes and reports the discovered Markdown count, local links and anchors checked, architecture documents indexed, architecture and OpenWiki source references checked, and documentation snapshot digest. Its passing status also proves production TUI terminology, README section order, prohibited roadmap-style current-state language, Markdown fence balance, and required single-H1 structure satisfy scripts/check-documentation.py.",
           "evidence": "runtime:evidence/verify-documentation/result.json",
           "id": "documentation-contract-passed",
           "kind": "test"
@@ -2927,11 +2927,11 @@
         "working_directory": "."
       },
       "executor": {
-        "instructions": "Execute the configured pnpm run docs:check command exactly as the declared argv array and retain full stdout, stderr, exit status, timing, and the complete checked-documentation snapshot digest.",
+        "instructions": "Execute the configured pnpm run docs:check command exactly as the declared argv array and retain full stdout, stderr, exit status, timing, counts, and the complete checked-documentation snapshot digest.",
         "kind": "deterministic",
         "name": "Verify Production Documentation"
       },
-      "goal": "Prove the complete root release document set, product and architecture documentation, OpenWiki snapshot, and non-secret environment example have valid links, complete architecture index coverage, approved production terminology and README order, current-state architecture wording, source-accurate configuration, setup, storage, model-selection, capability, connector, gateway, protocol-enforcement, progress-visibility, changelog, diagnostics, installer-integrity, and third-party-notice guidance, resolvable source references, and valid Markdown structure.",
+      "goal": "Run the repository's deterministic documentation contract across root release documents, docs, and OpenWiki: local links and anchors, architecture index coverage, production TUI terminology, README section order, prohibited roadmap-style current-state language, resolvable architecture and OpenWiki source references, Markdown fence and H1 structure, and a reproducible documentation snapshot.",
       "id": "verify-documentation",
       "inputs": [
         {
@@ -4863,7 +4863,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:9682665a18f53ea20ae31fbe2a2c1f6596b14e70a3f8305a38907b76ca437719",
+    "context_version": "snapshot:sha256:29f54c36f464c9aa89a44b038c78683b8026d6d08384bdc457e50d0308d066f8",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",

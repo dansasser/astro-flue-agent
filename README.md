@@ -489,7 +489,11 @@ Skill, tool, and worker sources can be Git repository URLs or local directories.
 
 CLI changes are explicit user actions. Agent-added skills can be enabled immediately because skills contain instructions rather than executable code. Agent-added tools, workers, and MCP servers remain disabled until the user approves them.
 
-Registration and enablement do not grant unrestricted authority. Loaded capabilities remain subject to the active protocol bundle, trusted identity and scope, typed tool boundaries, worker ownership, orchestrator/critic validation, and approval-gated mutation paths.
+Registration and enablement do not grant unrestricted authority. Current source
+constrains loaded capabilities through trusted identity and scope, typed tool
+boundaries, worker ownership, and approval-gated mutation paths. Complete
+protocol scoring and orchestrator/critic enforcement across every capability
+path remain release gates.
 
 ### Manage Skills
 

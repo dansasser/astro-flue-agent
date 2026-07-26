@@ -186,8 +186,11 @@ OLLAMA_LOCAL_API_KEY
 OLLAMA_LOCAL_EMBEDDING_MODEL
 GOROMBO_EMBEDDING_MODEL_PATH
 GOROMBO_EMBEDDING_TIMEOUT_MS
-GOROMBO_VECTOR_STORE_PATH
 ```
+
+Configure the vector database with `storage.vectorStorePath` in
+`gorombo.config.json`. The current runtime does not read a vector-store
+environment override.
 
 ### Image Generation
 

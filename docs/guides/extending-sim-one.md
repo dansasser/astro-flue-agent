@@ -133,12 +133,14 @@ The agent can propose or add runtime capabilities through governed tools:
 Registration does not grant unrestricted authority. Enabled capabilities
 remain subject to:
 
-- the active SQLite protocol bundle;
 - trusted connector, actor, conversation, and project scope;
 - typed tool boundaries;
 - worker ownership and isolation;
-- orchestrator/critic validation;
 - approval-gated mutations.
+
+The release contract also subjects every capability path to active protocol
+scoring and orchestrator/critic enforcement. Complete activation of that
+boundary remains a release gate.
 
 ## Verify An Addition
 
