@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 7a91bb9d6627f8e7f510ed9adeaaf50f033f4394794c1b2b14c85761d41358f7 -->
+<!-- development-graph-sha256: b1e3300b14c372607ddaf4fb204a32e869255dbe0871d2817d6116260caf48d9 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,7 +9,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `31` |
+| Graph version | `32` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
@@ -18,7 +18,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `7a91bb9d6627f8e7f510ed9adeaaf50f033f4394794c1b2b14c85761d41358f7` |
+| Canonical checksum | `b1e3300b14c372607ddaf4fb204a32e869255dbe0871d2817d6116260caf48d9` |
 
 ## Flow
 
@@ -63,10 +63,11 @@ flowchart TD
     n_deploy_canary[["Deploy Approved Canary\\n(operation / planned)"]]
     n_verify_canary_behavior(["Verify Canary Behavior\\n(observation / planned)"])
     n_approve_production_release{{"Approve Release Assets And Production\\n(human_gate / planned)"}}
-    n_publish_release_assets[["Publish Approved Release Assets\\n(operation / planned)"]]
-    n_verify_published_release_assets(["Verify Published Release Assets\\n(verification / planned)"])
+    n_stage_release_assets[["Stage Approved Release Assets Privately\\n(operation / planned)"]]
+    n_verify_staged_release_assets(["Verify Private Staged Release Assets\\n(verification / planned)"])
     n_release_production[["Release Approved Candidate\\n(operation / planned)"]]
     n_observe_production(["Observe Production Outcomes\\n(observation / planned)"])
+    n_publish_release_assets[["Publish Verified Assets After Production\\n(operation / planned)"]]
     n_prepare_release_ledger_update["Prepare Release Ledger Update\\n(work / planned)"]
     n_approve_release_ledger_update{{"Approve Release Ledger Update\\n(human_gate / planned)"}}
     n_update_release_ledger[["Update Verified Release Ledger\\n(operation / planned)"]]
@@ -170,29 +171,35 @@ flowchart TD
     n_build_release_package -- "consumes" --> n_approve_production_release
     n_verify_canary_behavior -- "consumes" --> n_approve_production_release
     n_verify_onboarding_distribution -- "consumes" --> n_approve_production_release
-    n_publish_release_candidate -- "consumes" --> n_publish_release_assets
-    n_build_release_package -- "consumes" --> n_publish_release_assets
-    n_verify_onboarding_distribution -- "consumes" --> n_publish_release_assets
-    n_approve_production_release -- "approves" --> n_publish_release_assets
-    n_approve_production_release -- "consumes" --> n_publish_release_assets
-    n_publish_release_assets -- "consumes" --> n_verify_published_release_assets
+    n_publish_release_candidate -- "consumes" --> n_stage_release_assets
+    n_build_release_package -- "consumes" --> n_stage_release_assets
+    n_verify_onboarding_distribution -- "consumes" --> n_stage_release_assets
+    n_approve_production_release -- "approves" --> n_stage_release_assets
+    n_approve_production_release -- "consumes" --> n_stage_release_assets
+    n_stage_release_assets -- "consumes" --> n_verify_staged_release_assets
     n_publish_release_candidate -- "consumes" --> n_release_production
     n_verify_canary_behavior -- "consumes" --> n_release_production
-    n_verify_published_release_assets -- "consumes" --> n_release_production
+    n_verify_staged_release_assets -- "consumes" --> n_release_production
     n_approve_production_release -- "approves" --> n_release_production
     n_approve_production_release -- "consumes" --> n_release_production
     n_release_production -- "consumes" --> n_observe_production
-    n_verify_published_release_assets -- "consumes" --> n_prepare_release_ledger_update
+    n_stage_release_assets -- "consumes" --> n_publish_release_assets
+    n_verify_staged_release_assets -- "consumes" --> n_publish_release_assets
+    n_release_production -- "consumes" --> n_publish_release_assets
+    n_observe_production -- "consumes" --> n_publish_release_assets
+    n_approve_production_release -- "approves" --> n_publish_release_assets
+    n_approve_production_release -- "consumes" --> n_publish_release_assets
+    n_publish_release_assets -- "consumes" --> n_prepare_release_ledger_update
     n_release_production -- "consumes" --> n_prepare_release_ledger_update
     n_observe_production -- "consumes" --> n_prepare_release_ledger_update
-    n_verify_published_release_assets -- "consumes" --> n_approve_release_ledger_update
+    n_publish_release_assets -- "consumes" --> n_approve_release_ledger_update
     n_prepare_release_ledger_update -- "consumes" --> n_approve_release_ledger_update
     n_release_production -- "consumes" --> n_approve_release_ledger_update
     n_observe_production -- "consumes" --> n_approve_release_ledger_update
     n_approve_release_ledger_update -- "approves" --> n_update_release_ledger
     n_approve_release_ledger_update -- "consumes" --> n_update_release_ledger
     n_prepare_release_ledger_update -- "consumes" --> n_update_release_ledger
-    n_verify_published_release_assets -- "consumes" --> n_update_release_ledger
+    n_publish_release_assets -- "consumes" --> n_update_release_ledger
     n_release_production -- "consumes" --> n_update_release_ledger
     n_observe_production -- "consumes" --> n_update_release_ledger
     n_publish_release_candidate -- "consumes" --> n_closeout_release
@@ -222,8 +229,8 @@ flowchart TD
     n_verify_sim_one_tui -. "conflicts" .-> n_verify_onboarding_distribution
     n_verify_cli_behavior -. "conflicts" .-> n_verify_onboarding_distribution
     n_verify_http_integration -. "conflicts" .-> n_verify_onboarding_distribution
-    n_verify_onboarding_distribution -. "conflicts" .-> n_verify_tui_e2e
-    n_verify_onboarding_distribution -. "conflicts" .-> n_verify_memory_smoke
+    n_verify_tui_e2e -. "conflicts" .-> n_verify_onboarding_distribution
+    n_verify_memory_smoke -. "conflicts" .-> n_verify_onboarding_distribution
     n_verify_cli_behavior -. "conflicts" .-> n_verify_tui_e2e
     n_verify_cli_behavior -. "conflicts" .-> n_verify_memory_smoke
     n_verify_http_integration -. "conflicts" .-> n_verify_tui_e2e
@@ -262,14 +269,14 @@ flowchart TD
 
 | ID | Type | State | Executor | Goal | Outputs |
 |---|---|---|---|---|---|
-| `baseline-context` | `operation` | `planned` | agent: SIM-ONE project context adapter | Bind one authorized change request to the current SIM-ONE Alpha commit, applicable instructions, architecture contracts, affected domains, and external-effect boundaries. | artifact:baseline-context |
+| `baseline-context` | `operation` | `planned` | agent: SIM-ONE project context adapter | Bind one authorized change request to the current SIM-ONE Alpha commit, applicable instructions, exact external beta source-plan digests, architecture contracts, affected domains, and external-effect boundaries. | artifact:baseline-context |
 | `install-dependencies` | `operation` | `planned` | deterministic: pnpm frozen installer | Prepare the Node 22 and pnpm dependency tree from the committed lockfile without changing dependency intent. | artifact:dependency-environment |
 | `fetch-embedding-model` | `operation` | `planned` | deterministic: SIM-ONE embedding model fetcher | Materialize the pinned local ONNX embedding model and tokenizer assets required by embedding and RAG verification. | artifact:embedding-model-assets |
 | `build-wasm-memory` | `operation` | `planned` | deterministic: SIM-ONE wasm-pack builder | Compile the Rust structured-memory engine to the Node-compatible WASM artifact required by real memory execution. | artifact:memory-wasm |
 | `define-change-contract` | `work` | `planned` | agent: SIM-ONE planning adapter | Turn the authorized request into a project-specific purpose, scope, non-goals, evidence plan, permission boundary, rollback, and user-visible progress contract. | artifact:change-contract, artifact:affected-domain-map |
-| `approve-beta-release-contract` | `human_gate` | `planned` | human: SIM-ONE project owner | Bind the fixed owner decision that every remaining release item and the SIM-ONE TUI work pane are required for 0.1.0 Beta before architecture and implementation planning. | artifact:beta-release-contract |
+| `approve-beta-release-contract` | `human_gate` | `planned` | human: SIM-ONE project owner | Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, and the exact external source-plan digest manifest are required for 0.1.0 Beta before architecture and implementation planning. | artifact:beta-release-contract |
 | `decide-architecture` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Choose the smallest design that satisfies the change contract while preserving SIM-ONE Alpha domain ownership and Flue architecture. | artifact:architecture-decision |
-| `plan-implementation` | `work` | `planned` | agent: SIM-ONE implementation planning adapter | Produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback. | artifact:implementation-plan |
+| `plan-implementation` | `work` | `planned` | agent: SIM-ONE implementation planning adapter | After proving the external source plans still match the owner-approved digest manifest, produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback. | artifact:implementation-plan |
 | `implement-core-contracts` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized changes to shared types, Valibot schemas, protocols, model cards, configuration, architecture contracts, and Flue-discovered entrypoints. | artifact:core-contracts-change |
 | `implement-agent-runtime` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while treating company-owned system instructions as read-only, preserving delegation ownership and capability isolation, and keeping the Coding Worker runtime access root separate. | artifact:agent-runtime-change |
 | `implement-memory-retrieval` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized structured memory, session memory, document indexing, knowledge storage, retrieval routing, embeddings, and Rust/WASM changes while keeping memory layers distinct. | artifact:memory-retrieval-change |
@@ -300,11 +307,12 @@ flowchart TD
 | `approve-canary` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve the exact release candidate, canary target, probe plan, rollback, and observation window. | artifact:canary-approval |
 | `deploy-canary` | `operation` | `planned` | hybrid: project-specific deployment adapter | Deploy the exact approved release candidate to the declared canary environment with idempotency fencing and a concrete rollback path. | artifact:canary-deployment |
 | `verify-canary-behavior` | `observation` | `planned` | hybrid: SIM-ONE canary probe adapter | Prove the canary produces correct user-visible and system-visible behavior across gateway, orchestrator, protocols, memory, workers, progress, and changed product surfaces. | artifact:canary-behavior-report |
-| `approve-production-release` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve or reject the exact immutable release assets and production release using the candidate, canary behavior, rollback, and production observation plan. | artifact:production-release-approval |
-| `publish-release-assets` | `operation` | `planned` | hybrid: approval-gated GitHub release asset adapter | Publish the exact approved SIM-ONE release archive, installer entrypoint, and checksums under an immutable version tag and durable GitHub release record. | artifact:published-release-assets |
-| `verify-published-release-assets` | `verification` | `planned` | hybrid: published SIM-ONE release asset verification adapter | Prove the approved versioned SIM-ONE release is actually downloadable, integrity-verifiable, installable, and runnable without a source checkout. | artifact:published-release-assets-report |
+| `approve-production-release` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve or reject the exact private asset stage, production release, and post-observation public release using the candidate, canary behavior, rollback, and production observation plan. | artifact:production-release-approval |
+| `stage-release-assets` | `operation` | `planned` | hybrid: approval-gated private GitHub release staging adapter | Stage the exact approved SIM-ONE release archive, installer entrypoint, and checksums in a private GitHub draft that cannot be discovered or downloaded publicly before production succeeds. | artifact:staged-release-assets |
+| `verify-staged-release-assets` | `verification` | `planned` | hybrid: private staged SIM-ONE release asset verification adapter | Prove the approved private draft assets are inaccessible anonymously but authenticated-downloadable, integrity-verifiable, installable, and runnable without a source checkout. | artifact:staged-release-assets-report |
 | `release-production` | `operation` | `planned` | hybrid: project-specific production deployment adapter | Release the exact approved candidate to the declared production target with idempotency fencing and recorded rollback. | artifact:production-release |
 | `observe-production` | `observation` | `planned` | hybrid: SIM-ONE production observation adapter | Verify correct production behavior and durable target-system outcomes through the approved observation window. | artifact:production-observation |
+| `publish-release-assets` | `operation` | `planned` | hybrid: post-production approval-gated GitHub release publication adapter | After successful production observation, expose the exact privately verified assets under the approved immutable tag and prove the resulting public GitHub release without changing staged bytes. | artifact:published-release-assets-report |
 | `prepare-release-ledger-update` | `work` | `planned` | hybrid: non-mutating release ledger proposal adapter | Produce the exact immutable release-ledger diff that the owner can approve and the repository updater can apply without authoring new content after approval. | artifact:release-ledger-proposal |
 | `approve-release-ledger-update` | `human_gate` | `planned` | human: SIM-ONE project owner | Let the project owner approve or reject the exact repository mutation that records the successfully published 0.1.0 Beta release. | artifact:release-ledger-update-approval |
 | `update-release-ledger` | `operation` | `planned` | hybrid: approval-gated release ledger repository adapter | Record the verified 0.1.0 Beta publication in the repository-owned release ledger through an exact, separately approved, and independently verified GitHub mutation. | artifact:release-ledger-update |
@@ -318,14 +326,14 @@ flowchart TD
 | `install-to-embedding-model` | `install-dependencies` | `consumes` | `fetch-embedding-model` | Upstream artifacts are current, accepted, and bound to this run. | artifact:dependency-environment | — |
 | `install-to-wasm-build` | `install-dependencies` | `consumes` | `build-wasm-memory` | Upstream artifacts are current, accepted, and bound to this run. | artifact:dependency-environment | — |
 | `baseline-to-change-contract` | `baseline-context` | `consumes` | `define-change-contract` | Upstream artifacts are current, accepted, and bound to this run. | artifact:baseline-context | — |
-| `baseline-to-beta-release-contract` | `baseline-context` | `consumes` | `approve-beta-release-contract` | The current source state and release ledger are bound to the same authorized run. | artifact:baseline-context | — |
+| `baseline-to-beta-release-contract` | `baseline-context` | `consumes` | `approve-beta-release-contract` | The current source state, release ledger, and exact external source-plan digest manifest are bound to the same authorized run. | artifact:baseline-context | — |
 | `contract-to-beta-release-contract` | `define-change-contract` | `consumes` | `approve-beta-release-contract` | The requested change and affected domains are explicit enough to bind the fixed 0.1.0 Beta contract. | artifact:change-contract, artifact:affected-domain-map | — |
 | `context-and-contract-to-architecture` | `baseline-context` | `consumes` | `decide-architecture` | Upstream artifacts are current, accepted, and bound to this run. | artifact:baseline-context | — |
 | `beta-release-contract-to-architecture` | `approve-beta-release-contract` | `consumes` | `decide-architecture` | The owner has approved every stable release and planned-work ID as required for 0.1.0 Beta. | artifact:beta-release-contract | — |
 | `contract-to-architecture` | `define-change-contract` | `consumes` | `decide-architecture` | Upstream artifacts are current, accepted, and bound to this run. | artifact:change-contract, artifact:affected-domain-map | — |
 | `contract-to-implementation-plan` | `define-change-contract` | `consumes` | `plan-implementation` | Upstream artifacts are current, accepted, and bound to this run. | artifact:change-contract | — |
 | `architecture-to-implementation-plan` | `decide-architecture` | `consumes` | `plan-implementation` | Upstream artifacts are current, accepted, and bound to this run. | artifact:architecture-decision | — |
-| `beta-release-contract-to-implementation-plan` | `approve-beta-release-contract` | `consumes` | `plan-implementation` | The fixed owner-approved 0.1.0 Beta contract is current and bound to this run. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implementation-plan` | `approve-beta-release-contract` | `consumes` | `plan-implementation` | The fixed owner-approved 0.1.0 Beta contract and external source-plan digest manifest are current and bound to this run. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-agent-runtime` | `approve-beta-release-contract` | `consumes` | `implement-agent-runtime` | The owner-approved release requirements assigned to the agent-runtime lane are current. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-capabilities-security` | `approve-beta-release-contract` | `consumes` | `implement-capabilities-security` | The owner-approved release requirements assigned to the capabilities and security lane are current. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-ingress-operations` | `approve-beta-release-contract` | `consumes` | `implement-ingress-operations` | The owner-approved connector, schedule, and ingress release requirements are current. | artifact:beta-release-contract | — |
@@ -413,29 +421,35 @@ flowchart TD
 | `release-package-to-production-approval` | `build-release-package` | `consumes` | `approve-production-release` | The owner approval binds the exact typed archive, installer, checksum manifest, candidate commit, paths, sizes, modes, and digests. | artifact:release-package | — |
 | `canary-behavior-to-production-approval` | `verify-canary-behavior` | `consumes` | `approve-production-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:canary-behavior-report | — |
 | `onboarding-distribution-to-production-approval` | `verify-onboarding-distribution` | `consumes` | `approve-production-release` | The owner reviews the exact release-candidate archive, checksum manifest, installation evidence, and documented publication contract. | artifact:onboarding-distribution-report | — |
-| `candidate-to-release-assets` | `publish-release-candidate` | `consumes` | `publish-release-assets` | The exact approved candidate commit is the immutable source of the versioned release assets. | artifact:release-candidate | — |
-| `release-package-to-release-assets` | `build-release-package` | `consumes` | `publish-release-assets` | GitHub release publication uploads only the exact typed package bytes and checksum manifest approved for this run. | artifact:release-package | — |
-| `onboarding-distribution-to-release-assets` | `verify-onboarding-distribution` | `consumes` | `publish-release-assets` | The locally verified archive and checksum manifest are current and bound to the exact approved candidate. | artifact:onboarding-distribution-report | — |
-| `production-approval-to-release-assets` | `approve-production-release` | `approves` | `publish-release-assets` | The owner approved the exact immutable tag, release target, archive and checksum manifest, candidate commit, and publication scope. | artifact:production-release-approval | — |
-| `production-approval-artifact-to-release-assets` | `approve-production-release` | `consumes` | `publish-release-assets` | The release-asset publication approval is current, accepted, and bound to this run. | artifact:production-release-approval | — |
-| `published-release-assets-to-verification` | `publish-release-assets` | `consumes` | `verify-published-release-assets` | The immutable GitHub release record exposes the exact approved versioned assets and download URLs. | artifact:published-release-assets | — |
+| `candidate-to-staged-release-assets` | `publish-release-candidate` | `consumes` | `stage-release-assets` | The exact approved candidate commit is the immutable source of the privately staged release assets. | artifact:release-candidate | — |
+| `release-package-to-staged-release-assets` | `build-release-package` | `consumes` | `stage-release-assets` | Private GitHub draft staging uploads only the exact typed package bytes and checksum manifest approved for this run. | artifact:release-package | — |
+| `onboarding-distribution-to-staged-release-assets` | `verify-onboarding-distribution` | `consumes` | `stage-release-assets` | The locally verified archive and checksum manifest are current and bound to the exact approved candidate. | artifact:onboarding-distribution-report | — |
+| `production-approval-to-staged-release-assets` | `approve-production-release` | `approves` | `stage-release-assets` | The owner approved the exact private draft stage, immutable tag, release target, archive and checksum manifest, candidate commit, and final publication scope. | artifact:production-release-approval | — |
+| `production-approval-artifact-to-staged-release-assets` | `approve-production-release` | `consumes` | `stage-release-assets` | The private release-asset staging approval is current, accepted, and bound to this run. | artifact:production-release-approval | — |
+| `staged-release-assets-to-verification` | `stage-release-assets` | `consumes` | `verify-staged-release-assets` | The private GitHub draft-release record exposes the exact approved versioned assets only through authenticated staging endpoints. | artifact:staged-release-assets | — |
 | `candidate-to-production-release` | `publish-release-candidate` | `consumes` | `release-production` | Upstream artifacts are current, accepted, and bound to this run. | artifact:release-candidate | — |
 | `canary-behavior-to-production-release` | `verify-canary-behavior` | `consumes` | `release-production` | Upstream artifacts are current, accepted, and bound to this run. | artifact:canary-behavior-report | — |
-| `published-release-assets-verification-to-production-release` | `verify-published-release-assets` | `consumes` | `release-production` | The immutable published package is downloadable, checksum-verified, installable, and runnable before production deployment begins. | artifact:published-release-assets-report | — |
+| `staged-release-assets-verification-to-production-release` | `verify-staged-release-assets` | `consumes` | `release-production` | The privately staged package is authenticated-downloadable, checksum-verified, installable, and runnable before production deployment begins. | artifact:staged-release-assets-report | — |
 | `production-approval-to-release` | `approve-production-release` | `approves` | `release-production` | The owner approved the exact production candidate, target, observation plan, and rollback. | artifact:production-release-approval | — |
 | `production-approval-artifact-to-release` | `approve-production-release` | `consumes` | `release-production` | Upstream artifacts are current, accepted, and bound to this run. | artifact:production-release-approval | — |
 | `production-release-to-observation` | `release-production` | `consumes` | `observe-production` | Upstream artifacts are current, accepted, and bound to this run. | artifact:production-release | — |
-| `published-release-assets-verification-to-ledger-proposal` | `verify-published-release-assets` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal derives release fields from the verified immutable asset record. | artifact:published-release-assets-report | — |
+| `staged-release-assets-to-publication` | `stage-release-assets` | `consumes` | `publish-release-assets` | The exact private draft release, asset IDs, candidate commit, and checksums remain unchanged after production observation. | artifact:staged-release-assets | — |
+| `staged-release-assets-verification-to-publication` | `verify-staged-release-assets` | `consumes` | `publish-release-assets` | Authenticated clean-install verification of the private draft assets passed without unresolved platform gaps. | artifact:staged-release-assets-report | — |
+| `production-release-to-release-assets` | `release-production` | `consumes` | `publish-release-assets` | The production deployment record remains bound to the exact staged candidate and rollback authority. | artifact:production-release | — |
+| `production-observation-to-release-assets` | `observe-production` | `consumes` | `publish-release-assets` | The full observation window passed with the candidate still deployed, no rollback, and no unresolved regression; rollback or failed observation blocks public release. | artifact:production-observation | — |
+| `production-approval-to-release-assets` | `approve-production-release` | `approves` | `publish-release-assets` | The owner approval explicitly authorizes final public tag and release publication only after successful production observation. | artifact:production-release-approval | — |
+| `production-approval-artifact-to-release-assets` | `approve-production-release` | `consumes` | `publish-release-assets` | The final publication approval is current and bound to the exact staged assets, production deployment, observation plan, tag, and release target. | artifact:production-release-approval | — |
+| `published-release-assets-to-ledger-proposal` | `publish-release-assets` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal derives release fields from the verified immutable asset record. | artifact:published-release-assets-report | — |
 | `production-release-to-ledger-proposal` | `release-production` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal binds the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-proposal` | `observe-production` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal is created only after successful production observation. | artifact:production-observation | — |
-| `published-release-assets-verification-to-ledger-approval` | `verify-published-release-assets` | `consumes` | `approve-release-ledger-update` | The release-ledger approval must bind the verified immutable asset record. | artifact:published-release-assets-report | — |
+| `published-release-assets-to-ledger-approval` | `publish-release-assets` | `consumes` | `approve-release-ledger-update` | The release-ledger approval must bind the verified immutable asset record. | artifact:published-release-assets-report | — |
 | `release-ledger-proposal-to-approval` | `prepare-release-ledger-update` | `consumes` | `approve-release-ledger-update` | The owner approves the exact precomputed single-file diff, expected base commit, immutable release fields, and proposal digest without authoring new content. | artifact:release-ledger-proposal | — |
 | `production-release-to-ledger-approval` | `release-production` | `consumes` | `approve-release-ledger-update` | The release-ledger approval must bind the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-approval` | `observe-production` | `consumes` | `approve-release-ledger-update` | The release ledger may be updated only after the approved production observation completes successfully. | artifact:production-observation | — |
 | `release-ledger-approval-to-update` | `approve-release-ledger-update` | `approves` | `update-release-ledger` | The owner approved the exact file, diff, release date, immutable release references, GitHub mutation scope, and rollback. | artifact:release-ledger-update-approval | — |
 | `release-ledger-approval-artifact-to-update` | `approve-release-ledger-update` | `consumes` | `update-release-ledger` | The repository mutation approval is current, accepted, and bound to the exact proposed ledger diff. | artifact:release-ledger-update-approval | — |
 | `release-ledger-proposal-to-update` | `prepare-release-ledger-update` | `consumes` | `update-release-ledger` | The repository updater applies only the exact proposal digest reviewed by the owner and recorded in the approval artifact. | artifact:release-ledger-proposal | — |
-| `published-release-assets-verification-to-ledger-update` | `verify-published-release-assets` | `consumes` | `update-release-ledger` | The repository ledger must match the verified immutable tag, release URL, candidate commit, and asset digests. | artifact:published-release-assets-report | — |
+| `published-release-assets-to-ledger-update` | `publish-release-assets` | `consumes` | `update-release-ledger` | The repository ledger must match the verified immutable tag, release URL, candidate commit, and asset digests. | artifact:published-release-assets-report | — |
 | `production-release-to-ledger-update` | `release-production` | `consumes` | `update-release-ledger` | The repository ledger must match the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-update` | `observe-production` | `consumes` | `update-release-ledger` | The repository ledger mutation proceeds only after verified production observation. | artifact:production-observation | — |
 | `candidate-to-closeout` | `publish-release-candidate` | `consumes` | `closeout-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:release-candidate | — |
@@ -465,8 +479,8 @@ flowchart TD
 | `verify-sim-one-tui-conflicts-verify-onboarding-distribution` | `verify-sim-one-tui` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the packaged CLI, TUI, and mutable isolated runtime root. | — | — |
 | `verify-cli-behavior-conflicts-verify-onboarding-distribution` | `verify-cli-behavior` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the packaged CLI and mutable isolated runtime root. | — | — |
 | `verify-http-integration-conflicts-verify-onboarding-distribution` | `verify-http-integration` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the built runtime and mutable isolated runtime configuration. | — | — |
-| `verify-onboarding-distribution-conflicts-verify-tui-e2e` | `verify-onboarding-distribution` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the built runtime, packaged CLI, and mutable isolated runtime root. | — | — |
-| `verify-onboarding-distribution-conflicts-verify-memory-smoke` | `verify-onboarding-distribution` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the built runtime and mutable isolated runtime configuration. | — | — |
+| `verify-tui-e2e-conflicts-verify-onboarding-distribution` | `verify-tui-e2e` | `conflicts` | `verify-onboarding-distribution` | The pre-merge TUI end-to-end probe completes before the post-merge onboarding probe because both require exclusive use of the built runtime, packaged CLI, and mutable isolated runtime root. | — | — |
+| `verify-memory-smoke-conflicts-verify-onboarding-distribution` | `verify-memory-smoke` | `conflicts` | `verify-onboarding-distribution` | The pre-merge memory smoke probe completes before the post-merge onboarding probe because both require exclusive use of the built runtime and mutable isolated runtime configuration. | — | — |
 | `verify-cli-behavior-conflicts-verify-tui-e2e` | `verify-cli-behavior` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
 | `verify-cli-behavior-conflicts-verify-memory-smoke` | `verify-cli-behavior` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
 | `verify-http-integration-conflicts-verify-tui-e2e` | `verify-http-integration` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
@@ -475,12 +489,12 @@ flowchart TD
 | `verify-sim-one-tui-conflicts-verify-memory-smoke` | `verify-sim-one-tui` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `verify-tui-e2e-conflicts-verify-memory-smoke` | `verify-tui-e2e` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `baseline-invalidates-change-contract` | `baseline-context` | `invalidates` | `define-change-contract` | A changed commit, instruction, or authorized request makes the former contract stale. | artifact:change-contract, artifact:affected-domain-map | — |
-| `baseline-invalidates-beta-release-contract` | `baseline-context` | `invalidates` | `approve-beta-release-contract` | A changed commit, release ledger, source plan, or authorized request makes the former beta contract approval stale. | artifact:beta-release-contract | — |
+| `baseline-invalidates-beta-release-contract` | `baseline-context` | `invalidates` | `approve-beta-release-contract` | A changed commit, release ledger, external source-plan path, byte size, SHA-256 digest, or authorized request makes the former beta contract approval stale. | artifact:beta-release-contract | — |
 | `change-contract-invalidates-beta-release-contract` | `define-change-contract` | `invalidates` | `approve-beta-release-contract` | A changed purpose, scope, non-goal, or affected-domain map makes the former beta contract approval stale. | artifact:beta-release-contract | — |
 | `change-contract-invalidates-architecture` | `define-change-contract` | `invalidates` | `decide-architecture` | A changed purpose, scope, non-goal, or acceptance criterion makes the former architecture decision stale. | artifact:architecture-decision | — |
 | `architecture-invalidates-plan` | `decide-architecture` | `invalidates` | `plan-implementation` | A changed architecture decision makes the former implementation plan stale. | artifact:implementation-plan | — |
 | `beta-release-contract-invalidates-architecture` | `approve-beta-release-contract` | `invalidates` | `decide-architecture` | A changed owner-approved beta contract invalidates architecture and planning assumptions for affected members. | artifact:architecture-decision | — |
-| `beta-release-contract-invalidates-plan` | `approve-beta-release-contract` | `invalidates` | `plan-implementation` | A changed owner-approved beta contract invalidates the implementation sequence and file-ownership map. | artifact:implementation-plan | — |
+| `beta-release-contract-invalidates-plan` | `approve-beta-release-contract` | `invalidates` | `plan-implementation` | A changed owner-approved beta contract or external source-plan digest manifest invalidates the implementation sequence and file-ownership map. | artifact:implementation-plan | — |
 | `plan-invalidates-implement-core-contracts` | `plan-implementation` | `invalidates` | `implement-core-contracts` | A changed implementation plan invalidates the affected domain output. | artifact:core-contracts-change | — |
 | `plan-invalidates-implement-agent-runtime` | `plan-implementation` | `invalidates` | `implement-agent-runtime` | A changed implementation plan invalidates the affected domain output. | artifact:agent-runtime-change | — |
 | `plan-invalidates-implement-memory-retrieval` | `plan-implementation` | `invalidates` | `implement-memory-retrieval` | A changed implementation plan invalidates the affected domain output. | artifact:memory-retrieval-change | — |
@@ -504,17 +518,18 @@ flowchart TD
 
 ### `baseline-context` — Bind Change To Current Project Context
 
-- Goal: Bind one authorized change request to the current SIM-ONE Alpha commit, applicable instructions, architecture contracts, affected domains, and external-effect boundaries.
-- Executor instructions: Read the authorized request, current Git state, AGENTS.md, architecture documents, manifests, and relevant history. Do not mark historical implementation as verified. Classify every workspace-related path as company-owned system instructions, the main-agent persona workspace, a lead-worker persona workspace, a worker-local internal-subagent workspace, or the Coding Worker runtime access root. Before any executable node is claimed, compare the active checkout containing development-graph.json with project.root. If they differ, record explicit operator authority for canonical-root execution or stop; never silently execute against another checkout.
-- Inputs: external:authorized-change-request, external:repository-checkout
+- Goal: Bind one authorized change request to the current SIM-ONE Alpha commit, applicable instructions, exact external beta source-plan digests, architecture contracts, affected domains, and external-effect boundaries.
+- Executor instructions: Read the authorized request, current Git state, AGENTS.md, architecture documents, manifests, relevant history, and every external beta source plan declared by external:release-source-plans. Record a canonical path, byte size, and SHA-256 digest for each exact plan before approval. Do not mark historical implementation as verified. Classify every workspace-related path as company-owned system instructions, the main-agent persona workspace, a lead-worker persona workspace, a worker-local internal-subagent workspace, or the Coding Worker runtime access root. Before any executable node is claimed, compare the active checkout containing development-graph.json with project.root. If they differ, record explicit operator authority for canonical-root execution or stop; never silently execute against another checkout.
+- Inputs: external:authorized-change-request, external:repository-checkout, external:release-source-plans
 - Resources: —
-- Permissions: read [AGENTS.md, docs/architecture/, package.json, pnpm-lock.yaml, .github/workflows/, current Git metadata, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/]; write [—]; external [—]; destructive `false`
+- Permissions: read [AGENTS.md, docs/architecture/, package.json, pnpm-lock.yaml, .github/workflows/, current Git metadata, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `45` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `none` — Produces evidence without mutating project or external state.
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
   - `context-bound-to-commit` (artifact): The context record names the exact Git commit, instruction files, requested outcome, explicit non-goals, affected domains, and external effects. Evidence: `runtime:evidence/baseline-context/context.json`
+  - `external-plan-digests-bound` (policy): The context record includes a canonical manifest of the exact external beta source-plan paths, byte sizes, and SHA-256 digests; a missing, added, or changed source plan invalidates the baseline and blocks reuse of its approval. Evidence: `runtime:evidence/baseline-context/external-plan-digests.json`
   - `boundaries-confirmed` (review): The context preserves Flue discovery paths; company-owned src/AGENTS.md authority; main-agent, lead-worker, and worker-local internal-subagent workspace ownership; Coding Worker runtime-root scope; orchestrator/worker ownership; protocol/tool/skill separation; and project naming rules. Evidence: `runtime:evidence/baseline-context/boundary-review.json`
   - `execution-root-authorized` (policy): The context record proves that the checkout containing development-graph.json matches the declared canonical project.root, or records explicit operator authority to execute against that canonical root; an unapproved worktree/CI mismatch blocks executable claims. Evidence: `runtime:evidence/baseline-context/execution-root.json`
 
@@ -582,8 +597,8 @@ flowchart TD
 
 ### `approve-beta-release-contract` — Approve 0.1.0 Beta Release Contract
 
-- Goal: Bind the fixed owner decision that every remaining release item and the SIM-ONE TUI work pane are required for 0.1.0 Beta before architecture and implementation planning.
-- Executor instructions: Review the stable release ledger and exact external source plans, then approve the fixed contract in which every listed ID is required for 0.1.0 Beta. Any scope reduction requires a separate owner decision and graph revision rather than a runtime deferral.
+- Goal: Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, and the exact external source-plan digest manifest are required for 0.1.0 Beta before architecture and implementation planning.
+- Executor instructions: Review the stable release ledger, the exact external source plans, and the canonical plan-digest manifest in artifact:baseline-context, then approve the fixed contract in which every listed ID and source-plan digest is required for 0.1.0 Beta. Any source-plan change, scope reduction, or digest mismatch requires a fresh baseline, separate owner decision, and graph revision rather than a runtime deferral.
 - Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map
 - Resources: —
 - Permissions: read [artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md]; write [—]; external [—]; destructive `false`
@@ -594,7 +609,7 @@ flowchart TD
 - Acceptance:
   - `all-release-items-required` (manual): The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch. Evidence: `runtime:evidence/approve-beta-release-contract/approval.json`
   - `release-ledger-covered` (review): The fixed contract covers REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-REL-001, and TUI-WORK-001 without silently dropping a ledger entry. Evidence: `runtime:evidence/approve-beta-release-contract/coverage.json`
-  - `external-plan-lineage-bound` (policy): The decision binds repository release IDs to the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity. Evidence: `runtime:evidence/approve-beta-release-contract/plan-lineage.json`
+  - `external-plan-lineage-bound` (policy): The decision binds repository release IDs to the exact path, byte size, and SHA-256 digest manifest for the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity. Evidence: `runtime:evidence/approve-beta-release-contract/plan-lineage.json`
 
 ### `decide-architecture` — Resolve Architecture And Ownership
 
@@ -614,8 +629,8 @@ flowchart TD
 
 ### `plan-implementation` — Plan Bounded Implementation
 
-- Goal: Produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback.
-- Executor instructions: Map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution.
+- Goal: After proving the external source plans still match the owner-approved digest manifest, produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback.
+- Executor instructions: Before mapping workstreams, recompute every external beta source-plan path, byte size, and SHA-256 digest and compare the canonical manifest with artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed plan. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution.
 - Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract
 - Resources: plans:<topic>
 - Permissions: read [artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts]; write [/opt/ai/plans/<topic>/plan.md]; external [—]; destructive `false`
@@ -630,7 +645,7 @@ flowchart TD
   - `file-ownership-disjoint` (policy): The file-ownership matrix assigns every planned source, documentation, generated-definition, and focused-test mutation to exactly one producer; shared files are serialized or deferred to integration. Evidence: `runtime:evidence/plan-implementation/file-ownership.json`
   - `workspace-layers-mapped` (review): The plan distinguishes src/AGENTS.md, src/workspace/, built-in lead-worker workspaces, Coding Worker internal-subagent workspaces, runtime-loaded user workers, and the Coding Worker runtime access root whenever those layers are affected. Evidence: `runtime:evidence/plan-implementation/workspace-layers.json`
   - `release-ledger-mapped` (review): The implementation plan maps every required release and planned-work ID to one producing graph member, one verification path, and one file owner with no deferred or optional branch. Evidence: `runtime:evidence/plan-implementation/release-ledger-map.json`
-  - `source-plan-lineage-preserved` (policy): The plan uses /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, and /opt/ai/plans/agent-tui/plan.md as detailed source inputs while using SIM-ONE TUI as product terminology. Evidence: `runtime:evidence/plan-implementation/source-plan-lineage.json`
+  - `source-plan-lineage-preserved` (policy): Before producing any implementation workstream, the planner recomputes the path, byte size, and SHA-256 digest of every external beta source plan and proves an exact match with the manifest bound into artifact:baseline-context and artifact:beta-release-contract; a mismatch stops planning and requires a fresh baseline and approval. Evidence: `runtime:evidence/plan-implementation/source-plan-lineage.json`
 
 ### `implement-core-contracts` — Implement Core Contracts And Architecture
 
@@ -1135,8 +1150,8 @@ flowchart TD
 
 ### `approve-production-release` — Approve Release Assets And Production
 
-- Goal: Let the project owner approve or reject the exact immutable release assets and production release using the candidate, canary behavior, rollback, and production observation plan.
-- Executor instructions: Review current canary evidence, the exact release-candidate archive and checksum manifest, GitHub release target, immutable version tag, and production risk. Approval is target-specific, graph-bound, candidate-bound, manifest-bound, and time-bound.
+- Goal: Let the project owner approve or reject the exact private asset stage, production release, and post-observation public release using the candidate, canary behavior, rollback, and production observation plan.
+- Executor instructions: Review current canary evidence, the exact release-candidate archive and checksum manifest, private GitHub draft target, immutable version tag, production risk, and the rule that public release is forbidden until successful production observation. Approval is target-specific, graph-bound, candidate-bound, manifest-bound, staged-release-bound, and time-bound.
 - Inputs: artifact:release-candidate, artifact:canary-behavior-report, artifact:onboarding-distribution-report, artifact:release-package
 - Resources: —
 - Permissions: read [artifact:release-candidate, artifact:canary-behavior-report, artifact:onboarding-distribution-report, artifact:release-package, production release contract]; write [—]; external [—]; destructive `false`
@@ -1145,52 +1160,52 @@ flowchart TD
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `production-authority-recorded` (manual): The owner explicitly approves or rejects the exact candidate, production target, immutable version tag, release-asset manifest and checksums, GitHub release publication, rollback, and production observation plan. Evidence: `runtime:approval/approve-production-release`
+  - `production-authority-recorded` (manual): The owner explicitly approves or rejects the exact candidate, production target, private draft staging scope, immutable version tag, release-asset manifest and checksums, post-observation public GitHub release publication, rollback, and production observation plan. Evidence: `runtime:approval/approve-production-release`
 
-### `publish-release-assets` — Publish Approved Release Assets
+### `stage-release-assets` — Stage Approved Release Assets Privately
 
-- Goal: Publish the exact approved SIM-ONE release archive, installer entrypoint, and checksums under an immutable version tag and durable GitHub release record.
-- Executor instructions: Use only the Git and GitHub release adapter authorized by artifact:production-release-approval. Refuse an existing mismatched tag or release. Push the approved immutable version tag, create the approved GitHub release, upload the exact archive, sim-one.sh, and checksum manifest, then read the resulting GitHub state and record URLs, sizes, and digests.
+- Goal: Stage the exact approved SIM-ONE release archive, installer entrypoint, and checksums in a private GitHub draft that cannot be discovered or downloaded publicly before production succeeds.
+- Executor instructions: Use only the GitHub release adapter authorized by artifact:production-release-approval. Refuse any existing public or mismatched version tag or release. Create a new draft GitHub release without pushing the public tag, upload the exact archive, sim-one.sh, and checksum manifest, then read the draft through authenticated APIs and prove anonymous discovery and download are unavailable. Record the draft release ID, proposed tag, target commit, asset IDs, names, sizes, and digests.
 - Inputs: artifact:release-candidate, artifact:onboarding-distribution-report, artifact:production-release-approval, artifact:release-package
 - Resources: external:github-repository
-- Permissions: read [artifact:release-candidate, artifact:onboarding-distribution-report, artifact:production-release-approval, artifact:release-package, GitHub repository, tag, and release metadata]; write [approved immutable version tag, approved GitHub release, approved GitHub release assets]; external [Git remote immutable version-tag push, GitHub Releases API release and asset write]; destructive `false`
+- Permissions: read [artifact:release-candidate, artifact:onboarding-distribution-report, artifact:production-release-approval, artifact:release-package, GitHub repository, tag, draft release, and asset metadata]; write [approved private GitHub draft release, approved private GitHub draft release assets]; external [GitHub Releases API private draft release and asset write]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Publishes an immutable version tag and externally downloadable GitHub release assets.
-- Rollback: Mark a defective release as withdrawn and publish a corrected successor under new approval; never rewrite the immutable version tag or erase publication evidence.
+- Side effects: `reversible` — Creates a private draft release and private staged assets without creating a public tag or release.
+- Rollback: Delete the private draft release and its staged assets by recorded draft and asset IDs while preserving the staging evidence; no public tag or release exists to withdraw.
 - Approval required: `true`
 - Acceptance:
-  - `release-assets-bound` (policy): The immutable version tag resolves to the exact approved candidate commit and the GitHub release record binds that tag, commit, approval, release URL, archive names, byte sizes, and SHA-256 digests. Evidence: `runtime:evidence/publish-release-assets/release.json`
-  - `rel-pkg-001-assets-published` (artifact): REL-PKG-001 publication: the approved GitHub release exposes the versioned SIM-ONE archive, sim-one.sh entrypoint, and checksum manifest without rewriting an existing version tag or release. Evidence: `runtime:evidence/publish-release-assets/assets.json`
+  - `staged-release-assets-bound` (policy): The GitHub release record remains draft and non-public, no public version tag is pushed, and the private record binds the proposed tag, exact candidate commit, approval, draft asset IDs, archive names, byte sizes, and SHA-256 digests. Evidence: `runtime:evidence/stage-release-assets/draft-release.json`
+  - `release-assets-staged-privately` (artifact): The approved private draft contains the exact versioned SIM-ONE archive, sim-one.sh entrypoint, and checksum manifest, exposes them only through authenticated staging APIs, and proves anonymous users cannot download or discover them. Evidence: `runtime:evidence/stage-release-assets/private-assets.json`
 
-### `verify-published-release-assets` — Verify Published Release Assets
+### `verify-staged-release-assets` — Verify Private Staged Release Assets
 
-- Goal: Prove the approved versioned SIM-ONE release is actually downloadable, integrity-verifiable, installable, and runnable without a source checkout.
-- Executor instructions: Download only from the immutable release URLs recorded by artifact:published-release-assets. Verify the tag and candidate commit, reconstruct and check the published checksum chain before extraction, execute the installer and packaged product with temporary HOME and runtime roots from an arbitrary working directory, and preserve output-level evidence. Do not accept local build artifacts as publication proof.
-- Inputs: artifact:published-release-assets
-- Resources: external:github-release-assets, isolated-packaged-install-probe
-- Permissions: read [artifact:published-release-assets, 0.1.0 Beta packaging and installation contract]; write [/tmp SIM-ONE published-release download root, /tmp SIM-ONE published-release install home, /tmp SIM-ONE published-release runtime root]; external [approved immutable GitHub release asset download endpoints]; destructive `false`
+- Goal: Prove the approved private draft assets are inaccessible anonymously but authenticated-downloadable, integrity-verifiable, installable, and runnable without a source checkout.
+- Executor instructions: Download only through the authenticated draft-release asset endpoints recorded by artifact:staged-release-assets. Verify draft state, proposed tag, target candidate commit, asset IDs, and anonymous inaccessibility; reconstruct and check the staged checksum chain before extraction; execute the installer and packaged product with temporary HOME and runtime roots from an arbitrary working directory; and preserve output-level evidence. Do not accept local build artifacts or public release state as staging proof.
+- Inputs: artifact:staged-release-assets
+- Resources: external:github-draft-release-assets, isolated-packaged-install-probe
+- Permissions: read [artifact:staged-release-assets, 0.1.0 Beta packaging and installation contract]; write [/tmp SIM-ONE staged-release download root, /tmp SIM-ONE staged-release install home, /tmp SIM-ONE staged-release runtime root]; external [approved authenticated GitHub draft-release asset API endpoints, anonymous GitHub release and tag read probes]; destructive `false`
 - Execution: max `2` attempt(s), `45` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Downloads published release assets and creates only isolated temporary installation and runtime state.
-- Rollback: Remove the isolated download, installation, and runtime roots while preserving the publication verification evidence.
+- Side effects: `reversible` — Downloads private staged release assets through authenticated APIs and creates only isolated temporary installation and runtime state.
+- Rollback: Remove the isolated download, installation, and runtime roots while preserving the private-stage verification evidence.
 - Approval required: `false`
 - Acceptance:
-  - `rel-pkg-001-publication-verified` (probe): REL-PKG-001: the immutable GitHub release and version tag expose the documented archive, sim-one.sh entrypoint, and checksum manifest for the exact approved candidate. Evidence: `runtime:evidence/verify-published-release-assets/rel-pkg-001.json`
-  - `rel-pkg-002-install-verified` (test): REL-PKG-002: an isolated clean-home probe downloads the published archive and checksum manifest from their recorded release URLs, verifies checksums before extraction, rejects a tampered copy, installs without a source checkout, and launches the packaged product from an arbitrary working directory. Evidence: `runtime:evidence/verify-published-release-assets/rel-pkg-002.json`
-  - `published-assets-evidence-honest` (policy): The report records requested and final URLs, HTTP status, downloaded byte counts, tag and commit identity, archive and binary digests, platform coverage, temporary runtime roots, launch output, and every unproved platform behavior that must block production release. Evidence: `runtime:evidence/verify-published-release-assets/evidence-scope.json`
+  - `private-release-stage-verified` (probe): The authenticated GitHub draft-release API exposes the documented archive, sim-one.sh entrypoint, and checksum manifest for the exact approved candidate while anonymous access and public tag lookup remain unavailable. Evidence: `runtime:evidence/verify-staged-release-assets/private-stage.json`
+  - `rel-pkg-002-install-verified` (test): REL-PKG-002: an isolated clean-home probe downloads the private draft archive and checksum manifest through authenticated asset APIs, verifies checksums before extraction, rejects a tampered copy, installs without a source checkout, and launches the packaged product from an arbitrary working directory. Evidence: `runtime:evidence/verify-staged-release-assets/rel-pkg-002.json`
+  - `staged-assets-evidence-honest` (policy): The report records authenticated API endpoints, anonymous-access probes, HTTP status, downloaded byte counts, proposed tag and commit identity, draft and asset IDs, archive and binary digests, platform coverage, temporary runtime roots, launch output, and every unproved platform behavior that must block production release. Evidence: `runtime:evidence/verify-staged-release-assets/evidence-scope.json`
 
 ### `release-production` — Release Approved Candidate
 
 - Goal: Release the exact approved candidate to the declared production target with idempotency fencing and recorded rollback.
-- Executor instructions: Use only the approved production adapter after published release-asset verification passes. Record candidate and release-asset digests, deployment ID, previous release, idempotency key, and concrete rollback. Do not mutate the repository release ledger.
-- Inputs: artifact:release-candidate, artifact:canary-behavior-report, artifact:production-release-approval, artifact:published-release-assets-report
+- Executor instructions: Use only the approved production adapter after private staged release-asset verification passes. Record candidate and staged-asset digests, deployment ID, previous release, idempotency key, and concrete rollback. Do not publish the GitHub release or mutate the repository release ledger.
+- Inputs: artifact:release-candidate, artifact:canary-behavior-report, artifact:production-release-approval, artifact:staged-release-assets-report
 - Resources: external:production-environment
-- Permissions: read [approved candidate and production credentials, artifact:production-release-approval, artifact:published-release-assets-report]; write [approved production environment]; external [production deployment API]; destructive `false`
+- Permissions: read [approved candidate and production credentials, artifact:production-release-approval, artifact:staged-release-assets-report]; write [approved production environment]; external [production deployment API]; destructive `false`
 - Execution: max `2` attempt(s), `90` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Changes the approved production environment to the candidate release.
 - Rollback: Use the recorded production adapter and previous-release identifier to restore the prior production release.
 - Approval required: `true`
 - Acceptance:
-  - `production-release-bound` (policy): The release record binds the exact candidate, verified immutable release assets, target, approval, deployment ID, prior release, idempotency key, and rollback. Evidence: `runtime:evidence/release-production/release.json`
+  - `production-release-bound` (policy): The release record binds the exact candidate, verified private staged assets, target, approval, deployment ID, prior release, idempotency key, and rollback without making the release assets public. Evidence: `runtime:evidence/release-production/release.json`
 
 ### `observe-production` — Observe Production Outcomes
 
@@ -1207,6 +1222,22 @@ flowchart TD
   - `production-behavior-proved` (probe): Changed behavior and required side effects are correct in production; process, port, deployment-job, or submission status alone is rejected. Evidence: `runtime:evidence/observe-production/behavior.json`
   - `production-window-complete` (policy): The approved observation window completes without unresolved regression, durability, security, or telemetry evidence. Evidence: `runtime:evidence/observe-production/window.json`
   - `production-rollback-accounted` (policy): The observation proves either that no rollback condition occurred or that the exact pre-approved recorded rollback was invoked, its deployment result was recorded, and the restored production behavior was verified before repair begins. Evidence: `runtime:evidence/observe-production/rollback.json`
+
+### `publish-release-assets` — Publish Verified Assets After Production
+
+- Goal: After successful production observation, expose the exact privately verified assets under the approved immutable tag and prove the resulting public GitHub release without changing staged bytes.
+- Executor instructions: Use only the Git and GitHub release adapter authorized by artifact:production-release-approval. Re-read artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, and artifact:production-observation. Refuse publication if the candidate was rolled back, observation failed, the draft or any asset changed, the proposed tag exists with a mismatched commit, or approval drifted. Push the approved immutable version tag, publish the exact existing draft without replacing asset bytes, then perform unauthenticated tag, release, and asset readback; download each public asset and prove its digest matches the staged record.
+- Inputs: artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, artifact:production-observation, artifact:production-release-approval
+- Resources: external:github-repository, external:github-release-assets
+- Permissions: read [artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, artifact:production-observation, artifact:production-release-approval, GitHub repository, tag, draft release, public release, and asset metadata]; write [approved immutable version tag, approved public GitHub release state]; external [Git remote immutable version-tag push, GitHub Releases API approved draft publication, anonymous GitHub release asset download endpoints]; destructive `false`
+- Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `reversible` — Makes the approved immutable tag and previously private release assets publicly discoverable and downloadable after successful production observation.
+- Rollback: Mark a defective public release as withdrawn and publish a corrected successor under separate approval; never rewrite the immutable version tag, replace published asset bytes, or erase publication evidence.
+- Approval required: `true`
+- Acceptance:
+  - `production-success-gates-publication` (policy): Public release is blocked unless the complete production observation proves the exact candidate remains deployed, the observation window passed, no rollback occurred, and no unresolved regression, durability, security, or telemetry condition remains. Evidence: `runtime:evidence/publish-release-assets/production-gate.json`
+  - `release-assets-published-from-stage` (artifact): The immutable version tag resolves to the exact staged candidate commit, the previously verified draft is published without changing any asset bytes or IDs, and the public GitHub release record binds tag, commit, approval, release URL, archive names, byte sizes, and SHA-256 digests. Evidence: `runtime:evidence/publish-release-assets/release.json`
+  - `rel-pkg-001-publication-verified` (probe): REL-PKG-001 publication: anonymous GitHub tag, release, archive, sim-one.sh, and checksum-manifest requests succeed for the exact approved candidate, and downloaded byte digests exactly match the privately staged verification record. Evidence: `runtime:evidence/publish-release-assets/public-readback.json`
 
 ### `prepare-release-ledger-update` — Prepare Release Ledger Update
 
@@ -1272,11 +1303,11 @@ flowchart TD
 
 - Each runtime run governs one explicitly authorized change against a named Git commit.
 - The current commit is project context, not proof that historical implementation is verified.
-- The project owner supplies target-specific authority for GitHub, release-asset, release-ledger, canary, and production mutations at the declared gates.
+- The project owner supplies target-specific authority for GitHub, private release-asset staging, post-observation public release, release-ledger, canary, and production mutations at the declared gates.
 - Canary and production deployment commands remain adapter bindings until the project documents an approved deployment mechanism.
 - Full live-model TUI probes require valid provider credentials supplied through the runtime environment, never stored in this graph.
 - Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.
-- docs/getting-started/pre-release-status.md is the repository-owned stable release ledger; /opt/ai/plans/sim-one-ratatui-tui/, /opt/ai/plans/sim-one-build-structure/, and /opt/ai/plans/agent-tui/ remain detailed external source plans rather than repository implementation plans.
+- docs/getting-started/pre-release-status.md is the repository-owned stable release ledger; /opt/ai/plans/sim-one-ratatui-tui/, /opt/ai/plans/sim-one-build-structure/, and /opt/ai/plans/agent-tui/ remain detailed external source plans whose exact paths, byte sizes, and SHA-256 digests are bound into the baseline and beta approval rather than copied into the repository.
 - Every stable release and planned-work ID in docs/getting-started/pre-release-status.md is required for 0.1.0 Beta; changing that fixed scope requires a new explicit owner decision and graph revision.
 - The checked-in definition is deliberately bound to the canonical host checkout /opt/ai/sim-one-alpha under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.
 - The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/SIM-ONE TUI session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.
@@ -1287,12 +1318,12 @@ flowchart TD
 
 - Architecture documents or Flue behavior may drift from the context commit; a changed instruction or dependency invalidates downstream evidence.
 - A parallel domain may discover a shared contract overlap; the integration node must serialize the repair and preserve unrelated verified branches.
-- External GitHub or deployment actions can have uncertain outcomes; adapters must use idempotency fencing and verify resulting state.
+- External GitHub or deployment actions can have uncertain outcomes; adapters must use idempotency fencing, keep release assets private until production observation succeeds, and verify resulting state.
 - The full verification matrix is intentionally expensive; omitting a required check requires explicit evidence and human review.
 - The graph coordinator is not an operating-system sandbox or distributed scheduler; untrusted commands require an approved isolation layer.
 - The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.
 - Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.
-- External source plans contain historical implementation and package names; execution must reconcile them against the repository release ledger, current architecture, and SIM-ONE TUI product terminology before assigning files or behavior.
+- External source plans contain historical implementation and package names and can change outside repository history; execution must verify their owner-approved digest manifest, then reconcile them against the repository release ledger, current architecture, and SIM-ONE TUI product terminology before assigning files or behavior.
 - Current gateway and packaged SIM-ONE TUI probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.
 - Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, scheduled trusted-event context or output delivery, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, trusted-context handoff, persisted result fields, connector delivery path, and configured test command while labeling unimplemented release contracts explicitly.
 
