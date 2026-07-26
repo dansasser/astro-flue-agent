@@ -33,6 +33,7 @@ runnable.
 | Coding Worker file-edit approval enforcement | Workspace and sandbox boundaries exist; current write/patch tools do not call the approval service |
 | Live Coding Worker checkpoint progress over active connectors | Event types and standalone reporter exist; the live Flue worker profile does not attach or forward them |
 | Scheduled trusted-event context handoff | Scheduled turns reach the orchestrator, but dispatch does not persist or pass the event id required by protocol and scoped-memory tools |
+| Scheduled result persistence and user delivery | The manager records terminal status and errors but does not persist result content or deliver it through a connector |
 | Reliable capability source version pinning | `--version` is stored, but current materialization shallow-clones the remote default branch and cannot reliably select another branch, tag, or commit |
 | In-place MCP connection updates | `mcp update` changes only `updated_at`; connection, name, and description changes require remove and re-add |
 | Complete release protocol policy records | Base records exist; release policy coverage remains incomplete |

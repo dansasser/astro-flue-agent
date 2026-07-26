@@ -81,12 +81,14 @@ Env overrides: `GOROMBO_SCHEDULES_MAX_CONCURRENT_RUNS`, `GOROMBO_SCHEDULES_KEEP_
 `src/engine/schedules/schedule-telemetry.ts` emits structured `schedule.*`
 progress events (fired, dispatched, completed, error, skipped, created, paused,
 resumed, updated, deleted, shutdown) to a bounded in-memory
-`ScheduleProgressReporter`. The scheduled turn's actual output reaches the user
-through the orchestrator response. Schedule lifecycle events are currently
-typed and collected in an internal in-memory reporter. No production admin or
-telemetry route exposes that reporter; schedule API routes expose definitions
-and durable run history instead. Lifecycle events are not durably persisted or
-pushed independently through connectors.
+`ScheduleProgressReporter`. The manager observes the scheduled turn's terminal
+status but does not store its result content or deliver that result through a
+connector. Scheduled result persistence and user delivery remain release
+gates. Schedule lifecycle events are currently typed and collected in an
+internal in-memory reporter. No production admin or telemetry route exposes
+that reporter; schedule API routes expose definitions and durable run history
+instead. Lifecycle events are not durably persisted or pushed independently
+through connectors.
 
 ## Files
 

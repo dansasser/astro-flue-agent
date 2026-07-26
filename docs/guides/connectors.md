@@ -89,7 +89,10 @@ runtime's capability boundaries and run observation. Current schedule dispatch
 does not persist or pass a trusted normalized-event id, so `load_protocols` and
 scoped memory retrieval are unavailable during scheduled turns. Trusted event
 handoff for scheduled protocol and memory access remains a release gate.
-Schedule definitions and run history are stored in SQLite.
+Schedule definitions and run history are stored in SQLite. Current run history
+records terminal status and errors, not generated result content, and scheduled
+results are not delivered through a connector. Result persistence and user
+delivery remain release gates.
 
 ## Connector Security
 

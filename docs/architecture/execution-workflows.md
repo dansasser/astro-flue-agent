@@ -132,9 +132,13 @@ operations. Schedule definitions and run history are stored in SQLite.
 
 A scheduled prompt enters the agent runtime through admission dispatch and is
 observed through structured progress. Current dispatch does not persist or pass
-a trusted normalized-event id, so scheduled turns cannot call
-`load_protocols` or scoped memory retrieval successfully. Trusted event
-handoff for those controls remains a release gate.
+a trusted normalized-event id, so `load_protocols` and scoped memory retrieval
+are unavailable during scheduled turns. Trusted event handoff for those
+controls remains a release gate.
+
+The schedule manager observes terminal status but does not retain the
+orchestrator's result content or deliver it through a connector. Scheduled
+result persistence and user delivery remain release gates.
 
 ## Runtime Capability Lifecycle
 
