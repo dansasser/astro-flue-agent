@@ -579,8 +579,9 @@ The complete documentation set is organized in the [documentation hub](docs/READ
 
 Explore [SIM-ONE Alpha on DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha)
 for generated, source-linked architecture explanations and diagrams, or use
-Ask Devin there to ask repository-grounded questions. The versioned
-documentation in this repository remains the product and architecture contract.
+DeepWiki's Ask Devin feature to ask repository-grounded questions. The
+versioned documentation in this repository remains the product and architecture
+contract.
 
 - [Installation](docs/getting-started/installation.md) and [onboarding](docs/getting-started/onboarding.md)
 - [Terminal and session guide](docs/guides/terminal-and-sessions.md)
