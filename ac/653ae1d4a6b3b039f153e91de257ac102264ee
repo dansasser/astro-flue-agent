@@ -1,0 +1,21 @@
+.github/ISSUE_TEMPLATE/bug-report.yml
+  s_1f6220b46220b2::t_bdf2d48d99398c 38-40,87,89-92,94
+.github/ISSUE_TEMPLATE/feature-request.yml
+  s_1f6220b46220b2::t_bdf2d48d99398c 45,47-48,75,77-78,106,108-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "ac653ae1d4a6b3b039f153e91de257ac102264ee",
+  "prompts": {},
+  "sessions": {
+    "s_1f6220b46220b2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9efb-5919-7750-8db3-04b1ec42fc08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
