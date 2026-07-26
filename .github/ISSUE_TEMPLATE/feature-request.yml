@@ -1,0 +1,109 @@
+name: Feature request
+description: Propose a focused improvement to SIM-ONE Alpha
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing an improvement to SIM-ONE Alpha.
+
+        Describe the user problem and desired outcome before the implementation. Questions and setup help belong in the [support channels](https://github.com/dansasser/sim-one-alpha/blob/main/SUPPORT.md), and vulnerabilities must follow the [security policy](https://github.com/dansasser/sim-one-alpha/security/policy).
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched open and closed issues for an existing request.
+          required: true
+        - label: This request covers one focused capability or outcome.
+          required: true
+        - label: I removed credentials, private data, and other sensitive information.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or unmet need
+      description: Explain the limitation or user problem. Do not start with the implementation.
+      placeholder: Describe what the user cannot accomplish or what currently creates unnecessary risk or effort.
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-workflow
+    attributes:
+      label: User and workflow
+      description: Identify who needs this and describe the concrete workflow where it matters.
+      placeholder: "As a ..., when I ..., I need ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature description and desired outcome
+      description: Describe the proposed capability and the observable product behavior that would solve the problem.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected area
+      options:
+        - Installation or onboarding
+        - sim-one CLI
+        - SIM-ONE terminal UI
+        - Gateway or HTTP API
+        - Telegram or another connector
+        - Authentication, permissions, or approvals
+        - Protocol system
+        - Tools, skills, workers, or registries
+        - Memory, RAG, or document indexing
+        - Scheduling
+        - Build, packaging, or dependencies
+        - Documentation
+        - New integration or connector
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution-alternatives
+    attributes:
+      label: Proposed solution and alternatives
+      description: Describe an implementation approach, current workaround, or alternative if you have one. The maintainers may choose a different design.
+
+  - type: dropdown
+    id: governance-impact
+    attributes:
+      label: Governance, security, or data impact
+      description: Select the closest expected impact.
+      options:
+        - No protocol, permission, approval, security, or data impact expected
+        - Changes protocol or policy enforcement
+        - Changes permissions, approvals, authentication, or trust boundaries
+        - Changes data storage, memory, privacy, or retention
+        - Unsure
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: List the observable conditions that would make this request complete.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility-context
+    attributes:
+      label: Compatibility considerations and additional context
+      description: Note expected effects on configuration, persisted data, connectors, capabilities, protocols, sessions, or existing workflows. Add mockups, examples, or references that help explain the request.
