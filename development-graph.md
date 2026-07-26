@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: c8dfec0a0aed3e8ab0abee3a816691e25537e20307a53496592d8b1bfe33b4ea -->
+<!-- development-graph-sha256: 3837efab28bf669b61faf99067c645c19b1868c5f16fc00b3ddd60b0e8c34285 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,7 +9,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `33` |
+| Graph version | `34` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
@@ -18,7 +18,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `c8dfec0a0aed3e8ab0abee3a816691e25537e20307a53496592d8b1bfe33b4ea` |
+| Canonical checksum | `3837efab28bf669b61faf99067c645c19b1868c5f16fc00b3ddd60b0e8c34285` |
 
 ## Flow
 
@@ -92,6 +92,16 @@ flowchart TD
     n_approve_beta_release_contract -- "consumes" --> n_implement_sim_one_onboarding_distribution
     n_approve_beta_release_contract -- "approves" --> n_implement_sim_one_onboarding_distribution
     n_approve_beta_release_contract -- "consumes" --> n_implement_product_delivery
+    n_approve_beta_release_contract -- "consumes" --> n_implement_core_contracts
+    n_approve_beta_release_contract -- "consumes" --> n_implement_memory_retrieval
+    n_approve_beta_release_contract -- "consumes" --> n_integrate_and_repair
+    n_approve_beta_release_contract -- "approves" --> n_implement_core_contracts
+    n_approve_beta_release_contract -- "approves" --> n_implement_agent_runtime
+    n_approve_beta_release_contract -- "approves" --> n_implement_memory_retrieval
+    n_approve_beta_release_contract -- "approves" --> n_implement_capabilities_security
+    n_approve_beta_release_contract -- "approves" --> n_implement_ingress_operations
+    n_approve_beta_release_contract -- "approves" --> n_implement_product_delivery
+    n_approve_beta_release_contract -- "approves" --> n_integrate_and_repair
     n_plan_implementation -- "consumes" --> n_implement_core_contracts
     n_implement_core_contracts -- "consumes" --> n_integrate_and_repair
     n_plan_implementation -- "consumes" --> n_implement_agent_runtime
@@ -278,7 +288,7 @@ flowchart TD
 | `fetch-embedding-model` | `operation` | `planned` | deterministic: SIM-ONE embedding model fetcher | Materialize the pinned local ONNX embedding model and tokenizer assets required by embedding and RAG verification. | artifact:embedding-model-assets |
 | `build-wasm-memory` | `operation` | `planned` | deterministic: SIM-ONE wasm-pack builder | Compile the Rust structured-memory engine to the Node-compatible WASM artifact required by real memory execution. | artifact:memory-wasm |
 | `define-change-contract` | `work` | `planned` | agent: SIM-ONE planning adapter | Turn the authorized request into a project-specific purpose, scope, non-goals, evidence plan, permission boundary, rollback, and user-visible progress contract. | artifact:change-contract, artifact:affected-domain-map |
-| `approve-beta-release-contract` | `human_gate` | `planned` | human: SIM-ONE project owner | Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, and the exact external source-plan digest manifest are required for 0.1.0 Beta before architecture and implementation planning. | artifact:beta-release-contract |
+| `approve-beta-release-contract` | `human_gate` | `planned` | human: SIM-ONE project owner | Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, the exact external source-plan digest manifest, and fail-closed approval of every Coding Worker repository mutation are required for 0.1.0 Beta before architecture and implementation planning. | artifact:beta-release-contract |
 | `decide-architecture` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Choose the smallest design that satisfies the change contract while preserving SIM-ONE Alpha domain ownership and Flue architecture. | artifact:architecture-decision |
 | `plan-implementation` | `work` | `planned` | agent: SIM-ONE implementation planning adapter | After proving the external source plans still match the owner-approved digest manifest, produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback. | artifact:implementation-plan |
 | `implement-core-contracts` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized changes to shared types, Valibot schemas, protocols, model cards, configuration, architecture contracts, and Flue-discovered entrypoints. | artifact:core-contracts-change |
@@ -346,6 +356,16 @@ flowchart TD
 | `beta-release-contract-to-implement-sim-one-onboarding-distribution` | `approve-beta-release-contract` | `consumes` | `implement-sim-one-onboarding-distribution` | The owner-approved packaging, onboarding, and lifecycle release requirements are current. | artifact:beta-release-contract | — |
 | `beta-release-contract-approves-sim-one-onboarding-distribution` | `approve-beta-release-contract` | `approves` | `implement-sim-one-onboarding-distribution` | The owner authorizes entering the bounded onboarding and distribution mutation scope; every individual repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-product-delivery` | `approve-beta-release-contract` | `consumes` | `implement-product-delivery` | The owner-approved product-surface and release-document requirements are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-core-contracts` | `approve-beta-release-contract` | `consumes` | `implement-core-contracts` | The fixed owner-approved beta contract and repository-mutation policy are current for the core-contracts workstream. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-memory-retrieval` | `approve-beta-release-contract` | `consumes` | `implement-memory-retrieval` | The fixed owner-approved beta contract and repository-mutation policy are current for the memory-retrieval workstream. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-integration-and-repair` | `approve-beta-release-contract` | `consumes` | `integrate-and-repair` | The fixed owner-approved beta contract and repository-mutation policy are current for integration and repair. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-core-contracts` | `approve-beta-release-contract` | `approves` | `implement-core-contracts` | The owner authorizes entering the bounded core-contracts mutation scope; every repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-agent-runtime` | `approve-beta-release-contract` | `approves` | `implement-agent-runtime` | The owner authorizes entering the bounded agent-runtime mutation scope; every repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-memory-retrieval` | `approve-beta-release-contract` | `approves` | `implement-memory-retrieval` | The owner authorizes entering the bounded memory-retrieval mutation scope; every repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-capabilities-security` | `approve-beta-release-contract` | `approves` | `implement-capabilities-security` | The owner authorizes entering the bounded capabilities/security mutation scope, including its first approval-enforcement bootstrap write; every repository write remains fail-closed on a current approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-ingress-operations` | `approve-beta-release-contract` | `approves` | `implement-ingress-operations` | The owner authorizes entering the bounded ingress/operations mutation scope; every repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-product-delivery` | `approve-beta-release-contract` | `approves` | `implement-product-delivery` | The owner authorizes entering the serialized product-delivery mutation scope; every repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-integration-and-repair` | `approve-beta-release-contract` | `approves` | `integrate-and-repair` | The owner authorizes bounded integration and repair; every repository write remains fail-closed on a current Coding Worker approval-service decision tied to the failed evidence and exact mutation. | artifact:beta-release-contract | — |
 | `plan-to-implement-core-contracts` | `plan-implementation` | `consumes` | `implement-core-contracts` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `implement-core-contracts-to-integration` | `implement-core-contracts` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:core-contracts-change | — |
 | `plan-to-implement-agent-runtime` | `plan-implementation` | `consumes` | `implement-agent-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
@@ -605,8 +625,8 @@ flowchart TD
 
 ### `approve-beta-release-contract` — Approve 0.1.0 Beta Release Contract
 
-- Goal: Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, and the exact external source-plan digest manifest are required for 0.1.0 Beta before architecture and implementation planning.
-- Executor instructions: Review the stable release ledger, the exact external source plans, the canonical plan-digest manifest in artifact:baseline-context, and the bounded mutation scopes for the TUI work-pane and onboarding/distribution workstreams. Approve the fixed contract only with fail-closed per-write Coding Worker approval-service enforcement. Every listed ID and source-plan digest is required for 0.1.0 Beta. Any source-plan change, scope reduction, digest mismatch, or approval-service bypass requires a fresh owner decision and graph revision rather than a runtime deferral.
+- Goal: Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, the exact external source-plan digest manifest, and fail-closed approval of every Coding Worker repository mutation are required for 0.1.0 Beta before architecture and implementation planning.
+- Executor instructions: Review the stable release ledger, the exact external source plans, the canonical plan-digest manifest in artifact:baseline-context, and every repository-mutating Coding Worker implementation and integration scope. Approve the fixed contract only with fail-closed per-write approval-service enforcement, including the first write that implements or changes approval enforcement itself. Every listed ID and source-plan digest is required for 0.1.0 Beta. Any source-plan change, scope reduction, digest mismatch, or approval-service bypass requires a fresh owner decision and graph revision rather than a runtime deferral.
 - Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map
 - Resources: —
 - Permissions: read [artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md]; write [—]; external [—]; destructive `false`
@@ -618,7 +638,7 @@ flowchart TD
   - `all-release-items-required` (manual): The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch. Evidence: `runtime:evidence/approve-beta-release-contract/approval.json`
   - `release-ledger-covered` (review): The fixed contract covers REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-REL-001, and TUI-WORK-001 without silently dropping a ledger entry. Evidence: `runtime:evidence/approve-beta-release-contract/coverage.json`
   - `external-plan-lineage-bound` (policy): The decision binds repository release IDs to the exact path, byte size, and SHA-256 digest manifest for the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity. Evidence: `runtime:evidence/approve-beta-release-contract/plan-lineage.json`
-  - `new-workstream-mutation-policy-approved` (manual): The owner authorizes the bounded TUI work-pane and onboarding/distribution workstreams only under the project approval service; each repository write must produce a current path- and mutation-bound decision and fail closed when approval is denied, missing, expired, or mismatched. Evidence: `runtime:evidence/approve-beta-release-contract/workstream-mutation-policy.json`
+  - `implementation-mutation-policy-approved` (manual): The owner authorizes every repository-mutating Coding Worker implementation and integration lane only under the project approval service, including the capabilities/security lane's first bootstrap write; each repository write must produce a current path- and mutation-bound decision and fail closed when approval is denied, missing, expired, or mismatched. Evidence: `runtime:evidence/approve-beta-release-contract/workstream-mutation-policy.json`
 
 ### `decide-architecture` — Resolve Architecture And Ownership
 
@@ -659,32 +679,34 @@ flowchart TD
 ### `implement-core-contracts` — Implement Core Contracts And Architecture
 
 - Goal: Implement authorized changes to shared types, Valibot schemas, protocols, model cards, configuration, architecture contracts, and Flue-discovered entrypoints.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:core-contracts
-- Permissions: read [artifact:implementation-plan, authorized project files]; write [src/core/, src/app.ts, src/db.ts, docs/architecture/, flue.config.ts, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, src/index.ts]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, authorized project files]; write [src/core/, src/app.ts, src/db.ts, docs/architecture/, flue.config.ts, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, src/index.ts]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the core-contracts workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-core-contracts/scope-review.json`
+  - `core-contract-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-core-contracts/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-core-contracts/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-core-contracts/progress-events.jsonl`
 
 ### `implement-agent-runtime` — Implement Agent Runtime And Workspace Boundaries
 
 - Goal: Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while treating company-owned system instructions as read-only, preserving delegation ownership and capability isolation, and keeping the Coding Worker runtime access root separate.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona workspace and default Coding Worker runtime access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona workspace and default Coding Worker runtime access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:agent-runtime
 - Permissions: read [artifact:implementation-plan, authorized project files, src/AGENTS.md, src/workspace-loader.ts, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts]; write [src/agents/, src/workflows/, src/workspace/, src/engine/tools/, src/skills/, src/engine/workers/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, src/workspace-loader.ts]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the agent-runtime workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-agent-runtime/scope-review.json`
+  - `agent-runtime-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-agent-runtime/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-agent-runtime/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-agent-runtime/progress-events.jsonl`
   - `persona-workspace-ownership-preserved` (policy): Company instructions remain in src/AGENTS.md; the orchestrator composes only src/workspace/ as its persona; each built-in lead worker composes its own src/engine/workers/<name>/workspace/; Coding Worker internal subagents compose only their worker-local workspace; and persona content does not rename architecture paths. Evidence: `runtime:evidence/implement-agent-runtime/workspace-ownership.json`
@@ -697,32 +719,34 @@ flowchart TD
 ### `implement-memory-retrieval` — Implement Memory, RAG, And Embeddings
 
 - Goal: Implement authorized structured memory, session memory, document indexing, knowledge storage, retrieval routing, embeddings, and Rust/WASM changes while keeping memory layers distinct.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:memory-retrieval
-- Permissions: read [artifact:implementation-plan, authorized project files]; write [src/engine/memory/, src/engine/rag/, src/engine/embeddings/, crates/gorombo-memory/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, authorized project files]; write [src/engine/memory/, src/engine/rag/, src/engine/embeddings/, crates/gorombo-memory/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the memory-retrieval workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-memory-retrieval/scope-review.json`
+  - `memory-retrieval-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-memory-retrieval/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-memory-retrieval/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-memory-retrieval/progress-events.jsonl`
 
 ### `implement-capabilities-security` — Implement Capabilities, Registries, And Security
 
 - Goal: Implement authorized capability-store, registry, MCP, approval, GitHub-auth, and policy enforcement changes with fail-closed trust boundaries.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before the capabilities/security lane's first bootstrap write and every later repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; never rely on approval code this lane is about to implement, and stop fail-closed on denied, missing, expired, or mismatched approval. Record every decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:capabilities-security
 - Permissions: read [artifact:implementation-plan, authorized project files]; write [src/engine/capabilities/, src/engine/registries/, src/engine/approvals/, src/api/ingress/, docs/architecture/github-auth-system.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the capabilities/security workstream, including the first bootstrap mutation.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-capabilities-security/scope-review.json`
+  - `capabilities-security-bootstrap-mutations-approved` (policy): Before the first bootstrap write and every later repository mutation, an already active fail-closed Coding Worker approval-service path records a decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; the lane must not rely on the approval code it is about to implement. Evidence: `runtime:evidence/implement-capabilities-security/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-capabilities-security/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-capabilities-security/progress-events.jsonl`
   - `rel-cw-001-edit-approval-enforced` (test): REL-CW-001: every Coding Worker write and patch path calls the approval service with trusted project and repository scope and fails closed when approval is missing or unavailable. Evidence: `runtime:evidence/implement-capabilities-security/rel-cw-001-edit-approval.json`
@@ -734,16 +758,17 @@ flowchart TD
 ### `implement-ingress-operations` — Implement Ingress, Sessions, Schedules, And Telemetry
 
 - Goal: Implement authorized connector normalization, authenticated API routes, connector-specific session policy, fresh and explicit-resume TUI lifecycle, durable transcript projection, schedules, and typed progress/telemetry surfaces.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:ingress-operations
 - Permissions: read [artifact:implementation-plan, authorized project files]; write [src/api/, src/channels/, src/engine/session/, src/engine/schedules/, src/core/telemetry/, docs/operations/ files assigned exclusively to this workstream by artifact:implementation-plan, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the ingress/operations workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-ingress-operations/scope-review.json`
+  - `ingress-operations-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-ingress-operations/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-ingress-operations/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-ingress-operations/progress-events.jsonl`
   - `rel-tg-001-pairing-delivery` (test): REL-TG-001: an unknown Telegram user creates a durable pending pairing request and receives the intended connector response without bypassing approval. Evidence: `runtime:evidence/implement-ingress-operations/rel-tg-001-pairing.json`
@@ -794,16 +819,17 @@ flowchart TD
 ### `implement-product-delivery` — Implement Product Surfaces And Delivery
 
 - Goal: Integrate authorized SIM-ONE product surfaces, shared build and CI contracts, Web UI scope, and release documentation after the TUI and onboarding workstreams while preserving capability-management subcommands.
-- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
+- Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract, artifact:sim-one-tui-work-pane-change, artifact:sim-one-onboarding-distribution-change
 - Resources: project:product-delivery
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, artifact:sim-one-tui-work-pane-change, artifact:sim-one-onboarding-distribution-change, authorized project files]; write [shared product integration files assigned exclusively to this serialized member by artifact:implementation-plan, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan, openwiki/]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the authorized files in this domain workstream.
+- Side effects: `reversible` — Changes only approval-service-authorized files in the serialized product-delivery workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-product-delivery/scope-review.json`
+  - `product-delivery-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-product-delivery/mutation-approvals.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-product-delivery/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-product-delivery/progress-events.jsonl`
   - `product-workstreams-integrated` (review): The product integration consumes the required SIM-ONE TUI work-pane and onboarding/distribution outputs, preserves the sim-one capability command families, and resolves every shared-file owner before mutation. Evidence: `runtime:evidence/implement-product-delivery/product-workstream-integration.json`
@@ -813,16 +839,17 @@ flowchart TD
 ### `integrate-and-repair` — Integrate Change And Apply Bounded Repairs
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
-- Executor instructions: Integrate only authorized outputs. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
+- Executor instructions: Integrate only authorized outputs. Before every integration or repair mutation, call the already active Coding Worker approval service with the exact run, failed evidence, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
+- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
-- Permissions: read [authorized project tree, domain change artifacts, verification evidence]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Integrates and repairs authorized project files in the isolated worktree.
+- Side effects: `reversible` — Integrates and repairs only approval-service-authorized project files in the isolated worktree.
 - Rollback: Restore the affected files from the pre-integration Git commit while preserving unrelated branches and evidence.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `diff-authorized` (policy): The integrated Git diff contains only authorized files and no dependency-approval, generated-asset, secret, or unrelated worktree fallout. Evidence: `runtime:evidence/integrate-and-repair/diff-scope.json`
+  - `integration-repair-mutations-approved` (policy): Every integration or repair write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, failed evidence, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/integrate-and-repair/mutation-approvals.json`
   - `contracts-consistent` (schema): Shared types, schemas, registries, handoff contracts, docs, and consumers agree across every changed domain. Evidence: `runtime:evidence/integrate-and-repair/contract-check.json`
   - `repair-bounded` (policy): Each repair cites the failed evidence, preserves unrelated verified work, and remains within the declared feedback and attempt bounds. Evidence: `runtime:evidence/integrate-and-repair/repair-ledger.json`
   - `parallel-file-ownership-reconciled` (policy): Every changed file has one recorded producer; shared or cross-domain files were serialized or assigned to integration, and no parallel branch silently overwrote another branch. Evidence: `runtime:evidence/integrate-and-repair/file-ownership.json`
