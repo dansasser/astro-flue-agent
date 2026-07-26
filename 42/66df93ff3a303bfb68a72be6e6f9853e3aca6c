@@ -1,0 +1,22 @@
+README.md
+  s_1f6220b46220b2::t_9341054db18085 582-584
+CONTRIBUTING.md
+  s_1f6220b46220b2::t_9341054db18085 91-94
+  s_1f6220b46220b2::t_ac1f5619bb46de 95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "4266df93ff3a303bfb68a72be6e6f9853e3aca6c",
+  "prompts": {},
+  "sessions": {
+    "s_1f6220b46220b2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f9efb-5919-7750-8db3-04b1ec42fc08",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
