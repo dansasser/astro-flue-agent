@@ -77,8 +77,10 @@ progress events (fired, dispatched, completed, error, skipped, created, paused,
 resumed, updated, deleted, shutdown) to a bounded in-memory
 `ScheduleProgressReporter`. The scheduled turn's actual output reaches the user
 through the orchestrator response. Schedule lifecycle events are currently
-typed, collected in memory, and exposed through the reporter/admin route; they
-are not durably persisted or pushed independently through connectors.
+typed and collected in an internal in-memory reporter. No production admin or
+telemetry route exposes that reporter; schedule API routes expose definitions
+and durable run history instead. Lifecycle events are not durably persisted or
+pushed independently through connectors.
 
 ## Files
 

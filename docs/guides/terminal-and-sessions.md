@@ -26,8 +26,8 @@ sim-one --base-url http://127.0.0.1:3940
 ```
 
 `--base-url` takes precedence over `--port`. The current terminal client uses
-plain HTTP and sends no external API-secret header, so the endpoint must be
-loopback or a local tunnel.
+plain HTTP and sends no `x-api-secret` header, so the endpoint must be loopback
+or a local tunnel.
 
 ## Interface
 

@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 21,
+  "graph_version": 22,
   "nodes": [
     {
       "acceptance": [
@@ -4875,7 +4875,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:c27f9c352df038dbf724e03c0db4c1c88fd705a661af4dbf1460e9fc9ffc6ffd",
+    "context_version": "snapshot:sha256:72f24d0df865307d993443ddea5223b49b49ea36d94a42cb4ab5804e3129fbb2",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
@@ -4912,7 +4912,7 @@
     "The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.",
     "Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.",
     "Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.",
-    "Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, or verification behavior; independent review must compare each current-source claim with the exact runtime call path and configured test command while labeling unimplemented release contracts explicitly."
+    "Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, and configured test command while labeling unimplemented release contracts explicitly."
   ],
   "schema_version": 1,
   "status": "validated",

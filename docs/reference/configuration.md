@@ -176,17 +176,20 @@ GOROMBO_RAG_WEB_FETCH_TOP_K
 
 ### Embeddings And Retrieval
 
-The embedding chain uses cloud embeddings when configured, then the bundled
-local ONNX model, then an optional local Ollama endpoint.
+The embedding chain uses model-card-defined cloud embeddings when configured,
+then the bundled local ONNX model, then an optional model-card-defined local
+Ollama endpoint.
 
 ```text
-OLLAMA_CLOUD_EMBEDDING_MODEL
 OLLAMA_LOCAL_BASE_URL
 OLLAMA_LOCAL_API_KEY
-OLLAMA_LOCAL_EMBEDDING_MODEL
 GOROMBO_EMBEDDING_MODEL_PATH
 GOROMBO_EMBEDDING_TIMEOUT_MS
 ```
+
+The current runtime does not read embedding-model-name environment overrides.
+Cloud and local Ollama embedding model identifiers come from the bundled model
+cards.
 
 Configure the vector database with `storage.vectorStorePath` in
 `gorombo.config.json`. The current runtime does not read a vector-store
