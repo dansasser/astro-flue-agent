@@ -1,0 +1,23 @@
+docs/operations/telegram-connector.md
+  s_a3b1aea6901a1b::t_cdcc95cb46ab1e 36
+development-graph.json
+  s_a3b1aea6901a1b::t_4b24e62c344e7b 1430,4122-4127,4136,4140,4168-4169,4171-4174,4878
+development-graph.md
+  s_a3b1aea6901a1b::t_246af9d219c784 1,12,17,21,216,785-786,789,801
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "6ca341100ea6780b5e8daea94491771a916d88dc",
+  "prompts": {},
+  "sessions": {
+    "s_a3b1aea6901a1b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f38cb-e8a0-7922-b7a7-82ff95d4c704",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
