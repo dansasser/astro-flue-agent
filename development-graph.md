@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: b1e3300b14c372607ddaf4fb204a32e869255dbe0871d2817d6116260caf48d9 -->
+<!-- development-graph-sha256: c8dfec0a0aed3e8ab0abee3a816691e25537e20307a53496592d8b1bfe33b4ea -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,7 +9,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `32` |
+| Graph version | `33` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
@@ -18,7 +18,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `b1e3300b14c372607ddaf4fb204a32e869255dbe0871d2817d6116260caf48d9` |
+| Canonical checksum | `c8dfec0a0aed3e8ab0abee3a816691e25537e20307a53496592d8b1bfe33b4ea` |
 
 ## Flow
 
@@ -88,7 +88,9 @@ flowchart TD
     n_approve_beta_release_contract -- "consumes" --> n_implement_capabilities_security
     n_approve_beta_release_contract -- "consumes" --> n_implement_ingress_operations
     n_approve_beta_release_contract -- "consumes" --> n_implement_sim_one_tui_work_pane
+    n_approve_beta_release_contract -- "approves" --> n_implement_sim_one_tui_work_pane
     n_approve_beta_release_contract -- "consumes" --> n_implement_sim_one_onboarding_distribution
+    n_approve_beta_release_contract -- "approves" --> n_implement_sim_one_onboarding_distribution
     n_approve_beta_release_contract -- "consumes" --> n_implement_product_delivery
     n_plan_implementation -- "consumes" --> n_implement_core_contracts
     n_implement_core_contracts -- "consumes" --> n_integrate_and_repair
@@ -102,6 +104,7 @@ flowchart TD
     n_implement_ingress_operations -- "consumes" --> n_integrate_and_repair
     n_plan_implementation -- "consumes" --> n_implement_sim_one_tui_work_pane
     n_plan_implementation -- "consumes" --> n_implement_sim_one_onboarding_distribution
+    n_plan_implementation -- "consumes" --> n_build_release_package
     n_plan_implementation -- "consumes" --> n_implement_product_delivery
     n_implement_sim_one_tui_work_pane -- "consumes" --> n_implement_product_delivery
     n_implement_sim_one_onboarding_distribution -- "consumes" --> n_implement_product_delivery
@@ -253,6 +256,7 @@ flowchart TD
     n_plan_implementation -. "invalidates" .-> n_implement_product_delivery
     n_plan_implementation -. "invalidates" .-> n_implement_sim_one_tui_work_pane
     n_plan_implementation -. "invalidates" .-> n_implement_sim_one_onboarding_distribution
+    n_plan_implementation -. "invalidates" .-> n_build_release_package
     n_implement_sim_one_tui_work_pane -. "invalidates" .-> n_implement_product_delivery
     n_implement_sim_one_onboarding_distribution -. "invalidates" .-> n_implement_product_delivery
     n_integrate_and_repair -. "invalidates" .-> n_verify_typecheck
@@ -338,7 +342,9 @@ flowchart TD
 | `beta-release-contract-to-implement-capabilities-security` | `approve-beta-release-contract` | `consumes` | `implement-capabilities-security` | The owner-approved release requirements assigned to the capabilities and security lane are current. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-ingress-operations` | `approve-beta-release-contract` | `consumes` | `implement-ingress-operations` | The owner-approved connector, schedule, and ingress release requirements are current. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-sim-one-tui-work-pane` | `approve-beta-release-contract` | `consumes` | `implement-sim-one-tui-work-pane` | The required TUI work-pane contract is current and bound to this run. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-sim-one-tui-work-pane` | `approve-beta-release-contract` | `approves` | `implement-sim-one-tui-work-pane` | The owner authorizes entering the bounded TUI work-pane mutation scope; every individual repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-sim-one-onboarding-distribution` | `approve-beta-release-contract` | `consumes` | `implement-sim-one-onboarding-distribution` | The owner-approved packaging, onboarding, and lifecycle release requirements are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-approves-sim-one-onboarding-distribution` | `approve-beta-release-contract` | `approves` | `implement-sim-one-onboarding-distribution` | The owner authorizes entering the bounded onboarding and distribution mutation scope; every individual repository write remains fail-closed on a current Coding Worker approval-service decision. | artifact:beta-release-contract | — |
 | `beta-release-contract-to-implement-product-delivery` | `approve-beta-release-contract` | `consumes` | `implement-product-delivery` | The owner-approved product-surface and release-document requirements are current. | artifact:beta-release-contract | — |
 | `plan-to-implement-core-contracts` | `plan-implementation` | `consumes` | `implement-core-contracts` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `implement-core-contracts-to-integration` | `implement-core-contracts` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:core-contracts-change | — |
@@ -352,6 +358,7 @@ flowchart TD
 | `implement-ingress-operations-to-integration` | `implement-ingress-operations` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:ingress-operations-change | — |
 | `plan-to-implement-sim-one-tui-work-pane` | `plan-implementation` | `consumes` | `implement-sim-one-tui-work-pane` | The implementation plan assigns disjoint files for the required TUI work-pane member. | artifact:implementation-plan | — |
 | `plan-to-implement-sim-one-onboarding-distribution` | `plan-implementation` | `consumes` | `implement-sim-one-onboarding-distribution` | The implementation plan assigns disjoint onboarding and distribution files. | artifact:implementation-plan | — |
+| `plan-to-release-package-build` | `plan-implementation` | `consumes` | `build-release-package` | The implementation plan declares the exact packaging argv, output paths, file ownership, and verification bindings for the release-package build. | artifact:implementation-plan | — |
 | `plan-to-implement-product-delivery` | `plan-implementation` | `consumes` | `implement-product-delivery` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `sim-one-tui-work-pane-to-product-delivery` | `implement-sim-one-tui-work-pane` | `consumes` | `implement-product-delivery` | The required TUI work-pane output is complete. | artifact:sim-one-tui-work-pane-change | — |
 | `sim-one-onboarding-distribution-to-product-delivery` | `implement-sim-one-onboarding-distribution` | `consumes` | `implement-product-delivery` | The onboarding and distribution output is complete and ready for product integration. | artifact:sim-one-onboarding-distribution-change | — |
@@ -503,6 +510,7 @@ flowchart TD
 | `plan-invalidates-implement-product-delivery` | `plan-implementation` | `invalidates` | `implement-product-delivery` | A changed implementation plan invalidates the affected domain output. | artifact:product-delivery-change | — |
 | `plan-invalidates-implement-sim-one-tui-work-pane` | `plan-implementation` | `invalidates` | `implement-sim-one-tui-work-pane` | A changed implementation plan invalidates the required TUI work-pane output. | artifact:sim-one-tui-work-pane-change | — |
 | `plan-invalidates-implement-sim-one-onboarding-distribution` | `plan-implementation` | `invalidates` | `implement-sim-one-onboarding-distribution` | A changed implementation plan invalidates the onboarding and distribution output. | artifact:sim-one-onboarding-distribution-change | — |
+| `plan-invalidates-release-package-build` | `plan-implementation` | `invalidates` | `build-release-package` | A changed implementation plan, packaging argv, output path, file-ownership assignment, or verification binding invalidates the release-package record. | artifact:release-package | — |
 | `sim-one-tui-work-pane-invalidates-product-delivery` | `implement-sim-one-tui-work-pane` | `invalidates` | `implement-product-delivery` | A changed TUI work-pane output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
 | `sim-one-onboarding-distribution-invalidates-product-delivery` | `implement-sim-one-onboarding-distribution` | `invalidates` | `implement-product-delivery` | A changed onboarding and distribution output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
 | `integration-invalidates-verify-typecheck` | `integrate-and-repair` | `invalidates` | `verify-typecheck` | A changed integrated diff invalidates prior verification evidence. | artifact:typecheck-report | — |
@@ -598,7 +606,7 @@ flowchart TD
 ### `approve-beta-release-contract` — Approve 0.1.0 Beta Release Contract
 
 - Goal: Bind the fixed owner decision that every remaining release item, the SIM-ONE TUI work pane, and the exact external source-plan digest manifest are required for 0.1.0 Beta before architecture and implementation planning.
-- Executor instructions: Review the stable release ledger, the exact external source plans, and the canonical plan-digest manifest in artifact:baseline-context, then approve the fixed contract in which every listed ID and source-plan digest is required for 0.1.0 Beta. Any source-plan change, scope reduction, or digest mismatch requires a fresh baseline, separate owner decision, and graph revision rather than a runtime deferral.
+- Executor instructions: Review the stable release ledger, the exact external source plans, the canonical plan-digest manifest in artifact:baseline-context, and the bounded mutation scopes for the TUI work-pane and onboarding/distribution workstreams. Approve the fixed contract only with fail-closed per-write Coding Worker approval-service enforcement. Every listed ID and source-plan digest is required for 0.1.0 Beta. Any source-plan change, scope reduction, digest mismatch, or approval-service bypass requires a fresh owner decision and graph revision rather than a runtime deferral.
 - Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map
 - Resources: —
 - Permissions: read [artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md]; write [—]; external [—]; destructive `false`
@@ -610,6 +618,7 @@ flowchart TD
   - `all-release-items-required` (manual): The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch. Evidence: `runtime:evidence/approve-beta-release-contract/approval.json`
   - `release-ledger-covered` (review): The fixed contract covers REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-REL-001, and TUI-WORK-001 without silently dropping a ledger entry. Evidence: `runtime:evidence/approve-beta-release-contract/coverage.json`
   - `external-plan-lineage-bound` (policy): The decision binds repository release IDs to the exact path, byte size, and SHA-256 digest manifest for the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity. Evidence: `runtime:evidence/approve-beta-release-contract/plan-lineage.json`
+  - `new-workstream-mutation-policy-approved` (manual): The owner authorizes the bounded TUI work-pane and onboarding/distribution workstreams only under the project approval service; each repository write must produce a current path- and mutation-bound decision and fail closed when approval is denied, missing, expired, or mismatched. Evidence: `runtime:evidence/approve-beta-release-contract/workstream-mutation-policy.json`
 
 ### `decide-architecture` — Resolve Architecture And Ownership
 
@@ -747,16 +756,17 @@ flowchart TD
 ### `implement-sim-one-tui-work-pane` — Implement SIM-ONE TUI Work Pane
 
 - Goal: Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction.
-- Executor instructions: Follow /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md using SIM-ONE TUI product terminology. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.
+- Executor instructions: Follow /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md using SIM-ONE TUI product terminology. Before every repository mutation, call the Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:sim-one-tui-work-pane
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, docs/architecture/tui-cli-session-flow.md, docs/operations/product-tui.md, docs/tui/, tui/ratatui/, crates/]; write [tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan, Rust/WASM helper files assigned exclusively to this member by artifact:implementation-plan, focused test files assigned exclusively to this member by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `240` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the TUI work-pane implementation and its exclusively assigned tests.
+- Side effects: `reversible` — Changes only approval-service-authorized TUI work-pane implementation files and exclusively assigned tests.
 - Rollback: Restore this member's files from the pre-change Git commit while preserving the existing two-pane TUI and unrelated workstreams.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `tui-work-001-scope-obeyed` (policy): TUI-WORK-001 implements the required SIM-ONE TUI work pane without regressing the existing transcript and prompt interaction. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/scope.json`
+  - `tui-work-pane-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/mutation-approvals.json`
   - `responsive-work-pane-rendered` (test): At supported widths, the SIM-ONE TUI renders transcript and prompt with a right-side work pane near 30 percent width; constrained terminals use the planned overlay or alternate view without overlap or inaccessible content. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/responsive-layout.json`
   - `task-checklist-independent` (test): The task checklist has independent focus and scrolling, displays stable checkboxes, persists task state through the Rust/WASM helper contract, and never steals transcript or prompt scrolling. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/task-checklist.json`
   - `work-pane-data-real` (test): Usage input, output, total spend, Git status, and runtime status are sourced from typed data rather than decorative placeholders and remain readable in loading, unavailable, empty, error, and populated states. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/work-pane-data.json`
@@ -765,16 +775,17 @@ flowchart TD
 ### `implement-sim-one-onboarding-distribution` — Implement SIM-ONE Onboarding And Distribution
 
 - Goal: Implement versioned SIM-ONE packaging, integrity-verified installation, packaged onboarding, configuration, diagnostics, and local or service-managed lifecycle commands.
-- Executor instructions: Use /opt/ai/plans/sim-one-build-structure/plan.md as the current runtime and packaging foundation and /opt/ai/plans/agent-tui/plan.md as onboarding research, correcting stale framework, package, authentication, and product naming assumptions against current repository architecture. Keep the install and service probes isolated from host production services.
+- Executor instructions: Use /opt/ai/plans/sim-one-build-structure/plan.md as the current runtime and packaging foundation and /opt/ai/plans/agent-tui/plan.md as onboarding research, correcting stale framework, package, authentication, and product naming assumptions against current repository architecture. Before every repository mutation, call the Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Keep the install and service probes isolated from host production services.
 - Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:sim-one-onboarding-distribution
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md, sim-one-cli/, scripts/, package.json, docs/getting-started/, docs/operations/]; write [sim-one-cli/ files assigned exclusively to this member by artifact:implementation-plan, release packaging and service files assigned exclusively to this member by artifact:implementation-plan, focused test files assigned exclusively to this member by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `300` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Changes only the isolated onboarding, packaging, installer, lifecycle, and focused-test files assigned to this member.
+- Side effects: `reversible` — Changes only approval-service-authorized onboarding, packaging, installer, lifecycle, and focused-test files assigned to this member.
 - Rollback: Restore this member's files from the pre-change Git commit and retain the last verified packaged runtime for recovery.
-- Approval required: `false`
+- Approval required: `true`
 - Acceptance:
   - `rel-pkg-001-release-archive` (artifact): REL-PKG-001: the packaging implementation can assemble a versioned release archive containing the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and checksum manifest. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-001-release-archive.json`
+  - `onboarding-distribution-mutations-approved` (policy): Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/mutation-approvals.json`
   - `rel-pkg-002-integrity-install` (test): REL-PKG-002: installation verifies checksums before materializing the runtime, refuses mismatches, uses the runtime owner directory independent of caller cwd, and leaves a recoverable prior installation. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-002-integrity-install.json`
   - `rel-onb-001-packaged-onboarding` (test): REL-ONB-001: sim-one install runs packaged onboarding, stores validated configuration and secrets in documented user-owned locations, verifies a real model response, and enters the first secure SIM-ONE TUI session. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-onb-001-onboarding.json`
   - `rel-ops-001-lifecycle-commands` (test): REL-OPS-001: sim-one config, doctor, status, start, restart, and stop expose documented behavior for local-process and service-managed runtime modes, with output-level health evidence and idempotent lifecycle handling. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-ops-001-lifecycle-commands.json`
@@ -927,9 +938,9 @@ flowchart TD
 
 - Goal: Rebuild the exact typed versioned SIM-ONE release package and checksum manifest from the immutable merged main-branch candidate consumed by pre-publication verification and approved GitHub release publication.
 - Executor instructions: Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Check out the immutable merged main-branch commit recorded by artifact:release-candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.
-- Inputs: artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
+- Inputs: artifact:implementation-plan, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
 - Resources: project:release-package-output
-- Permissions: read [artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Writes only generated release-package staging files and checksum evidence.
 - Rollback: Remove the generated staging files and rebuild the package from the same reviewed commit and typed build artifacts.
@@ -1160,7 +1171,7 @@ flowchart TD
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `production-authority-recorded` (manual): The owner explicitly approves or rejects the exact candidate, production target, private draft staging scope, immutable version tag, release-asset manifest and checksums, post-observation public GitHub release publication, rollback, and production observation plan. Evidence: `runtime:approval/approve-production-release`
+  - `production-authority-recorded` (manual): The owner explicitly approves or rejects the exact candidate, production target, private draft staging scope, immutable version tag, release-asset manifest and checksums, irreversible post-observation public GitHub release publication, production rollback, and publication compensation plan, acknowledging that downloaded bytes and the immutable tag cannot be retracted. Evidence: `runtime:approval/approve-production-release`
 
 ### `stage-release-assets` — Stage Approved Release Assets Privately
 
@@ -1229,10 +1240,10 @@ flowchart TD
 - Executor instructions: Use only the Git and GitHub release adapter authorized by artifact:production-release-approval. Re-read artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, and artifact:production-observation. Refuse publication if the candidate was rolled back, observation failed, the draft or any asset changed, the proposed tag exists with a mismatched commit, or approval drifted. Push the approved immutable version tag, publish the exact existing draft without replacing asset bytes, then perform unauthenticated tag, release, and asset readback; download each public asset and prove its digest matches the staged record.
 - Inputs: artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, artifact:production-observation, artifact:production-release-approval
 - Resources: external:github-repository, external:github-release-assets
-- Permissions: read [artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, artifact:production-observation, artifact:production-release-approval, GitHub repository, tag, draft release, public release, and asset metadata]; write [approved immutable version tag, approved public GitHub release state]; external [Git remote immutable version-tag push, GitHub Releases API approved draft publication, anonymous GitHub release asset download endpoints]; destructive `false`
+- Permissions: read [artifact:staged-release-assets, artifact:staged-release-assets-report, artifact:production-release, artifact:production-observation, artifact:production-release-approval, GitHub repository, tag, draft release, public release, and asset metadata]; write [approved immutable version tag, approved public GitHub release state]; external [Git remote immutable version-tag push, GitHub Releases API approved draft publication, anonymous GitHub release asset download endpoints]; destructive `true`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — Makes the approved immutable tag and previously private release assets publicly discoverable and downloadable after successful production observation.
-- Rollback: Mark a defective public release as withdrawn and publish a corrected successor under separate approval; never rewrite the immutable version tag, replace published asset bytes, or erase publication evidence.
+- Side effects: `destructive` — Irreversibly makes the approved immutable tag and previously private release assets publicly discoverable and downloadable after successful production observation; downloaded bytes cannot be retracted.
+- Rollback: Compensation only: mark a defective public release as withdrawn and publish a corrected successor under separate approval; never claim rollback, rewrite the immutable version tag, replace published asset bytes, or erase publication evidence.
 - Approval required: `true`
 - Acceptance:
   - `production-success-gates-publication` (policy): Public release is blocked unless the complete production observation proves the exact candidate remains deployed, the observation window passed, no rollback occurred, and no unresolved regression, durability, security, or telemetry condition remains. Evidence: `runtime:evidence/publish-release-assets/production-gate.json`
@@ -1303,7 +1314,7 @@ flowchart TD
 
 - Each runtime run governs one explicitly authorized change against a named Git commit.
 - The current commit is project context, not proof that historical implementation is verified.
-- The project owner supplies target-specific authority for GitHub, private release-asset staging, post-observation public release, release-ledger, canary, and production mutations at the declared gates.
+- The project owner supplies target-specific authority for GitHub, private release-asset staging, irreversible post-observation public release, release-ledger, canary, and production mutations at the declared gates.
 - Canary and production deployment commands remain adapter bindings until the project documents an approved deployment mechanism.
 - Full live-model TUI probes require valid provider credentials supplied through the runtime environment, never stored in this graph.
 - Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.
