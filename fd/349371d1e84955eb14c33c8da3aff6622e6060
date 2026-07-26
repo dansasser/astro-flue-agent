@@ -1,0 +1,30 @@
+development-graph.json
+  s_a81fff26d52223::t_1b735ac4e44939 5,2335
+  s_a81fff26d52223::t_be350e836243ba 4911-4914,4952
+  s_a81fff26d52223::t_baaea88a98dc5f 6727
+  s_a81fff26d52223::t_415f468786cf7a 211-212,214,246,403-404,406-414,2198-2207,2209
+  s_a81fff26d52223::t_a4e9fc0b468f64 213,215-222,235-245
+  s_a81fff26d52223::t_c058c984fbcd3e 3660-3665,3697,3746-3747,3771-3776,3808,3857-3858,4910
+  s_a81fff26d52223::t_a2b56820fe0cf8 6237,6752-6754
+  s_a81fff26d52223::t_42f619c67565a7 2804-2809,2818
+  s_a81fff26d52223::t_ecdb260666f468 405
+  s_a81fff26d52223::t_13e967e77432c4 2208
+development-graph.md
+  s_a81fff26d52223::t_46727aecf51435 1,12,21,91,93,107,259,345,347,361,513,609,621,759,764,766,769,778,783,785,788,941,943,1174,1243,1245-1246,1317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "fd349371d1e84955eb14c33c8da3aff6622e6060",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
