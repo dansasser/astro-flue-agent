@@ -32,25 +32,12 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: installation-method
-    attributes:
-      label: Installation method
-      options:
-        - Source checkout using npm
-        - Source checkout using pnpm
-        - Release package or sim-one.sh
-        - Existing installation or upgrade
-        - Other
-    validations:
-      required: true
-
   - type: input
     id: environment
     attributes:
-      label: Operating environment
-      description: Include the operating system, version, and architecture. Include the Node.js version for source builds.
-      placeholder: "Ubuntu 24.04 x86_64; Node.js 22.22.3"
+      label: Installation and operating environment
+      description: Include the installation method, operating system, version, and architecture. Include the Node.js version and package manager for source builds.
+      placeholder: "Source checkout with pnpm; Ubuntu 24.04 x86_64; Node.js 22.22.3"
     validations:
       required: true
 
@@ -97,18 +84,14 @@ body:
       required: true
 
   - type: textarea
-    id: expected-behavior
+    id: expected-actual-behavior
     attributes:
-      label: Expected behavior
-      description: Describe the result you expected.
-    validations:
-      required: true
+      label: Expected and actual behavior
+      description: Describe the result you expected and the result you observed, including whether the problem is consistent or intermittent.
+      placeholder: |
+        Expected:
 
-  - type: textarea
-    id: actual-behavior
-    attributes:
-      label: Actual behavior
-      description: Describe the observed result, including whether it is consistent or intermittent.
+        Actual:
     validations:
       required: true
 

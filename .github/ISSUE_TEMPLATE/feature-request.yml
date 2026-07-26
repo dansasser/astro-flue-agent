@@ -42,10 +42,10 @@ body:
       required: true
 
   - type: textarea
-    id: desired-outcome
+    id: feature-description
     attributes:
-      label: Desired outcome
-      description: Describe the observable product behavior that would solve the problem.
+      label: Feature description and desired outcome
+      description: Describe the proposed capability and the observable product behavior that would solve the problem.
     validations:
       required: true
 
@@ -72,10 +72,10 @@ body:
       required: true
 
   - type: textarea
-    id: proposed-solution
+    id: solution-alternatives
     attributes:
-      label: Proposed solution
-      description: Describe an implementation approach if you have one. The maintainers may choose a different design.
+      label: Proposed solution and alternatives
+      description: Describe an implementation approach, current workaround, or alternative if you have one. The maintainers may choose a different design.
 
   - type: dropdown
     id: governance-impact
@@ -103,19 +103,7 @@ body:
       required: true
 
   - type: textarea
-    id: alternatives
+    id: compatibility-context
     attributes:
-      label: Alternatives considered
-      description: Describe current workarounds or other approaches you considered.
-
-  - type: textarea
-    id: compatibility
-    attributes:
-      label: Compatibility or migration considerations
-      description: Note any expected effects on configuration, persisted data, connectors, capabilities, protocols, sessions, or existing workflows.
-
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Additional context
-      description: Add mockups, examples, references, or other information that helps explain the request.
+      label: Compatibility considerations and additional context
+      description: Note expected effects on configuration, persisted data, connectors, capabilities, protocols, sessions, or existing workflows. Add mockups, examples, or references that help explain the request.
