@@ -20,6 +20,16 @@ architecture documentation for SIM-ONE Alpha.
 | Trace protocols, workers, retrieval, and workflows | [Execution Workflows](architecture/execution-workflows.md) |
 | Diagnose an installed system | [Troubleshooting](operations/troubleshooting.md) |
 
+## Interactive Codebase Explorer
+
+[SIM-ONE Alpha on DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha)
+provides generated architecture diagrams, source-linked explanations, and Ask
+Devin for repository-grounded questions.
+
+DeepWiki is generated from repository source and serves as an interactive
+exploration companion. The versioned documentation in this repository remains
+the authoritative product and architecture contract.
+
 ## Product Guides
 
 - [Pre-Release Status](getting-started/pre-release-status.md) separates

@@ -8,6 +8,7 @@
 ![Rust/WASM](https://img.shields.io/badge/Rust-WASM-000000?logo=rust&logoColor=white)
 [![Built with Flue](https://img.shields.io/badge/built%20with-Flue-purple)](https://flueframework.com/)
 [![SIM-ONE Framework](https://img.shields.io/badge/framework-SIM--ONE-blueviolet)](https://simoneframework.org)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dansasser/sim-one-alpha)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ![SIM-ONE Alpha by Gorombo](.github/assets/sim-one-alpha-social-preview.jpg)
@@ -575,6 +576,12 @@ See the [Capability system](docs/architecture/capability-system.md) and [Registr
 ## Documentation
 
 The complete documentation set is organized in the [documentation hub](docs/README.md).
+
+Explore [SIM-ONE Alpha on DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha)
+for generated, source-linked architecture explanations and diagrams, or use
+DeepWiki's Ask Devin feature to ask repository-grounded questions. The
+versioned documentation in this repository remains the product and architecture
+contract.
 
 - [Installation](docs/getting-started/installation.md) and [onboarding](docs/getting-started/onboarding.md)
 - [Terminal and session guide](docs/guides/terminal-and-sessions.md)

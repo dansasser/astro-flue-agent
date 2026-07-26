@@ -83,6 +83,11 @@ The concise repository entry point remains in the README
 
 ## Follow The Architecture
 
+Optionally use [DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha) for
+source-linked codebase exploration and repository-grounded questions. Its
+generated content is an exploration aid, not required reading or a replacement
+for the versioned architecture documentation.
+
 Read the [documentation hub](docs/README.md) and
 [architecture overview](docs/architecture/overview.md) before changing runtime
 behavior. Changes must preserve the project contracts relevant to their scope,

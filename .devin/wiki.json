@@ -1,0 +1,40 @@
+{
+  "repo_notes": [
+    {
+      "content": "Keep product identity precise: Gorombo is the company, SIM-ONE Alpha is the product and AI employee system in this repository, Flue is the TypeScript agent harness, the SIM-ONE Framework is the governance method applied on top of Flue, and Ollie is a workspace persona rather than an architecture or path name.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Preserve the Flue architecture boundary. src/app.ts is the Hono application shell for routes, middleware, health checks, custom ingress, telemetry startup, and mounting flue(). src/agents/orchestrator.ts owns the main Flue agent composition, including models, tools, skills, subagents, sessions, and compaction. Do not attribute orchestration logic to src/app.ts.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Describe the orchestrator as the control plane that governs and delegates. Workers are specialized executors that return results to the orchestrator; they are not standalone products, public endpoints, or final authorities. Internal worker subagents remain owned by their worker and are not top-level orchestrator capabilities.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Treat protocols, tools, skills, workers, registries, connectors, approvals, schedules, memory, and RAG as separate systems with explicit ownership. Protocols are SQLite-backed runtime rule records loaded through the Protocol Tool. Tools execute capabilities. Skills describe reusable workflow knowledge. Registries provide typed discovery. Connectors normalize external communication and do not orchestrate.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Explain the dual capability layer accurately: application-owned Flue tools, skills, and subagents provide built-in capabilities, while the SIM-ONE runtime capability store and registries support user- or agent-added skills, tools, workers, and MCP servers. Runtime capabilities remain subject to validation, approvals, enablement state, and orchestrator ownership.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Cover memory and retrieval as first-class architecture. The Rust/WebAssembly gorombo-memory crate provides structured task and checklist memory support behind TypeScript shims, while SQLite-backed memory, document retrieval, RAG routing, and researcher-owned web research provide contextual retrieval through governed tools and workflows.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Keep interfaces distinct. sim-one is the product CLI binary. The terminal UI is the SIM-ONE terminal interface and supports durable sessions and slash commands. The secure Web API is the backend ingress point. Telegram is a connector. CLI flags and subcommands are separate from slash commands used inside the terminal interface.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Use docs/README.md and docs/architecture/README.md as indexes into the versioned product and architecture contract. Generated plans, docs/archive material, OpenWiki snapshots, AGENTS.md process instructions, and agent research notes are engineering context, not the installed-product contract.",
+      "author": "Gorombo"
+    },
+    {
+      "content": "Do not infer release availability from architecture descriptions. SIM-ONE Alpha 0.1.0 Beta is pre-release, and docs/getting-started/pre-release-status.md is authoritative for packaging, onboarding, service commands, connectors, interfaces, protocol enforcement, and other remaining release gates.",
+      "author": "Gorombo"
+    }
+  ]
+}

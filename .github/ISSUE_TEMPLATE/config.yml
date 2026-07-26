@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask DeepWiki
+    url: https://deepwiki.com/dansasser/sim-one-alpha
+    about: Explore source-linked code and ask repository questions. Use issue forms for bugs and features, and SECURITY.md for private security reports.
