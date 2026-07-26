@@ -6,8 +6,10 @@
     "Canary and production deployment commands remain adapter bindings until the project documents an approved deployment mechanism.",
     "Full live-model TUI probes require valid provider credentials supplied through the runtime environment, never stored in this graph.",
     "Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.",
+    "docs/getting-started/pre-release-status.md is the repository-owned stable release ledger; /opt/ai/plans/sim-one-ratatui-tui/, /opt/ai/plans/sim-one-build-structure/, and /opt/ai/plans/agent-tui/ remain detailed external source plans rather than repository implementation plans.",
+    "Every stable release and planned-work ID in docs/getting-started/pre-release-status.md is required for 0.1.0 Beta; changing that fixed scope requires a new explicit owner decision and graph revision.",
     "The checked-in definition is deliberately bound to the canonical host checkout /opt/ai/sim-one-alpha under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.",
-    "The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/Ratatui session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.",
+    "The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/SIM-ONE TUI session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.",
     "Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate.",
     "A snapshot:sha256 project context version hashes a newline-delimited manifest of sorted Git-tracked and nonignored untracked files, excluding development-graph.json and development-graph.md; each record contains the project-relative path, a NUL separator, and the file SHA-256."
   ],
@@ -64,10 +66,47 @@
       "artifacts": [
         "artifact:baseline-context"
       ],
+      "condition": "The current source state and release ledger are bound to the same authorized run.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-beta-release-contract",
+      "max_traversals": null,
+      "to": "approve-beta-release-contract",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:change-contract",
+        "artifact:affected-domain-map"
+      ],
+      "condition": "The requested change and affected domains are explicit enough to bind the fixed 0.1.0 Beta contract.",
+      "exit_condition": null,
+      "from": "define-change-contract",
+      "id": "contract-to-beta-release-contract",
+      "max_traversals": null,
+      "to": "approve-beta-release-contract",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "baseline-context",
       "id": "context-and-contract-to-architecture",
+      "max_traversals": null,
+      "to": "decide-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner has approved every stable release and planned-work ID as required for 0.1.0 Beta.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-architecture",
       "max_traversals": null,
       "to": "decide-architecture",
       "type": "consumes"
@@ -107,6 +146,90 @@
       "id": "architecture-to-implementation-plan",
       "max_traversals": null,
       "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The fixed owner-approved 0.1.0 Beta contract is current and bound to this run.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implementation-plan",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner-approved release requirements assigned to the agent-runtime lane are current.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner-approved release requirements assigned to the capabilities and security lane are current.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-capabilities-security",
+      "max_traversals": null,
+      "to": "implement-capabilities-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner-approved connector, schedule, and ingress release requirements are current.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-ingress-operations",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The required TUI work-pane contract is current and bound to this run.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-sim-one-tui-work-pane",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner-approved packaging, onboarding, and lifecycle release requirements are current.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-sim-one-onboarding-distribution",
+      "max_traversals": null,
+      "to": "implement-sim-one-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner-approved product-surface and release-document requirements are current.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-implement-product-delivery",
+      "max_traversals": null,
+      "to": "implement-product-delivery",
       "type": "consumes"
     },
     {
@@ -233,10 +356,58 @@
       "artifacts": [
         "artifact:implementation-plan"
       ],
+      "condition": "The implementation plan assigns disjoint files for the required TUI work-pane member.",
+      "exit_condition": null,
+      "from": "plan-implementation",
+      "id": "plan-to-implement-sim-one-tui-work-pane",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "The implementation plan assigns disjoint onboarding and distribution files.",
+      "exit_condition": null,
+      "from": "plan-implementation",
+      "id": "plan-to-implement-sim-one-onboarding-distribution",
+      "max_traversals": null,
+      "to": "implement-sim-one-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "plan-implementation",
       "id": "plan-to-implement-product-delivery",
+      "max_traversals": null,
+      "to": "implement-product-delivery",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-work-pane-change"
+      ],
+      "condition": "The required TUI work-pane output is complete.",
+      "exit_condition": null,
+      "from": "implement-sim-one-tui-work-pane",
+      "id": "sim-one-tui-work-pane-to-product-delivery",
+      "max_traversals": null,
+      "to": "implement-product-delivery",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-onboarding-distribution-change"
+      ],
+      "condition": "The onboarding and distribution output is complete and ready for product integration.",
+      "exit_condition": null,
+      "from": "implement-sim-one-onboarding-distribution",
+      "id": "sim-one-onboarding-distribution-to-product-delivery",
       "max_traversals": null,
       "to": "implement-product-delivery",
       "type": "consumes"
@@ -392,9 +563,9 @@
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "integrate-and-repair",
-      "id": "integration-to-ratatui-build",
+      "id": "integration-to-sim-one-tui-build",
       "max_traversals": null,
-      "to": "build-ratatui",
+      "to": "build-sim-one-tui",
       "type": "consumes"
     },
     {
@@ -404,9 +575,9 @@
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "build-runtime",
-      "id": "runtime-to-ratatui-build",
+      "id": "runtime-to-sim-one-tui-build",
       "max_traversals": null,
-      "to": "build-ratatui",
+      "to": "build-sim-one-tui",
       "type": "consumes"
     },
     {
@@ -459,12 +630,12 @@
     },
     {
       "artifacts": [
-        "artifact:ratatui-build"
+        "artifact:sim-one-tui-build"
       ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
-      "from": "build-ratatui",
-      "id": "ratatui-build-to-cli-behavior",
+      "from": "build-sim-one-tui",
+      "id": "sim-one-tui-build-to-cli-behavior",
       "max_traversals": null,
       "to": "verify-cli-behavior",
       "type": "consumes"
@@ -488,21 +659,93 @@
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "build-runtime",
-      "id": "runtime-to-ratatui-product",
+      "id": "runtime-to-sim-one-tui-product",
       "max_traversals": null,
-      "to": "verify-ratatui-product",
+      "to": "verify-sim-one-tui",
       "type": "consumes"
     },
     {
       "artifacts": [
-        "artifact:ratatui-build"
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The required TUI work-pane contract is current and bound to the packaged-product probe.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-verify-sim-one-tui",
+      "max_traversals": null,
+      "to": "verify-sim-one-tui",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "The integrated product includes the required onboarding and distribution contract.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:runtime-build"
+      ],
+      "condition": "The packaged runtime is current and bound to the onboarding candidate.",
+      "exit_condition": null,
+      "from": "build-runtime",
+      "id": "runtime-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-build"
+      ],
+      "condition": "The packaged TUI is current and available to the installer and first-run flow.",
+      "exit_condition": null,
+      "from": "build-sim-one-tui",
+      "id": "sim-one-tui-build-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:cli-build"
+      ],
+      "condition": "The packaged CLI is current and exposes the required onboarding and lifecycle commands.",
+      "exit_condition": null,
+      "from": "build-cli",
+      "id": "cli-build-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The required packaging, onboarding, and lifecycle contract is current and bound to the isolated probe.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-build"
       ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
-      "from": "build-ratatui",
-      "id": "ratatui-build-to-product-test",
+      "from": "build-sim-one-tui",
+      "id": "sim-one-tui-build-to-product-test",
       "max_traversals": null,
-      "to": "verify-ratatui-product",
+      "to": "verify-sim-one-tui",
       "type": "consumes"
     },
     {
@@ -512,9 +755,9 @@
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
       "from": "build-cli",
-      "id": "cli-build-to-ratatui-product",
+      "id": "cli-build-to-sim-one-tui-product",
       "max_traversals": null,
-      "to": "verify-ratatui-product",
+      "to": "verify-sim-one-tui",
       "type": "consumes"
     },
     {
@@ -639,12 +882,24 @@
     },
     {
       "artifacts": [
-        "artifact:ratatui-product-report"
+        "artifact:sim-one-tui-product-report"
       ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
       "exit_condition": null,
-      "from": "verify-ratatui-product",
-      "id": "verify-ratatui-product-to-verification-summary",
+      "from": "verify-sim-one-tui",
+      "id": "verify-sim-one-tui-to-verification-summary",
+      "max_traversals": null,
+      "to": "aggregate-verification",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "The isolated packaged onboarding and distribution verification is complete.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "verify-onboarding-distribution-to-verification-summary",
       "max_traversals": null,
       "to": "aggregate-verification",
       "type": "consumes"
@@ -1011,24 +1266,36 @@
     },
     {
       "artifacts": [
-        "artifact:ratatui-build"
+        "artifact:sim-one-tui-build"
       ],
       "condition": "The evidence identifies a correctable implementation or integration failure.",
       "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
-      "from": "build-ratatui",
-      "id": "build-ratatui-feedback-to-integration",
+      "from": "build-sim-one-tui",
+      "id": "build-sim-one-tui-feedback-to-integration",
       "max_traversals": 3,
       "to": "integrate-and-repair",
       "type": "feedback"
     },
     {
       "artifacts": [
-        "artifact:ratatui-product-report"
+        "artifact:sim-one-tui-product-report"
       ],
       "condition": "The evidence identifies a correctable implementation or integration failure.",
       "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
-      "from": "verify-ratatui-product",
-      "id": "verify-ratatui-product-feedback-to-integration",
+      "from": "verify-sim-one-tui",
+      "id": "verify-sim-one-tui-feedback-to-integration",
+      "max_traversals": 3,
+      "to": "integrate-and-repair",
+      "type": "feedback"
+    },
+    {
+      "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "The isolated packaged onboarding or distribution evidence identifies a correctable implementation or integration failure.",
+      "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
+      "from": "verify-onboarding-distribution",
+      "id": "verify-onboarding-distribution-feedback-to-integration",
       "max_traversals": 3,
       "to": "integrate-and-repair",
       "type": "feedback"
@@ -1146,9 +1413,9 @@
       "condition": "Both probes require exclusive use of the local built runtime and mutable test configuration.",
       "exit_condition": null,
       "from": "verify-http-integration",
-      "id": "verify-http-integration-conflicts-verify-ratatui-product",
+      "id": "verify-http-integration-conflicts-verify-sim-one-tui",
       "max_traversals": null,
-      "to": "verify-ratatui-product",
+      "to": "verify-sim-one-tui",
       "type": "conflicts"
     },
     {
@@ -1166,9 +1433,59 @@
       "condition": "Both probes require exclusive use of the local built runtime and mutable test state.",
       "exit_condition": null,
       "from": "verify-cli-behavior",
-      "id": "verify-cli-behavior-conflicts-verify-ratatui-product",
+      "id": "verify-cli-behavior-conflicts-verify-sim-one-tui",
       "max_traversals": null,
-      "to": "verify-ratatui-product",
+      "to": "verify-sim-one-tui",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both probes require exclusive use of the packaged CLI, TUI, and mutable isolated runtime root.",
+      "exit_condition": null,
+      "from": "verify-sim-one-tui",
+      "id": "verify-sim-one-tui-conflicts-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both probes require exclusive use of the packaged CLI and mutable isolated runtime root.",
+      "exit_condition": null,
+      "from": "verify-cli-behavior",
+      "id": "verify-cli-behavior-conflicts-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both probes require exclusive use of the built runtime and mutable isolated runtime configuration.",
+      "exit_condition": null,
+      "from": "verify-http-integration",
+      "id": "verify-http-integration-conflicts-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both probes require exclusive use of the built runtime, packaged CLI, and mutable isolated runtime root.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "verify-onboarding-distribution-conflicts-verify-tui-e2e",
+      "max_traversals": null,
+      "to": "verify-tui-e2e",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both probes require exclusive use of the built runtime and mutable isolated runtime configuration.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "verify-onboarding-distribution-conflicts-verify-memory-smoke",
+      "max_traversals": null,
+      "to": "verify-memory-smoke",
       "type": "conflicts"
     },
     {
@@ -1215,8 +1532,8 @@
       "artifacts": [],
       "condition": "Both probes require exclusive use of the local built runtime and mutable test configuration.",
       "exit_condition": null,
-      "from": "verify-ratatui-product",
-      "id": "verify-ratatui-product-conflicts-verify-tui-e2e",
+      "from": "verify-sim-one-tui",
+      "id": "verify-sim-one-tui-conflicts-verify-tui-e2e",
       "max_traversals": null,
       "to": "verify-tui-e2e",
       "type": "conflicts"
@@ -1225,8 +1542,8 @@
       "artifacts": [],
       "condition": "Both probes require exclusive use of the local built runtime and mutable test configuration.",
       "exit_condition": null,
-      "from": "verify-ratatui-product",
-      "id": "verify-ratatui-product-conflicts-verify-memory-smoke",
+      "from": "verify-sim-one-tui",
+      "id": "verify-sim-one-tui-conflicts-verify-memory-smoke",
       "max_traversals": null,
       "to": "verify-memory-smoke",
       "type": "conflicts"
@@ -1256,6 +1573,30 @@
     },
     {
       "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "A changed commit, release ledger, source plan, or authorized request makes the former beta contract approval stale.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-invalidates-beta-release-contract",
+      "max_traversals": null,
+      "to": "approve-beta-release-contract",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "A changed purpose, scope, non-goal, or affected-domain map makes the former beta contract approval stale.",
+      "exit_condition": null,
+      "from": "define-change-contract",
+      "id": "change-contract-invalidates-beta-release-contract",
+      "max_traversals": null,
+      "to": "approve-beta-release-contract",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
         "artifact:architecture-decision"
       ],
       "condition": "A changed purpose, scope, non-goal, or acceptance criterion makes the former architecture decision stale.",
@@ -1274,6 +1615,30 @@
       "exit_condition": null,
       "from": "decide-architecture",
       "id": "architecture-invalidates-plan",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "A changed owner-approved beta contract invalidates architecture and planning assumptions for affected members.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-invalidates-architecture",
+      "max_traversals": null,
+      "to": "decide-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A changed owner-approved beta contract invalidates the implementation sequence and file-ownership map.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-invalidates-plan",
       "max_traversals": null,
       "to": "plan-implementation",
       "type": "invalidates"
@@ -1352,6 +1717,54 @@
     },
     {
       "artifacts": [
+        "artifact:sim-one-tui-work-pane-change"
+      ],
+      "condition": "A changed implementation plan invalidates the required TUI work-pane output.",
+      "exit_condition": null,
+      "from": "plan-implementation",
+      "id": "plan-invalidates-implement-sim-one-tui-work-pane",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-onboarding-distribution-change"
+      ],
+      "condition": "A changed implementation plan invalidates the onboarding and distribution output.",
+      "exit_condition": null,
+      "from": "plan-implementation",
+      "id": "plan-invalidates-implement-sim-one-onboarding-distribution",
+      "max_traversals": null,
+      "to": "implement-sim-one-onboarding-distribution",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:product-delivery-change"
+      ],
+      "condition": "A changed TUI work-pane output invalidates product integration and release documentation.",
+      "exit_condition": null,
+      "from": "implement-sim-one-tui-work-pane",
+      "id": "sim-one-tui-work-pane-invalidates-product-delivery",
+      "max_traversals": null,
+      "to": "implement-product-delivery",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:product-delivery-change"
+      ],
+      "condition": "A changed onboarding and distribution output invalidates product integration and release documentation.",
+      "exit_condition": null,
+      "from": "implement-sim-one-onboarding-distribution",
+      "id": "sim-one-onboarding-distribution-invalidates-product-delivery",
+      "max_traversals": null,
+      "to": "implement-product-delivery",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
         "artifact:typecheck-report"
       ],
       "condition": "A changed integrated diff invalidates prior verification evidence.",
@@ -1400,6 +1813,18 @@
     },
     {
       "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "A changed integrated diff invalidates prior packaged onboarding and distribution evidence.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-verify-onboarding-distribution",
+      "max_traversals": null,
+      "to": "verify-onboarding-distribution",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
         "artifact:production-release-approval"
       ],
       "condition": "The owner approved the exact production target, candidate, observation plan, and recorded rollback authority.",
@@ -1427,7 +1852,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 25,
+  "graph_version": 28,
   "nodes": [
     {
       "acceptance": [
@@ -1865,6 +2290,96 @@
     {
       "acceptance": [
         {
+          "criterion": "The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch.",
+          "evidence": "runtime:evidence/approve-beta-release-contract/approval.json",
+          "id": "all-release-items-required",
+          "kind": "manual"
+        },
+        {
+          "criterion": "The fixed contract covers REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-REL-001, and TUI-WORK-001 without silently dropping a ledger entry.",
+          "evidence": "runtime:evidence/approve-beta-release-contract/coverage.json",
+          "id": "release-ledger-covered",
+          "kind": "review"
+        },
+        {
+          "criterion": "The decision binds repository release IDs to the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity.",
+          "evidence": "runtime:evidence/approve-beta-release-contract/plan-lineage.json",
+          "id": "external-plan-lineage-bound",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 1,
+        "timeout_minutes": 1440
+      },
+      "executor": {
+        "instructions": "Review the stable release ledger and exact external source plans, then approve the fixed contract in which every listed ID is required for 0.1.0 Beta. Any scope reduction requires a separate owner decision and graph revision rather than a runtime deferral.",
+        "kind": "human",
+        "name": "SIM-ONE project owner"
+      },
+      "goal": "Bind the fixed owner decision that every remaining release item and the SIM-ONE TUI work pane are required for 0.1.0 Beta before architecture and implementation planning.",
+      "id": "approve-beta-release-contract",
+      "inputs": [
+        {
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
+          "required": true
+        },
+        {
+          "artifact": "artifact:change-contract",
+          "name": "change acceptance contract",
+          "required": true
+        },
+        {
+          "artifact": "artifact:affected-domain-map",
+          "name": "affected domain map",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:beta-release-contract",
+          "format": "approval-record",
+          "name": "0.1.0 Beta release contract approval"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:baseline-context",
+          "artifact:change-contract",
+          "artifact:affected-domain-map",
+          "docs/getting-started/pre-release-status.md",
+          "/opt/ai/plans/sim-one-ratatui-tui/plan.md",
+          "/opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md",
+          "/opt/ai/plans/sim-one-build-structure/plan.md",
+          "/opt/ai/plans/agent-tui/plan.md"
+        ],
+        "write": []
+      },
+      "resources": [],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Produces an owner-bound approval of the fixed 0.1.0 Beta contract without mutating project or external state.",
+        "level": "none",
+        "rollback": "none"
+      },
+      "state": "planned",
+      "tags": [
+        "human-gate",
+        "release-contract",
+        "lineage",
+        "tui",
+        "onboarding"
+      ],
+      "title": "Approve 0.1.0 Beta Release Contract",
+      "type": "human_gate"
+    },
+    {
+      "acceptance": [
+        {
           "criterion": "The decision records alternatives, decision criteria, supporting evidence, the selected approach, consequences, and a revisit trigger.",
           "evidence": "runtime:evidence/decide-architecture/decision.json",
           "id": "alternatives-recorded",
@@ -1909,6 +2424,11 @@
         {
           "artifact": "artifact:affected-domain-map",
           "name": "affected domain map",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
           "required": true
         }
       ],
@@ -1981,6 +2501,18 @@
           "evidence": "runtime:evidence/plan-implementation/workspace-layers.json",
           "id": "workspace-layers-mapped",
           "kind": "review"
+        },
+        {
+          "criterion": "The implementation plan maps every required release and planned-work ID to one producing graph member, one verification path, and one file owner with no deferred or optional branch.",
+          "evidence": "runtime:evidence/plan-implementation/release-ledger-map.json",
+          "id": "release-ledger-mapped",
+          "kind": "review"
+        },
+        {
+          "criterion": "The plan uses /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, and /opt/ai/plans/agent-tui/plan.md as detailed source inputs while using SIM-ONE TUI as product terminology.",
+          "evidence": "runtime:evidence/plan-implementation/source-plan-lineage.json",
+          "id": "source-plan-lineage-preserved",
+          "kind": "policy"
         }
       ],
       "execution": {
@@ -2005,6 +2537,11 @@
           "artifact": "artifact:architecture-decision",
           "name": "architecture decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
         }
       ],
       "outputs": [
@@ -2020,6 +2557,12 @@
         "read": [
           "artifact:change-contract",
           "artifact:architecture-decision",
+          "artifact:beta-release-contract",
+          "docs/getting-started/pre-release-status.md",
+          "/opt/ai/plans/sim-one-ratatui-tui/plan.md",
+          "/opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md",
+          "/opt/ai/plans/sim-one-build-structure/plan.md",
+          "/opt/ai/plans/agent-tui/plan.md",
           "package.json",
           ".github/workflows/ci.yml",
           "src/AGENTS.md",
@@ -2182,6 +2725,18 @@
           "evidence": "runtime:evidence/implement-agent-runtime/company-instruction-gate.json",
           "id": "company-instructions-human-gated",
           "kind": "policy"
+        },
+        {
+          "criterion": "REL-CW-002: the live Flue Coding Worker profile attaches checkpoint reporting and forwards durable typed progress through active connector routes; a standalone reporter or unit-only event type is insufficient.",
+          "evidence": "runtime:evidence/implement-agent-runtime/rel-cw-002-live-progress.json",
+          "id": "rel-cw-002-live-checkpoint-progress",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-PROTO-003: orchestrator and critic scoring cover every required protocol stage with fail-closed handling for missing, invalid, or rejected stage evidence.",
+          "evidence": "runtime:evidence/implement-agent-runtime/rel-proto-003-stage-scoring.json",
+          "id": "rel-proto-003-stage-scoring",
+          "kind": "test"
         }
       ],
       "execution": {
@@ -2200,6 +2755,11 @@
         {
           "artifact": "artifact:implementation-plan",
           "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
           "required": true
         }
       ],
@@ -2361,6 +2921,36 @@
           "evidence": "runtime:evidence/implement-capabilities-security/progress-events.jsonl",
           "id": "progress-visible",
           "kind": "artifact"
+        },
+        {
+          "criterion": "REL-CW-001: every Coding Worker write and patch path calls the approval service with trusted project and repository scope and fails closed when approval is missing or unavailable.",
+          "evidence": "runtime:evidence/implement-capabilities-security/rel-cw-001-edit-approval.json",
+          "id": "rel-cw-001-edit-approval-enforced",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-CAP-001: capability materialization resolves and records an exact requested branch, tag, or commit instead of shallow-cloning the remote default branch.",
+          "evidence": "runtime:evidence/implement-capabilities-security/rel-cap-001-version-pinning.json",
+          "id": "rel-cap-001-version-pinning",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-MCP-001: mcp update changes validated connection, name, and description fields in place while preserving identity, audit data, and secret handling.",
+          "evidence": "runtime:evidence/implement-capabilities-security/rel-mcp-001-in-place-update.json",
+          "id": "rel-mcp-001-in-place-update",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-PROTO-001: the release policy set contains complete enabled records for global, connector, project, workflow, task, output, approval, and progress behavior.",
+          "evidence": "runtime:evidence/implement-capabilities-security/rel-proto-001-policy-records.json",
+          "id": "rel-proto-001-policy-records",
+          "kind": "artifact"
+        },
+        {
+          "criterion": "REL-PROTO-002: trusted pre-execution enforcement blocks reasoning, tool execution, worker delegation, and final response when the required Protocol Tool result is absent, invalid, or incomplete.",
+          "evidence": "runtime:evidence/implement-capabilities-security/rel-proto-002-fail-closed.json",
+          "id": "rel-proto-002-fail-closed",
+          "kind": "test"
         }
       ],
       "execution": {
@@ -2379,6 +2969,11 @@
         {
           "artifact": "artifact:implementation-plan",
           "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
           "required": true
         }
       ],
@@ -2445,6 +3040,42 @@
           "evidence": "runtime:evidence/implement-ingress-operations/progress-events.jsonl",
           "id": "progress-visible",
           "kind": "artifact"
+        },
+        {
+          "criterion": "REL-TG-001: an unknown Telegram user creates a durable pending pairing request and receives the intended connector response without bypassing approval.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-tg-001-pairing.json",
+          "id": "rel-tg-001-pairing-delivery",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-TG-002: Telegram disabled-policy semantics distinguish direct-message policy from group-message policy and enforce the documented scope.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-tg-002-disabled-policy.json",
+          "id": "rel-tg-002-disabled-policy",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-SEC-001: authenticated gateway ingress applies bounded request throttling with actor-aware keys, observable rejection evidence, and tests for bypass and reset behavior.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-sec-001-rate-limiting.json",
+          "id": "rel-sec-001-rate-limiting",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-SCH-001: scheduled dispatch persists and passes the trusted event id required by protocol and scoped-memory retrieval through the orchestrator handoff.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-sch-001-context-handoff.json",
+          "id": "rel-sch-001-context-handoff",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-SCH-002: scheduled results persist durable content and deliver through the selected connector with idempotent retry and terminal failure evidence.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-sch-002-result-delivery.json",
+          "id": "rel-sch-002-result-delivery",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-DISCORD-001: the Discord connector normalizes authenticated events, uses connector-owned session policy, and delivers responses through the gateway.",
+          "evidence": "runtime:evidence/implement-ingress-operations/rel-discord-001.json",
+          "id": "rel-discord-001-resolved",
+          "kind": "policy"
         }
       ],
       "execution": {
@@ -2463,6 +3094,11 @@
         {
           "artifact": "artifact:implementation-plan",
           "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
           "required": true
         }
       ],
@@ -2515,6 +3151,216 @@
     {
       "acceptance": [
         {
+          "criterion": "TUI-WORK-001 implements the required SIM-ONE TUI work pane without regressing the existing transcript and prompt interaction.",
+          "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/scope.json",
+          "id": "tui-work-001-scope-obeyed",
+          "kind": "policy"
+        },
+        {
+          "criterion": "At supported widths, the SIM-ONE TUI renders transcript and prompt with a right-side work pane near 30 percent width; constrained terminals use the planned overlay or alternate view without overlap or inaccessible content.",
+          "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/responsive-layout.json",
+          "id": "responsive-work-pane-rendered",
+          "kind": "test"
+        },
+        {
+          "criterion": "The task checklist has independent focus and scrolling, displays stable checkboxes, persists task state through the Rust/WASM helper contract, and never steals transcript or prompt scrolling.",
+          "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/task-checklist.json",
+          "id": "task-checklist-independent",
+          "kind": "test"
+        },
+        {
+          "criterion": "Usage input, output, total spend, Git status, and runtime status are sourced from typed data rather than decorative placeholders and remain readable in loading, unavailable, empty, error, and populated states.",
+          "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/work-pane-data.json",
+          "id": "work-pane-data-real",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused Rust state, framebuffer, interaction, persistence/WASM, and packaged-product tests cover pane sizing, focus, independent scrolling, task mutations, data states, and narrow-terminal behavior.",
+          "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/focused-verification.json",
+          "id": "work-pane-tests-passed",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 3,
+        "timeout_minutes": 240
+      },
+      "executor": {
+        "instructions": "Follow /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md using SIM-ONE TUI product terminology. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.",
+        "kind": "agent",
+        "name": "SIM-ONE Coding Worker lead"
+      },
+      "goal": "Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction.",
+      "id": "implement-sim-one-tui-work-pane",
+      "inputs": [
+        {
+          "artifact": "artifact:implementation-plan",
+          "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:sim-one-tui-work-pane-change",
+          "format": "git-diff-or-no-change-record",
+          "name": "SIM-ONE TUI work-pane change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:implementation-plan",
+          "artifact:beta-release-contract",
+          "/opt/ai/plans/sim-one-ratatui-tui/plan.md",
+          "/opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md",
+          "docs/architecture/tui-cli-session-flow.md",
+          "docs/operations/product-tui.md",
+          "docs/tui/",
+          "tui/ratatui/",
+          "crates/"
+        ],
+        "write": [
+          "tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan",
+          "Rust/WASM helper files assigned exclusively to this member by artifact:implementation-plan",
+          "focused test files assigned exclusively to this member by artifact:implementation-plan"
+        ]
+      },
+      "resources": [
+        "project:sim-one-tui-work-pane"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Changes only the TUI work-pane implementation and its exclusively assigned tests.",
+        "level": "reversible",
+        "rollback": "Restore this member's files from the pre-change Git commit while preserving the existing two-pane TUI and unrelated workstreams."
+      },
+      "state": "planned",
+      "tags": [
+        "implementation",
+        "tui",
+        "work-pane",
+        "tasks",
+        "usage",
+        "git-status"
+      ],
+      "title": "Implement SIM-ONE TUI Work Pane",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "REL-PKG-001: a versioned release archive contains the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and published checksums.",
+          "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-001-release-archive.json",
+          "id": "rel-pkg-001-release-archive",
+          "kind": "artifact"
+        },
+        {
+          "criterion": "REL-PKG-002: installation verifies checksums before materializing the runtime, refuses mismatches, uses the runtime owner directory independent of caller cwd, and leaves a recoverable prior installation.",
+          "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-002-integrity-install.json",
+          "id": "rel-pkg-002-integrity-install",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-ONB-001: sim-one install runs packaged onboarding, stores validated configuration and secrets in documented user-owned locations, verifies a real model response, and enters the first secure SIM-ONE TUI session.",
+          "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-onb-001-onboarding.json",
+          "id": "rel-onb-001-packaged-onboarding",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-OPS-001: sim-one config, doctor, status, start, restart, and stop expose documented behavior for local-process and service-managed runtime modes, with output-level health evidence and idempotent lifecycle handling.",
+          "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-ops-001-lifecycle-commands.json",
+          "id": "rel-ops-001-lifecycle-commands",
+          "kind": "test"
+        },
+        {
+          "criterion": "Onboarding and lifecycle output never prints secret values, distinguishes warnings from blockers, and provides actionable recovery without requiring a source checkout or Cargo command.",
+          "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/secret-and-recovery-review.json",
+          "id": "onboarding-secrets-and-recovery-safe",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 3,
+        "timeout_minutes": 300
+      },
+      "executor": {
+        "instructions": "Use /opt/ai/plans/sim-one-build-structure/plan.md as the current runtime and packaging foundation and /opt/ai/plans/agent-tui/plan.md as onboarding research, correcting stale framework, package, authentication, and product naming assumptions against current repository architecture. Keep the install and service probes isolated from host production services.",
+        "kind": "agent",
+        "name": "SIM-ONE Coding Worker lead"
+      },
+      "goal": "Implement versioned SIM-ONE packaging, integrity-verified installation, packaged onboarding, configuration, diagnostics, and local or service-managed lifecycle commands.",
+      "id": "implement-sim-one-onboarding-distribution",
+      "inputs": [
+        {
+          "artifact": "artifact:implementation-plan",
+          "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:sim-one-onboarding-distribution-change",
+          "format": "git-diff-or-no-change-record",
+          "name": "SIM-ONE onboarding and distribution change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:implementation-plan",
+          "artifact:beta-release-contract",
+          "/opt/ai/plans/sim-one-build-structure/plan.md",
+          "/opt/ai/plans/agent-tui/plan.md",
+          "sim-one-cli/",
+          "scripts/",
+          "package.json",
+          "docs/getting-started/",
+          "docs/operations/"
+        ],
+        "write": [
+          "sim-one-cli/ files assigned exclusively to this member by artifact:implementation-plan",
+          "release packaging and service files assigned exclusively to this member by artifact:implementation-plan",
+          "focused test files assigned exclusively to this member by artifact:implementation-plan"
+        ]
+      },
+      "resources": [
+        "project:sim-one-onboarding-distribution"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Changes only the isolated onboarding, packaging, installer, lifecycle, and focused-test files assigned to this member.",
+        "level": "reversible",
+        "rollback": "Restore this member's files from the pre-change Git commit and retain the last verified packaged runtime for recovery."
+      },
+      "state": "planned",
+      "tags": [
+        "implementation",
+        "onboarding",
+        "packaging",
+        "installer",
+        "cli",
+        "service"
+      ],
+      "title": "Implement SIM-ONE Onboarding And Distribution",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
           "criterion": "The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision.",
           "evidence": "runtime:evidence/implement-product-delivery/scope-review.json",
           "id": "scope-obeyed",
@@ -2531,6 +3377,24 @@
           "evidence": "runtime:evidence/implement-product-delivery/progress-events.jsonl",
           "id": "progress-visible",
           "kind": "artifact"
+        },
+        {
+          "criterion": "The product integration consumes the required SIM-ONE TUI work-pane and onboarding/distribution outputs, preserves the sim-one capability command families, and resolves every shared-file owner before mutation.",
+          "evidence": "runtime:evidence/implement-product-delivery/product-workstream-integration.json",
+          "id": "product-workstreams-integrated",
+          "kind": "review"
+        },
+        {
+          "criterion": "REL-WEB-001: the Web UI uses the authenticated gateway, connector-owned session policy, durable progress, and packaged configuration.",
+          "evidence": "runtime:evidence/implement-product-delivery/rel-web-001.json",
+          "id": "rel-web-001-resolved",
+          "kind": "policy"
+        },
+        {
+          "criterion": "docs/getting-started/pre-release-status.md retains every stable release ID, current implementation status, graph owner, and approved scope after product integration.",
+          "evidence": "runtime:evidence/implement-product-delivery/release-ledger.json",
+          "id": "release-ledger-current",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -2543,12 +3407,27 @@
         "kind": "agent",
         "name": "SIM-ONE Coding Worker lead"
       },
-      "goal": "Implement authorized sim-one command, primary Ratatui TUI, product packaging, install, build, CI, and release documentation changes while preserving capability-management subcommands.",
+      "goal": "Integrate authorized SIM-ONE product surfaces, shared build and CI contracts, Web UI scope, and release documentation after the TUI and onboarding workstreams while preserving capability-management subcommands.",
       "id": "implement-product-delivery",
       "inputs": [
         {
           "artifact": "artifact:implementation-plan",
           "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        },
+        {
+          "artifact": "artifact:sim-one-tui-work-pane-change",
+          "name": "SIM-ONE TUI work-pane change",
+          "required": true
+        },
+        {
+          "artifact": "artifact:sim-one-onboarding-distribution-change",
+          "name": "SIM-ONE onboarding and distribution change",
           "required": true
         }
       ],
@@ -2564,12 +3443,13 @@
         "external": [],
         "read": [
           "artifact:implementation-plan",
+          "artifact:beta-release-contract",
+          "artifact:sim-one-tui-work-pane-change",
+          "artifact:sim-one-onboarding-distribution-change",
           "authorized project files"
         ],
         "write": [
-          "sim-one-cli/",
-          "tui/",
-          "scripts/",
+          "shared product integration files assigned exclusively to this serialized member by artifact:implementation-plan",
           ".github/workflows/",
           "docs/architecture/product-flow.md",
           "docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan",
@@ -2736,13 +3616,18 @@
           "required": false
         },
         {
-          "artifact": "artifact:ratatui-build",
-          "name": "ratatui build",
+          "artifact": "artifact:sim-one-tui-build",
+          "name": "SIM-ONE TUI build",
           "required": false
         },
         {
-          "artifact": "artifact:ratatui-product-report",
-          "name": "ratatui product report",
+          "artifact": "artifact:sim-one-tui-product-report",
+          "name": "SIM-ONE TUI product report",
+          "required": false
+        },
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "name": "onboarding and distribution report",
           "required": false
         },
         {
@@ -2999,7 +3884,7 @@
           "kind": "test"
         },
         {
-          "criterion": "The unit report proves approval-ingress.test.ts and coding-worker.test.ts passed, covering typed approval/progress events, durable routing, tool execution progress, and worker handoffs without claiming Ratatui rendering that these TypeScript tests do not exercise.",
+          "criterion": "The unit report proves approval-ingress.test.ts and coding-worker.test.ts passed, covering typed approval/progress events, durable routing, tool execution progress, and worker handoffs without claiming TUI rendering that these TypeScript tests do not exercise.",
           "evidence": "runtime:evidence/verify-unit-tests/approval-progress-tests.json",
           "id": "approval-progress-routing-passed",
           "kind": "test"
@@ -3116,15 +4001,21 @@
           "kind": "test"
         },
         {
-          "criterion": "The Rust report proves the Ratatui event reducer and application state handle thinking, tool, and delegated-task progress, while the rendered terminal surface proves thinking and tool rows and preserves stream state; delegated-task rendering and approval UI require separate evidence.",
-          "evidence": "runtime:evidence/verify-rust-tests/ratatui-progress-rendering.json",
-          "id": "ratatui-progress-rendering-passed",
+          "criterion": "The Rust report proves the TUI event reducer and application state handle thinking, tool, and delegated-task progress, while the rendered terminal surface proves thinking and tool rows and preserves stream state; delegated-task rendering and approval UI require separate evidence.",
+          "evidence": "runtime:evidence/verify-rust-tests/tui-progress-rendering.json",
+          "id": "tui-progress-rendering-passed",
           "kind": "test"
         },
         {
           "criterion": "The Rust report proves durable transcript pages and live events converge in one document, completed responses remain immutable, newest and prepended history preserve viewport anchors, live-tail reaches the rendered bottom, and keyboard, multiline prompt, command-palette, mouse selection, copy, and scrollbar behavior remain covered.",
-          "evidence": "runtime:evidence/verify-rust-tests/ratatui-session-transcript-interaction.json",
-          "id": "ratatui-session-transcript-interaction-passed",
+          "evidence": "runtime:evidence/verify-rust-tests/tui-session-transcript-interaction.json",
+          "id": "tui-session-transcript-interaction-passed",
+          "kind": "test"
+        },
+        {
+          "criterion": "Rust state, rendering, and interaction tests prove the required TUI work pane has responsive sizing, constrained-terminal behavior, independent task scrolling, task mutation, and transcript/prompt focus isolation.",
+          "evidence": "runtime:evidence/verify-rust-tests/tui-work-pane.json",
+          "id": "tui-work-pane-passed",
           "kind": "test"
         }
       ],
@@ -3147,7 +4038,7 @@
         "kind": "deterministic",
         "name": "Verify Rust Project Tests"
       },
-      "goal": "Run the configured Rust project tests for the memory engine and Ratatui crates.",
+      "goal": "Run the configured Rust project tests for the memory engine and Rust TUI crates.",
       "id": "verify-rust-tests",
       "inputs": [
         {
@@ -3304,8 +4195,8 @@
     {
       "acceptance": [
         {
-          "criterion": "The Ratatui release build succeeds and the product binary exists with an executable mode and recorded digest.",
-          "evidence": "runtime:evidence/build-ratatui/result.json",
+          "criterion": "The SIM-ONE TUI release build succeeds and the product binary exists with an executable mode and recorded digest.",
+          "evidence": "runtime:evidence/build-sim-one-tui/result.json",
           "id": "verification-passed",
           "kind": "test"
         }
@@ -3315,7 +4206,7 @@
         "command": [
           "pnpm",
           "run",
-          "build:tui:ratatui"
+          "build:tui"
         ],
         "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
         "environment": [],
@@ -3330,10 +4221,10 @@
       "executor": {
         "instructions": "Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.",
         "kind": "deterministic",
-        "name": "Build Ratatui Product TUI"
+        "name": "Build SIM-ONE TUI"
       },
-      "goal": "Build the release-mode Ratatui TUI product binary and copy it into the product artifact.",
-      "id": "build-ratatui",
+      "goal": "Build the release-mode SIM-ONE TUI binary and copy it into the product artifact.",
+      "id": "build-sim-one-tui",
       "inputs": [
         {
           "artifact": "artifact:integrated-change",
@@ -3348,9 +4239,9 @@
       ],
       "outputs": [
         {
-          "artifact": "artifact:ratatui-build",
+          "artifact": "artifact:sim-one-tui-build",
           "format": "verification-report",
-          "name": "Build Ratatui Product TUI"
+          "name": "Build SIM-ONE TUI"
         }
       ],
       "permissions": {
@@ -3366,7 +4257,7 @@
         ]
       },
       "resources": [
-        "project:ratatui-build-output"
+        "project:sim-one-tui-build-output"
       ],
       "side_effects": {
         "approval_required": false,
@@ -3379,10 +4270,9 @@
         "verification",
         "deterministic",
         "build",
-        "ratatui",
         "tui"
       ],
-      "title": "Build Ratatui Product TUI",
+      "title": "Build SIM-ONE TUI",
       "type": "verification"
     },
     {
@@ -3418,7 +4308,7 @@
         "kind": "deterministic",
         "name": "Build SIM-ONE CLI"
       },
-      "goal": "Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged Ratatui TUI by default.",
+      "goal": "Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged SIM-ONE TUI by default.",
       "id": "build-cli",
       "inputs": [
         {
@@ -3466,7 +4356,7 @@
         "build",
         "cli",
         "launcher",
-        "ratatui"
+        "tui"
       ],
       "title": "Build SIM-ONE CLI",
       "type": "verification"
@@ -3474,7 +4364,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The platform sim-one launcher exits zero for --help, prints the documented SIM-ONE Alpha capability-management surface, and completes --smoke-startup through the packaged Ratatui launcher rather than merely proving cli.js exists.",
+          "criterion": "The platform sim-one launcher exits zero for --help, prints the documented SIM-ONE Alpha capability-management surface, and completes --smoke-startup through the packaged SIM-ONE TUI launcher rather than merely proving cli.js exists.",
           "evidence": "runtime:evidence/verify-cli-behavior/result.json",
           "id": "verification-passed",
           "kind": "test"
@@ -3500,7 +4390,7 @@
         "kind": "deterministic",
         "name": "Verify CLI Behavior"
       },
-      "goal": "Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built Ratatui product path.",
+      "goal": "Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built SIM-ONE TUI product path.",
       "id": "verify-cli-behavior",
       "inputs": [
         {
@@ -3509,8 +4399,8 @@
           "required": true
         },
         {
-          "artifact": "artifact:ratatui-build",
-          "name": "Ratatui build",
+          "artifact": "artifact:sim-one-tui-build",
+          "name": "SIM-ONE TUI build",
           "required": true
         },
         {
@@ -3542,7 +4432,7 @@
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "May write temporary local packaged-runtime state while exercising Ratatui startup.",
+        "description": "May write temporary local packaged-runtime state while exercising SIM-ONE TUI startup.",
         "level": "reversible",
         "rollback": "Remove the isolated test runtime state or regenerate it from the reviewed build."
       },
@@ -3551,7 +4441,7 @@
         "verification",
         "deterministic",
         "cli",
-        "ratatui",
+        "tui",
         "packaged-product",
         "behavior"
       ],
@@ -3658,32 +4548,38 @@
       "acceptance": [
         {
           "criterion": "The product smoke records a real assistant response of valid content; binary or process existence alone is insufficient.",
-          "evidence": "runtime:evidence/verify-ratatui-product/result.json",
+          "evidence": "runtime:evidence/verify-sim-one-tui/result.json",
           "id": "verification-passed",
           "kind": "test"
         },
         {
           "criterion": "The product smoke launches through .gorombo/sim-one-cli/sim-one, proves consecutive default launches create distinct fresh durable sessions, verifies workspace-derived greeting-preflight behavior, and resumes an exact owned id or explicit name without sending a second greeting.",
-          "evidence": "runtime:evidence/verify-ratatui-product/packaged-session-lifecycle.json",
+          "evidence": "runtime:evidence/verify-sim-one-tui/packaged-session-lifecycle.json",
           "id": "packaged-launch-and-session-lifecycle-passed",
           "kind": "test"
         },
         {
           "criterion": "The product smoke restores newest and older transcript pages, attaches strictly after snapshot nextOffset, preserves completed exchanges, deduplicates reconnect replay, hides private and nested output, and renders one authoritative Markdown final in terminal order.",
-          "evidence": "runtime:evidence/verify-ratatui-product/transcript-replay-live-convergence.json",
+          "evidence": "runtime:evidence/verify-sim-one-tui/transcript-replay-live-convergence.json",
           "id": "transcript-replay-live-convergence-passed",
           "kind": "test"
         },
         {
           "criterion": "On the canonical POSIX host, the packaged PTY evidence proves prompt editing and multiline submission remain active during transcript scrollback, command-palette selection works, mouse selection and copy do not exit, history prepend preserves the visible anchor, and scrollbar/live-tail controls reach the true transcript ends; cross-platform terminal-event coverage remains separately owned by verify-rust-tests.",
-          "evidence": "runtime:evidence/verify-ratatui-product/interactive-terminal-controls.json",
+          "evidence": "runtime:evidence/verify-sim-one-tui/interactive-terminal-controls.json",
           "id": "interactive-terminal-controls-passed",
           "kind": "test"
         },
         {
           "criterion": "The product smoke proves /new, /clear, /session, /sessions, /compact, /resume, /rename, and /exit operate through the active TUI connector session and preserve the documented header, status, and exit identity behavior.",
-          "evidence": "runtime:evidence/verify-ratatui-product/session-command-surface.json",
+          "evidence": "runtime:evidence/verify-sim-one-tui/session-command-surface.json",
           "id": "session-command-surface-passed",
+          "kind": "test"
+        },
+        {
+          "criterion": "Packaged terminal evidence proves the required work pane renders at supported widths, uses the planned constrained-terminal view, scrolls independently, mutates durable task state, and leaves transcript and prompt interaction intact.",
+          "evidence": "runtime:evidence/verify-sim-one-tui/work-pane-product-behavior.json",
+          "id": "work-pane-product-behavior-passed",
           "kind": "test"
         }
       ],
@@ -3711,10 +4607,10 @@
       "executor": {
         "instructions": "Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.",
         "kind": "deterministic",
-        "name": "Verify Packaged Ratatui Product"
+        "name": "Verify Packaged SIM-ONE TUI"
       },
-      "goal": "Prove the packaged sim-one command launches Ratatui, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response.",
-      "id": "verify-ratatui-product",
+      "goal": "Prove the packaged sim-one command launches the SIM-ONE TUI, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response.",
+      "id": "verify-sim-one-tui",
       "inputs": [
         {
           "artifact": "artifact:runtime-build",
@@ -3722,21 +4618,26 @@
           "required": true
         },
         {
-          "artifact": "artifact:ratatui-build",
-          "name": "Ratatui build",
+          "artifact": "artifact:sim-one-tui-build",
+          "name": "SIM-ONE TUI build",
           "required": true
         },
         {
           "artifact": "artifact:cli-build",
           "name": "CLI build",
           "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
         }
       ],
       "outputs": [
         {
-          "artifact": "artifact:ratatui-product-report",
+          "artifact": "artifact:sim-one-tui-product-report",
           "format": "verification-report",
-          "name": "Verify Packaged Ratatui Product"
+          "name": "Verify Packaged SIM-ONE TUI"
         }
       ],
       "permissions": {
@@ -3750,7 +4651,7 @@
         ],
         "write": [
           ".gorombo test runtime configuration",
-          "/tmp Ratatui product runtime root"
+          "/tmp SIM-ONE TUI product runtime root"
         ]
       },
       "resources": [
@@ -3766,12 +4667,124 @@
       "tags": [
         "verification",
         "deterministic",
-        "ratatui",
         "tui",
         "live-model",
         "behavior"
       ],
-      "title": "Verify Packaged Ratatui Product",
+      "title": "Verify Packaged SIM-ONE TUI",
+      "type": "verification"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "REL-PKG-001 and REL-PKG-002: an isolated clean-home probe downloads or reads the versioned release archive, verifies published checksums before extraction, installs without a source checkout, and launches the packaged product from an arbitrary working directory.",
+          "evidence": "runtime:evidence/verify-onboarding-distribution/package-install.json",
+          "id": "package-install-passed",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-ONB-001: the packaged sim-one install flow validates configuration, protects secrets, obtains a real model response, and opens the first secure SIM-ONE TUI session with output-level evidence.",
+          "evidence": "runtime:evidence/verify-onboarding-distribution/onboarding.json",
+          "id": "packaged-onboarding-passed",
+          "kind": "test"
+        },
+        {
+          "criterion": "REL-OPS-001: isolated command probes prove config, doctor, status, start, restart, and stop behavior for local-process and service-managed modes without mutating the host production service.",
+          "evidence": "runtime:evidence/verify-onboarding-distribution/lifecycle-commands.json",
+          "id": "lifecycle-commands-passed",
+          "kind": "test"
+        },
+        {
+          "criterion": "The verification records exact platform coverage, archive and binary digests, temporary runtime roots, provider response evidence, and any unproved platform or service behavior that must block release.",
+          "evidence": "runtime:evidence/verify-onboarding-distribution/evidence-scope.json",
+          "id": "distribution-evidence-honest",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Run the exact isolated packaging, installer, onboarding, command, and service-adapter probes introduced by the implementation plan. Bind their argv commands and expected artifacts before execution. Use temporary HOME and runtime roots; do not install or restart the host production service. Preserve full stdout, stderr, exit status, timing, digests, and output-level health evidence.",
+        "kind": "hybrid",
+        "name": "SIM-ONE packaged onboarding verification adapter"
+      },
+      "goal": "Prove the versioned SIM-ONE package installs with integrity, onboards from a clean user environment, manages its runtime, and launches the finished product without a source checkout.",
+      "id": "verify-onboarding-distribution",
+      "inputs": [
+        {
+          "artifact": "artifact:integrated-change",
+          "name": "integrated change set",
+          "required": true
+        },
+        {
+          "artifact": "artifact:runtime-build",
+          "name": "runtime build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:sim-one-tui-build",
+          "name": "SIM-ONE TUI build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:cli-build",
+          "name": "CLI build",
+          "required": true
+        },
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "format": "verification-report",
+          "name": "Verify SIM-ONE Onboarding And Distribution"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "configured model-provider HTTPS endpoint declared by project model cards",
+          "approved release-asset download endpoint when the probe requires it"
+        ],
+        "read": [
+          "authorized project tree",
+          "artifact:beta-release-contract",
+          "node_modules/",
+          "versioned release assets"
+        ],
+        "write": [
+          "/tmp SIM-ONE onboarding test home",
+          "/tmp SIM-ONE packaged runtime root",
+          "isolated service-manager test state"
+        ]
+      },
+      "resources": [
+        "local-runtime-probe",
+        "isolated-packaged-install-probe"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates only isolated temporary installation, onboarding, runtime, and service-test state.",
+        "level": "reversible",
+        "rollback": "Remove the isolated test roots and regenerate the package from the reviewed commit."
+      },
+      "state": "planned",
+      "tags": [
+        "verification",
+        "onboarding",
+        "packaging",
+        "installer",
+        "cli",
+        "service"
+      ],
+      "title": "Verify SIM-ONE Onboarding And Distribution",
       "type": "verification"
     },
     {
@@ -3789,7 +4802,7 @@
           "kind": "test"
         },
         {
-          "criterion": "This node reports only direct gateway prompt and CLI-help behavior. Packaged sim-one/Ratatui launch, sessions, transcript replay, interaction, and visible-final behavior belong to verify-ratatui-product; approval routing and typed progress belong to unit evidence; missing user-visible approval or subagent end-to-end proof remains an architecture-review blocker.",
+          "criterion": "This node reports only direct gateway prompt and CLI-help behavior. Packaged sim-one/SIM-ONE TUI launch, sessions, transcript replay, interaction, and visible-final behavior belong to verify-sim-one-tui; approval routing and typed progress belong to unit evidence; missing user-visible approval or subagent end-to-end proof remains an architecture-review blocker.",
           "evidence": "runtime:evidence/verify-tui-e2e/evidence-scope.json",
           "id": "evidence-scope-honest",
           "kind": "policy"
@@ -3818,7 +4831,7 @@
         "kind": "deterministic",
         "name": "Verify Gateway And CLI Smoke"
       },
-      "goal": "Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged Ratatui end-to-end evidence.",
+      "goal": "Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged SIM-ONE TUI end-to-end evidence.",
       "id": "verify-tui-e2e",
       "inputs": [
         {
@@ -3979,9 +4992,15 @@
           "kind": "policy"
         },
         {
-          "criterion": "The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust Ratatui state/rendering, and packaged sim-one/Ratatui PTY behavior as distinct evidence scopes and rejects claims that exceed the probe that produced them.",
+          "criterion": "The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them.",
           "evidence": "runtime:evidence/aggregate-verification/product-evidence-scope.json",
           "id": "product-evidence-scopes-separated",
+          "kind": "review"
+        },
+        {
+          "criterion": "Every required release and planned-work ID has fresh implementation and behavioral evidence from its owning graph member; no ID may pass through a deferred, optional, or not-applicable branch.",
+          "evidence": "runtime:evidence/aggregate-verification/release-ledger-coverage.json",
+          "id": "release-ledger-coverage-complete",
           "kind": "review"
         }
       ],
@@ -4024,8 +5043,13 @@
           "required": true
         },
         {
-          "artifact": "artifact:ratatui-product-report",
-          "name": "Ratatui product report",
+          "artifact": "artifact:sim-one-tui-product-report",
+          "name": "SIM-ONE TUI product report",
+          "required": true
+        },
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "name": "onboarding and distribution report",
           "required": true
         },
         {
@@ -4115,15 +5139,21 @@
           "kind": "review"
         },
         {
-          "criterion": "Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust Ratatui state/rendering tests, packaged sim-one/Ratatui PTY tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval.",
+          "criterion": "Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust TUI state/rendering tests, packaged SIM-ONE TUI PTY tests, isolated onboarding/distribution tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval.",
           "evidence": "runtime:evidence/review-architecture-security/probe-claim-map.json",
           "id": "verification-claims-match-probes",
           "kind": "review"
         },
         {
-          "criterion": "Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior from release gates without presenting a roadmap.",
+          "criterion": "Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior, required release gates, and owner-scoped planned product work without making speculative promises.",
           "evidence": "runtime:evidence/review-architecture-security/release-documentation.json",
           "id": "release-documentation-reviewed",
+          "kind": "review"
+        },
+        {
+          "criterion": "The release ledger, graph members, owner scope decision, external plan lineage, and verification summary contain the same complete set of stable release IDs and no required item is hidden by a generic workstream.",
+          "evidence": "runtime:evidence/review-architecture-security/release-lineage.json",
+          "id": "release-lineage-consistent",
           "kind": "review"
         }
       ],
@@ -4646,6 +5676,12 @@
           "evidence": "runtime:evidence/release-production/release.json",
           "id": "production-release-bound",
           "kind": "policy"
+        },
+        {
+          "criterion": "REL-REL-001: the 0.1.0 Beta release date is written only after successful publication and matches the immutable release record.",
+          "evidence": "runtime:evidence/release-production/rel-rel-001-release-date.json",
+          "id": "rel-rel-001-release-date-recorded",
+          "kind": "artifact"
         }
       ],
       "execution": {
@@ -4885,7 +5921,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:8ecb9be15a21925a56dad76381a3367522b351eb43a1f9e25afdbc94a8c0e98a",
+    "context_version": "snapshot:sha256:2ca3b3c61d639975e49095a681f113520c55afbea7a06576b4d3f3ee1681fea3",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
@@ -4907,6 +5943,7 @@
       "/opt/ai/sim-one-alpha/docs/operations/product-tui.md",
       "/opt/ai/sim-one-alpha/docs/tui/ratatui.md",
       "/opt/ai/sim-one-alpha/docs/tui/session-management.md",
+      "/opt/ai/sim-one-alpha/docs/getting-started/pre-release-status.md",
       "/opt/ai/sim-one-alpha/.github/workflows/ci.yml"
     ],
     "name": "sim-one-alpha",
@@ -4921,7 +5958,8 @@
     "The graph coordinator is not an operating-system sandbox or distributed scheduler; untrusted commands require an approved isolation layer.",
     "The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.",
     "Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.",
-    "Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.",
+    "External source plans contain historical implementation and package names; execution must reconcile them against the repository release ledger, current architecture, and SIM-ONE TUI product terminology before assigning files or behavior.",
+    "Current gateway and packaged SIM-ONE TUI probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.",
     "Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, scheduled trusted-event context or output delivery, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, trusted-context handoff, persisted result fields, connector delivery path, and configured test command while labeling unimplemented release contracts explicitly."
   ],
   "schema_version": 1,

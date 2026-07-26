@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 293655b66efdc5ae6af925f569d76148082a21a0d7642ec871f2225b58903d8c -->
+<!-- development-graph-sha256: 532fe4a23724260246c4e765cbf448ebf7759da2aa1dbae808ede94b8236ed58 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `25` |
+| Graph version | `28` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `snapshot:sha256:8ecb9be15a21925a56dad76381a3367522b351eb43a1f9e25afdbc94a8c0e98a` |
+| Context version | `snapshot:sha256:2ca3b3c61d639975e49095a681f113520c55afbea7a06576b4d3f3ee1681fea3` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `293655b66efdc5ae6af925f569d76148082a21a0d7642ec871f2225b58903d8c` |
+| Canonical checksum | `532fe4a23724260246c4e765cbf448ebf7759da2aa1dbae808ede94b8236ed58` |
 
 ## Flow
 
@@ -29,6 +29,7 @@ flowchart TD
     n_fetch_embedding_model[["Fetch Bundled Embedding Model\\n(operation / planned)"]]
     n_build_wasm_memory[["Build Rust Memory WASM\\n(operation / planned)"]]
     n_define_change_contract["Define Purpose And Acceptance Contract\\n(work / planned)"]
+    n_approve_beta_release_contract{{"Approve 0.1.0 Beta Release Contract\\n(human_gate / planned)"}}
     n_decide_architecture{"Resolve Architecture And Ownership\\n(decision / planned)"}
     n_plan_implementation["Plan Bounded Implementation\\n(work / planned)"]
     n_implement_core_contracts["Implement Core Contracts And Architecture\\n(work / planned)"]
@@ -36,6 +37,8 @@ flowchart TD
     n_implement_memory_retrieval["Implement Memory, RAG, And Embeddings\\n(work / planned)"]
     n_implement_capabilities_security["Implement Capabilities, Registries, And Security\\n(work / planned)"]
     n_implement_ingress_operations["Implement Ingress, Sessions, Schedules, And Telemetry\\n(work / planned)"]
+    n_implement_sim_one_tui_work_pane["Implement SIM-ONE TUI Work Pane\\n(work / planned)"]
+    n_implement_sim_one_onboarding_distribution["Implement SIM-ONE Onboarding And Distribution\\n(work / planned)"]
     n_implement_product_delivery["Implement Product Surfaces And Delivery\\n(work / planned)"]
     n_integrate_and_repair["Integrate Change And Apply Bounded Repairs\\n(work / planned)"]
     n_verify_typecheck(["Verify TypeScript Types\\n(verification / planned)"])
@@ -43,11 +46,12 @@ flowchart TD
     n_verify_unit_tests(["Verify Unit Test Suite\\n(verification / planned)"])
     n_verify_rust_tests(["Verify Rust Project Tests\\n(verification / planned)"])
     n_build_runtime(["Build Flue Runtime\\n(verification / planned)"])
-    n_build_ratatui(["Build Ratatui Product TUI\\n(verification / planned)"])
+    n_build_sim_one_tui(["Build SIM-ONE TUI\\n(verification / planned)"])
     n_build_cli(["Build SIM-ONE CLI\\n(verification / planned)"])
     n_verify_cli_behavior(["Verify CLI Behavior\\n(verification / planned)"])
     n_verify_http_integration(["Verify Built HTTP Runtime\\n(verification / planned)"])
-    n_verify_ratatui_product(["Verify Packaged Ratatui Product\\n(verification / planned)"])
+    n_verify_sim_one_tui(["Verify Packaged SIM-ONE TUI\\n(verification / planned)"])
+    n_verify_onboarding_distribution(["Verify SIM-ONE Onboarding And Distribution\\n(verification / planned)"])
     n_verify_tui_e2e(["Verify Gateway And CLI Smoke\\n(verification / planned)"])
     n_verify_memory_smoke(["Verify Real Memory Runtime\\n(verification / planned)"])
     n_aggregate_verification(["Aggregate Verification Evidence\\n(verification / planned)"])
@@ -65,10 +69,20 @@ flowchart TD
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
     n_baseline_context -- "consumes" --> n_define_change_contract
+    n_baseline_context -- "consumes" --> n_approve_beta_release_contract
+    n_define_change_contract -- "consumes" --> n_approve_beta_release_contract
     n_baseline_context -- "consumes" --> n_decide_architecture
+    n_approve_beta_release_contract -- "consumes" --> n_decide_architecture
     n_define_change_contract -- "consumes" --> n_decide_architecture
     n_define_change_contract -- "consumes" --> n_plan_implementation
     n_decide_architecture -- "consumes" --> n_plan_implementation
+    n_approve_beta_release_contract -- "consumes" --> n_plan_implementation
+    n_approve_beta_release_contract -- "consumes" --> n_implement_agent_runtime
+    n_approve_beta_release_contract -- "consumes" --> n_implement_capabilities_security
+    n_approve_beta_release_contract -- "consumes" --> n_implement_ingress_operations
+    n_approve_beta_release_contract -- "consumes" --> n_implement_sim_one_tui_work_pane
+    n_approve_beta_release_contract -- "consumes" --> n_implement_sim_one_onboarding_distribution
+    n_approve_beta_release_contract -- "consumes" --> n_implement_product_delivery
     n_plan_implementation -- "consumes" --> n_implement_core_contracts
     n_implement_core_contracts -- "consumes" --> n_integrate_and_repair
     n_plan_implementation -- "consumes" --> n_implement_agent_runtime
@@ -79,7 +93,11 @@ flowchart TD
     n_implement_capabilities_security -- "consumes" --> n_integrate_and_repair
     n_plan_implementation -- "consumes" --> n_implement_ingress_operations
     n_implement_ingress_operations -- "consumes" --> n_integrate_and_repair
+    n_plan_implementation -- "consumes" --> n_implement_sim_one_tui_work_pane
+    n_plan_implementation -- "consumes" --> n_implement_sim_one_onboarding_distribution
     n_plan_implementation -- "consumes" --> n_implement_product_delivery
+    n_implement_sim_one_tui_work_pane -- "consumes" --> n_implement_product_delivery
+    n_implement_sim_one_onboarding_distribution -- "consumes" --> n_implement_product_delivery
     n_implement_product_delivery -- "consumes" --> n_integrate_and_repair
     n_install_dependencies -- "consumes" --> n_integrate_and_repair
     n_fetch_embedding_model -- "consumes" --> n_integrate_and_repair
@@ -92,17 +110,23 @@ flowchart TD
     n_verify_typecheck -- "consumes" --> n_build_runtime
     n_verify_unit_tests -- "consumes" --> n_build_runtime
     n_verify_rust_tests -- "consumes" --> n_build_runtime
-    n_integrate_and_repair -- "consumes" --> n_build_ratatui
-    n_build_runtime -- "consumes" --> n_build_ratatui
+    n_integrate_and_repair -- "consumes" --> n_build_sim_one_tui
+    n_build_runtime -- "consumes" --> n_build_sim_one_tui
     n_integrate_and_repair -- "consumes" --> n_build_cli
     n_build_runtime -- "consumes" --> n_build_cli
     n_build_cli -- "consumes" --> n_verify_cli_behavior
     n_build_runtime -- "consumes" --> n_verify_cli_behavior
-    n_build_ratatui -- "consumes" --> n_verify_cli_behavior
+    n_build_sim_one_tui -- "consumes" --> n_verify_cli_behavior
     n_build_runtime -- "consumes" --> n_verify_http_integration
-    n_build_runtime -- "consumes" --> n_verify_ratatui_product
-    n_build_ratatui -- "consumes" --> n_verify_ratatui_product
-    n_build_cli -- "consumes" --> n_verify_ratatui_product
+    n_build_runtime -- "consumes" --> n_verify_sim_one_tui
+    n_approve_beta_release_contract -- "consumes" --> n_verify_sim_one_tui
+    n_integrate_and_repair -- "consumes" --> n_verify_onboarding_distribution
+    n_build_runtime -- "consumes" --> n_verify_onboarding_distribution
+    n_build_sim_one_tui -- "consumes" --> n_verify_onboarding_distribution
+    n_build_cli -- "consumes" --> n_verify_onboarding_distribution
+    n_approve_beta_release_contract -- "consumes" --> n_verify_onboarding_distribution
+    n_build_sim_one_tui -- "consumes" --> n_verify_sim_one_tui
+    n_build_cli -- "consumes" --> n_verify_sim_one_tui
     n_build_runtime -- "consumes" --> n_verify_tui_e2e
     n_build_cli -- "consumes" --> n_verify_tui_e2e
     n_build_runtime -- "consumes" --> n_verify_memory_smoke
@@ -113,7 +137,8 @@ flowchart TD
     n_verify_unit_tests -- "consumes" --> n_aggregate_verification
     n_verify_rust_tests -- "consumes" --> n_aggregate_verification
     n_build_runtime -- "consumes" --> n_aggregate_verification
-    n_verify_ratatui_product -- "consumes" --> n_aggregate_verification
+    n_verify_sim_one_tui -- "consumes" --> n_aggregate_verification
+    n_verify_onboarding_distribution -- "consumes" --> n_aggregate_verification
     n_verify_cli_behavior -- "consumes" --> n_aggregate_verification
     n_verify_http_integration -- "consumes" --> n_aggregate_verification
     n_verify_tui_e2e -- "consumes" --> n_aggregate_verification
@@ -144,8 +169,9 @@ flowchart TD
     n_verify_unit_tests -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_rust_tests -. "feedback <= 3" .-> n_integrate_and_repair
     n_build_runtime -. "feedback <= 3" .-> n_integrate_and_repair
-    n_build_ratatui -. "feedback <= 3" .-> n_integrate_and_repair
-    n_verify_ratatui_product -. "feedback <= 3" .-> n_integrate_and_repair
+    n_build_sim_one_tui -. "feedback <= 3" .-> n_integrate_and_repair
+    n_verify_sim_one_tui -. "feedback <= 3" .-> n_integrate_and_repair
+    n_verify_onboarding_distribution -. "feedback <= 3" .-> n_integrate_and_repair
     n_build_cli -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_cli_behavior -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_http_integration -. "feedback <= 3" .-> n_integrate_and_repair
@@ -155,29 +181,43 @@ flowchart TD
     n_review_architecture_security -. "feedback <= 3" .-> n_integrate_and_repair
     n_verify_canary_behavior -. "feedback <= 2" .-> n_integrate_and_repair
     n_observe_production -. "feedback <= 1" .-> n_integrate_and_repair
-    n_verify_http_integration -. "conflicts" .-> n_verify_ratatui_product
+    n_verify_http_integration -. "conflicts" .-> n_verify_sim_one_tui
     n_verify_cli_behavior -. "conflicts" .-> n_verify_http_integration
-    n_verify_cli_behavior -. "conflicts" .-> n_verify_ratatui_product
+    n_verify_cli_behavior -. "conflicts" .-> n_verify_sim_one_tui
+    n_verify_sim_one_tui -. "conflicts" .-> n_verify_onboarding_distribution
+    n_verify_cli_behavior -. "conflicts" .-> n_verify_onboarding_distribution
+    n_verify_http_integration -. "conflicts" .-> n_verify_onboarding_distribution
+    n_verify_onboarding_distribution -. "conflicts" .-> n_verify_tui_e2e
+    n_verify_onboarding_distribution -. "conflicts" .-> n_verify_memory_smoke
     n_verify_cli_behavior -. "conflicts" .-> n_verify_tui_e2e
     n_verify_cli_behavior -. "conflicts" .-> n_verify_memory_smoke
     n_verify_http_integration -. "conflicts" .-> n_verify_tui_e2e
     n_verify_http_integration -. "conflicts" .-> n_verify_memory_smoke
-    n_verify_ratatui_product -. "conflicts" .-> n_verify_tui_e2e
-    n_verify_ratatui_product -. "conflicts" .-> n_verify_memory_smoke
+    n_verify_sim_one_tui -. "conflicts" .-> n_verify_tui_e2e
+    n_verify_sim_one_tui -. "conflicts" .-> n_verify_memory_smoke
     n_verify_tui_e2e -. "conflicts" .-> n_verify_memory_smoke
     n_baseline_context -. "invalidates" .-> n_define_change_contract
+    n_baseline_context -. "invalidates" .-> n_approve_beta_release_contract
+    n_define_change_contract -. "invalidates" .-> n_approve_beta_release_contract
     n_define_change_contract -. "invalidates" .-> n_decide_architecture
     n_decide_architecture -. "invalidates" .-> n_plan_implementation
+    n_approve_beta_release_contract -. "invalidates" .-> n_decide_architecture
+    n_approve_beta_release_contract -. "invalidates" .-> n_plan_implementation
     n_plan_implementation -. "invalidates" .-> n_implement_core_contracts
     n_plan_implementation -. "invalidates" .-> n_implement_agent_runtime
     n_plan_implementation -. "invalidates" .-> n_implement_memory_retrieval
     n_plan_implementation -. "invalidates" .-> n_implement_capabilities_security
     n_plan_implementation -. "invalidates" .-> n_implement_ingress_operations
     n_plan_implementation -. "invalidates" .-> n_implement_product_delivery
+    n_plan_implementation -. "invalidates" .-> n_implement_sim_one_tui_work_pane
+    n_plan_implementation -. "invalidates" .-> n_implement_sim_one_onboarding_distribution
+    n_implement_sim_one_tui_work_pane -. "invalidates" .-> n_implement_product_delivery
+    n_implement_sim_one_onboarding_distribution -. "invalidates" .-> n_implement_product_delivery
     n_integrate_and_repair -. "invalidates" .-> n_verify_typecheck
     n_integrate_and_repair -. "invalidates" .-> n_verify_documentation
     n_integrate_and_repair -. "invalidates" .-> n_verify_unit_tests
     n_integrate_and_repair -. "invalidates" .-> n_verify_rust_tests
+    n_integrate_and_repair -. "invalidates" .-> n_verify_onboarding_distribution
     n_approve_production_release -- "approves" --> n_observe_production
     n_approve_production_release -- "consumes" --> n_observe_production
 ```
@@ -191,6 +231,7 @@ flowchart TD
 | `fetch-embedding-model` | `operation` | `planned` | deterministic: SIM-ONE embedding model fetcher | Materialize the pinned local ONNX embedding model and tokenizer assets required by embedding and RAG verification. | artifact:embedding-model-assets |
 | `build-wasm-memory` | `operation` | `planned` | deterministic: SIM-ONE wasm-pack builder | Compile the Rust structured-memory engine to the Node-compatible WASM artifact required by real memory execution. | artifact:memory-wasm |
 | `define-change-contract` | `work` | `planned` | agent: SIM-ONE planning adapter | Turn the authorized request into a project-specific purpose, scope, non-goals, evidence plan, permission boundary, rollback, and user-visible progress contract. | artifact:change-contract, artifact:affected-domain-map |
+| `approve-beta-release-contract` | `human_gate` | `planned` | human: SIM-ONE project owner | Bind the fixed owner decision that every remaining release item and the SIM-ONE TUI work pane are required for 0.1.0 Beta before architecture and implementation planning. | artifact:beta-release-contract |
 | `decide-architecture` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Choose the smallest design that satisfies the change contract while preserving SIM-ONE Alpha domain ownership and Flue architecture. | artifact:architecture-decision |
 | `plan-implementation` | `work` | `planned` | agent: SIM-ONE implementation planning adapter | Produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback. | artifact:implementation-plan |
 | `implement-core-contracts` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized changes to shared types, Valibot schemas, protocols, model cards, configuration, architecture contracts, and Flue-discovered entrypoints. | artifact:core-contracts-change |
@@ -198,19 +239,22 @@ flowchart TD
 | `implement-memory-retrieval` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized structured memory, session memory, document indexing, knowledge storage, retrieval routing, embeddings, and Rust/WASM changes while keeping memory layers distinct. | artifact:memory-retrieval-change |
 | `implement-capabilities-security` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized capability-store, registry, MCP, approval, GitHub-auth, and policy enforcement changes with fail-closed trust boundaries. | artifact:capabilities-security-change |
 | `implement-ingress-operations` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized connector normalization, authenticated API routes, connector-specific session policy, fresh and explicit-resume TUI lifecycle, durable transcript projection, schedules, and typed progress/telemetry surfaces. | artifact:ingress-operations-change |
-| `implement-product-delivery` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement authorized sim-one command, primary Ratatui TUI, product packaging, install, build, CI, and release documentation changes while preserving capability-management subcommands. | artifact:product-delivery-change |
+| `implement-sim-one-tui-work-pane` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction. | artifact:sim-one-tui-work-pane-change |
+| `implement-sim-one-onboarding-distribution` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Implement versioned SIM-ONE packaging, integrity-verified installation, packaged onboarding, configuration, diagnostics, and local or service-managed lifecycle commands. | artifact:sim-one-onboarding-distribution-change |
+| `implement-product-delivery` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Integrate authorized SIM-ONE product surfaces, shared build and CI contracts, Web UI scope, and release documentation after the TUI and onboarding workstreams while preserving capability-management subcommands. | artifact:product-delivery-change |
 | `integrate-and-repair` | `work` | `planned` | hybrid: SIM-ONE Coding Worker integration adapter | Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence. | artifact:integrated-change |
 | `verify-typecheck` | `verification` | `planned` | deterministic: Verify TypeScript Types | Prove the full TypeScript project satisfies its configured no-emit type contract. | artifact:typecheck-report |
 | `verify-documentation` | `verification` | `planned` | deterministic: Verify Production Documentation | Run the repository's deterministic documentation contract across root release documents, docs, and OpenWiki: local links and anchors, architecture index coverage, production TUI terminology, README section order, prohibited roadmap-style current-state language, resolvable architecture and OpenWiki source references, Markdown fence and H1 structure, and a reproducible documentation snapshot. | artifact:documentation-verification-report |
 | `verify-unit-tests` | `verification` | `planned` | deterministic: Verify Unit Test Suite | Run the configured SIM-ONE Alpha unit suite with real local embedding assets and WASM available, including agent/workspace ownership, approval/progress routing, connector-scoped session lifecycle, durable transcript projection, product artifact locking, memory scoping, and telemetry-redaction contracts. | artifact:unit-test-report |
-| `verify-rust-tests` | `verification` | `planned` | deterministic: Verify Rust Project Tests | Run the configured Rust project tests for the memory engine and Ratatui crates. | artifact:rust-test-report |
+| `verify-rust-tests` | `verification` | `planned` | deterministic: Verify Rust Project Tests | Run the configured Rust project tests for the memory engine and Rust TUI crates. | artifact:rust-test-report |
 | `build-runtime` | `verification` | `planned` | deterministic: Build Flue Runtime | Build the Node-target SIM-ONE Alpha Flue runtime and copy configuration, imported built-in Flue skills, registries, persona workspaces, and memory WASM into the product artifact. | artifact:runtime-build |
-| `build-ratatui` | `verification` | `planned` | deterministic: Build Ratatui Product TUI | Build the release-mode Ratatui TUI product binary and copy it into the product artifact. | artifact:ratatui-build |
-| `build-cli` | `verification` | `planned` | deterministic: Build SIM-ONE CLI | Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged Ratatui TUI by default. | artifact:cli-build |
-| `verify-cli-behavior` | `verification` | `planned` | deterministic: Verify CLI Behavior | Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built Ratatui product path. | artifact:cli-behavior-report |
+| `build-sim-one-tui` | `verification` | `planned` | deterministic: Build SIM-ONE TUI | Build the release-mode SIM-ONE TUI binary and copy it into the product artifact. | artifact:sim-one-tui-build |
+| `build-cli` | `verification` | `planned` | deterministic: Build SIM-ONE CLI | Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged SIM-ONE TUI by default. | artifact:cli-build |
+| `verify-cli-behavior` | `verification` | `planned` | deterministic: Verify CLI Behavior | Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built SIM-ONE TUI product path. | artifact:cli-behavior-report |
 | `verify-http-integration` | `verification` | `planned` | deterministic: Verify Built HTTP Runtime | Exercise the built HTTP server routes, authentication boundaries, connector-scoped session lifecycle, durable transcript projection, and chat/runtime behavior. | artifact:http-test-report |
-| `verify-ratatui-product` | `verification` | `planned` | deterministic: Verify Packaged Ratatui Product | Prove the packaged sim-one command launches Ratatui, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response. | artifact:ratatui-product-report |
-| `verify-tui-e2e` | `verification` | `planned` | deterministic: Verify Gateway And CLI Smoke | Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged Ratatui end-to-end evidence. | artifact:tui-e2e-report |
+| `verify-sim-one-tui` | `verification` | `planned` | deterministic: Verify Packaged SIM-ONE TUI | Prove the packaged sim-one command launches the SIM-ONE TUI, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response. | artifact:sim-one-tui-product-report |
+| `verify-onboarding-distribution` | `verification` | `planned` | hybrid: SIM-ONE packaged onboarding verification adapter | Prove the versioned SIM-ONE package installs with integrity, onboards from a clean user environment, manages its runtime, and launches the finished product without a source checkout. | artifact:onboarding-distribution-report |
+| `verify-tui-e2e` | `verification` | `planned` | deterministic: Verify Gateway And CLI Smoke | Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged SIM-ONE TUI end-to-end evidence. | artifact:tui-e2e-report |
 | `verify-memory-smoke` | `verification` | `planned` | deterministic: Verify Real Memory Runtime | Exercise the real WASM memory engine, SQLite durability, retrieval, and Coding Worker memory path end to end. | artifact:memory-smoke-report |
 | `aggregate-verification` | `verification` | `planned` | hybrid: SIM-ONE verification aggregator | Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact. | artifact:verification-summary |
 | `review-architecture-security` | `verification` | `planned` | agent: SIM-ONE review adapter | Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability. | artifact:architecture-security-review |
@@ -232,10 +276,20 @@ flowchart TD
 | `install-to-embedding-model` | `install-dependencies` | `consumes` | `fetch-embedding-model` | Upstream artifacts are current, accepted, and bound to this run. | artifact:dependency-environment | — |
 | `install-to-wasm-build` | `install-dependencies` | `consumes` | `build-wasm-memory` | Upstream artifacts are current, accepted, and bound to this run. | artifact:dependency-environment | — |
 | `baseline-to-change-contract` | `baseline-context` | `consumes` | `define-change-contract` | Upstream artifacts are current, accepted, and bound to this run. | artifact:baseline-context | — |
+| `baseline-to-beta-release-contract` | `baseline-context` | `consumes` | `approve-beta-release-contract` | The current source state and release ledger are bound to the same authorized run. | artifact:baseline-context | — |
+| `contract-to-beta-release-contract` | `define-change-contract` | `consumes` | `approve-beta-release-contract` | The requested change and affected domains are explicit enough to bind the fixed 0.1.0 Beta contract. | artifact:change-contract, artifact:affected-domain-map | — |
 | `context-and-contract-to-architecture` | `baseline-context` | `consumes` | `decide-architecture` | Upstream artifacts are current, accepted, and bound to this run. | artifact:baseline-context | — |
+| `beta-release-contract-to-architecture` | `approve-beta-release-contract` | `consumes` | `decide-architecture` | The owner has approved every stable release and planned-work ID as required for 0.1.0 Beta. | artifact:beta-release-contract | — |
 | `contract-to-architecture` | `define-change-contract` | `consumes` | `decide-architecture` | Upstream artifacts are current, accepted, and bound to this run. | artifact:change-contract, artifact:affected-domain-map | — |
 | `contract-to-implementation-plan` | `define-change-contract` | `consumes` | `plan-implementation` | Upstream artifacts are current, accepted, and bound to this run. | artifact:change-contract | — |
 | `architecture-to-implementation-plan` | `decide-architecture` | `consumes` | `plan-implementation` | Upstream artifacts are current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `beta-release-contract-to-implementation-plan` | `approve-beta-release-contract` | `consumes` | `plan-implementation` | The fixed owner-approved 0.1.0 Beta contract is current and bound to this run. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-agent-runtime` | `approve-beta-release-contract` | `consumes` | `implement-agent-runtime` | The owner-approved release requirements assigned to the agent-runtime lane are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-capabilities-security` | `approve-beta-release-contract` | `consumes` | `implement-capabilities-security` | The owner-approved release requirements assigned to the capabilities and security lane are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-ingress-operations` | `approve-beta-release-contract` | `consumes` | `implement-ingress-operations` | The owner-approved connector, schedule, and ingress release requirements are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-sim-one-tui-work-pane` | `approve-beta-release-contract` | `consumes` | `implement-sim-one-tui-work-pane` | The required TUI work-pane contract is current and bound to this run. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-sim-one-onboarding-distribution` | `approve-beta-release-contract` | `consumes` | `implement-sim-one-onboarding-distribution` | The owner-approved packaging, onboarding, and lifecycle release requirements are current. | artifact:beta-release-contract | — |
+| `beta-release-contract-to-implement-product-delivery` | `approve-beta-release-contract` | `consumes` | `implement-product-delivery` | The owner-approved product-surface and release-document requirements are current. | artifact:beta-release-contract | — |
 | `plan-to-implement-core-contracts` | `plan-implementation` | `consumes` | `implement-core-contracts` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `implement-core-contracts-to-integration` | `implement-core-contracts` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:core-contracts-change | — |
 | `plan-to-implement-agent-runtime` | `plan-implementation` | `consumes` | `implement-agent-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
@@ -246,7 +300,11 @@ flowchart TD
 | `implement-capabilities-security-to-integration` | `implement-capabilities-security` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:capabilities-security-change | — |
 | `plan-to-implement-ingress-operations` | `plan-implementation` | `consumes` | `implement-ingress-operations` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `implement-ingress-operations-to-integration` | `implement-ingress-operations` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:ingress-operations-change | — |
+| `plan-to-implement-sim-one-tui-work-pane` | `plan-implementation` | `consumes` | `implement-sim-one-tui-work-pane` | The implementation plan assigns disjoint files for the required TUI work-pane member. | artifact:implementation-plan | — |
+| `plan-to-implement-sim-one-onboarding-distribution` | `plan-implementation` | `consumes` | `implement-sim-one-onboarding-distribution` | The implementation plan assigns disjoint onboarding and distribution files. | artifact:implementation-plan | — |
 | `plan-to-implement-product-delivery` | `plan-implementation` | `consumes` | `implement-product-delivery` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
+| `sim-one-tui-work-pane-to-product-delivery` | `implement-sim-one-tui-work-pane` | `consumes` | `implement-product-delivery` | The required TUI work-pane output is complete. | artifact:sim-one-tui-work-pane-change | — |
+| `sim-one-onboarding-distribution-to-product-delivery` | `implement-sim-one-onboarding-distribution` | `consumes` | `implement-product-delivery` | The onboarding and distribution output is complete and ready for product integration. | artifact:sim-one-onboarding-distribution-change | — |
 | `implement-product-delivery-to-integration` | `implement-product-delivery` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:product-delivery-change | — |
 | `dependencies-to-integration` | `install-dependencies` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:dependency-environment | — |
 | `embedding-model-to-integration` | `fetch-embedding-model` | `consumes` | `integrate-and-repair` | Upstream artifacts are current, accepted, and bound to this run. | artifact:embedding-model-assets | — |
@@ -259,17 +317,23 @@ flowchart TD
 | `typecheck-to-runtime-build` | `verify-typecheck` | `consumes` | `build-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:typecheck-report | — |
 | `unit-tests-to-runtime-build` | `verify-unit-tests` | `consumes` | `build-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:unit-test-report | — |
 | `rust-tests-to-runtime-build` | `verify-rust-tests` | `consumes` | `build-runtime` | Upstream artifacts are current, accepted, and bound to this run. | artifact:rust-test-report | — |
-| `integration-to-ratatui-build` | `integrate-and-repair` | `consumes` | `build-ratatui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
-| `runtime-to-ratatui-build` | `build-runtime` | `consumes` | `build-ratatui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
+| `integration-to-sim-one-tui-build` | `integrate-and-repair` | `consumes` | `build-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
+| `runtime-to-sim-one-tui-build` | `build-runtime` | `consumes` | `build-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `integration-to-cli-build` | `integrate-and-repair` | `consumes` | `build-cli` | Upstream artifacts are current, accepted, and bound to this run. | artifact:integrated-change | — |
 | `runtime-to-cli-build` | `build-runtime` | `consumes` | `build-cli` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `cli-build-to-cli-behavior` | `build-cli` | `consumes` | `verify-cli-behavior` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-build | — |
 | `runtime-to-cli-behavior` | `build-runtime` | `consumes` | `verify-cli-behavior` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
-| `ratatui-build-to-cli-behavior` | `build-ratatui` | `consumes` | `verify-cli-behavior` | Upstream artifacts are current, accepted, and bound to this run. | artifact:ratatui-build | — |
+| `sim-one-tui-build-to-cli-behavior` | `build-sim-one-tui` | `consumes` | `verify-cli-behavior` | Upstream artifacts are current, accepted, and bound to this run. | artifact:sim-one-tui-build | — |
 | `runtime-to-http-tests` | `build-runtime` | `consumes` | `verify-http-integration` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
-| `runtime-to-ratatui-product` | `build-runtime` | `consumes` | `verify-ratatui-product` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
-| `ratatui-build-to-product-test` | `build-ratatui` | `consumes` | `verify-ratatui-product` | Upstream artifacts are current, accepted, and bound to this run. | artifact:ratatui-build | — |
-| `cli-build-to-ratatui-product` | `build-cli` | `consumes` | `verify-ratatui-product` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-build | — |
+| `runtime-to-sim-one-tui-product` | `build-runtime` | `consumes` | `verify-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
+| `beta-release-contract-to-verify-sim-one-tui` | `approve-beta-release-contract` | `consumes` | `verify-sim-one-tui` | The required TUI work-pane contract is current and bound to the packaged-product probe. | artifact:beta-release-contract | — |
+| `integration-to-verify-onboarding-distribution` | `integrate-and-repair` | `consumes` | `verify-onboarding-distribution` | The integrated product includes the required onboarding and distribution contract. | artifact:integrated-change | — |
+| `runtime-to-verify-onboarding-distribution` | `build-runtime` | `consumes` | `verify-onboarding-distribution` | The packaged runtime is current and bound to the onboarding candidate. | artifact:runtime-build | — |
+| `sim-one-tui-build-to-verify-onboarding-distribution` | `build-sim-one-tui` | `consumes` | `verify-onboarding-distribution` | The packaged TUI is current and available to the installer and first-run flow. | artifact:sim-one-tui-build | — |
+| `cli-build-to-verify-onboarding-distribution` | `build-cli` | `consumes` | `verify-onboarding-distribution` | The packaged CLI is current and exposes the required onboarding and lifecycle commands. | artifact:cli-build | — |
+| `beta-release-contract-to-verify-onboarding-distribution` | `approve-beta-release-contract` | `consumes` | `verify-onboarding-distribution` | The required packaging, onboarding, and lifecycle contract is current and bound to the isolated probe. | artifact:beta-release-contract | — |
+| `sim-one-tui-build-to-product-test` | `build-sim-one-tui` | `consumes` | `verify-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:sim-one-tui-build | — |
+| `cli-build-to-sim-one-tui-product` | `build-cli` | `consumes` | `verify-sim-one-tui` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-build | — |
 | `runtime-to-tui-e2e` | `build-runtime` | `consumes` | `verify-tui-e2e` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
 | `cli-build-to-tui-e2e` | `build-cli` | `consumes` | `verify-tui-e2e` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-build | — |
 | `runtime-to-memory-smoke` | `build-runtime` | `consumes` | `verify-memory-smoke` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
@@ -280,7 +344,8 @@ flowchart TD
 | `verify-unit-tests-to-verification-summary` | `verify-unit-tests` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:unit-test-report | — |
 | `verify-rust-tests-to-verification-summary` | `verify-rust-tests` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:rust-test-report | — |
 | `build-runtime-to-verification-summary` | `build-runtime` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:runtime-build | — |
-| `verify-ratatui-product-to-verification-summary` | `verify-ratatui-product` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:ratatui-product-report | — |
+| `verify-sim-one-tui-to-verification-summary` | `verify-sim-one-tui` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:sim-one-tui-product-report | — |
+| `verify-onboarding-distribution-to-verification-summary` | `verify-onboarding-distribution` | `consumes` | `aggregate-verification` | The isolated packaged onboarding and distribution verification is complete. | artifact:onboarding-distribution-report | — |
 | `verify-cli-behavior-to-verification-summary` | `verify-cli-behavior` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:cli-behavior-report | — |
 | `verify-http-integration-to-verification-summary` | `verify-http-integration` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:http-test-report | — |
 | `verify-tui-e2e-to-verification-summary` | `verify-tui-e2e` | `consumes` | `aggregate-verification` | Upstream artifacts are current, accepted, and bound to this run. | artifact:tui-e2e-report | — |
@@ -311,8 +376,9 @@ flowchart TD
 | `verify-unit-tests-feedback-to-integration` | `verify-unit-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:unit-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-rust-tests-feedback-to-integration` | `verify-rust-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:rust-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `build-runtime-feedback-to-integration` | `build-runtime` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:runtime-build | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
-| `build-ratatui-feedback-to-integration` | `build-ratatui` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:ratatui-build | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
-| `verify-ratatui-product-feedback-to-integration` | `verify-ratatui-product` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:ratatui-product-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
+| `build-sim-one-tui-feedback-to-integration` | `build-sim-one-tui` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:sim-one-tui-build | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
+| `verify-sim-one-tui-feedback-to-integration` | `verify-sim-one-tui` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:sim-one-tui-product-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
+| `verify-onboarding-distribution-feedback-to-integration` | `verify-onboarding-distribution` | `feedback` | `integrate-and-repair` | The isolated packaged onboarding or distribution evidence identifies a correctable implementation or integration failure. | artifact:onboarding-distribution-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `build-cli-feedback-to-integration` | `build-cli` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:cli-build | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-cli-behavior-feedback-to-integration` | `verify-cli-behavior` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:cli-behavior-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-http-integration-feedback-to-integration` | `verify-http-integration` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:http-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
@@ -322,29 +388,43 @@ flowchart TD
 | `review-architecture-security-feedback-to-integration` | `review-architecture-security` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:architecture-security-review | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `canary-feedback-to-integration` | `verify-canary-behavior` | `feedback` | `integrate-and-repair` | The canary exposes a correctable release regression and the recorded canary rollback has been invoked when required. | artifact:canary-behavior-report | max 2; Fresh canary evidence passes after repair, or two traversals exhaust and the run moves to needs_human. |
 | `production-feedback-to-integration` | `observe-production` | `feedback` | `integrate-and-repair` | Production observation exposes a correctable regression and the recorded rollback has been invoked. | artifact:production-observation | max 1; Fresh verification and canary evidence pass after one repair traversal, or the run remains needs_human. |
-| `verify-http-integration-conflicts-verify-ratatui-product` | `verify-http-integration` | `conflicts` | `verify-ratatui-product` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
+| `verify-http-integration-conflicts-verify-sim-one-tui` | `verify-http-integration` | `conflicts` | `verify-sim-one-tui` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `verify-cli-behavior-conflicts-verify-http-integration` | `verify-cli-behavior` | `conflicts` | `verify-http-integration` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
-| `verify-cli-behavior-conflicts-verify-ratatui-product` | `verify-cli-behavior` | `conflicts` | `verify-ratatui-product` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
+| `verify-cli-behavior-conflicts-verify-sim-one-tui` | `verify-cli-behavior` | `conflicts` | `verify-sim-one-tui` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
+| `verify-sim-one-tui-conflicts-verify-onboarding-distribution` | `verify-sim-one-tui` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the packaged CLI, TUI, and mutable isolated runtime root. | — | — |
+| `verify-cli-behavior-conflicts-verify-onboarding-distribution` | `verify-cli-behavior` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the packaged CLI and mutable isolated runtime root. | — | — |
+| `verify-http-integration-conflicts-verify-onboarding-distribution` | `verify-http-integration` | `conflicts` | `verify-onboarding-distribution` | Both probes require exclusive use of the built runtime and mutable isolated runtime configuration. | — | — |
+| `verify-onboarding-distribution-conflicts-verify-tui-e2e` | `verify-onboarding-distribution` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the built runtime, packaged CLI, and mutable isolated runtime root. | — | — |
+| `verify-onboarding-distribution-conflicts-verify-memory-smoke` | `verify-onboarding-distribution` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the built runtime and mutable isolated runtime configuration. | — | — |
 | `verify-cli-behavior-conflicts-verify-tui-e2e` | `verify-cli-behavior` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
 | `verify-cli-behavior-conflicts-verify-memory-smoke` | `verify-cli-behavior` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test state. | — | — |
 | `verify-http-integration-conflicts-verify-tui-e2e` | `verify-http-integration` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `verify-http-integration-conflicts-verify-memory-smoke` | `verify-http-integration` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
-| `verify-ratatui-product-conflicts-verify-tui-e2e` | `verify-ratatui-product` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
-| `verify-ratatui-product-conflicts-verify-memory-smoke` | `verify-ratatui-product` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
+| `verify-sim-one-tui-conflicts-verify-tui-e2e` | `verify-sim-one-tui` | `conflicts` | `verify-tui-e2e` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
+| `verify-sim-one-tui-conflicts-verify-memory-smoke` | `verify-sim-one-tui` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `verify-tui-e2e-conflicts-verify-memory-smoke` | `verify-tui-e2e` | `conflicts` | `verify-memory-smoke` | Both probes require exclusive use of the local built runtime and mutable test configuration. | — | — |
 | `baseline-invalidates-change-contract` | `baseline-context` | `invalidates` | `define-change-contract` | A changed commit, instruction, or authorized request makes the former contract stale. | artifact:change-contract, artifact:affected-domain-map | — |
+| `baseline-invalidates-beta-release-contract` | `baseline-context` | `invalidates` | `approve-beta-release-contract` | A changed commit, release ledger, source plan, or authorized request makes the former beta contract approval stale. | artifact:beta-release-contract | — |
+| `change-contract-invalidates-beta-release-contract` | `define-change-contract` | `invalidates` | `approve-beta-release-contract` | A changed purpose, scope, non-goal, or affected-domain map makes the former beta contract approval stale. | artifact:beta-release-contract | — |
 | `change-contract-invalidates-architecture` | `define-change-contract` | `invalidates` | `decide-architecture` | A changed purpose, scope, non-goal, or acceptance criterion makes the former architecture decision stale. | artifact:architecture-decision | — |
 | `architecture-invalidates-plan` | `decide-architecture` | `invalidates` | `plan-implementation` | A changed architecture decision makes the former implementation plan stale. | artifact:implementation-plan | — |
+| `beta-release-contract-invalidates-architecture` | `approve-beta-release-contract` | `invalidates` | `decide-architecture` | A changed owner-approved beta contract invalidates architecture and planning assumptions for affected members. | artifact:architecture-decision | — |
+| `beta-release-contract-invalidates-plan` | `approve-beta-release-contract` | `invalidates` | `plan-implementation` | A changed owner-approved beta contract invalidates the implementation sequence and file-ownership map. | artifact:implementation-plan | — |
 | `plan-invalidates-implement-core-contracts` | `plan-implementation` | `invalidates` | `implement-core-contracts` | A changed implementation plan invalidates the affected domain output. | artifact:core-contracts-change | — |
 | `plan-invalidates-implement-agent-runtime` | `plan-implementation` | `invalidates` | `implement-agent-runtime` | A changed implementation plan invalidates the affected domain output. | artifact:agent-runtime-change | — |
 | `plan-invalidates-implement-memory-retrieval` | `plan-implementation` | `invalidates` | `implement-memory-retrieval` | A changed implementation plan invalidates the affected domain output. | artifact:memory-retrieval-change | — |
 | `plan-invalidates-implement-capabilities-security` | `plan-implementation` | `invalidates` | `implement-capabilities-security` | A changed implementation plan invalidates the affected domain output. | artifact:capabilities-security-change | — |
 | `plan-invalidates-implement-ingress-operations` | `plan-implementation` | `invalidates` | `implement-ingress-operations` | A changed implementation plan invalidates the affected domain output. | artifact:ingress-operations-change | — |
 | `plan-invalidates-implement-product-delivery` | `plan-implementation` | `invalidates` | `implement-product-delivery` | A changed implementation plan invalidates the affected domain output. | artifact:product-delivery-change | — |
+| `plan-invalidates-implement-sim-one-tui-work-pane` | `plan-implementation` | `invalidates` | `implement-sim-one-tui-work-pane` | A changed implementation plan invalidates the required TUI work-pane output. | artifact:sim-one-tui-work-pane-change | — |
+| `plan-invalidates-implement-sim-one-onboarding-distribution` | `plan-implementation` | `invalidates` | `implement-sim-one-onboarding-distribution` | A changed implementation plan invalidates the onboarding and distribution output. | artifact:sim-one-onboarding-distribution-change | — |
+| `sim-one-tui-work-pane-invalidates-product-delivery` | `implement-sim-one-tui-work-pane` | `invalidates` | `implement-product-delivery` | A changed TUI work-pane output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
+| `sim-one-onboarding-distribution-invalidates-product-delivery` | `implement-sim-one-onboarding-distribution` | `invalidates` | `implement-product-delivery` | A changed onboarding and distribution output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
 | `integration-invalidates-verify-typecheck` | `integrate-and-repair` | `invalidates` | `verify-typecheck` | A changed integrated diff invalidates prior verification evidence. | artifact:typecheck-report | — |
 | `integration-invalidates-verify-documentation` | `integrate-and-repair` | `invalidates` | `verify-documentation` | A changed integrated diff invalidates prior documentation verification evidence. | artifact:documentation-verification-report | — |
 | `integration-invalidates-verify-unit-tests` | `integrate-and-repair` | `invalidates` | `verify-unit-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:unit-test-report | — |
 | `integration-invalidates-verify-rust-tests` | `integrate-and-repair` | `invalidates` | `verify-rust-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:rust-test-report | — |
+| `integration-invalidates-verify-onboarding-distribution` | `integrate-and-repair` | `invalidates` | `verify-onboarding-distribution` | A changed integrated diff invalidates prior packaged onboarding and distribution evidence. | artifact:onboarding-distribution-report | — |
 | `production-approval-to-observation` | `approve-production-release` | `approves` | `observe-production` | The owner approved the exact production target, candidate, observation plan, and recorded rollback authority. | artifact:production-release-approval | — |
 | `production-approval-artifact-to-observation` | `approve-production-release` | `consumes` | `observe-production` | The rollback authority is current, accepted, and bound to the exact production release and this run. | artifact:production-release-approval | — |
 
@@ -428,11 +508,27 @@ flowchart TD
   - `authority-is-bounded` (policy): The contract lists exact authorized mutations and separates read-only discovery from local, GitHub, deployment, sending, spending, and destructive effects. Evidence: `runtime:evidence/define-change-contract/authority.json`
   - `workspace-scope-explicit` (policy): A workspace-affecting contract names whether it changes company-owned instructions, the main-agent persona workspace, a lead-worker persona workspace, an internal-subagent workspace, or the Coding Worker runtime access root; non-workspace changes explicitly record this criterion as not applicable. Evidence: `runtime:evidence/define-change-contract/workspace-scope.json`
 
+### `approve-beta-release-contract` — Approve 0.1.0 Beta Release Contract
+
+- Goal: Bind the fixed owner decision that every remaining release item and the SIM-ONE TUI work pane are required for 0.1.0 Beta before architecture and implementation planning.
+- Executor instructions: Review the stable release ledger and exact external source plans, then approve the fixed contract in which every listed ID is required for 0.1.0 Beta. Any scope reduction requires a separate owner decision and graph revision rather than a runtime deferral.
+- Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map
+- Resources: —
+- Permissions: read [artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md]; write [—]; external [—]; destructive `false`
+- Execution: max `1` attempt(s), `1440` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `none` — Produces an owner-bound approval of the fixed 0.1.0 Beta contract without mutating project or external state.
+- Rollback: none
+- Approval required: `false`
+- Acceptance:
+  - `all-release-items-required` (manual): The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch. Evidence: `runtime:evidence/approve-beta-release-contract/approval.json`
+  - `release-ledger-covered` (review): The fixed contract covers REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-REL-001, and TUI-WORK-001 without silently dropping a ledger entry. Evidence: `runtime:evidence/approve-beta-release-contract/coverage.json`
+  - `external-plan-lineage-bound` (policy): The decision binds repository release IDs to the detailed SIM-ONE TUI, work-pane, build-structure, and onboarding source plans without moving those plans into the repository or treating stale implementation names as product identity. Evidence: `runtime:evidence/approve-beta-release-contract/plan-lineage.json`
+
 ### `decide-architecture` — Resolve Architecture And Ownership
 
 - Goal: Choose the smallest design that satisfies the change contract while preserving SIM-ONE Alpha domain ownership and Flue architecture.
 - Executor instructions: Read local architecture sources before version-matched Flue docs. Record alternatives, evidence, ownership, consequences, and revisit triggers; write an ADR only when material.
-- Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map
+- Inputs: artifact:baseline-context, artifact:change-contract, artifact:affected-domain-map, artifact:beta-release-contract
 - Resources: architecture-decision:<topic>
 - Permissions: read [docs/architecture/, src/, version-matched Flue documentation]; write [docs/adr/ or /opt/ai/plans/<topic>/plan.md]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -448,9 +544,9 @@ flowchart TD
 
 - Goal: Produce an executable implementation sequence with file ownership, artifact handoffs, progress events, verification commands, approval scopes, and rollback.
 - Executor instructions: Map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution.
-- Inputs: artifact:change-contract, artifact:architecture-decision
+- Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract
 - Resources: plans:<topic>
-- Permissions: read [artifact:change-contract, artifact:architecture-decision, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts]; write [/opt/ai/plans/<topic>/plan.md]; external [—]; destructive `false`
+- Permissions: read [artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, docs/getting-started/pre-release-status.md, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts]; write [/opt/ai/plans/<topic>/plan.md]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Updates the authorized task plan with the reviewed implementation sequence.
 - Rollback: Restore the prior plan revision and invalidate downstream work that consumed the superseded plan.
@@ -461,6 +557,8 @@ flowchart TD
   - `progress-events-required` (policy): Every tool execution, worker handoff, plan update, verification result, and state transition has a durable typed progress-event expectation. Evidence: `runtime:evidence/plan-implementation/progress-contract.json`
   - `file-ownership-disjoint` (policy): The file-ownership matrix assigns every planned source, documentation, generated-definition, and focused-test mutation to exactly one producer; shared files are serialized or deferred to integration. Evidence: `runtime:evidence/plan-implementation/file-ownership.json`
   - `workspace-layers-mapped` (review): The plan distinguishes src/AGENTS.md, src/workspace/, built-in lead-worker workspaces, Coding Worker internal-subagent workspaces, runtime-loaded user workers, and the Coding Worker runtime access root whenever those layers are affected. Evidence: `runtime:evidence/plan-implementation/workspace-layers.json`
+  - `release-ledger-mapped` (review): The implementation plan maps every required release and planned-work ID to one producing graph member, one verification path, and one file owner with no deferred or optional branch. Evidence: `runtime:evidence/plan-implementation/release-ledger-map.json`
+  - `source-plan-lineage-preserved` (policy): The plan uses /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, /opt/ai/plans/sim-one-build-structure/plan.md, and /opt/ai/plans/agent-tui/plan.md as detailed source inputs while using SIM-ONE TUI as product terminology. Evidence: `runtime:evidence/plan-implementation/source-plan-lineage.json`
 
 ### `implement-core-contracts` — Implement Core Contracts And Architecture
 
@@ -482,7 +580,7 @@ flowchart TD
 
 - Goal: Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while treating company-owned system instructions as read-only, preserving delegation ownership and capability isolation, and keeping the Coding Worker runtime access root separate.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona workspace and default Coding Worker runtime access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.
-- Inputs: artifact:implementation-plan
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:agent-runtime
 - Permissions: read [artifact:implementation-plan, authorized project files, src/AGENTS.md, src/workspace-loader.ts, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts]; write [src/agents/, src/workflows/, src/workspace/, src/engine/tools/, src/skills/, src/engine/workers/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, src/workspace-loader.ts]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -497,6 +595,8 @@ flowchart TD
   - `runtime-root-separated` (policy): The Coding Worker runtime access root and project/repository scope are treated as sandbox authorization boundaries, not as worker persona-instruction ownership; approval and managed-auth state remain outside that root. Evidence: `runtime:evidence/implement-agent-runtime/runtime-root-boundary.json`
   - `delegation-boundary-preserved` (test): The main orchestrator exposes built-in lead workers but no Coding Worker internal subagent; each profile receives only its declared instructions, tools, skills, and subagents under Flue inheritance rules. Evidence: `runtime:evidence/implement-agent-runtime/delegation-boundary.json`
   - `company-instructions-human-gated` (policy): src/AGENTS.md remains read-only in this ordinary Coding Worker workstream. Any authorized change to company-owned system instructions uses a separately scoped lifecycle with an explicit owner human gate before implementation. Evidence: `runtime:evidence/implement-agent-runtime/company-instruction-gate.json`
+  - `rel-cw-002-live-checkpoint-progress` (test): REL-CW-002: the live Flue Coding Worker profile attaches checkpoint reporting and forwards durable typed progress through active connector routes; a standalone reporter or unit-only event type is insufficient. Evidence: `runtime:evidence/implement-agent-runtime/rel-cw-002-live-progress.json`
+  - `rel-proto-003-stage-scoring` (test): REL-PROTO-003: orchestrator and critic scoring cover every required protocol stage with fail-closed handling for missing, invalid, or rejected stage evidence. Evidence: `runtime:evidence/implement-agent-runtime/rel-proto-003-stage-scoring.json`
 
 ### `implement-memory-retrieval` — Implement Memory, RAG, And Embeddings
 
@@ -518,7 +618,7 @@ flowchart TD
 
 - Goal: Implement authorized capability-store, registry, MCP, approval, GitHub-auth, and policy enforcement changes with fail-closed trust boundaries.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:capabilities-security
 - Permissions: read [artifact:implementation-plan, authorized project files]; write [src/engine/capabilities/, src/engine/registries/, src/engine/approvals/, src/api/ingress/, docs/architecture/github-auth-system.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -529,12 +629,17 @@ flowchart TD
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-capabilities-security/scope-review.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-capabilities-security/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-capabilities-security/progress-events.jsonl`
+  - `rel-cw-001-edit-approval-enforced` (test): REL-CW-001: every Coding Worker write and patch path calls the approval service with trusted project and repository scope and fails closed when approval is missing or unavailable. Evidence: `runtime:evidence/implement-capabilities-security/rel-cw-001-edit-approval.json`
+  - `rel-cap-001-version-pinning` (test): REL-CAP-001: capability materialization resolves and records an exact requested branch, tag, or commit instead of shallow-cloning the remote default branch. Evidence: `runtime:evidence/implement-capabilities-security/rel-cap-001-version-pinning.json`
+  - `rel-mcp-001-in-place-update` (test): REL-MCP-001: mcp update changes validated connection, name, and description fields in place while preserving identity, audit data, and secret handling. Evidence: `runtime:evidence/implement-capabilities-security/rel-mcp-001-in-place-update.json`
+  - `rel-proto-001-policy-records` (artifact): REL-PROTO-001: the release policy set contains complete enabled records for global, connector, project, workflow, task, output, approval, and progress behavior. Evidence: `runtime:evidence/implement-capabilities-security/rel-proto-001-policy-records.json`
+  - `rel-proto-002-fail-closed` (test): REL-PROTO-002: trusted pre-execution enforcement blocks reasoning, tool execution, worker delegation, and final response when the required Protocol Tool result is absent, invalid, or incomplete. Evidence: `runtime:evidence/implement-capabilities-security/rel-proto-002-fail-closed.json`
 
 ### `implement-ingress-operations` — Implement Ingress, Sessions, Schedules, And Telemetry
 
 - Goal: Implement authorized connector normalization, authenticated API routes, connector-specific session policy, fresh and explicit-resume TUI lifecycle, durable transcript projection, schedules, and typed progress/telemetry surfaces.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
 - Resources: project:ingress-operations
 - Permissions: read [artifact:implementation-plan, authorized project files]; write [src/api/, src/channels/, src/engine/session/, src/engine/schedules/, src/core/telemetry/, docs/operations/ files assigned exclusively to this workstream by artifact:implementation-plan, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -545,14 +650,56 @@ flowchart TD
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-ingress-operations/scope-review.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-ingress-operations/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-ingress-operations/progress-events.jsonl`
+  - `rel-tg-001-pairing-delivery` (test): REL-TG-001: an unknown Telegram user creates a durable pending pairing request and receives the intended connector response without bypassing approval. Evidence: `runtime:evidence/implement-ingress-operations/rel-tg-001-pairing.json`
+  - `rel-tg-002-disabled-policy` (test): REL-TG-002: Telegram disabled-policy semantics distinguish direct-message policy from group-message policy and enforce the documented scope. Evidence: `runtime:evidence/implement-ingress-operations/rel-tg-002-disabled-policy.json`
+  - `rel-sec-001-rate-limiting` (test): REL-SEC-001: authenticated gateway ingress applies bounded request throttling with actor-aware keys, observable rejection evidence, and tests for bypass and reset behavior. Evidence: `runtime:evidence/implement-ingress-operations/rel-sec-001-rate-limiting.json`
+  - `rel-sch-001-context-handoff` (test): REL-SCH-001: scheduled dispatch persists and passes the trusted event id required by protocol and scoped-memory retrieval through the orchestrator handoff. Evidence: `runtime:evidence/implement-ingress-operations/rel-sch-001-context-handoff.json`
+  - `rel-sch-002-result-delivery` (test): REL-SCH-002: scheduled results persist durable content and deliver through the selected connector with idempotent retry and terminal failure evidence. Evidence: `runtime:evidence/implement-ingress-operations/rel-sch-002-result-delivery.json`
+  - `rel-discord-001-resolved` (policy): REL-DISCORD-001: the Discord connector normalizes authenticated events, uses connector-owned session policy, and delivers responses through the gateway. Evidence: `runtime:evidence/implement-ingress-operations/rel-discord-001.json`
+
+### `implement-sim-one-tui-work-pane` — Implement SIM-ONE TUI Work Pane
+
+- Goal: Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction.
+- Executor instructions: Follow /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md using SIM-ONE TUI product terminology. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
+- Resources: project:sim-one-tui-work-pane
+- Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, /opt/ai/plans/sim-one-ratatui-tui/plan.md, /opt/ai/plans/sim-one-ratatui-tui/work-pane-addendum.md, docs/architecture/tui-cli-session-flow.md, docs/operations/product-tui.md, docs/tui/, tui/ratatui/, crates/]; write [tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan, Rust/WASM helper files assigned exclusively to this member by artifact:implementation-plan, focused test files assigned exclusively to this member by artifact:implementation-plan]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `240` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `reversible` — Changes only the TUI work-pane implementation and its exclusively assigned tests.
+- Rollback: Restore this member's files from the pre-change Git commit while preserving the existing two-pane TUI and unrelated workstreams.
+- Approval required: `false`
+- Acceptance:
+  - `tui-work-001-scope-obeyed` (policy): TUI-WORK-001 implements the required SIM-ONE TUI work pane without regressing the existing transcript and prompt interaction. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/scope.json`
+  - `responsive-work-pane-rendered` (test): At supported widths, the SIM-ONE TUI renders transcript and prompt with a right-side work pane near 30 percent width; constrained terminals use the planned overlay or alternate view without overlap or inaccessible content. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/responsive-layout.json`
+  - `task-checklist-independent` (test): The task checklist has independent focus and scrolling, displays stable checkboxes, persists task state through the Rust/WASM helper contract, and never steals transcript or prompt scrolling. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/task-checklist.json`
+  - `work-pane-data-real` (test): Usage input, output, total spend, Git status, and runtime status are sourced from typed data rather than decorative placeholders and remain readable in loading, unavailable, empty, error, and populated states. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/work-pane-data.json`
+  - `work-pane-tests-passed` (test): Focused Rust state, framebuffer, interaction, persistence/WASM, and packaged-product tests cover pane sizing, focus, independent scrolling, task mutations, data states, and narrow-terminal behavior. Evidence: `runtime:evidence/implement-sim-one-tui-work-pane/focused-verification.json`
+
+### `implement-sim-one-onboarding-distribution` — Implement SIM-ONE Onboarding And Distribution
+
+- Goal: Implement versioned SIM-ONE packaging, integrity-verified installation, packaged onboarding, configuration, diagnostics, and local or service-managed lifecycle commands.
+- Executor instructions: Use /opt/ai/plans/sim-one-build-structure/plan.md as the current runtime and packaging foundation and /opt/ai/plans/agent-tui/plan.md as onboarding research, correcting stale framework, package, authentication, and product naming assumptions against current repository architecture. Keep the install and service probes isolated from host production services.
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract
+- Resources: project:sim-one-onboarding-distribution
+- Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, /opt/ai/plans/sim-one-build-structure/plan.md, /opt/ai/plans/agent-tui/plan.md, sim-one-cli/, scripts/, package.json, docs/getting-started/, docs/operations/]; write [sim-one-cli/ files assigned exclusively to this member by artifact:implementation-plan, release packaging and service files assigned exclusively to this member by artifact:implementation-plan, focused test files assigned exclusively to this member by artifact:implementation-plan]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `300` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `reversible` — Changes only the isolated onboarding, packaging, installer, lifecycle, and focused-test files assigned to this member.
+- Rollback: Restore this member's files from the pre-change Git commit and retain the last verified packaged runtime for recovery.
+- Approval required: `false`
+- Acceptance:
+  - `rel-pkg-001-release-archive` (artifact): REL-PKG-001: a versioned release archive contains the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and published checksums. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-001-release-archive.json`
+  - `rel-pkg-002-integrity-install` (test): REL-PKG-002: installation verifies checksums before materializing the runtime, refuses mismatches, uses the runtime owner directory independent of caller cwd, and leaves a recoverable prior installation. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-002-integrity-install.json`
+  - `rel-onb-001-packaged-onboarding` (test): REL-ONB-001: sim-one install runs packaged onboarding, stores validated configuration and secrets in documented user-owned locations, verifies a real model response, and enters the first secure SIM-ONE TUI session. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-onb-001-onboarding.json`
+  - `rel-ops-001-lifecycle-commands` (test): REL-OPS-001: sim-one config, doctor, status, start, restart, and stop expose documented behavior for local-process and service-managed runtime modes, with output-level health evidence and idempotent lifecycle handling. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/rel-ops-001-lifecycle-commands.json`
+  - `onboarding-secrets-and-recovery-safe` (policy): Onboarding and lifecycle output never prints secret values, distinguishes warnings from blockers, and provides actionable recovery without requiring a source checkout or Cargo command. Evidence: `runtime:evidence/implement-sim-one-onboarding-distribution/secret-and-recovery-review.json`
 
 ### `implement-product-delivery` — Implement Product Surfaces And Delivery
 
-- Goal: Implement authorized sim-one command, primary Ratatui TUI, product packaging, install, build, CI, and release documentation changes while preserving capability-management subcommands.
+- Goal: Integrate authorized SIM-ONE product surfaces, shared build and CI contracts, Web UI scope, and release documentation after the TUI and onboarding workstreams while preserving capability-management subcommands.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, artifact:sim-one-tui-work-pane-change, artifact:sim-one-onboarding-distribution-change
 - Resources: project:product-delivery
-- Permissions: read [artifact:implementation-plan, authorized project files]; write [sim-one-cli/, tui/, scripts/, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan, openwiki/]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, artifact:sim-one-tui-work-pane-change, artifact:sim-one-onboarding-distribution-change, authorized project files]; write [shared product integration files assigned exclusively to this serialized member by artifact:implementation-plan, .github/workflows/, docs/architecture/product-flow.md, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, docs/operations/product-tui.md, docs/tui/, README.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, package.json documentation-check script when assigned exclusively to this workstream by artifact:implementation-plan, scripts/check-documentation.py, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/getting-started/, docs/guides/, docs/reference/, docs/operations/telegram-connector.md, docs/operations/troubleshooting.md, docs/archive/readme-before-release-rewrite.md, docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan, openwiki/]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Changes only the authorized files in this domain workstream.
 - Rollback: Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams.
@@ -561,12 +708,15 @@ flowchart TD
   - `scope-obeyed` (policy): The patch or no-change record stays inside the authorized domain, contains only files assigned to this workstream by the implementation plan, has no concurrent file owner in another parallel branch, and preserves the architecture decision. Evidence: `runtime:evidence/implement-product-delivery/scope-review.json`
   - `focused-verification-recorded` (test): Focused tests for changed behavior pass, or the no-change record proves why no focused test is applicable. Evidence: `runtime:evidence/implement-product-delivery/focused-verification.json`
   - `progress-visible` (artifact): Typed durable progress events cover implementation, internal specialist handoffs, tool execution, and verification. Evidence: `runtime:evidence/implement-product-delivery/progress-events.jsonl`
+  - `product-workstreams-integrated` (review): The product integration consumes the required SIM-ONE TUI work-pane and onboarding/distribution outputs, preserves the sim-one capability command families, and resolves every shared-file owner before mutation. Evidence: `runtime:evidence/implement-product-delivery/product-workstream-integration.json`
+  - `rel-web-001-resolved` (policy): REL-WEB-001: the Web UI uses the authenticated gateway, connector-owned session policy, durable progress, and packaged configuration. Evidence: `runtime:evidence/implement-product-delivery/rel-web-001.json`
+  - `release-ledger-current` (review): docs/getting-started/pre-release-status.md retains every stable release ID, current implementation status, graph owner, and approved scope after product integration. Evidence: `runtime:evidence/implement-product-delivery/release-ledger.json`
 
 ### `integrate-and-repair` — Integrate Change And Apply Bounded Repairs
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-build, artifact:ratatui-product-report, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
+- Inputs: artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
 - Permissions: read [authorized project tree, domain change artifacts, verification evidence]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -622,14 +772,14 @@ flowchart TD
 - Acceptance:
   - `verification-passed` (test): All required unit tests pass; any skips are recorded and do not hide a missing required model or WASM artifact. Evidence: `runtime:evidence/verify-unit-tests/result.json`
   - `workspace-boundary-tests-passed` (test): The unit report proves architecture-contract.test.ts, workspace-loader.test.ts, coding-worker.test.ts, coding-worker-internal-subagents.test.ts, and research-agent.test.ts passed, including main/worker/internal workspace composition, runtime-root scoping, and lead-only delegation. Evidence: `runtime:evidence/verify-unit-tests/workspace-boundary-tests.json`
-  - `approval-progress-routing-passed` (test): The unit report proves approval-ingress.test.ts and coding-worker.test.ts passed, covering typed approval/progress events, durable routing, tool execution progress, and worker handoffs without claiming Ratatui rendering that these TypeScript tests do not exercise. Evidence: `runtime:evidence/verify-unit-tests/approval-progress-tests.json`
+  - `approval-progress-routing-passed` (test): The unit report proves approval-ingress.test.ts and coding-worker.test.ts passed, covering typed approval/progress events, durable routing, tool execution progress, and worker handoffs without claiming TUI rendering that these TypeScript tests do not exercise. Evidence: `runtime:evidence/verify-unit-tests/approval-progress-tests.json`
   - `session-memory-privacy-passed` (test): The unit report proves flue-session-store.test.ts, memory-tool.test.ts, memory-telemetry.test.ts, trusted-event-admission.test.ts, flue-telemetry.test.ts, and http-endpoints.test.ts passed, including actor/conversation scoping, trusted-event admission, raw-payload omission, and telemetry redaction. Evidence: `runtime:evidence/verify-unit-tests/session-memory-privacy-tests.json`
   - `tui-session-transcript-contracts-passed` (test): The unit report proves session-routing.test.ts, session-transcript.test.ts, and http-endpoints.test.ts passed, including fresh default TUI sessions, owner-scoped exact resume, missing-selector fallback, chronological transcript paging, immutable completed exchanges, stream-offset handoff, and exclusion of private startup, tool, and nested-worker content. Evidence: `runtime:evidence/verify-unit-tests/tui-session-transcript-tests.json`
   - `product-build-contracts-passed` (test): The unit report proves build-script-regressions.test.ts and product-artifact-lock.test.mjs passed, including imported built-in Flue skill discovery and serialized packaged-product test artifacts. Evidence: `runtime:evidence/verify-unit-tests/product-build-contract-tests.json`
 
 ### `verify-rust-tests` — Verify Rust Project Tests
 
-- Goal: Run the configured Rust project tests for the memory engine and Ratatui crates.
+- Goal: Run the configured Rust project tests for the memory engine and Rust TUI crates.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
 - Inputs: artifact:integrated-change
 - Resources: project:rust-target
@@ -640,8 +790,9 @@ flowchart TD
 - Approval required: `false`
 - Acceptance:
   - `verification-passed` (test): Every configured Rust project test passes under the pinned toolchain. Evidence: `runtime:evidence/verify-rust-tests/result.json`
-  - `ratatui-progress-rendering-passed` (test): The Rust report proves the Ratatui event reducer and application state handle thinking, tool, and delegated-task progress, while the rendered terminal surface proves thinking and tool rows and preserves stream state; delegated-task rendering and approval UI require separate evidence. Evidence: `runtime:evidence/verify-rust-tests/ratatui-progress-rendering.json`
-  - `ratatui-session-transcript-interaction-passed` (test): The Rust report proves durable transcript pages and live events converge in one document, completed responses remain immutable, newest and prepended history preserve viewport anchors, live-tail reaches the rendered bottom, and keyboard, multiline prompt, command-palette, mouse selection, copy, and scrollbar behavior remain covered. Evidence: `runtime:evidence/verify-rust-tests/ratatui-session-transcript-interaction.json`
+  - `tui-progress-rendering-passed` (test): The Rust report proves the TUI event reducer and application state handle thinking, tool, and delegated-task progress, while the rendered terminal surface proves thinking and tool rows and preserves stream state; delegated-task rendering and approval UI require separate evidence. Evidence: `runtime:evidence/verify-rust-tests/tui-progress-rendering.json`
+  - `tui-session-transcript-interaction-passed` (test): The Rust report proves durable transcript pages and live events converge in one document, completed responses remain immutable, newest and prepended history preserve viewport anchors, live-tail reaches the rendered bottom, and keyboard, multiline prompt, command-palette, mouse selection, copy, and scrollbar behavior remain covered. Evidence: `runtime:evidence/verify-rust-tests/tui-session-transcript-interaction.json`
+  - `tui-work-pane-passed` (test): Rust state, rendering, and interaction tests prove the required TUI work pane has responsive sizing, constrained-terminal behavior, independent task scrolling, task mutation, and transcript/prompt focus isolation. Evidence: `runtime:evidence/verify-rust-tests/tui-work-pane.json`
 
 ### `build-runtime` — Build Flue Runtime
 
@@ -657,23 +808,23 @@ flowchart TD
 - Acceptance:
   - `verification-passed` (test): The Flue Node build succeeds and the runtime server, config, builtin registry, imported greeting-preflight skill, main persona workspace, and WASM memory artifact are present with recorded digests. Evidence: `runtime:evidence/build-runtime/result.json`
 
-### `build-ratatui` — Build Ratatui Product TUI
+### `build-sim-one-tui` — Build SIM-ONE TUI
 
-- Goal: Build the release-mode Ratatui TUI product binary and copy it into the product artifact.
+- Goal: Build the release-mode SIM-ONE TUI binary and copy it into the product artifact.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
 - Inputs: artifact:integrated-change, artifact:runtime-build
-- Resources: project:ratatui-build-output
+- Resources: project:sim-one-tui-build-output
 - Permissions: read [authorized project tree, node_modules/]; write [target/release/, .gorombo/sim-one-ratatui/]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `40` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Writes only documented generated build or test artifacts.
 - Rollback: Regenerate the documented build or test artifacts from the prior reviewed commit.
 - Approval required: `false`
 - Acceptance:
-  - `verification-passed` (test): The Ratatui release build succeeds and the product binary exists with an executable mode and recorded digest. Evidence: `runtime:evidence/build-ratatui/result.json`
+  - `verification-passed` (test): The SIM-ONE TUI release build succeeds and the product binary exists with an executable mode and recorded digest. Evidence: `runtime:evidence/build-sim-one-tui/result.json`
 
 ### `build-cli` — Build SIM-ONE CLI
 
-- Goal: Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged Ratatui TUI by default.
+- Goal: Build the TypeScript sim-one command launcher and capability-management CLI that selects the packaged SIM-ONE TUI by default.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
 - Inputs: artifact:integrated-change, artifact:runtime-build
 - Resources: project:cli-build-output
@@ -687,17 +838,17 @@ flowchart TD
 
 ### `verify-cli-behavior` — Verify CLI Behavior
 
-- Goal: Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built Ratatui product path.
+- Goal: Prove the packaged sim-one launcher exposes its documented command surface and delegates startup to the built SIM-ONE TUI product path.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
-- Inputs: artifact:runtime-build, artifact:ratatui-build, artifact:cli-build
+- Inputs: artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build
 - Resources: local-runtime-probe
 - Permissions: read [authorized project tree, node_modules/]; write [.gorombo test runtime state]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `5` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
-- Side effects: `reversible` — May write temporary local packaged-runtime state while exercising Ratatui startup.
+- Side effects: `reversible` — May write temporary local packaged-runtime state while exercising SIM-ONE TUI startup.
 - Rollback: Remove the isolated test runtime state or regenerate it from the reviewed build.
 - Approval required: `false`
 - Acceptance:
-  - `verification-passed` (test): The platform sim-one launcher exits zero for --help, prints the documented SIM-ONE Alpha capability-management surface, and completes --smoke-startup through the packaged Ratatui launcher rather than merely proving cli.js exists. Evidence: `runtime:evidence/verify-cli-behavior/result.json`
+  - `verification-passed` (test): The platform sim-one launcher exits zero for --help, prints the documented SIM-ONE Alpha capability-management surface, and completes --smoke-startup through the packaged SIM-ONE TUI launcher rather than merely proving cli.js exists. Evidence: `runtime:evidence/verify-cli-behavior/result.json`
 
 ### `verify-http-integration` — Verify Built HTTP Runtime
 
@@ -716,27 +867,45 @@ flowchart TD
   - `tui-session-lifecycle-passed` (test): The built HTTP suite proves fresh TUI session creation, exact owned id-or-name resume, missing-selector fresh fallback, duplicate-name rejection, and separation from Telegram connector persistence. Evidence: `runtime:evidence/verify-http-integration/tui-session-lifecycle.json`
   - `durable-transcript-projection-passed` (test): The built HTTP suite returns newest chronological transcript pages with stable cursors and nextOffset while preserving prompt/final correlation and excluding private startup instructions, raw tool results, and nested-worker responses. Evidence: `runtime:evidence/verify-http-integration/durable-transcript-projection.json`
 
-### `verify-ratatui-product` — Verify Packaged Ratatui Product
+### `verify-sim-one-tui` — Verify Packaged SIM-ONE TUI
 
-- Goal: Prove the packaged sim-one command launches Ratatui, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response.
+- Goal: Prove the packaged sim-one command launches the SIM-ONE TUI, manages fresh and resumed sessions, restores durable transcripts, preserves terminal interaction, submits a real prompt, and renders the authoritative assistant response.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
-- Inputs: artifact:runtime-build, artifact:ratatui-build, artifact:cli-build
+- Inputs: artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
 - Resources: local-runtime-probe
-- Permissions: read [authorized project tree, node_modules/]; write [.gorombo test runtime configuration, /tmp Ratatui product runtime root]; external [configured model-provider HTTPS endpoint declared by project model cards]; destructive `false`
+- Permissions: read [authorized project tree, node_modules/]; write [.gorombo test runtime configuration, /tmp SIM-ONE TUI product runtime root]; external [configured model-provider HTTPS endpoint declared by project model cards]; destructive `false`
 - Execution: max `2` attempt(s), `15` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Writes only documented generated build or test artifacts.
 - Rollback: Regenerate the documented build or test artifacts from the prior reviewed commit.
 - Approval required: `false`
 - Acceptance:
-  - `verification-passed` (test): The product smoke records a real assistant response of valid content; binary or process existence alone is insufficient. Evidence: `runtime:evidence/verify-ratatui-product/result.json`
-  - `packaged-launch-and-session-lifecycle-passed` (test): The product smoke launches through .gorombo/sim-one-cli/sim-one, proves consecutive default launches create distinct fresh durable sessions, verifies workspace-derived greeting-preflight behavior, and resumes an exact owned id or explicit name without sending a second greeting. Evidence: `runtime:evidence/verify-ratatui-product/packaged-session-lifecycle.json`
-  - `transcript-replay-live-convergence-passed` (test): The product smoke restores newest and older transcript pages, attaches strictly after snapshot nextOffset, preserves completed exchanges, deduplicates reconnect replay, hides private and nested output, and renders one authoritative Markdown final in terminal order. Evidence: `runtime:evidence/verify-ratatui-product/transcript-replay-live-convergence.json`
-  - `interactive-terminal-controls-passed` (test): On the canonical POSIX host, the packaged PTY evidence proves prompt editing and multiline submission remain active during transcript scrollback, command-palette selection works, mouse selection and copy do not exit, history prepend preserves the visible anchor, and scrollbar/live-tail controls reach the true transcript ends; cross-platform terminal-event coverage remains separately owned by verify-rust-tests. Evidence: `runtime:evidence/verify-ratatui-product/interactive-terminal-controls.json`
-  - `session-command-surface-passed` (test): The product smoke proves /new, /clear, /session, /sessions, /compact, /resume, /rename, and /exit operate through the active TUI connector session and preserve the documented header, status, and exit identity behavior. Evidence: `runtime:evidence/verify-ratatui-product/session-command-surface.json`
+  - `verification-passed` (test): The product smoke records a real assistant response of valid content; binary or process existence alone is insufficient. Evidence: `runtime:evidence/verify-sim-one-tui/result.json`
+  - `packaged-launch-and-session-lifecycle-passed` (test): The product smoke launches through .gorombo/sim-one-cli/sim-one, proves consecutive default launches create distinct fresh durable sessions, verifies workspace-derived greeting-preflight behavior, and resumes an exact owned id or explicit name without sending a second greeting. Evidence: `runtime:evidence/verify-sim-one-tui/packaged-session-lifecycle.json`
+  - `transcript-replay-live-convergence-passed` (test): The product smoke restores newest and older transcript pages, attaches strictly after snapshot nextOffset, preserves completed exchanges, deduplicates reconnect replay, hides private and nested output, and renders one authoritative Markdown final in terminal order. Evidence: `runtime:evidence/verify-sim-one-tui/transcript-replay-live-convergence.json`
+  - `interactive-terminal-controls-passed` (test): On the canonical POSIX host, the packaged PTY evidence proves prompt editing and multiline submission remain active during transcript scrollback, command-palette selection works, mouse selection and copy do not exit, history prepend preserves the visible anchor, and scrollbar/live-tail controls reach the true transcript ends; cross-platform terminal-event coverage remains separately owned by verify-rust-tests. Evidence: `runtime:evidence/verify-sim-one-tui/interactive-terminal-controls.json`
+  - `session-command-surface-passed` (test): The product smoke proves /new, /clear, /session, /sessions, /compact, /resume, /rename, and /exit operate through the active TUI connector session and preserve the documented header, status, and exit identity behavior. Evidence: `runtime:evidence/verify-sim-one-tui/session-command-surface.json`
+  - `work-pane-product-behavior-passed` (test): Packaged terminal evidence proves the required work pane renders at supported widths, uses the planned constrained-terminal view, scrolls independently, mutates durable task state, and leaves transcript and prompt interaction intact. Evidence: `runtime:evidence/verify-sim-one-tui/work-pane-product-behavior.json`
+
+### `verify-onboarding-distribution` — Verify SIM-ONE Onboarding And Distribution
+
+- Goal: Prove the versioned SIM-ONE package installs with integrity, onboards from a clean user environment, manages its runtime, and launches the finished product without a source checkout.
+- Executor instructions: Run the exact isolated packaging, installer, onboarding, command, and service-adapter probes introduced by the implementation plan. Bind their argv commands and expected artifacts before execution. Use temporary HOME and runtime roots; do not install or restart the host production service. Preserve full stdout, stderr, exit status, timing, digests, and output-level health evidence.
+- Inputs: artifact:integrated-change, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
+- Resources: local-runtime-probe, isolated-packaged-install-probe
+- Permissions: read [authorized project tree, artifact:beta-release-contract, node_modules/, versioned release assets]; write [/tmp SIM-ONE onboarding test home, /tmp SIM-ONE packaged runtime root, isolated service-manager test state]; external [configured model-provider HTTPS endpoint declared by project model cards, approved release-asset download endpoint when the probe requires it]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `reversible` — Creates only isolated temporary installation, onboarding, runtime, and service-test state.
+- Rollback: Remove the isolated test roots and regenerate the package from the reviewed commit.
+- Approval required: `false`
+- Acceptance:
+  - `package-install-passed` (test): REL-PKG-001 and REL-PKG-002: an isolated clean-home probe downloads or reads the versioned release archive, verifies published checksums before extraction, installs without a source checkout, and launches the packaged product from an arbitrary working directory. Evidence: `runtime:evidence/verify-onboarding-distribution/package-install.json`
+  - `packaged-onboarding-passed` (test): REL-ONB-001: the packaged sim-one install flow validates configuration, protects secrets, obtains a real model response, and opens the first secure SIM-ONE TUI session with output-level evidence. Evidence: `runtime:evidence/verify-onboarding-distribution/onboarding.json`
+  - `lifecycle-commands-passed` (test): REL-OPS-001: isolated command probes prove config, doctor, status, start, restart, and stop behavior for local-process and service-managed modes without mutating the host production service. Evidence: `runtime:evidence/verify-onboarding-distribution/lifecycle-commands.json`
+  - `distribution-evidence-honest` (policy): The verification records exact platform coverage, archive and binary digests, temporary runtime roots, provider response evidence, and any unproved platform or service behavior that must block release. Evidence: `runtime:evidence/verify-onboarding-distribution/evidence-scope.json`
 
 ### `verify-tui-e2e` — Verify Gateway And CLI Smoke
 
-- Goal: Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged Ratatui end-to-end evidence.
+- Goal: Exercise the direct built-gateway model path and built CLI help surface without treating this narrow smoke as packaged SIM-ONE TUI end-to-end evidence.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
 - Inputs: artifact:runtime-build, artifact:cli-build
 - Resources: local-runtime-probe
@@ -748,7 +917,7 @@ flowchart TD
 - Acceptance:
   - `gateway-prompt-passed` (test): The configured smoke posts through the built gateway agent route and receives a nonempty, non-error assistant response. Evidence: `runtime:evidence/verify-tui-e2e/gateway-prompt.json`
   - `cli-smoke-passed` (test): The built CLI --help command exits zero and returns a nonempty command surface. Evidence: `runtime:evidence/verify-tui-e2e/cli-smoke.json`
-  - `evidence-scope-honest` (policy): This node reports only direct gateway prompt and CLI-help behavior. Packaged sim-one/Ratatui launch, sessions, transcript replay, interaction, and visible-final behavior belong to verify-ratatui-product; approval routing and typed progress belong to unit evidence; missing user-visible approval or subagent end-to-end proof remains an architecture-review blocker. Evidence: `runtime:evidence/verify-tui-e2e/evidence-scope.json`
+  - `evidence-scope-honest` (policy): This node reports only direct gateway prompt and CLI-help behavior. Packaged sim-one/SIM-ONE TUI launch, sessions, transcript replay, interaction, and visible-final behavior belong to verify-sim-one-tui; approval routing and typed progress belong to unit evidence; missing user-visible approval or subagent end-to-end proof remains an architecture-review blocker. Evidence: `runtime:evidence/verify-tui-e2e/evidence-scope.json`
 
 ### `verify-memory-smoke` — Verify Real Memory Runtime
 
@@ -768,7 +937,7 @@ flowchart TD
 
 - Goal: Map fresh project verification evidence back to every change-contract criterion and identify any unproved behavior, skipped requirement, or stale artifact.
 - Executor instructions: Inspect full outputs and target behavior. Reject coverage claims based only on a narrow test, successful command, process, port, or artifact existence.
-- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:ratatui-product-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
+- Inputs: artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report
 - Resources: —
 - Permissions: read [all verification evidence, artifact:change-contract, Git diff]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -778,7 +947,8 @@ flowchart TD
 - Acceptance:
   - `all-criteria-mapped` (review): Every change-contract criterion names current direct evidence or is explicitly marked unproved and blocks release. Evidence: `runtime:evidence/aggregate-verification/coverage-map.json`
   - `no-false-positive-status` (policy): Positive status claims rely on correct current output or target-system effects, not process, port, session, file, or command existence. Evidence: `runtime:evidence/aggregate-verification/output-proof-review.json`
-  - `product-evidence-scopes-separated` (review): The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust Ratatui state/rendering, and packaged sim-one/Ratatui PTY behavior as distinct evidence scopes and rejects claims that exceed the probe that produced them. Evidence: `runtime:evidence/aggregate-verification/product-evidence-scope.json`
+  - `product-evidence-scopes-separated` (review): The coverage map keeps direct gateway/CLI smoke, built HTTP session/transcript behavior, Rust TUI state/rendering, packaged sim-one/SIM-ONE TUI PTY behavior, and isolated onboarding/distribution probes as distinct evidence scopes and rejects claims that exceed the probe that produced them. Evidence: `runtime:evidence/aggregate-verification/product-evidence-scope.json`
+  - `release-ledger-coverage-complete` (review): Every required release and planned-work ID has fresh implementation and behavioral evidence from its owning graph member; no ID may pass through a deferred, optional, or not-applicable branch. Evidence: `runtime:evidence/aggregate-verification/release-ledger-coverage.json`
 
 ### `review-architecture-security` — Review Architecture, Security, And Product Boundaries
 
@@ -797,8 +967,9 @@ flowchart TD
   - `progress-contract-passes` (review): Every tool execution, subagent delegation, verification, approval, and state transition reaches the user through durable typed progress events. Evidence: `runtime:evidence/review-architecture-security/progress.json`
   - `workspace-boundaries-pass` (policy): src/AGENTS.md remains company-owned; src/workspace/ remains the main-agent persona workspace even when used as the default Coding Worker runtime root; built-in lead workers and Coding Worker internal subagents compose only their own workspace guidance; runtime-loaded user workers remain capability profiles; and only lead workers are orchestrator-addressable. Evidence: `runtime:evidence/review-architecture-security/workspaces.json`
   - `parallel-ownership-passes` (review): The final diff matches the plan's one-producer-per-file matrix; any shared file was serialized or reconciled by integration with no hidden parallel overwrite. Evidence: `runtime:evidence/review-architecture-security/file-ownership.json`
-  - `verification-claims-match-probes` (review): Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust Ratatui state/rendering tests, packaged sim-one/Ratatui PTY tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval. Evidence: `runtime:evidence/review-architecture-security/probe-claim-map.json`
-  - `release-documentation-reviewed` (review): Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior from release gates without presenting a roadmap. Evidence: `runtime:evidence/review-architecture-security/release-documentation.json`
+  - `verification-claims-match-probes` (review): Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust TUI state/rendering tests, packaged SIM-ONE TUI PTY tests, isolated onboarding/distribution tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval. Evidence: `runtime:evidence/review-architecture-security/probe-claim-map.json`
+  - `release-documentation-reviewed` (review): Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior, required release gates, and owner-scoped planned product work without making speculative promises. Evidence: `runtime:evidence/review-architecture-security/release-documentation.json`
+  - `release-lineage-consistent` (review): The release ledger, graph members, owner scope decision, external plan lineage, and verification summary contain the same complete set of stable release IDs and no required item is hidden by a generic workstream. Evidence: `runtime:evidence/review-architecture-security/release-lineage.json`
 
 ### `approve-release-candidate` — Approve Release Candidate Publication
 
@@ -901,6 +1072,7 @@ flowchart TD
 - Approval required: `true`
 - Acceptance:
   - `production-release-bound` (policy): The release record binds the exact candidate, target, approval, deployment ID, prior release, idempotency key, and rollback. Evidence: `runtime:evidence/release-production/release.json`
+  - `rel-rel-001-release-date-recorded` (artifact): REL-REL-001: the 0.1.0 Beta release date is written only after successful publication and matches the immutable release record. Evidence: `runtime:evidence/release-production/rel-rel-001-release-date.json`
 
 ### `observe-production` — Observe Production Outcomes
 
@@ -941,8 +1113,10 @@ flowchart TD
 - Canary and production deployment commands remain adapter bindings until the project documents an approved deployment mechanism.
 - Full live-model TUI probes require valid provider credentials supplied through the runtime environment, never stored in this graph.
 - Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.
+- docs/getting-started/pre-release-status.md is the repository-owned stable release ledger; /opt/ai/plans/sim-one-ratatui-tui/, /opt/ai/plans/sim-one-build-structure/, and /opt/ai/plans/agent-tui/ remain detailed external source plans rather than repository implementation plans.
+- Every stable release and planned-work ID in docs/getting-started/pre-release-status.md is required for 0.1.0 Beta; changing that fixed scope requires a new explicit owner decision and graph revision.
 - The checked-in definition is deliberately bound to the canonical host checkout /opt/ai/sim-one-alpha under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.
-- The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/Ratatui session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.
+- The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/SIM-ONE TUI session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.
 - Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate.
 - A snapshot:sha256 project context version hashes a newline-delimited manifest of sorted Git-tracked and nonignored untracked files, excluding development-graph.json and development-graph.md; each record contains the project-relative path, a NUL separator, and the file SHA-256.
 
@@ -955,12 +1129,13 @@ flowchart TD
 - The graph coordinator is not an operating-system sandbox or distributed scheduler; untrusted commands require an approved isolation layer.
 - The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.
 - Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.
-- Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.
+- External source plans contain historical implementation and package names; execution must reconcile them against the repository release ledger, current architecture, and SIM-ONE TUI product terminology before assigning files or behavior.
+- Current gateway and packaged SIM-ONE TUI probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.
 - Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, scheduled trusted-event context or output delivery, verification, configuration, or admin-surface behavior; independent review must compare each current-source claim and documented setting with the exact runtime call path, route registration, trusted-context handoff, persisted result fields, connector delivery path, and configured test command while labeling unimplemented release contracts explicitly.
 
 ## Provenance and validation
 
-Project instructions: /opt/ai/sim-one-alpha/AGENTS.md, /opt/ai/sim-one-alpha/src/AGENTS.md, /opt/ai/sim-one-alpha/docs/architecture/README.md, /opt/ai/sim-one-alpha/docs/architecture/overview.md, /opt/ai/sim-one-alpha/docs/architecture/execution-workflows.md, /opt/ai/sim-one-alpha/docs/architecture/protocol-system.md, /opt/ai/sim-one-alpha/docs/architecture/retrieval-and-research.md, /opt/ai/sim-one-alpha/docs/architecture/skill-system.md, /opt/ai/sim-one-alpha/docs/architecture/worker-system.md, /opt/ai/sim-one-alpha/docs/architecture/flue-architecture.md, /opt/ai/sim-one-alpha/docs/architecture/gorombo-flue-map.md, /opt/ai/sim-one-alpha/docs/architecture/product-flow.md, /opt/ai/sim-one-alpha/docs/architecture/registry-system.md, /opt/ai/sim-one-alpha/docs/architecture/tool-system.md, /opt/ai/sim-one-alpha/docs/architecture/capability-system.md, /opt/ai/sim-one-alpha/docs/architecture/memory-system.md, /opt/ai/sim-one-alpha/docs/architecture/tui-cli-session-flow.md, /opt/ai/sim-one-alpha/docs/operations/product-tui.md, /opt/ai/sim-one-alpha/docs/tui/ratatui.md, /opt/ai/sim-one-alpha/docs/tui/session-management.md, /opt/ai/sim-one-alpha/.github/workflows/ci.yml
+Project instructions: /opt/ai/sim-one-alpha/AGENTS.md, /opt/ai/sim-one-alpha/src/AGENTS.md, /opt/ai/sim-one-alpha/docs/architecture/README.md, /opt/ai/sim-one-alpha/docs/architecture/overview.md, /opt/ai/sim-one-alpha/docs/architecture/execution-workflows.md, /opt/ai/sim-one-alpha/docs/architecture/protocol-system.md, /opt/ai/sim-one-alpha/docs/architecture/retrieval-and-research.md, /opt/ai/sim-one-alpha/docs/architecture/skill-system.md, /opt/ai/sim-one-alpha/docs/architecture/worker-system.md, /opt/ai/sim-one-alpha/docs/architecture/flue-architecture.md, /opt/ai/sim-one-alpha/docs/architecture/gorombo-flue-map.md, /opt/ai/sim-one-alpha/docs/architecture/product-flow.md, /opt/ai/sim-one-alpha/docs/architecture/registry-system.md, /opt/ai/sim-one-alpha/docs/architecture/tool-system.md, /opt/ai/sim-one-alpha/docs/architecture/capability-system.md, /opt/ai/sim-one-alpha/docs/architecture/memory-system.md, /opt/ai/sim-one-alpha/docs/architecture/tui-cli-session-flow.md, /opt/ai/sim-one-alpha/docs/operations/product-tui.md, /opt/ai/sim-one-alpha/docs/tui/ratatui.md, /opt/ai/sim-one-alpha/docs/tui/session-management.md, /opt/ai/sim-one-alpha/docs/getting-started/pre-release-status.md, /opt/ai/sim-one-alpha/.github/workflows/ci.yml
 
 Canonical source: `development-graph.json`
 
