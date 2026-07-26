@@ -88,6 +88,11 @@ Read the [documentation hub](docs/README.md) and
 behavior. Changes must preserve the project contracts relevant to their scope,
 including:
 
+Optionally use [DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha) for
+source-linked codebase exploration and repository-grounded questions. Its
+generated content is an exploration aid, not required reading or a replacement
+for the versioned architecture documentation.
+
 - Flue remains the runtime foundation and SIM-ONE remains the governance layer;
 - the orchestrator governs and delegates while workers execute and report back;
 - protocols are mandatory SQLite-backed runtime rules, not skills;

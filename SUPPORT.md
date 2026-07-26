@@ -7,6 +7,9 @@ Use the following project documentation before opening a request:
 - [README](README.md) for installation, onboarding, configuration, and usage;
 - [documentation hub](docs/README.md) for architecture, operations, and
   subsystem references;
+- [DeepWiki](https://deepwiki.com/dansasser/sim-one-alpha) for generated,
+  source-linked codebase exploration and repository-grounded questions that
+  may not require an issue;
 - [changelog](CHANGELOG.md) for release contents and user-visible changes;
 - [contributing guide](CONTRIBUTING.md) for source builds and pull requests.
 
