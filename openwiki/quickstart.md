@@ -80,6 +80,7 @@ pnpm run connect
 pnpm run build:cli
 pnpm run build:all
 pnpm run test:tui
+pnpm run test:tui:ratatui
 pnpm run smoke:http
 pnpm run smoke:memory
 pnpm run cargo:test

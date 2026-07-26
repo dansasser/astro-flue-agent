@@ -1,9 +1,10 @@
 # Product Runtime And Interface Flow
 
 This document describes the SIM-ONE Alpha product surfaces implemented in this
-repository and how they enter the governed runtime. Installation and onboarding
+repository and how they enter the runtime. Installation and onboarding
 instructions live in the [documentation hub](../README.md); this file owns the
-runtime and interface architecture.
+runtime and interface architecture. Complete critic scoring and trusted
+fail-closed protocol enforcement remain release gates.
 
 ## Product Identity
 
@@ -31,7 +32,7 @@ internal executors, not separate products or public endpoints.
 Presentation and connector code do not contain orchestration logic. Every
 conversation or scheduled agent turn reaches the same governing orchestrator.
 
-## Governed Product Flow
+## Current Product Flow
 
 ```mermaid
 flowchart TD
@@ -46,23 +47,24 @@ flowchart TD
     Schedule --> Dispatch["Durable Flue dispatch"]
     Gateway --> Event["Trusted normalized event"]
     Event --> Session["Owned durable session"]
-    Session --> Orchestrator["SIM-ONE orchestrator and critic"]
+    Session --> Orchestrator["SIM-ONE orchestrator"]
     Dispatch --> Orchestrator
     Orchestrator --> Protocols["Protocol Tool and SQLite protocol bundle"]
     Protocols --> Orchestrator
     Orchestrator --> Capabilities["Memory, tools, workflows, MCP, and workers"]
-    Capabilities --> Validation["Orchestrator and critic validation"]
-    Validation --> Outcome["Approval, revision, rejection, or response"]
+    Capabilities --> Validation["Orchestrator synthesis"]
+    Validation --> Outcome["Implemented approval path or response"]
     Outcome --> Gateway
     Gateway --> TUI
     Gateway --> Telegram
     Gateway --> API
 ```
 
-The protocol bundle is loaded from trusted event data before final reasoning,
-tool execution, worker delegation, or response synthesis. Workers and tools
-return results to the orchestrator; they do not approve their own work or send
-independent final responses.
+Orchestrator instructions require the protocol bundle to be loaded from
+trusted event data. Trusted enforcement that prevents reasoning, tool
+execution, worker delegation, or response synthesis before lookup remains a
+release gate. Workers and tools return results to the orchestrator; they do not
+send independent final responses.
 
 ## Gateway And Runtime Root
 

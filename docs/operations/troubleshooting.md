@@ -44,8 +44,10 @@ sim-one --port <number>
 sim-one --base-url <url>
 ```
 
-`--base-url` overrides `--port`. Verify that the URL points to the Secure Web
-API and that external requests include the configured API secret.
+`--base-url` overrides `--port`. The current terminal client supports a
+loopback HTTP endpoint and does not send `x-api-secret`; it cannot connect
+directly to a non-loopback gateway protected by external API authentication.
+Use an SSH tunnel that exposes the remote gateway on a local loopback port.
 
 ## Model Or Credential Failure
 

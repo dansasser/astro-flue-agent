@@ -105,13 +105,15 @@ enable them through the product CLI or control surface. CLI additions may use
 Enablement means the tool may be loaded and attached. It does not grant
 unrestricted authority. A loaded tool remains constrained by:
 
-- the active protocol bundle;
 - trusted connector, actor, conversation, client, and project scope;
 - the owning agent's instructions;
 - argument validation;
 - sandbox and filesystem boundaries;
-- tool-specific approval requirements;
-- orchestrator/critic result validation.
+- implemented tool-specific approval requirements.
+
+The release contract adds active protocol scoring and orchestrator/critic
+result validation across every tool path. Complete enforcement remains a
+release gate.
 
 Tools must derive sensitive scope from trusted runtime state rather than
 accepting model-selected authority fields.
@@ -119,7 +121,8 @@ accepting model-selected authority fields.
 ## Side Effects And Failure
 
 - Read-only tools return bounded structured data.
-- Mutating tools use the applicable approval service when policy requires it.
+- Git and GitHub mutation tools use the approval service; file write and patch
+  approval remains a release gate.
 - Missing configuration fails closed.
 - Provider errors are normalized before they enter agent context.
 - Tools do not silently mutate global state outside their documented scope.

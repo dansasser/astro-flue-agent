@@ -18,7 +18,7 @@ Admitted event
 -> Flue child session
 -> Worker tools, skills, and internal subagents
 -> Structured result and progress events
--> Orchestrator/critic validation
+-> Orchestrator synthesis
 -> Response, revision, or rejection
 ```
 
@@ -57,8 +57,8 @@ not directly own the web-search path.
 
 ### Coding Worker
 
-The Coding Worker is a lead worker for repository tasks. It runs a bounded,
-approval-gated loop:
+The Coding Worker is a lead worker for repository tasks. It runs a bounded loop
+with approval-gated Git and GitHub mutations:
 
 ```text
 Triage
@@ -72,8 +72,10 @@ Triage
 
 The worker owns the tools needed for repository inspection, code intelligence,
 planning, task memory, file changes, verification, Git operations, GitHub
-operations, and schedules. Mutating actions pass through the approval service.
-The model cannot create its own approval.
+operations, and schedules. Commit, push, and GitHub mutation tools pass through
+the approval service. Current write and patch tools use workspace and sandbox
+boundaries but do not call the approval service; that enforcement remains a
+release gate. The model cannot create its own approval.
 
 The Coding Worker also persists task checkpoints and uses structured task
 memory, including notes, todos, and checklists, to maintain execution state
@@ -164,10 +166,14 @@ Worker execution follows these rules:
 5. Sandbox and command policy constrain local execution.
 6. Mutating actions require approval where policy demands it.
 7. Progress and results remain observable.
-8. The orchestrator/critic performs final validation.
+8. The orchestrator performs final synthesis.
 
 This separation prevents the same model context from both performing work and
 acting as the final authority over that work.
+
+The release contract adds complete protocol scoring and orchestrator/critic
+validation across each returned result. That enforcement remains a release
+gate.
 
 ## Source Map
 

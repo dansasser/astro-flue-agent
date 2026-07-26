@@ -23,7 +23,7 @@ of the current CLI parser.
 | --- | --- |
 | `--session <selector>` | Resume an owned session by exact id or explicit name |
 | `--port <number>` | Use a local gateway port from 1 to 65535 |
-| `--base-url <url>` | Connect to an existing gateway URL; overrides `--port` |
+| `--base-url <url>` | Connect to an existing loopback HTTP gateway or local SSH tunnel; overrides `--port` |
 | `-h`, `--help` | Show command help |
 
 Examples:
@@ -34,6 +34,11 @@ sim-one --session "Quarterly planning"
 sim-one --port 3940
 sim-one --base-url http://127.0.0.1:3940
 ```
+
+The current terminal client sends no `x-api-secret` header and supports plain
+HTTP transport. A direct non-loopback gateway therefore fails external API
+authentication. Use a loopback endpoint or forward the remote gateway through
+an SSH tunnel to a local port.
 
 ## Skill Commands
 

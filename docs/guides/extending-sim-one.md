@@ -136,7 +136,7 @@ remain subject to:
 - trusted connector, actor, conversation, and project scope;
 - typed tool boundaries;
 - worker ownership and isolation;
-- approval-gated mutations.
+- approval-gated Git and GitHub mutations.
 
 The release contract also subjects every capability path to active protocol
 scoring and orchestrator/critic enforcement. Complete activation of that

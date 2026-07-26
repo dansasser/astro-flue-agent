@@ -160,6 +160,7 @@ npm run test:unit
 npm run cargo:test
 npm run test:http
 npm run test:tui
+npm run test:tui:ratatui
 npm run smoke:memory
 ```
 
@@ -172,6 +173,7 @@ pnpm run test:unit
 pnpm run cargo:test
 pnpm run test:http
 pnpm run test:tui
+pnpm run test:tui:ratatui
 pnpm run smoke:memory
 ```
 
@@ -186,7 +188,7 @@ requires them:
 | Change area | npm | pnpm |
 | --- | --- | --- |
 | Rust/WebAssembly memory | `npm run cargo:test` and `npm run smoke:memory` | `pnpm run cargo:test` and `pnpm run smoke:memory` |
-| SIM-ONE TUI | `npm run cargo:test`, `npm run build:tui`, and `npm run test:tui` | `pnpm run cargo:test`, `pnpm run build:tui`, and `pnpm run test:tui` |
+| SIM-ONE TUI | `npm run cargo:test`, `npm run build:tui`, `npm run test:tui`, and `npm run test:tui:ratatui` | `pnpm run cargo:test`, `pnpm run build:tui`, `pnpm run test:tui`, and `pnpm run test:tui:ratatui` |
 | CLI or product command | `npm --prefix sim-one-cli run build` and `npm run test:tui` | `pnpm run build:cli` and `pnpm run test:tui` |
 | HTTP routes or gateway behavior | `npm run test:http` and `npm run smoke:http` | `pnpm run test:http` and `pnpm run smoke:http` |
 | LSP integration | `GOROMBO_LSP_REAL_SERVER_TESTS=1 npm run test:lsp` | `GOROMBO_LSP_REAL_SERVER_TESTS=1 pnpm run test:lsp` |

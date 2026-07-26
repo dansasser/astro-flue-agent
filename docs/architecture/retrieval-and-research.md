@@ -18,7 +18,7 @@ Retrieval capabilities are assigned by responsibility:
 | Document and project search | Retrieval workflow and RAG router |
 | Web search and page retrieval | Researcher worker |
 | Source synthesis | Researcher worker |
-| Final use of retrieved evidence | Orchestrator/critic |
+| Final use of retrieved evidence | Orchestrator synthesis |
 
 The orchestrator can call `retrieve_memory` for trusted memory scopes. It can
 also delegate a research task to the Researcher. Web search is restricted to
@@ -120,8 +120,11 @@ Orchestrator
 -> Optional page fetches
 -> Unique context packing
 -> Sources, confidence, budget, and failures
--> Orchestrator/critic
+-> Orchestrator synthesis
 ```
+
+Complete critic scoring of retrieved evidence is part of the release
+enforcement contract and remains a release gate.
 
 Research depth is explicit:
 

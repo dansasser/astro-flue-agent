@@ -56,6 +56,7 @@ CLI and TUI checks:
 ```sh
 pnpm run build:cli
 pnpm run test:tui
+pnpm run test:tui:ratatui
 ```
 
 Memory/Rust/WASM checks:
@@ -121,7 +122,8 @@ When changing capabilities, run `capability-store.test.ts`, `worker-loader.test.
 
 When changing schedules, run schedule store/manager/routes/config tests and any coding schedule tool tests.
 
-When changing the CLI/TUI, run `pnpm run build:cli` and `pnpm run test:tui`.
+When changing the CLI/TUI, run `pnpm run build:cli`, `pnpm run test:tui`, and
+`pnpm run test:tui:ratatui`.
 Verify default and explicit session behavior against the current terminal
 implementation rather than preserving a historical hardcoded session ID.
 

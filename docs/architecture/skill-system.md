@@ -149,12 +149,14 @@ does not make skill content authoritative.
 
 Every skill remains subordinate to:
 
-- the active SQLite protocol bundle;
 - the owning agent's instructions;
 - trusted connector, actor, conversation, and project scope;
 - the tools and workers actually attached to the owning agent;
-- approval gates on executable or mutating work;
-- orchestrator/critic evaluation.
+- implemented approval gates on Git and GitHub mutations.
+
+The release contract also subjects skill use to active protocol scoring and
+orchestrator/critic evaluation across every execution path. Complete
+enforcement remains a release gate.
 
 Skill directories must not contain credentials, private keys, access tokens, or
 runtime secrets. Imported skill content is packaged with the application, and

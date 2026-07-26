@@ -44,7 +44,7 @@ SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.
 
 ## Status
 
-SIM-ONE Alpha is the base architecture behind [Gorombo](https://gorombo.com)'s AI Employees. The pre-release source provides the `sim-one` CLI, SIM-ONE terminal UI, gateway API, Telegram connector, scheduled jobs, runtime capability management, memory/RAG, worker delegation, protocol loading, and approval-gated local actions. Packaging and the remaining release gates are tracked in [Pre-Release Status](docs/getting-started/pre-release-status.md).
+SIM-ONE Alpha is the base architecture behind [Gorombo](https://gorombo.com)'s AI Employees. The pre-release source provides the `sim-one` CLI, SIM-ONE terminal UI, gateway API, Telegram connector, scheduled jobs, runtime capability management, memory/RAG, worker delegation, protocol loading, and approval-gated Git and GitHub actions. Packaging and the remaining release gates are tracked in [Pre-Release Status](docs/getting-started/pre-release-status.md).
 
 ## What Is SIM-ONE Alpha?
 
@@ -339,7 +339,7 @@ sim-one
 | --- | --- |
 | `sim-one --session <selector>` | Resume an owned session by exact id or explicit name. |
 | `sim-one --port <number>` | Use a local gateway port from 1 to 65535. |
-| `sim-one --base-url <url>` | Connect to an existing gateway URL; overrides `--port`. |
+| `sim-one --base-url <url>` | Connect to an existing loopback HTTP gateway or local SSH tunnel; overrides `--port`. |
 | `sim-one -h` or `sim-one --help` | Show CLI help. |
 
 Examples:
@@ -491,9 +491,9 @@ CLI changes are explicit user actions. Agent-added skills can be enabled immedia
 
 Registration and enablement do not grant unrestricted authority. Current source
 constrains loaded capabilities through trusted identity and scope, typed tool
-boundaries, worker ownership, and approval-gated mutation paths. Complete
-protocol scoring and orchestrator/critic enforcement across every capability
-path remain release gates.
+boundaries, worker ownership, and approval-gated Git and GitHub mutation paths.
+Complete protocol scoring and orchestrator/critic enforcement across every
+capability path remain release gates.
 
 ### Manage Skills
 

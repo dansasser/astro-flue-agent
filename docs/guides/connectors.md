@@ -95,7 +95,8 @@ Schedule definitions and run history are stored in SQLite.
 - Secrets remain in the runtime environment or secret manager.
 - Orchestrator instructions require applicable protocol loading before acting;
   trusted fail-closed enforcement remains a release gate.
-- Mutating work still uses approval-gated execution paths.
+- Git and GitHub mutations use approval-gated execution paths; file-edit
+  approval remains a release gate.
 - Connector-specific replies return through the initiating channel.
 
 ## Related Documentation

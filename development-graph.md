@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: eea00bfc904a4a6694709d6099451963a413cb148c23fe4d50024df40470519b -->
+<!-- development-graph-sha256: 51cec5ac6d3c0773638d6f39f57b17f237d775c7d4d0fd8df4f6a96b6bb05fdc -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `19` |
+| Graph version | `21` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `/opt/ai/sim-one-alpha` |
-| Context version | `snapshot:sha256:fc86c18028d2764b8f07ad3011599230b896a5a5a73fcaeeb91d31ea775eb241` |
+| Context version | `snapshot:sha256:c27f9c352df038dbf724e03c0db4c1c88fd705a661af4dbf1460e9fc9ffc6ffd` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `eea00bfc904a4a6694709d6099451963a413cb148c23fe4d50024df40470519b` |
+| Canonical checksum | `51cec5ac6d3c0773638d6f39f57b17f237d775c7d4d0fd8df4f6a96b6bb05fdc` |
 
 ## Flow
 
@@ -956,6 +956,7 @@ flowchart TD
 - The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.
 - Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.
 - Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.
+- Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, or verification behavior; independent review must compare each current-source claim with the exact runtime call path and configured test command while labeling unimplemented release contracts explicitly.
 
 ## Provenance and validation
 

@@ -5,9 +5,9 @@ Agents maintain conversational context. Workflows perform bounded operations
 with explicit inputs, outputs, budgets, and completion states.
 
 Both run inside the same orchestration envelope. Protocol loading and
-approval-gated mutation paths are implemented. Complete critic scoring and a
-trusted fail-closed pre-execution boundary across every path remain release
-gates.
+approval-gated Git and GitHub mutation paths are implemented. Complete critic
+scoring and a trusted fail-closed pre-execution boundary across every path
+remain release gates.
 
 ## Execution Envelope
 
@@ -69,7 +69,7 @@ Research request
 -> web_research workflow
 -> Bounded search, fetch, cache, and evidence packing
 -> Sources and retrieval limitations
--> Orchestrator/critic synthesis
+-> Orchestrator synthesis
 ```
 
 The standalone research workflow uses the same Researcher profile. Direct web
@@ -106,9 +106,11 @@ Coding request
 -> Orchestrator synthesis
 ```
 
-The Coding Worker owns its internal subagents and execution tools. File edits,
-commits, pushes, and pull request mutations pass through approval-gated
-surfaces. Progress events and task checkpoints make the loop observable and
+The Coding Worker owns its internal subagents and execution tools. Current file
+edits are constrained by the worker workspace and sandbox but are not routed
+through the approval service. Commits, pushes, and GitHub mutations use
+approval-gated tools. Approval enforcement for file edits remains a release
+gate. Progress events and task checkpoints make the loop observable and
 recoverable.
 
 ## Scheduled Execution

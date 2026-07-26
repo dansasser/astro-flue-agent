@@ -7,7 +7,11 @@ flows. The ownership invariants are also enforced by the generated
 [development lifecycle graph](../../development-graph.md), especially its
 architecture decision and architecture/security review nodes.
 
-## Governed Turn
+The diagram below is the release governance contract. Current source attaches
+protocol lookup and approval services, but complete critic scoring and trusted
+fail-closed enforcement across every path remain release gates.
+
+## Release Contract Turn
 
 ```mermaid
 flowchart TD

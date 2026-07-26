@@ -101,10 +101,11 @@ The current `sim-one` CLI declares `skill`, `tool`, `worker`, and `mcp` subcomma
 ## CLI and TUI workflow
 
 `sim-one-cli/src/cli.tsx` defines the `sim-one` binary. With no subcommand, it
-launches the current terminal interface. It can connect to a provided
-`--base-url`, or start/ensure a local server through
-`sim-one-cli/src/launcher/server-manager.ts`. Session creation and resume
-behavior belongs to the current terminal implementation and session routes.
+launches the current terminal interface. It can connect to a loopback HTTP
+gateway or local SSH tunnel through `--base-url`, or start/ensure a local
+server through `sim-one-cli/src/launcher/server-manager.ts`. Session creation
+and resume behavior belongs to the current terminal implementation and session
+routes.
 
 `package.json` exposes:
 
@@ -112,6 +113,7 @@ behavior belongs to the current terminal implementation and session routes.
 pnpm run build:cli
 pnpm run build:all
 pnpm run test:tui
+pnpm run test:tui:ratatui
 ```
 
 `build:all` builds the runtime, terminal interface, and CLI package, then runs

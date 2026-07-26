@@ -39,9 +39,8 @@ Connector, TUI, Web API, or schedule
 -> load_protocols(eventId)
 -> SQLite protocol provider
 -> Applicable ProtocolBundle
--> Orchestrator/critic
--> Governed reasoning, retrieval, tool use, or delegation
--> Result and response validation
+-> Orchestrator
+-> Reasoning, retrieval, tool use, delegation, or response synthesis
 ```
 
 The gateway persists the normalized event before the orchestrator uses the
@@ -51,6 +50,9 @@ record.
 
 Model-supplied connector, actor, conversation, client, project, workflow, or
 task values do not replace the persisted event values.
+
+The release enforcement contract adds trusted admission and result scoring
+around this implemented lookup path.
 
 ## Storage
 

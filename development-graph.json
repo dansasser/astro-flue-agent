@@ -1427,7 +1427,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 19,
+  "graph_version": 21,
   "nodes": [
     {
       "acceptance": [
@@ -4875,7 +4875,7 @@
     }
   ],
   "project": {
-    "context_version": "snapshot:sha256:fc86c18028d2764b8f07ad3011599230b896a5a5a73fcaeeb91d31ea775eb241",
+    "context_version": "snapshot:sha256:c27f9c352df038dbf724e03c0db4c1c88fd705a661af4dbf1460e9fc9ffc6ffd",
     "instructions": [
       "/opt/ai/sim-one-alpha/AGENTS.md",
       "/opt/ai/sim-one-alpha/src/AGENTS.md",
@@ -4911,7 +4911,8 @@
     "The graph coordinator is not an operating-system sandbox or distributed scheduler; untrusted commands require an approved isolation layer.",
     "The path src/workspace/ is both the main-agent persona workspace and, by default, the Coding Worker runtime access root; lifecycle evidence must distinguish instruction ownership from sandbox/project scope and from worker-local persona workspaces.",
     "Executing deterministic nodes from a review worktree while project.root names the canonical main checkout could operate on the wrong tree; baseline evidence must reject any unapproved root mismatch before claims.",
-    "Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims."
+    "Current gateway and packaged Ratatui product probes do not by themselves prove user-visible approval or complete subagent progress; release review must require separate applicable evidence and reject overclaims.",
+    "Release documentation may conflate implemented Git and GitHub approval with release-gated file write and patch approval, or overstate current critic, connector transport, or verification behavior; independent review must compare each current-source claim with the exact runtime call path and configured test command while labeling unimplemented release contracts explicitly."
   ],
   "schema_version": 1,
   "status": "validated",

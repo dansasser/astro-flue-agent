@@ -17,14 +17,17 @@ Resume an owned session by exact id or explicit name:
 sim-one --session <session-id-or-name>
 ```
 
-Connect to a specific local gateway port or existing gateway URL:
+Connect to a specific local gateway port or a gateway forwarded through a
+local SSH tunnel:
 
 ```bash
 sim-one --port 3940
 sim-one --base-url http://127.0.0.1:3940
 ```
 
-`--base-url` takes precedence over `--port`.
+`--base-url` takes precedence over `--port`. The current terminal client uses
+plain HTTP and sends no external API-secret header, so the endpoint must be
+loopback or a local tunnel.
 
 ## Interface
 

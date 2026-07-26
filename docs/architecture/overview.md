@@ -28,7 +28,9 @@ sim-one       product command
 Workers are internal SIM-ONE Alpha executors, not independent products or
 public agent endpoints.
 
-## Governed Runtime Flow
+## Release Governance Contract
+
+The complete release flow is:
 
 ```text
 Terminal / connector / Web API / schedule
@@ -132,8 +134,9 @@ The orchestrator is responsible for:
 
 Workers are specialized executors. The built-in researcher owns source-backed
 web research. The Coding Worker owns code planning, editing, testing, review,
-and approval-gated repository actions. Internal worker subagents remain
-private to their owning worker.
+and approval-gated Git and GitHub actions. Internal worker subagents remain
+private to their owning worker. File-edit approval enforcement is a release
+gate.
 
 Progress from tool calls, worker handoffs, verification, approvals, and state
 transitions is emitted as structured runtime activity rather than hidden
@@ -227,8 +230,10 @@ SIM-ONE Alpha applies security at multiple boundaries:
    fail-closed enforcement remains a release gate.
 4. Registries expose only enabled and valid capabilities.
 5. Workers receive bounded tasks and return structured results.
-6. Mutating work enters approval-gated paths.
-7. The orchestrator/critic evaluates results and the final response.
+6. Git and GitHub mutations enter approval-gated paths; file-edit approval is
+   a release gate.
+7. Current source returns worker and tool results to orchestrator synthesis;
+   complete critic evaluation remains a release gate.
 8. Credentials and protocol records remain outside model context.
 
 DM pairing, allow lists, API authentication, and connector permissions protect
