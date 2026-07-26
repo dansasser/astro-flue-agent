@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 3837efab28bf669b61faf99067c645c19b1868c5f16fc00b3ddd60b0e8c34285 -->
+<!-- development-graph-sha256: 0fd6d5c490ddb79380f69e0901dcce9e40777f5d615be5eb613668f7922b2e27 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,7 +9,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `34` |
+| Graph version | `35` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
@@ -18,7 +18,7 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `3837efab28bf669b61faf99067c645c19b1868c5f16fc00b3ddd60b0e8c34285` |
+| Canonical checksum | `0fd6d5c490ddb79380f69e0901dcce9e40777f5d615be5eb613668f7922b2e27` |
 
 ## Flow
 
@@ -115,6 +115,7 @@ flowchart TD
     n_plan_implementation -- "consumes" --> n_implement_sim_one_tui_work_pane
     n_plan_implementation -- "consumes" --> n_implement_sim_one_onboarding_distribution
     n_plan_implementation -- "consumes" --> n_build_release_package
+    n_integrate_and_repair -- "consumes" --> n_build_release_package
     n_plan_implementation -- "consumes" --> n_implement_product_delivery
     n_implement_sim_one_tui_work_pane -- "consumes" --> n_implement_product_delivery
     n_implement_sim_one_onboarding_distribution -- "consumes" --> n_implement_product_delivery
@@ -203,9 +204,17 @@ flowchart TD
     n_approve_production_release -- "approves" --> n_publish_release_assets
     n_approve_production_release -- "consumes" --> n_publish_release_assets
     n_publish_release_assets -- "consumes" --> n_prepare_release_ledger_update
+    n_approve_beta_release_contract -- "consumes" --> n_prepare_release_ledger_update
+    n_aggregate_verification -- "consumes" --> n_prepare_release_ledger_update
+    n_verify_onboarding_distribution -- "consumes" --> n_prepare_release_ledger_update
+    n_build_release_package -- "consumes" --> n_prepare_release_ledger_update
     n_release_production -- "consumes" --> n_prepare_release_ledger_update
     n_observe_production -- "consumes" --> n_prepare_release_ledger_update
     n_publish_release_assets -- "consumes" --> n_approve_release_ledger_update
+    n_approve_beta_release_contract -- "consumes" --> n_approve_release_ledger_update
+    n_aggregate_verification -- "consumes" --> n_approve_release_ledger_update
+    n_verify_onboarding_distribution -- "consumes" --> n_approve_release_ledger_update
+    n_build_release_package -- "consumes" --> n_approve_release_ledger_update
     n_prepare_release_ledger_update -- "consumes" --> n_approve_release_ledger_update
     n_release_production -- "consumes" --> n_approve_release_ledger_update
     n_observe_production -- "consumes" --> n_approve_release_ledger_update
@@ -213,6 +222,10 @@ flowchart TD
     n_approve_release_ledger_update -- "consumes" --> n_update_release_ledger
     n_prepare_release_ledger_update -- "consumes" --> n_update_release_ledger
     n_publish_release_assets -- "consumes" --> n_update_release_ledger
+    n_approve_beta_release_contract -- "consumes" --> n_update_release_ledger
+    n_aggregate_verification -- "consumes" --> n_update_release_ledger
+    n_verify_onboarding_distribution -- "consumes" --> n_update_release_ledger
+    n_build_release_package -- "consumes" --> n_update_release_ledger
     n_release_production -- "consumes" --> n_update_release_ledger
     n_observe_production -- "consumes" --> n_update_release_ledger
     n_publish_release_candidate -- "consumes" --> n_closeout_release
@@ -270,6 +283,11 @@ flowchart TD
     n_implement_sim_one_tui_work_pane -. "invalidates" .-> n_implement_product_delivery
     n_implement_sim_one_onboarding_distribution -. "invalidates" .-> n_implement_product_delivery
     n_integrate_and_repair -. "invalidates" .-> n_verify_typecheck
+    n_integrate_and_repair -. "invalidates" .-> n_build_release_package
+    n_integrate_and_repair -. "invalidates" .-> n_aggregate_verification
+    n_integrate_and_repair -. "invalidates" .-> n_review_architecture_security
+    n_integrate_and_repair -. "invalidates" .-> n_approve_release_candidate
+    n_integrate_and_repair -. "invalidates" .-> n_publish_release_candidate
     n_integrate_and_repair -. "invalidates" .-> n_verify_documentation
     n_integrate_and_repair -. "invalidates" .-> n_verify_unit_tests
     n_integrate_and_repair -. "invalidates" .-> n_verify_rust_tests
@@ -379,6 +397,7 @@ flowchart TD
 | `plan-to-implement-sim-one-tui-work-pane` | `plan-implementation` | `consumes` | `implement-sim-one-tui-work-pane` | The implementation plan assigns disjoint files for the required TUI work-pane member. | artifact:implementation-plan | — |
 | `plan-to-implement-sim-one-onboarding-distribution` | `plan-implementation` | `consumes` | `implement-sim-one-onboarding-distribution` | The implementation plan assigns disjoint onboarding and distribution files. | artifact:implementation-plan | — |
 | `plan-to-release-package-build` | `plan-implementation` | `consumes` | `build-release-package` | The implementation plan declares the exact packaging argv, output paths, file ownership, and verification bindings for the release-package build. | artifact:implementation-plan | — |
+| `integration-to-release-package-build` | `integrate-and-repair` | `consumes` | `build-release-package` | The latest integrated diff is current, and the merged release candidate must contain that exact diff before release packaging can run. | artifact:integrated-change | — |
 | `plan-to-implement-product-delivery` | `plan-implementation` | `consumes` | `implement-product-delivery` | Upstream artifacts are current, accepted, and bound to this run. | artifact:implementation-plan | — |
 | `sim-one-tui-work-pane-to-product-delivery` | `implement-sim-one-tui-work-pane` | `consumes` | `implement-product-delivery` | The required TUI work-pane output is complete. | artifact:sim-one-tui-work-pane-change | — |
 | `sim-one-onboarding-distribution-to-product-delivery` | `implement-sim-one-onboarding-distribution` | `consumes` | `implement-product-delivery` | The onboarding and distribution output is complete and ready for product integration. | artifact:sim-one-onboarding-distribution-change | — |
@@ -467,9 +486,17 @@ flowchart TD
 | `production-approval-to-release-assets` | `approve-production-release` | `approves` | `publish-release-assets` | The owner approval explicitly authorizes final public tag and release publication only after successful production observation. | artifact:production-release-approval | — |
 | `production-approval-artifact-to-release-assets` | `approve-production-release` | `consumes` | `publish-release-assets` | The final publication approval is current and bound to the exact staged assets, production deployment, observation plan, tag, and release target. | artifact:production-release-approval | — |
 | `published-release-assets-to-ledger-proposal` | `publish-release-assets` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal derives release fields from the verified immutable asset record. | artifact:published-release-assets-report | — |
+| `beta-release-contract-to-ledger-proposal` | `approve-beta-release-contract` | `consumes` | `prepare-release-ledger-update` | The ledger proposal must preserve exact set equality with every owner-approved stable beta ID. | artifact:beta-release-contract | — |
+| `verification-summary-to-ledger-proposal` | `aggregate-verification` | `consumes` | `prepare-release-ledger-update` | The ledger proposal derives pre-merge release-ID completion only from the accepted verification summary. | artifact:verification-summary | — |
+| `onboarding-distribution-to-ledger-proposal` | `verify-onboarding-distribution` | `consumes` | `prepare-release-ledger-update` | The ledger proposal derives post-merge packaging, onboarding, and lifecycle status only from the accepted isolated verification report. | artifact:onboarding-distribution-report | — |
+| `release-package-to-ledger-proposal` | `build-release-package` | `consumes` | `prepare-release-ledger-update` | The ledger proposal binds package and integrity status to the exact versioned package record. | artifact:release-package | — |
 | `production-release-to-ledger-proposal` | `release-production` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal binds the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-proposal` | `observe-production` | `consumes` | `prepare-release-ledger-update` | The non-mutating ledger proposal is created only after successful production observation. | artifact:production-observation | — |
 | `published-release-assets-to-ledger-approval` | `publish-release-assets` | `consumes` | `approve-release-ledger-update` | The release-ledger approval must bind the verified immutable asset record. | artifact:published-release-assets-report | — |
+| `beta-release-contract-to-ledger-approval` | `approve-beta-release-contract` | `consumes` | `approve-release-ledger-update` | The owner compares the proposed final ledger against every approved stable beta ID. | artifact:beta-release-contract | — |
+| `verification-summary-to-ledger-approval` | `aggregate-verification` | `consumes` | `approve-release-ledger-update` | The owner compares every proposed pre-merge completion status with the accepted verification summary. | artifact:verification-summary | — |
+| `onboarding-distribution-to-ledger-approval` | `verify-onboarding-distribution` | `consumes` | `approve-release-ledger-update` | The owner compares every proposed post-merge onboarding and lifecycle status with the accepted isolated verification report. | artifact:onboarding-distribution-report | — |
+| `release-package-to-ledger-approval` | `build-release-package` | `consumes` | `approve-release-ledger-update` | The owner compares proposed package and integrity status with the exact versioned package record. | artifact:release-package | — |
 | `release-ledger-proposal-to-approval` | `prepare-release-ledger-update` | `consumes` | `approve-release-ledger-update` | The owner approves the exact precomputed single-file diff, expected base commit, immutable release fields, and proposal digest without authoring new content. | artifact:release-ledger-proposal | — |
 | `production-release-to-ledger-approval` | `release-production` | `consumes` | `approve-release-ledger-update` | The release-ledger approval must bind the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-approval` | `observe-production` | `consumes` | `approve-release-ledger-update` | The release ledger may be updated only after the approved production observation completes successfully. | artifact:production-observation | — |
@@ -477,13 +504,17 @@ flowchart TD
 | `release-ledger-approval-artifact-to-update` | `approve-release-ledger-update` | `consumes` | `update-release-ledger` | The repository mutation approval is current, accepted, and bound to the exact proposed ledger diff. | artifact:release-ledger-update-approval | — |
 | `release-ledger-proposal-to-update` | `prepare-release-ledger-update` | `consumes` | `update-release-ledger` | The repository updater applies only the exact proposal digest reviewed by the owner and recorded in the approval artifact. | artifact:release-ledger-proposal | — |
 | `published-release-assets-to-ledger-update` | `publish-release-assets` | `consumes` | `update-release-ledger` | The repository ledger must match the verified immutable tag, release URL, candidate commit, and asset digests. | artifact:published-release-assets-report | — |
+| `beta-release-contract-to-ledger-update` | `approve-beta-release-contract` | `consumes` | `update-release-ledger` | The repository updater must prove the merged ledger has exact set equality with every approved stable beta ID. | artifact:beta-release-contract | — |
+| `verification-summary-to-ledger-update` | `aggregate-verification` | `consumes` | `update-release-ledger` | The repository updater must prove every merged pre-merge status matches the accepted verification summary. | artifact:verification-summary | — |
+| `onboarding-distribution-to-ledger-update` | `verify-onboarding-distribution` | `consumes` | `update-release-ledger` | The repository updater must prove every merged post-merge onboarding and lifecycle status matches the accepted isolated verification report. | artifact:onboarding-distribution-report | — |
+| `release-package-to-ledger-update` | `build-release-package` | `consumes` | `update-release-ledger` | The repository updater must prove merged package and integrity status matches the exact versioned package record. | artifact:release-package | — |
 | `production-release-to-ledger-update` | `release-production` | `consumes` | `update-release-ledger` | The repository ledger must match the immutable production release record. | artifact:production-release | — |
 | `production-observation-to-ledger-update` | `observe-production` | `consumes` | `update-release-ledger` | The repository ledger mutation proceeds only after verified production observation. | artifact:production-observation | — |
 | `candidate-to-closeout` | `publish-release-candidate` | `consumes` | `closeout-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:release-candidate | — |
 | `release-ledger-update-to-closeout` | `update-release-ledger` | `consumes` | `closeout-release` | Closeout requires the verified repository ledger update bound to the immutable release record. | artifact:release-ledger-update | — |
 | `production-observation-to-closeout` | `observe-production` | `consumes` | `closeout-release` | Upstream artifacts are current, accepted, and bound to this run. | artifact:production-observation | — |
 | `verify-typecheck-feedback-to-integration` | `verify-typecheck` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:typecheck-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
-| `build-release-package-feedback-to-integration` | `build-release-package` | `feedback` | `integrate-and-repair` | The release-package evidence identifies a correctable packaging, archive-scope, checksum, mode, or integration failure. | artifact:release-package | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
+| `build-release-package-feedback-to-integration` | `build-release-package` | `feedback` | `integrate-and-repair` | The release-package evidence identifies a correctable packaging, archive-scope, checksum, mode, or integration failure; any source repair supersedes the merged candidate and must traverse fresh verification, architecture review, owner approval, pull-request checks, merge, and main readback. | artifact:release-package | max 3; A newer artifact:release-candidate containing the repaired integrated diff is merged and read back from main and the failed package criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-documentation-feedback-to-integration` | `verify-documentation` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable documentation or integration failure. | artifact:documentation-verification-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-unit-tests-feedback-to-integration` | `verify-unit-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:unit-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
 | `verify-rust-tests-feedback-to-integration` | `verify-rust-tests` | `feedback` | `integrate-and-repair` | The evidence identifies a correctable implementation or integration failure. | artifact:rust-test-report | max 3; The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human. |
@@ -534,6 +565,11 @@ flowchart TD
 | `sim-one-tui-work-pane-invalidates-product-delivery` | `implement-sim-one-tui-work-pane` | `invalidates` | `implement-product-delivery` | A changed TUI work-pane output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
 | `sim-one-onboarding-distribution-invalidates-product-delivery` | `implement-sim-one-onboarding-distribution` | `invalidates` | `implement-product-delivery` | A changed onboarding and distribution output invalidates product integration and release documentation. | artifact:product-delivery-change | — |
 | `integration-invalidates-verify-typecheck` | `integrate-and-repair` | `invalidates` | `verify-typecheck` | A changed integrated diff invalidates prior verification evidence. | artifact:typecheck-report | — |
+| `integration-invalidates-release-package-build` | `integrate-and-repair` | `invalidates` | `build-release-package` | A changed integrated diff invalidates every package record built from an earlier candidate generation. | artifact:release-package | — |
+| `integration-invalidates-aggregate-verification` | `integrate-and-repair` | `invalidates` | `aggregate-verification` | A changed integrated diff invalidates the prior pre-merge verification summary and requires fresh evidence aggregation. | artifact:verification-summary | — |
+| `integration-invalidates-architecture-review` | `integrate-and-repair` | `invalidates` | `review-architecture-security` | A changed integrated diff invalidates the prior architecture and security review. | artifact:architecture-security-review | — |
+| `integration-invalidates-release-candidate-approval` | `integrate-and-repair` | `invalidates` | `approve-release-candidate` | A changed integrated diff invalidates owner approval of the superseded candidate tree and GitHub mutation scope. | artifact:release-candidate-approval | — |
+| `integration-invalidates-release-candidate` | `integrate-and-repair` | `invalidates` | `publish-release-candidate` | A changed integrated diff invalidates the superseded merged candidate; downstream post-merge work must wait for a newly approved, checked, merged, and read-back candidate. | artifact:release-candidate | — |
 | `integration-invalidates-verify-documentation` | `integrate-and-repair` | `invalidates` | `verify-documentation` | A changed integrated diff invalidates prior documentation verification evidence. | artifact:documentation-verification-report | — |
 | `integration-invalidates-verify-unit-tests` | `integrate-and-repair` | `invalidates` | `verify-unit-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:unit-test-report | — |
 | `integration-invalidates-verify-rust-tests` | `integrate-and-repair` | `invalidates` | `verify-rust-tests` | A changed integrated diff invalidates prior verification evidence. | artifact:rust-test-report | — |
@@ -852,6 +888,7 @@ flowchart TD
   - `integration-repair-mutations-approved` (policy): Every integration or repair write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, failed evidence, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write. Evidence: `runtime:evidence/integrate-and-repair/mutation-approvals.json`
   - `contracts-consistent` (schema): Shared types, schemas, registries, handoff contracts, docs, and consumers agree across every changed domain. Evidence: `runtime:evidence/integrate-and-repair/contract-check.json`
   - `repair-bounded` (policy): Each repair cites the failed evidence, preserves unrelated verified work, and remains within the declared feedback and attempt bounds. Evidence: `runtime:evidence/integrate-and-repair/repair-ledger.json`
+  - `post-merge-repair-republication-required` (policy): A repair caused by post-merge package or onboarding evidence records the superseded merged candidate and cannot return to post-merge verification until the repaired integrated diff completes fresh pre-merge verification, architecture review, owner approval, non-draft pull request checks, merge, and main-branch readback as a new artifact:release-candidate. Evidence: `runtime:evidence/integrate-and-repair/post-merge-republication.json`
   - `parallel-file-ownership-reconciled` (policy): Every changed file has one recorded producer; shared or cross-domain files were serialized or assigned to integration, and no parallel branch silently overwrote another branch. Evidence: `runtime:evidence/integrate-and-repair/file-ownership.json`
   - `company-instruction-exclusion-preserved` (policy): Integration and repair never writes src/AGENTS.md. Any company-owned system-instruction change remains outside this ordinary lifecycle and requires a separately scoped owner-approved gate. Evidence: `runtime:evidence/integrate-and-repair/company-instruction-exclusion.json`
 
@@ -964,10 +1001,10 @@ flowchart TD
 ### `build-release-package` — Build Versioned Release Package
 
 - Goal: Rebuild the exact typed versioned SIM-ONE release package and checksum manifest from the immutable merged main-branch candidate consumed by pre-publication verification and approved GitHub release publication.
-- Executor instructions: Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Check out the immutable merged main-branch commit recorded by artifact:release-candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.
-- Inputs: artifact:implementation-plan, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
+- Executor instructions: Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Prove the immutable merged main-branch commit recorded by artifact:release-candidate contains the exact latest artifact:integrated-change. If package feedback produced a repair, require a newer release-candidate generation with fresh verification, architecture review, owner approval, non-draft pull request checks, merge, and main readback; refuse the superseded candidate. Check out only the current immutable candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.
+- Inputs: artifact:implementation-plan, artifact:integrated-change, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract
 - Resources: project:release-package-output
-- Permissions: read [artifact:implementation-plan, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
+- Permissions: read [artifact:implementation-plan, artifact:integrated-change, artifact:release-candidate, artifact:runtime-build, artifact:sim-one-tui-build, artifact:cli-build, artifact:beta-release-contract, release packaging files assigned exclusively by artifact:implementation-plan]; write [release-package staging files assigned exclusively by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Writes only generated release-package staging files and checksum evidence.
 - Rollback: Remove the generated staging files and rebuild the package from the same reviewed commit and typed build artifacts.
@@ -975,6 +1012,7 @@ flowchart TD
 - Acceptance:
   - `release-package-assembled` (artifact): The exact versioned release-candidate archive is rebuilt from the immutable merged main-branch commit and contains the reviewed runtime, SIM-ONE TUI, sim-one command, sim-one.sh entrypoint, service assets, and required metadata without user data, runtime databases, local configuration, or secrets. Evidence: `runtime:evidence/build-release-package/archive.json`
   - `release-package-checksums-bound` (policy): The checksum manifest covers every distributed archive and installer byte, binds their SHA-256 digests to the exact merged main-branch candidate commit, tree digest, and version, and is recorded together with archive paths, sizes, executable modes, and platform scope. Evidence: `runtime:evidence/build-release-package/checksums.json`
+  - `post-merge-repair-candidate-republished` (policy): The merged release-candidate tree contains the exact latest artifact:integrated-change. After any package-feedback repair, the candidate record must have a newer generation, fresh owner approval, a new checked and merged pull request, and main-branch readback; rebuilding the superseded commit is forbidden. Evidence: `runtime:evidence/build-release-package/repair-candidate-lineage.json`
 
 ### `verify-cli-behavior` — Verify CLI Behavior
 
@@ -1280,45 +1318,47 @@ flowchart TD
 ### `prepare-release-ledger-update` — Prepare Release Ledger Update
 
 - Goal: Produce the exact immutable release-ledger diff that the owner can approve and the repository updater can apply without authoring new content after approval.
-- Executor instructions: Read the verified published-release, production-release, and production-observation records plus the current main-branch release ledger. Construct the exact single-file patch and canonical proposal record with expected base commit and SHA-256. Do not modify the worktree, Git state, GitHub state, or release ledger.
-- Inputs: artifact:published-release-assets-report, artifact:production-release, artifact:production-observation
+- Executor instructions: Read artifact:beta-release-contract, the complete pre-merge verification summary, post-merge onboarding/distribution and release-package evidence, verified published-release, production-release, and production-observation records, plus the current main-branch release ledger. Require exact set equality for every stable beta ID. Construct the exact single-file patch so every pre-release status cell becomes a completed and verified 0.1.0 Beta state with owning evidence, and record the expected base commit and proposal SHA-256. Refuse any omitted or still pre-release row. Do not modify the worktree, Git state, GitHub state, or release ledger.
+- Inputs: artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation
 - Resources: —
-- Permissions: read [artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, docs/getting-started/pre-release-status.md at the recorded main-branch commit]; write [—]; external [—]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, docs/getting-started/pre-release-status.md at the recorded main-branch commit]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `none` — Produces a proposal artifact without mutating project or external state.
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `release-ledger-proposal-bound` (artifact): The proposal contains the exact docs/getting-started/pre-release-status.md patch, expected base commit, target main branch, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release identifier, and proposal SHA-256. Evidence: `runtime:evidence/prepare-release-ledger-update/proposal.json`
+  - `release-ledger-proposal-bound` (artifact): The proposal contains the exact docs/getting-started/pre-release-status.md patch, expected base commit, target main branch, complete final status map for every stable ID in artifact:beta-release-contract, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release identifier, and proposal SHA-256. Evidence: `runtime:evidence/prepare-release-ledger-update/proposal.json`
+  - `release-ledger-final-status-map-complete` (policy): The proposal has exact set equality with every stable beta ID and changes each pre-release status cell to a completed and verified 0.1.0 Beta state backed by the owning verification-summary, post-merge onboarding/distribution, release-package, publication, and production evidence. No required row remains absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release. Evidence: `runtime:evidence/prepare-release-ledger-update/final-status-map.json`
   - `release-ledger-proposal-non-mutating` (policy): The proposal changes only the repository-owned release ledger, derives every release field from the accepted immutable records, performs no repository or GitHub mutation, and is independently consumable without being regenerated by the approver or updater. Evidence: `runtime:evidence/prepare-release-ledger-update/scope.json`
 
 ### `approve-release-ledger-update` — Approve Release Ledger Update
 
 - Goal: Let the project owner approve or reject the exact repository mutation that records the successfully published 0.1.0 Beta release.
-- Executor instructions: Review artifact:release-ledger-proposal and compare its expected base commit, canonical diff, proposal SHA-256, and release fields with the immutable published-release, production-release, and production-observation records. Approval is repository-specific, file-specific, proposal-digest-bound, release-record-bound, and time-bound. Do not author or alter the diff in this gate.
-- Inputs: artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-proposal
+- Executor instructions: Review artifact:release-ledger-proposal and compare its expected base commit, canonical diff, proposal SHA-256, exact stable-ID set, every final status/evidence mapping, and release fields with artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, and the immutable published-release, production-release, and production-observation records. Reject any omitted row or status that remains absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release. Approval is repository-specific, file-specific, proposal-digest-bound, evidence-bound, release-record-bound, and time-bound. Do not author or alter the diff in this gate.
+- Inputs: artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-proposal
 - Resources: —
-- Permissions: read [artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-proposal, docs/getting-started/pre-release-status.md, release-ledger diff and digest declared by artifact:release-ledger-proposal]; write [—]; external [—]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-proposal, docs/getting-started/pre-release-status.md, release-ledger diff and digest declared by artifact:release-ledger-proposal]; write [—]; external [—]; destructive `false`
 - Execution: max `1` attempt(s), `1440` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `none` — Produces evidence without mutating project or external state.
 - Rollback: none
 - Approval required: `false`
 - Acceptance:
-  - `release-ledger-authority-recorded` (manual): The owner explicitly approves or rejects artifact:release-ledger-proposal by its exact proposal SHA-256, expected base commit, single-file diff, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback. Evidence: `runtime:approval/approve-release-ledger-update`
+  - `release-ledger-authority-recorded` (manual): The owner explicitly approves or rejects artifact:release-ledger-proposal by its exact proposal SHA-256, expected base commit, single-file diff, exact complete stable-ID set, final completed/verified status and owning evidence for every required beta row, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback. Approval is forbidden while any row remains in a pre-release state. Evidence: `runtime:approval/approve-release-ledger-update`
 
 ### `update-release-ledger` — Update Verified Release Ledger
 
 - Goal: Record the verified 0.1.0 Beta publication in the repository-owned release ledger through an exact, separately approved, and independently verified GitHub mutation.
-- Executor instructions: Verify artifact:release-ledger-proposal matches the proposal SHA-256 and base commit authorized by artifact:release-ledger-update-approval, then apply that diff byte-for-byte without regeneration. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to compare the recorded date, tag, URL, commit, and digests with the immutable release records. Stop on any drift or approval mismatch.
-- Inputs: artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-update-approval, artifact:release-ledger-proposal
+- Executor instructions: Verify artifact:release-ledger-proposal matches the proposal SHA-256 and base commit authorized by artifact:release-ledger-update-approval. Parse the proposal and compare its exact stable-ID set and every final status/evidence mapping with artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, and artifact:release-package; refuse omitted IDs or any still pre-release status. Apply that diff byte-for-byte without regeneration. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to re-prove all stable statuses plus the recorded date, tag, URL, commit, and digests against immutable release records. Stop on any drift or approval mismatch.
+- Inputs: artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-update-approval, artifact:release-ledger-proposal
 - Resources: external:github-repository
-- Permissions: read [artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-update-approval, artifact:release-ledger-proposal, docs/getting-started/pre-release-status.md, Git and GitHub repository metadata]; write [docs/getting-started/pre-release-status.md, authorized Git branch, GitHub pull request, approved main-branch merge of the exact release-ledger mutation]; external [Git remote push, GitHub API pull request write, GitHub API approval-bound pull request merge after required checks]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, artifact:published-release-assets-report, artifact:production-release, artifact:production-observation, artifact:release-ledger-update-approval, artifact:release-ledger-proposal, docs/getting-started/pre-release-status.md, Git and GitHub repository metadata]; write [docs/getting-started/pre-release-status.md, authorized Git branch, GitHub pull request, approved main-branch merge of the exact release-ledger mutation]; external [Git remote push, GitHub API pull request write, GitHub API approval-bound pull request merge after required checks]; destructive `false`
 - Execution: max `2` attempt(s), `120` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Commits, pushes, reviews, and merges the exact approved post-publication release-ledger mutation.
 - Rollback: Use a separately approved follow-up pull request to correct the ledger while preserving the original release and repository history.
 - Approval required: `true`
 - Acceptance:
   - `rel-rel-001-release-date-recorded` (probe): REL-REL-001: docs/getting-started/pre-release-status.md records the 0.1.0 Beta release date only after successful asset publication and production observation, and its date, tag, release URL, candidate commit, and asset digests match the immutable release records. Evidence: `runtime:evidence/update-release-ledger/rel-rel-001.json`
+  - `all-release-gates-recorded-complete` (probe): A fresh parse of the proposed and merged ledger proves exact set equality with artifact:beta-release-contract and shows every stable release ID exactly once with a completed and verified 0.1.0 Beta status backed by its owning evidence; no required row retains absent, unavailable, awaiting, pending, planned, incomplete, or other pre-release language. Evidence: `runtime:evidence/update-release-ledger/all-release-gates-closed.json`
   - `release-ledger-mutation-verified` (policy): The repository mutation applies artifact:release-ledger-proposal byte-for-byte at its approved base and exactly matches the proposal SHA-256 recorded by artifact:release-ledger-update-approval; it changes only the authorized release ledger, is committed on an authorized branch, passes required checks in a non-draft pull request to main, and is merged before completion. Evidence: `runtime:evidence/update-release-ledger/repository-mutation.json`
   - `release-ledger-main-state-verified` (probe): A fresh read of main proves the committed release ledger matches the immutable GitHub release and production release records rather than merely proving that a process, push, or pull request exists. Evidence: `runtime:evidence/update-release-ledger/main-ledger.json`
 
@@ -1336,6 +1376,7 @@ flowchart TD
 - Acceptance:
   - `handoff-complete` (artifact): The closeout names files changed, commands and tests run, pass/fail results, approvals, PR/release URLs, immutable release assets, the verified repository ledger update, production evidence, assumptions, risks, rollback, and next step. Evidence: `runtime:evidence/closeout-release/handoff.json`
   - `history-preserved` (policy): Superseded evidence and failed attempts remain addressable through the append-only graph ledger and version control. Evidence: `runtime:evidence/closeout-release/history.json`
+  - `release-ledger-complete-at-closeout` (probe): The verified main-branch release ledger contains every stable beta ID exactly once in a completed and verified state; closeout is blocked if any required row still describes absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release behavior. Evidence: `runtime:evidence/closeout-release/release-ledger-complete.json`
 
 ## Assumptions
 

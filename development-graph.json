@@ -534,6 +534,18 @@
     },
     {
       "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "The latest integrated diff is current, and the merged release candidate must contain that exact diff before release packaging can run.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-to-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
         "artifact:implementation-plan"
       ],
       "condition": "Upstream artifacts are current, accepted, and bound to this run.",
@@ -1590,6 +1602,54 @@
     },
     {
       "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The ledger proposal must preserve exact set equality with every owner-approved stable beta ID.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:verification-summary"
+      ],
+      "condition": "The ledger proposal derives pre-merge release-ID completion only from the accepted verification summary.",
+      "exit_condition": null,
+      "from": "aggregate-verification",
+      "id": "verification-summary-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "The ledger proposal derives post-merge packaging, onboarding, and lifecycle status only from the accepted isolated verification report.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "onboarding-distribution-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The ledger proposal binds package and integrity status to the exact versioned package record.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-ledger-proposal",
+      "max_traversals": null,
+      "to": "prepare-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
         "artifact:production-release"
       ],
       "condition": "The non-mutating ledger proposal binds the immutable production release record.",
@@ -1620,6 +1680,54 @@
       "exit_condition": null,
       "from": "publish-release-assets",
       "id": "published-release-assets-to-ledger-approval",
+      "max_traversals": null,
+      "to": "approve-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The owner compares the proposed final ledger against every approved stable beta ID.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-ledger-approval",
+      "max_traversals": null,
+      "to": "approve-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:verification-summary"
+      ],
+      "condition": "The owner compares every proposed pre-merge completion status with the accepted verification summary.",
+      "exit_condition": null,
+      "from": "aggregate-verification",
+      "id": "verification-summary-to-ledger-approval",
+      "max_traversals": null,
+      "to": "approve-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "The owner compares every proposed post-merge onboarding and lifecycle status with the accepted isolated verification report.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "onboarding-distribution-to-ledger-approval",
+      "max_traversals": null,
+      "to": "approve-release-ledger-update",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The owner compares proposed package and integrity status with the exact versioned package record.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-ledger-approval",
       "max_traversals": null,
       "to": "approve-release-ledger-update",
       "type": "consumes"
@@ -1710,6 +1818,54 @@
     },
     {
       "artifacts": [
+        "artifact:beta-release-contract"
+      ],
+      "condition": "The repository updater must prove the merged ledger has exact set equality with every approved stable beta ID.",
+      "exit_condition": null,
+      "from": "approve-beta-release-contract",
+      "id": "beta-release-contract-to-ledger-update",
+      "max_traversals": null,
+      "to": "update-release-ledger",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:verification-summary"
+      ],
+      "condition": "The repository updater must prove every merged pre-merge status matches the accepted verification summary.",
+      "exit_condition": null,
+      "from": "aggregate-verification",
+      "id": "verification-summary-to-ledger-update",
+      "max_traversals": null,
+      "to": "update-release-ledger",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:onboarding-distribution-report"
+      ],
+      "condition": "The repository updater must prove every merged post-merge onboarding and lifecycle status matches the accepted isolated verification report.",
+      "exit_condition": null,
+      "from": "verify-onboarding-distribution",
+      "id": "onboarding-distribution-to-ledger-update",
+      "max_traversals": null,
+      "to": "update-release-ledger",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "The repository updater must prove merged package and integrity status matches the exact versioned package record.",
+      "exit_condition": null,
+      "from": "build-release-package",
+      "id": "release-package-to-ledger-update",
+      "max_traversals": null,
+      "to": "update-release-ledger",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
         "artifact:production-release"
       ],
       "condition": "The repository ledger must match the immutable production release record.",
@@ -1784,8 +1940,8 @@
       "artifacts": [
         "artifact:release-package"
       ],
-      "condition": "The release-package evidence identifies a correctable packaging, archive-scope, checksum, mode, or integration failure.",
-      "exit_condition": "The failed criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
+      "condition": "The release-package evidence identifies a correctable packaging, archive-scope, checksum, mode, or integration failure; any source repair supersedes the merged candidate and must traverse fresh verification, architecture review, owner approval, pull-request checks, merge, and main readback.",
+      "exit_condition": "A newer artifact:release-candidate containing the repaired integrated diff is merged and read back from main and the failed package criterion passes with fresh evidence, or three repair traversals exhaust and the run moves to needs_human.",
       "from": "build-release-package",
       "id": "build-release-package-feedback-to-integration",
       "max_traversals": 3,
@@ -2365,6 +2521,66 @@
     },
     {
       "artifacts": [
+        "artifact:release-package"
+      ],
+      "condition": "A changed integrated diff invalidates every package record built from an earlier candidate generation.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-release-package-build",
+      "max_traversals": null,
+      "to": "build-release-package",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:verification-summary"
+      ],
+      "condition": "A changed integrated diff invalidates the prior pre-merge verification summary and requires fresh evidence aggregation.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-aggregate-verification",
+      "max_traversals": null,
+      "to": "aggregate-verification",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A changed integrated diff invalidates the prior architecture and security review.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-architecture-review",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:release-candidate-approval"
+      ],
+      "condition": "A changed integrated diff invalidates owner approval of the superseded candidate tree and GitHub mutation scope.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-release-candidate-approval",
+      "max_traversals": null,
+      "to": "approve-release-candidate",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:release-candidate"
+      ],
+      "condition": "A changed integrated diff invalidates the superseded merged candidate; downstream post-merge work must wait for a newly approved, checked, merged, and read-back candidate.",
+      "exit_condition": null,
+      "from": "integrate-and-repair",
+      "id": "integration-invalidates-release-candidate",
+      "max_traversals": null,
+      "to": "publish-release-candidate",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
         "artifact:documentation-verification-report"
       ],
       "condition": "A changed integrated diff invalidates prior documentation verification evidence.",
@@ -2452,7 +2668,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 34,
+  "graph_version": 35,
   "nodes": [
     {
       "acceptance": [
@@ -4207,6 +4423,12 @@
           "kind": "policy"
         },
         {
+          "criterion": "A repair caused by post-merge package or onboarding evidence records the superseded merged candidate and cannot return to post-merge verification until the repaired integrated diff completes fresh pre-merge verification, architecture review, owner approval, non-draft pull request checks, merge, and main-branch readback as a new artifact:release-candidate.",
+          "evidence": "runtime:evidence/integrate-and-repair/post-merge-republication.json",
+          "id": "post-merge-repair-republication-required",
+          "kind": "policy"
+        },
+        {
           "criterion": "Every changed file has one recorded producer; shared or cross-domain files were serialized or assigned to integration, and no parallel branch silently overwrote another branch.",
           "evidence": "runtime:evidence/integrate-and-repair/file-ownership.json",
           "id": "parallel-file-ownership-reconciled",
@@ -5072,6 +5294,12 @@
           "evidence": "runtime:evidence/build-release-package/checksums.json",
           "id": "release-package-checksums-bound",
           "kind": "policy"
+        },
+        {
+          "criterion": "The merged release-candidate tree contains the exact latest artifact:integrated-change. After any package-feedback repair, the candidate record must have a newer generation, fresh owner approval, a new checked and merged pull request, and main-branch readback; rebuilding the superseded commit is forbidden.",
+          "evidence": "runtime:evidence/build-release-package/repair-candidate-lineage.json",
+          "id": "post-merge-repair-candidate-republished",
+          "kind": "policy"
         }
       ],
       "execution": {
@@ -5080,7 +5308,7 @@
         "timeout_minutes": 30
       },
       "executor": {
-        "instructions": "Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Check out the immutable merged main-branch commit recorded by artifact:release-candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.",
+        "instructions": "Bind the exact packaging argv and output paths introduced by artifact:implementation-plan before execution. Prove the immutable merged main-branch commit recorded by artifact:release-candidate contains the exact latest artifact:integrated-change. If package feedback produced a repair, require a newer release-candidate generation with fresh verification, architecture review, owner approval, non-draft pull request checks, merge, and main readback; refuse the superseded candidate. Check out only the current immutable candidate, rebuild the runtime, SIM-ONE TUI, and CLI using the verified build contracts, create sim-one.sh and the versioned archive, generate the checksum manifest from final bytes, and record candidate commit, tree digest, paths, sizes, modes, and SHA-256 digests. Refuse a worktree or build output not provably bound to that commit, plus undeclared files, mutable runtime state, configuration, databases, and secrets.",
         "kind": "hybrid",
         "name": "SIM-ONE release package build adapter"
       },
@@ -5090,6 +5318,11 @@
         {
           "artifact": "artifact:implementation-plan",
           "name": "implementation plan",
+          "required": true
+        },
+        {
+          "artifact": "artifact:integrated-change",
+          "name": "latest integrated change",
           "required": true
         },
         {
@@ -5130,6 +5363,7 @@
         "external": [],
         "read": [
           "artifact:implementation-plan",
+          "artifact:integrated-change",
           "artifact:release-candidate",
           "artifact:runtime-build",
           "artifact:sim-one-tui-build",
@@ -6947,10 +7181,16 @@
     {
       "acceptance": [
         {
-          "criterion": "The proposal contains the exact docs/getting-started/pre-release-status.md patch, expected base commit, target main branch, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release identifier, and proposal SHA-256.",
+          "criterion": "The proposal contains the exact docs/getting-started/pre-release-status.md patch, expected base commit, target main branch, complete final status map for every stable ID in artifact:beta-release-contract, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release identifier, and proposal SHA-256.",
           "evidence": "runtime:evidence/prepare-release-ledger-update/proposal.json",
           "id": "release-ledger-proposal-bound",
           "kind": "artifact"
+        },
+        {
+          "criterion": "The proposal has exact set equality with every stable beta ID and changes each pre-release status cell to a completed and verified 0.1.0 Beta state backed by the owning verification-summary, post-merge onboarding/distribution, release-package, publication, and production evidence. No required row remains absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release.",
+          "evidence": "runtime:evidence/prepare-release-ledger-update/final-status-map.json",
+          "id": "release-ledger-final-status-map-complete",
+          "kind": "policy"
         },
         {
           "criterion": "The proposal changes only the repository-owned release ledger, derives every release field from the accepted immutable records, performs no repository or GitHub mutation, and is independently consumable without being regenerated by the approver or updater.",
@@ -6965,13 +7205,33 @@
         "timeout_minutes": 30
       },
       "executor": {
-        "instructions": "Read the verified published-release, production-release, and production-observation records plus the current main-branch release ledger. Construct the exact single-file patch and canonical proposal record with expected base commit and SHA-256. Do not modify the worktree, Git state, GitHub state, or release ledger.",
+        "instructions": "Read artifact:beta-release-contract, the complete pre-merge verification summary, post-merge onboarding/distribution and release-package evidence, verified published-release, production-release, and production-observation records, plus the current main-branch release ledger. Require exact set equality for every stable beta ID. Construct the exact single-file patch so every pre-release status cell becomes a completed and verified 0.1.0 Beta state with owning evidence, and record the expected base commit and proposal SHA-256. Refuse any omitted or still pre-release row. Do not modify the worktree, Git state, GitHub state, or release ledger.",
         "kind": "hybrid",
         "name": "non-mutating release ledger proposal adapter"
       },
       "goal": "Produce the exact immutable release-ledger diff that the owner can approve and the repository updater can apply without authoring new content after approval.",
       "id": "prepare-release-ledger-update",
       "inputs": [
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        },
+        {
+          "artifact": "artifact:verification-summary",
+          "name": "pre-merge verification summary",
+          "required": true
+        },
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "name": "post-merge onboarding and distribution report",
+          "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
+        },
         {
           "artifact": "artifact:published-release-assets-report",
           "name": "published release assets verification",
@@ -6999,6 +7259,10 @@
         "destructive": false,
         "external": [],
         "read": [
+          "artifact:beta-release-contract",
+          "artifact:verification-summary",
+          "artifact:onboarding-distribution-report",
+          "artifact:release-package",
           "artifact:published-release-assets-report",
           "artifact:production-release",
           "artifact:production-observation",
@@ -7026,7 +7290,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The owner explicitly approves or rejects artifact:release-ledger-proposal by its exact proposal SHA-256, expected base commit, single-file diff, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback.",
+          "criterion": "The owner explicitly approves or rejects artifact:release-ledger-proposal by its exact proposal SHA-256, expected base commit, single-file diff, exact complete stable-ID set, final completed/verified status and owning evidence for every required beta row, 0.1.0 Beta release date, immutable tag, release URL, candidate commit, asset digests, production release record, target repository, and rollback. Approval is forbidden while any row remains in a pre-release state.",
           "evidence": "runtime:approval/approve-release-ledger-update",
           "id": "release-ledger-authority-recorded",
           "kind": "manual"
@@ -7038,13 +7302,33 @@
         "timeout_minutes": 1440
       },
       "executor": {
-        "instructions": "Review artifact:release-ledger-proposal and compare its expected base commit, canonical diff, proposal SHA-256, and release fields with the immutable published-release, production-release, and production-observation records. Approval is repository-specific, file-specific, proposal-digest-bound, release-record-bound, and time-bound. Do not author or alter the diff in this gate.",
+        "instructions": "Review artifact:release-ledger-proposal and compare its expected base commit, canonical diff, proposal SHA-256, exact stable-ID set, every final status/evidence mapping, and release fields with artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, artifact:release-package, and the immutable published-release, production-release, and production-observation records. Reject any omitted row or status that remains absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release. Approval is repository-specific, file-specific, proposal-digest-bound, evidence-bound, release-record-bound, and time-bound. Do not author or alter the diff in this gate.",
         "kind": "human",
         "name": "SIM-ONE project owner"
       },
       "goal": "Let the project owner approve or reject the exact repository mutation that records the successfully published 0.1.0 Beta release.",
       "id": "approve-release-ledger-update",
       "inputs": [
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        },
+        {
+          "artifact": "artifact:verification-summary",
+          "name": "pre-merge verification summary",
+          "required": true
+        },
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "name": "post-merge onboarding and distribution report",
+          "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
+        },
         {
           "artifact": "artifact:published-release-assets-report",
           "name": "published release assets verification",
@@ -7077,6 +7361,10 @@
         "destructive": false,
         "external": [],
         "read": [
+          "artifact:beta-release-contract",
+          "artifact:verification-summary",
+          "artifact:onboarding-distribution-report",
+          "artifact:release-package",
           "artifact:published-release-assets-report",
           "artifact:production-release",
           "artifact:production-observation",
@@ -7112,6 +7400,12 @@
           "kind": "probe"
         },
         {
+          "criterion": "A fresh parse of the proposed and merged ledger proves exact set equality with artifact:beta-release-contract and shows every stable release ID exactly once with a completed and verified 0.1.0 Beta status backed by its owning evidence; no required row retains absent, unavailable, awaiting, pending, planned, incomplete, or other pre-release language.",
+          "evidence": "runtime:evidence/update-release-ledger/all-release-gates-closed.json",
+          "id": "all-release-gates-recorded-complete",
+          "kind": "probe"
+        },
+        {
           "criterion": "The repository mutation applies artifact:release-ledger-proposal byte-for-byte at its approved base and exactly matches the proposal SHA-256 recorded by artifact:release-ledger-update-approval; it changes only the authorized release ledger, is committed on an authorized branch, passes required checks in a non-draft pull request to main, and is merged before completion.",
           "evidence": "runtime:evidence/update-release-ledger/repository-mutation.json",
           "id": "release-ledger-mutation-verified",
@@ -7130,13 +7424,33 @@
         "timeout_minutes": 120
       },
       "executor": {
-        "instructions": "Verify artifact:release-ledger-proposal matches the proposal SHA-256 and base commit authorized by artifact:release-ledger-update-approval, then apply that diff byte-for-byte without regeneration. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to compare the recorded date, tag, URL, commit, and digests with the immutable release records. Stop on any drift or approval mismatch.",
+        "instructions": "Verify artifact:release-ledger-proposal matches the proposal SHA-256 and base commit authorized by artifact:release-ledger-update-approval. Parse the proposal and compare its exact stable-ID set and every final status/evidence mapping with artifact:beta-release-contract, artifact:verification-summary, artifact:onboarding-distribution-report, and artifact:release-package; refuse omitted IDs or any still pre-release status. Apply that diff byte-for-byte without regeneration. Use non-interactive Git and GitHub commands to commit the single authorized file, push an authorized branch, open a non-draft pull request to main, verify required checks, merge only that exact approved change, and read main back to re-prove all stable statuses plus the recorded date, tag, URL, commit, and digests against immutable release records. Stop on any drift or approval mismatch.",
         "kind": "hybrid",
         "name": "approval-gated release ledger repository adapter"
       },
       "goal": "Record the verified 0.1.0 Beta publication in the repository-owned release ledger through an exact, separately approved, and independently verified GitHub mutation.",
       "id": "update-release-ledger",
       "inputs": [
+        {
+          "artifact": "artifact:beta-release-contract",
+          "name": "0.1.0 Beta release contract approval",
+          "required": true
+        },
+        {
+          "artifact": "artifact:verification-summary",
+          "name": "pre-merge verification summary",
+          "required": true
+        },
+        {
+          "artifact": "artifact:onboarding-distribution-report",
+          "name": "post-merge onboarding and distribution report",
+          "required": true
+        },
+        {
+          "artifact": "artifact:release-package",
+          "name": "versioned release package",
+          "required": true
+        },
         {
           "artifact": "artifact:published-release-assets-report",
           "name": "published release assets verification",
@@ -7178,6 +7492,10 @@
           "GitHub API approval-bound pull request merge after required checks"
         ],
         "read": [
+          "artifact:beta-release-contract",
+          "artifact:verification-summary",
+          "artifact:onboarding-distribution-report",
+          "artifact:release-package",
           "artifact:published-release-assets-report",
           "artifact:production-release",
           "artifact:production-observation",
@@ -7226,6 +7544,12 @@
           "evidence": "runtime:evidence/closeout-release/history.json",
           "id": "history-preserved",
           "kind": "policy"
+        },
+        {
+          "criterion": "The verified main-branch release ledger contains every stable beta ID exactly once in a completed and verified state; closeout is blocked if any required row still describes absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release behavior.",
+          "evidence": "runtime:evidence/closeout-release/release-ledger-complete.json",
+          "id": "release-ledger-complete-at-closeout",
+          "kind": "probe"
         }
       ],
       "execution": {
