@@ -175,11 +175,29 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
   const ratatuiStep = workflow.match(
     /      - name: Ratatui TUI product smoke\n[\s\S]*?(?=\n      - name: )/,
   )?.[0];
+  const runtimeConfigStep = workflow.match(
+    /      - name: Create CI runtime configuration\n[\s\S]*?(?=\n      - name: )/,
+  )?.[0];
+  const tuiEndToEndStep = workflow.match(
+    /      - name: TUI end-to-end test\n[\s\S]*?(?=\n      - name: )/,
+  )?.[0];
 
   assert.match(workflow, /- name: Create CI runtime configuration/);
   assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
   assert.match(workflow, /chmod 600 sim-one\.config/);
+  assert.ok(runtimeConfigStep, 'CI runtime configuration step is missing');
   assert.ok(ratatuiStep, 'Ratatui product smoke step is missing');
+  assert.ok(tuiEndToEndStep, 'TUI end-to-end step is missing');
+  for (const trustedStep of [
+    runtimeConfigStep,
+    ratatuiStep,
+    tuiEndToEndStep,
+  ]) {
+    assert.match(
+      trustedStep,
+      /if: github\.event_name == 'push' \|\| github\.event\.pull_request\.head\.repo\.full_name == github\.repository/,
+    );
+  }
   assert.match(ratatuiStep, /GOROMBO_TEST_MODE: '1'/);
   assert.match(
     ratatuiStep,

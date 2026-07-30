@@ -5,10 +5,9 @@ import {
 } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
 import {
-  assertPathInsideRuntimeRoot,
   createGoromboRuntimePaths,
+  resolveCodingWorkspaceRoot,
   resolveGoromboRuntimeRoot,
-  resolveRuntimePath,
 } from '../core/config/runtime-root.js';
 import { configureRuntimeModels } from '../core/models/index.js';
 import {
@@ -172,20 +171,7 @@ export function createFlueCompactionConfig(modelCard: AgentModelCard): {
 }
 
 export function resolveCodingWorkerWorkspaceRoot(env: Record<string, unknown>): string {
-  const runtimeRoot = resolveGoromboRuntimeRoot({ env });
-  const configuredRoot =
-    readOptionalEnv(env, 'GOROMBO_WORKSPACE_ROOT') ??
-    readOptionalEnv(env, 'GOROMBO_CODING_WORKSPACE_ROOT') ??
-    readOptionalEnv(env, 'GOROMBO_CODING_REPO_PATH');
-  const workspaceRoot = resolveRuntimePath(configuredRoot ?? 'workspace', {
-    env,
-    runtimeRoot,
-  });
-  return assertPathInsideRuntimeRoot(
-    workspaceRoot,
-    runtimeRoot,
-    'Coding-worker workspace root',
-  );
+  return resolveCodingWorkspaceRoot({ env });
 }
 
 function createCodingWorkerToolEnv(

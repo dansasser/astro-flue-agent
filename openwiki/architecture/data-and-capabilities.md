@@ -20,6 +20,14 @@ Do not read or document live `sim-one.config` values. Use
 
 The capability system lets users add skills, tools, workers, and MCP servers without rebuilding the product artifact. The source of truth is `docs/architecture/capability-system.md` plus `src/engine/capabilities/`.
 
+New source-backed lifecycle requests accept GitHub sources or local sources.
+Relative local handoffs resolve only beneath the runtime Coding Worker
+workspace. Approval records bind privately to a source-path digest, staging
+rejects symbolic links, and digest-bound handoffs are rechecked before
+promotion. MCP connection handoffs preserve the validated endpoint, transport,
+and canonical token-key reference; partial updates merge with the stored
+connection before validation.
+
 `src/engine/capabilities/capability-store.ts` creates and manages a SQLite
 table with `(kind, id)` as the primary key, a unique id index, enabled state,
 source metadata, config JSON, install/update timestamps, and install origin.

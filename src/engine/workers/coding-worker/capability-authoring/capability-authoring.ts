@@ -28,6 +28,12 @@ export type CodingCapabilityManagerKind = 'skill' | 'tool' | 'worker' | 'mcp';
 
 export type CapabilityAuthoringScanFinding = CapabilityPackageScanFinding;
 
+export interface McpConnectionHandoffConfig {
+  mcpUrl: string;
+  mcpTransport: 'streamable-http' | 'sse';
+  mcpTokenEnv?: string;
+}
+
 export interface CapabilityAuthoringValidation {
   valid: boolean;
   authoringKind: CodingCapabilityAuthoringKind;
@@ -38,6 +44,7 @@ export interface CapabilityAuthoringValidation {
   checks: string[];
   files: string[];
   requiredConfigurationKeys: string[];
+  mcpConnection?: McpConnectionHandoffConfig;
   protocolContext: CapabilityProtocolContext;
   findings: CapabilityAuthoringScanFinding[];
 }
@@ -55,6 +62,9 @@ export interface CodingCapabilityHandoff {
   validationEvidence: string[];
   testEvidence: CapabilityAuthoringTestEvidence;
   requiredConfigurationKeys: string[];
+  mcpUrl?: string;
+  mcpTransport?: 'streamable-http' | 'sse';
+  mcpTokenEnv?: string;
   requestedActivation: 'enabled' | 'disabled';
   operation: 'validate' | 'add' | 'update';
   protocolContext: CapabilityProtocolContext;
@@ -138,6 +148,9 @@ export function scaffoldCapabilityFiles(input: {
           endpoint: 'https://replace-with-mcp-endpoint.invalid/mcp',
           transport: 'streamable-http',
           requiredConfigurationKeys: configKeys,
+          ...(configKeys[0]
+            ? { tokenEnvironmentVariable: configKeys[0] }
+            : {}),
         }, null, 2)}\n`,
       }];
   }
@@ -166,6 +179,10 @@ export function validateCapabilityPackage(
   const requiredConfigurationKeys = normalizeConfigurationKeys(
     input.requiredConfigurationKeys ?? readMcpConnectionConfigKeys(input.authoringKind, root),
   );
+  const mcpConnection =
+    input.authoringKind === 'mcp-connection'
+      ? readMcpConnection(root, requiredConfigurationKeys)
+      : undefined;
 
   return {
     valid: true,
@@ -183,6 +200,7 @@ export function validateCapabilityPackage(
     ],
     files: relativeFiles,
     requiredConfigurationKeys,
+    ...(mcpConnection ? { mcpConnection } : {}),
     protocolContext,
     findings: [],
   };
@@ -241,6 +259,7 @@ export function createCapabilityHandoff(input: {
     ],
     testEvidence: input.testEvidence,
     requiredConfigurationKeys: [...input.validation.requiredConfigurationKeys],
+    ...(input.validation.mcpConnection ?? {}),
     requestedActivation,
     operation,
     protocolContext: input.validation.protocolContext,
@@ -292,27 +311,65 @@ function validateKindContract(
       return ['mcp-server-entry', 'mcp-server-tool-registration'];
     }
     case 'mcp-connection': {
-      const content = requireFile(
-        resolve(root, 'mcp-connection.json'),
-        'MCP connection packages require mcp-connection.json.',
-      );
-      const parsed = JSON.parse(content) as {
-        endpoint?: unknown;
-        transport?: unknown;
-      };
-      if (typeof parsed.endpoint !== 'string' || !/^https?:\/\//.test(parsed.endpoint)) {
-        throw new Error('MCP connection endpoint must be HTTP(S).');
-      }
-      const endpoint = new URL(parsed.endpoint);
-      if (endpoint.username || endpoint.password) {
-        throw new Error('MCP connection endpoint must not contain embedded credentials.');
-      }
-      if (parsed.transport !== 'streamable-http' && parsed.transport !== 'sse') {
-        throw new Error("MCP connection transport must be 'streamable-http' or 'sse'.");
-      }
+      readMcpConnection(root);
       return ['mcp-connection-manifest', 'mcp-endpoint', 'mcp-transport'];
     }
   }
+}
+
+function readMcpConnection(
+  root: string,
+  requiredConfigurationKeys?: string[],
+): McpConnectionHandoffConfig {
+  const content = requireFile(
+    resolve(root, 'mcp-connection.json'),
+    'MCP connection packages require mcp-connection.json.',
+  );
+  const parsed = JSON.parse(content) as {
+    endpoint?: unknown;
+    transport?: unknown;
+    tokenEnvironmentVariable?: unknown;
+  };
+  if (typeof parsed.endpoint !== 'string' || !/^https?:\/\//.test(parsed.endpoint)) {
+    throw new Error('MCP connection endpoint must be HTTP(S).');
+  }
+  const endpoint = new URL(parsed.endpoint);
+  if (endpoint.username || endpoint.password) {
+    throw new Error('MCP connection endpoint must not contain embedded credentials.');
+  }
+  if (parsed.transport !== 'streamable-http' && parsed.transport !== 'sse') {
+    throw new Error("MCP connection transport must be 'streamable-http' or 'sse'.");
+  }
+
+  const tokenEnvironmentVariable =
+    typeof parsed.tokenEnvironmentVariable === 'string'
+      ? parsed.tokenEnvironmentVariable.trim()
+      : undefined;
+  if (
+    tokenEnvironmentVariable &&
+    !/^[A-Z_][A-Z0-9_]*$/.test(tokenEnvironmentVariable)
+  ) {
+    throw new Error(
+      `Invalid canonical configuration key name: ${tokenEnvironmentVariable}`,
+    );
+  }
+  if (
+    tokenEnvironmentVariable &&
+    requiredConfigurationKeys &&
+    !requiredConfigurationKeys.includes(tokenEnvironmentVariable)
+  ) {
+    throw new Error(
+      'MCP token environment variable must be listed in requiredConfigurationKeys.',
+    );
+  }
+
+  return {
+    mcpUrl: parsed.endpoint,
+    mcpTransport: parsed.transport,
+    ...(tokenEnvironmentVariable
+      ? { mcpTokenEnv: tokenEnvironmentVariable }
+      : {}),
+  };
 }
 
 function readMcpConnectionConfigKeys(
@@ -375,7 +432,7 @@ function hashFiles(root: string, files: string[]): string {
   for (const file of files) {
     hash.update(normalizePath(relative(root, file)));
     hash.update('\0');
-    hash.update(readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
+    hash.update(readFileSync(file));
     hash.update('\0');
   }
   return hash.digest('hex');

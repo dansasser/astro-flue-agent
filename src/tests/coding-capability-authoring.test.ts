@@ -101,6 +101,11 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         managerKind: string;
         contentDigest: string;
         checks: string[];
+        mcpConnection?: {
+          mcpUrl: string;
+          mcpTransport: string;
+          mcpTokenEnv?: string;
+        };
         protocolContext: { directives: Array<{ id: string; rules: string[] }> };
       };
       const secondValidation = JSON.parse(
@@ -185,6 +190,9 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         contentDigest: string;
         validationEvidence: string[];
         testEvidence: { status: string; contentDigest: string; exitCode: number };
+        mcpUrl?: string;
+        mcpTransport?: string;
+        mcpTokenEnv?: string;
         protocolContext: { directives: Array<{ id: string }> };
       };
 
@@ -197,6 +205,19 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
       assert.equal(handoff.testEvidence.status, 'passed');
       assert.equal(handoff.testEvidence.exitCode, 0);
       assert.equal(handoff.testEvidence.contentDigest, firstValidation.contentDigest);
+      if (entry.kind === 'mcp-connection') {
+        assert.deepEqual(firstValidation.mcpConnection, {
+          mcpUrl: 'https://replace-with-mcp-endpoint.invalid/mcp',
+          mcpTransport: 'streamable-http',
+          mcpTokenEnv: 'FIXTURE_MCP_TOKEN',
+        });
+        assert.equal(
+          handoff.mcpUrl,
+          'https://replace-with-mcp-endpoint.invalid/mcp',
+        );
+        assert.equal(handoff.mcpTransport, 'streamable-http');
+        assert.equal(handoff.mcpTokenEnv, 'FIXTURE_MCP_TOKEN');
+      }
       assert.deepEqual(
         handoff.protocolContext.directives.map((directive) => directive.id),
         ['capabilities.lifecycle-routing'],

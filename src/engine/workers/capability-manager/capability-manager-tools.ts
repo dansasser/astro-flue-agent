@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { defineTool, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 import { resolveRuntimePath } from '../../../core/config/runtime-root.js';
@@ -20,7 +21,7 @@ import type { CodingApprovalService } from '../../../engine/workers/coding-worke
 import type { CodingApprovalActionType } from '../../../engine/workers/coding-worker/approvals/approval-types.js';
 
 const kindSchema = v.picklist(['skill', 'tool', 'worker', 'mcp']);
-const sourceSchema = v.picklist(['github', 'local', 'npm', 'builtin']);
+const sourceSchema = v.picklist(['github', 'local']);
 const transportSchema = v.picklist(['streamable-http', 'sse']);
 
 export interface CapabilityLifecycleServiceSession {
@@ -167,7 +168,9 @@ export function createCapabilityManagerTools(
           ...(args.source !== undefined ? { source: args.source } : {}),
           ...(args.sourceRef !== undefined ? { sourceRef: args.sourceRef } : {}),
           ...(args.version !== undefined ? { version: args.version || null } : {}),
-          ...(hasMcpConfig(args) ? { config: readMcpConfig(args) } : {}),
+          ...(hasMcpConfig(args)
+            ? { config: readMcpConfig(args, false) }
+            : {}),
         };
         return executeApprovedMutation(options, {
           taskId: args.taskId,
@@ -249,7 +252,7 @@ function readAddInput(args: {
     version: args.version || null,
     requestedEnabled: args.requestedEnabled ?? args.kind === 'skill',
     installedBy: 'agent',
-    ...(isMcp ? { config: readMcpConfig(args) } : {}),
+    ...(isMcp ? { config: readMcpConfig(args, true) } : {}),
   };
 }
 
@@ -257,10 +260,14 @@ function readMcpConfig(args: {
   mcpUrl?: string;
   mcpTransport?: 'streamable-http' | 'sse';
   mcpTokenEnv?: string;
-}): CapabilityConfig {
+}, defaultTransport: boolean): CapabilityConfig {
   return {
-    mcpUrl: args.mcpUrl,
-    mcpTransport: args.mcpTransport ?? 'streamable-http',
+    ...(args.mcpUrl !== undefined ? { mcpUrl: args.mcpUrl } : {}),
+    ...(args.mcpTransport !== undefined
+      ? { mcpTransport: args.mcpTransport }
+      : defaultTransport
+        ? { mcpTransport: 'streamable-http' as const }
+        : {}),
     ...(args.mcpTokenEnv ? { mcpTokenEnv: args.mcpTokenEnv } : {}),
   };
 }
@@ -308,12 +315,13 @@ async function executeApprovedMutation(
       id: input.id,
       ...(input.source ? { source: input.source } : {}),
       ...(input.sourceRef
-        ? {
-            sourceRef:
-              input.source === 'local'
-                ? '[workspace-local-source]'
-                : input.sourceRef,
-          }
+        ? input.source === 'local'
+          ? {
+              sourceRefDigest: createHash('sha256')
+                .update(input.sourceRef.trim())
+                .digest('hex'),
+            }
+          : { sourceRef: input.sourceRef }
         : {}),
       ...(input.version ? { version: input.version } : {}),
       ...(typeof input.config?.mcpUrl === 'string'

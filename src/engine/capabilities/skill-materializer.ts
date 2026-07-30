@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { resolveRuntimePath } from '../../core/config/runtime-root.js';
+import { resolveCodingWorkspacePath } from '../../core/config/runtime-root.js';
 import type { CapabilityKind, CapabilityRecord } from '../../engine/capabilities/types.js';
 import { resolveCapabilityPath } from '../../engine/capabilities/capability-loader.js';
 
@@ -88,7 +88,7 @@ function materializeFromLocal(
 ): MaterializeResult {
   const sourcePath = isAbsolute(record.sourceRef)
     ? record.sourceRef
-    : resolveRuntimePath(record.sourceRef, { env });
+    : resolveCodingWorkspacePath(record.sourceRef, { env });
 
   if (!existsSync(sourcePath)) {
     throw new Error(`Local capability source not found: ${sourcePath}`);

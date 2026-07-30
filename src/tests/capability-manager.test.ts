@@ -86,9 +86,11 @@ test('capability-manager mutations fail closed and executable activation require
       '["Route capability validation through protocols."]',
     );
     assert.equal(
-      pendingAdd.request.metadata.sourceRef,
-      '[workspace-local-source]',
+      typeof pendingAdd.request.metadata.sourceRefDigest,
+      'string',
     );
+    assert.match(String(pendingAdd.request.metadata.sourceRefDigest), /^[a-f0-9]{64}$/);
+    assert.equal(pendingAdd.request.metadata.sourceRef, undefined);
     assert.equal(fixture.serviceFactory().service.inspect('tool', 'approved-tool').record, undefined);
 
     await fixture.approvalService.recordDecision({
@@ -133,6 +135,51 @@ test('capability-manager mutations fail closed and executable activation require
     };
     assert.equal(enabled.record.enabled, true);
     assert.equal(enabled.activationState, 'enabled-pending-restart');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('capability-manager approvals distinguish different private local sources', async () => {
+  const fixture = createFixture();
+  try {
+    const firstSource = createToolSource(fixture.root, 'first-source');
+    const secondSource = createToolSource(fixture.root, 'second-source');
+    const profile = createCapabilityManagerSubagent({
+      approvalService: fixture.approvalService,
+      serviceFactory: fixture.serviceFactory,
+    });
+    const add = getTool(profile.tools ?? [], 'capability_add');
+    const commonArgs = {
+      taskId: 'local-source-identity',
+      protocolBundle: createProtocolBundle('local-source-identity'),
+      kind: 'tool',
+      id: 'source-bound-tool',
+      name: 'Source-bound tool',
+      description: '',
+      source: 'local',
+      version: 'fixture-v1',
+    };
+
+    const first = JSON.parse(
+      await add.execute({ ...commonArgs, sourceRef: firstSource }),
+    ) as {
+      request: {
+        dedupeKey: string;
+        metadata: Record<string, unknown>;
+      };
+    };
+    const second = JSON.parse(
+      await add.execute({ ...commonArgs, sourceRef: secondSource }),
+    ) as typeof first;
+
+    assert.notEqual(first.request.dedupeKey, second.request.dedupeKey);
+    assert.notEqual(
+      first.request.metadata.sourceRefDigest,
+      second.request.metadata.sourceRefDigest,
+    );
+    assert.doesNotMatch(JSON.stringify(first.request.metadata), /first-source/);
+    assert.doesNotMatch(JSON.stringify(second.request.metadata), /second-source/);
   } finally {
     fixture.cleanup();
   }
@@ -223,6 +270,121 @@ test('capability-manager stores MCP connections in the runtime capability regist
   }
 });
 
+test('capability-manager applies partial MCP updates without resending the stored URL', async () => {
+  const fixture = createFixture();
+  try {
+    const profile = createCapabilityManagerSubagent({
+      approvalService: fixture.approvalService,
+      serviceFactory: fixture.serviceFactory,
+    });
+    const add = getTool(profile.tools ?? [], 'capability_add');
+    const addArgs = {
+      taskId: 'partial-mcp-manager',
+      protocolBundle: createProtocolBundle('partial-mcp-manager-add'),
+      kind: 'mcp',
+      id: 'partial-manager-mcp',
+      name: 'Partial manager MCP',
+      mcpUrl: 'https://mcp.example.test/original',
+      mcpTransport: 'streamable-http',
+      mcpTokenEnv: 'PARTIAL_MCP_TOKEN',
+    };
+    const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
+      request: { id: string };
+    };
+    await fixture.approvalService.recordDecision({
+      requestId: pendingAdd.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+    await add.execute(addArgs);
+
+    const update = getTool(profile.tools ?? [], 'capability_update');
+    const updateArgs = {
+      taskId: 'partial-mcp-manager',
+      protocolBundle: createProtocolBundle('partial-mcp-manager-update'),
+      kind: 'mcp',
+      id: 'partial-manager-mcp',
+      mcpTransport: 'sse',
+    };
+    const pendingUpdate = JSON.parse(await update.execute(updateArgs)) as {
+      request: { id: string };
+    };
+    await fixture.approvalService.recordDecision({
+      requestId: pendingUpdate.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+    const updated = JSON.parse(await update.execute(updateArgs)) as {
+      record: { config: Record<string, unknown> };
+    };
+
+    assert.deepEqual(updated.record.config, {
+      mcpUrl: 'https://mcp.example.test/original',
+      mcpTransport: 'sse',
+      mcpTokenEnv: 'PARTIAL_MCP_TOKEN',
+    });
+
+    const tokenUpdateArgs = {
+      taskId: 'partial-mcp-manager',
+      protocolBundle: createProtocolBundle('partial-mcp-manager-token-update'),
+      kind: 'mcp',
+      id: 'partial-manager-mcp',
+      mcpTokenEnv: 'REPLACEMENT_MCP_TOKEN',
+    };
+    const pendingTokenUpdate = JSON.parse(
+      await update.execute(tokenUpdateArgs),
+    ) as {
+      request: { id: string };
+    };
+    await fixture.approvalService.recordDecision({
+      requestId: pendingTokenUpdate.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+    const tokenUpdated = JSON.parse(
+      await update.execute(tokenUpdateArgs),
+    ) as {
+      record: { config: Record<string, unknown> };
+    };
+    assert.deepEqual(tokenUpdated.record.config, {
+      mcpUrl: 'https://mcp.example.test/original',
+      mcpTransport: 'sse',
+      mcpTokenEnv: 'REPLACEMENT_MCP_TOKEN',
+    });
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('capability-manager rejects unsupported npm lifecycle sources', async () => {
+  const fixture = createFixture();
+  try {
+    const profile = createCapabilityManagerSubagent({
+      approvalService: fixture.approvalService,
+      serviceFactory: fixture.serviceFactory,
+    });
+    const validate = getTool(profile.tools ?? [], 'capability_validate');
+
+    await assert.rejects(
+      () =>
+        validate.execute({
+          protocolBundle: createProtocolBundle('unsupported-npm-source'),
+          kind: 'skill',
+          id: 'unsupported-npm-source',
+          name: 'Unsupported npm source',
+          source: 'npm',
+          sourceRef: '@example/unsupported-skill',
+        }),
+      /Expected \("github" \| "local"\) but received "npm"/,
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 function createFixture() {
   const root = mkdtempSync(join(tmpdir(), 'sim-one-capability-manager-'));
   const runtimeRoot = join(root, '.gorombo');
@@ -279,6 +441,16 @@ function createProtocolBundle(eventId: string) {
       tags: ['capabilities'],
     }],
   };
+}
+
+function createToolSource(root: string, name: string): string {
+  const source = join(root, name);
+  mkdirSync(source, { recursive: true });
+  writeFileSync(
+    join(source, 'index.mjs'),
+    "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
+  );
+  return source;
 }
 
 function getTool(tools: ToolDefinition[], name: string): ToolDefinition {

@@ -30,6 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Create CI runtime configuration
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         run: |
@@ -72,6 +73,7 @@ jobs:
         run: pnpm run build:cli
 
       - name: Ratatui TUI product smoke
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm run test:tui:ratatui
         env:
           GOROMBO_TEST_MODE: '1'
@@ -86,6 +88,7 @@ jobs:
           GOROMBO_TEST_MODE: '1'
 
       - name: TUI end-to-end test
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm run test:tui
         env:
           GOROMBO_TEST_MODE: '1'

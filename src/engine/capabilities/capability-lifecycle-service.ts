@@ -267,7 +267,14 @@ export class CapabilityLifecycleService {
       ...(input.source !== undefined ? { source: input.source } : {}),
       ...(input.sourceRef !== undefined ? { sourceRef: input.sourceRef } : {}),
       ...(input.version !== undefined ? { version: input.version } : {}),
-      ...(input.config !== undefined ? { config: sanitizeConfig(input.kind, input.config) } : {}),
+      ...(input.config !== undefined
+        ? {
+            config: sanitizeConfig(
+              input.kind,
+              mergeDefinedConfig(existing.config, input.config),
+            ),
+          }
+        : {}),
       enabled: existing.kind === 'skill' ? existing.enabled : false,
       updatedAt: this.#now(),
     };
@@ -425,6 +432,11 @@ export class CapabilityLifecycleService {
     if (!input.name.trim()) {
       throw new Error('Capability name is required.');
     }
+    if (input.source !== 'github' && input.source !== 'local') {
+      throw new Error(
+        `Unsupported capability source '${input.source}'. Capability lifecycle supports github and local sources.`,
+      );
+    }
     if (input.kind !== 'mcp' && !input.sourceRef.trim()) {
       throw new Error('Capability source reference is required.');
     }
@@ -472,10 +484,12 @@ export class CapabilityLifecycleService {
       if (!existsSync(path)) {
         throw new Error(`Capability source did not materialize for ${record.kind} ${record.id}.`);
       }
+      const contentDigest = hashDirectory(path);
+      assertExpectedLocalDigest(record, contentDigest);
       return {
         root: stagingRoot,
         path,
-        contentDigest: hashDirectory(path),
+        contentDigest,
         materialization,
       };
     } catch (error) {
@@ -701,6 +715,39 @@ function sanitizeConfig(kind: CapabilityKind, config: CapabilityConfig): Capabil
   return clone;
 }
 
+function mergeDefinedConfig(
+  existing: CapabilityConfig,
+  patch: CapabilityConfig,
+): CapabilityConfig {
+  const merged = structuredClone(existing);
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) {
+      merged[key] = structuredClone(value);
+    }
+  }
+  return merged;
+}
+
+function assertExpectedLocalDigest(
+  record: CapabilityRecord,
+  contentDigest: string,
+): void {
+  if (record.source !== 'local' || !record.version?.startsWith('sha256:')) {
+    return;
+  }
+  const expectedDigest = record.version.slice('sha256:'.length);
+  if (!/^[a-f0-9]{64}$/i.test(expectedDigest)) {
+    throw new Error(
+      `Invalid tested handoff digest for capability ${record.id}: ${record.version}.`,
+    );
+  }
+  if (expectedDigest.toLowerCase() !== contentDigest) {
+    throw new Error(
+      `Capability ${record.id} content does not match the tested handoff digest.`,
+    );
+  }
+}
+
 function validateMcpConfig(config: CapabilityConfig): void {
   const url = config.mcpUrl;
   if (typeof url !== 'string') {
@@ -817,6 +864,11 @@ function listFiles(root: string): string[] {
       continue;
     }
     const path = resolve(root, entry.name);
+    if (entry.isSymbolicLink()) {
+      throw new Error(
+        `Capability packages must not contain symbolic links: ${relative(root, path)}`,
+      );
+    }
     if (entry.isDirectory()) {
       files.push(...listFiles(path));
     } else if (entry.isFile() || statSync(path).isFile()) {

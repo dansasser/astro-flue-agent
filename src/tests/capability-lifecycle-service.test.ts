@@ -5,8 +5,10 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -202,6 +204,177 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
         }),
       /machine-specific absolute host path/,
     );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('relative local capability sources resolve beneath the coding workspace and cannot escape it', () => {
+  const fixture = createFixture();
+  try {
+    const workspaceRoot = join(fixture.runtimeRoot, 'workspace');
+    const sourceRef = createSourceFixture(
+      workspaceRoot,
+      'tool',
+      'workspace-relative-tool',
+    );
+    const relativeSourceRef = 'sources/workspace-relative-tool';
+
+    const validated = fixture.service.validate({
+      kind: 'tool',
+      id: 'workspace-relative-tool',
+      name: 'Workspace relative tool',
+      description: '',
+      source: 'local',
+      sourceRef: relativeSourceRef,
+      version: 'fixture-v1',
+      requestedEnabled: false,
+      installedBy: 'agent',
+    });
+
+    assert.equal(validated.validation.valid, true);
+    assert.equal(sourceRef, join(workspaceRoot, relativeSourceRef));
+
+    const escapedSource = createSourceFixture(
+      fixture.runtimeRoot,
+      'tool',
+      'outside-workspace-tool',
+    );
+    assert.equal(
+      escapedSource,
+      join(fixture.runtimeRoot, 'sources', 'outside-workspace-tool'),
+    );
+    assert.throws(
+      () =>
+        fixture.service.validate({
+          kind: 'tool',
+          id: 'outside-workspace-tool',
+          name: 'Outside workspace tool',
+          description: '',
+          source: 'local',
+          sourceRef: '../sources/outside-workspace-tool',
+          version: 'fixture-v1',
+          requestedEnabled: false,
+          installedBy: 'agent',
+        }),
+      /outside the coding workspace/,
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('local capability staging rejects symlinks and mismatched handoff digests', () => {
+  const fixture = createFixture();
+  try {
+    const symlinkedTool = createSourceFixture(
+      fixture.root,
+      'tool',
+      'symlinked-tool',
+    );
+    const externalDirectory = join(fixture.root, 'external-code');
+    mkdirSync(externalDirectory, { recursive: true });
+    writeFileSync(join(externalDirectory, 'payload.mjs'), 'export const value = 1;\n');
+    symlinkSync(externalDirectory, join(symlinkedTool, 'linked-code'), 'dir');
+
+    assert.throws(
+      () =>
+        fixture.service.validate({
+          kind: 'tool',
+          id: 'symlinked-tool',
+          name: 'Symlinked tool',
+          description: '',
+          source: 'local',
+          sourceRef: symlinkedTool,
+          version: 'fixture-v1',
+          requestedEnabled: false,
+          installedBy: 'agent',
+        }),
+      /symbolic links/,
+    );
+
+    const digestTool = createSourceFixture(
+      fixture.root,
+      'tool',
+      'digest-bound-tool',
+    );
+    const expectedDigest = hashSourceFixture(digestTool);
+    const added = fixture.service.add({
+      kind: 'tool',
+      id: 'digest-bound-tool',
+      name: 'Digest-bound tool',
+      description: '',
+      source: 'local',
+      sourceRef: digestTool,
+      version: `sha256:${expectedDigest}`,
+      requestedEnabled: false,
+      installedBy: 'agent',
+    });
+    assert.equal(added.contentDigest, expectedDigest);
+
+    const changedTool = createSourceFixture(
+      fixture.root,
+      'tool',
+      'changed-after-handoff',
+    );
+    const testedDigest = hashSourceFixture(changedTool);
+    writeFileSync(
+      join(changedTool, 'post-test.mjs'),
+      'export const changedAfterTesting = true;\n',
+    );
+    assert.throws(
+      () =>
+        fixture.service.add({
+          kind: 'tool',
+          id: 'changed-after-handoff',
+          name: 'Changed after handoff',
+          description: '',
+          source: 'local',
+          sourceRef: changedTool,
+          version: `sha256:${testedDigest}`,
+          requestedEnabled: false,
+          installedBy: 'agent',
+        }),
+      /does not match the tested handoff digest/,
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('partial MCP updates preserve stored connection fields before validation', () => {
+  const fixture = createFixture();
+  try {
+    fixture.service.add({
+      kind: 'mcp',
+      id: 'partial-mcp',
+      name: 'Partial MCP',
+      description: '',
+      source: 'local',
+      sourceRef: 'mcp://partial-mcp',
+      version: null,
+      requestedEnabled: false,
+      installedBy: 'agent',
+      config: {
+        mcpUrl: 'https://mcp.example.test/original',
+        mcpTransport: 'streamable-http',
+        mcpTokenEnv: 'ORIGINAL_MCP_TOKEN',
+      },
+    });
+
+    const updated = fixture.service.update({
+      kind: 'mcp',
+      id: 'partial-mcp',
+      config: {
+        mcpTransport: 'sse',
+      },
+    });
+
+    assert.deepEqual(updated.record?.config, {
+      mcpUrl: 'https://mcp.example.test/original',
+      mcpTransport: 'sse',
+      mcpTokenEnv: 'ORIGINAL_MCP_TOKEN',
+    });
   } finally {
     fixture.cleanup();
   }
@@ -547,4 +720,16 @@ function createSourceFixture(root: string, kind: Exclude<CapabilityKind, 'mcp'>,
       break;
   }
   return source;
+}
+
+function hashSourceFixture(root: string): string {
+  const hash = createHash('sha256');
+  const files = ['index.mjs'];
+  for (const file of files) {
+    hash.update(file);
+    hash.update('\0');
+    hash.update(readFileSync(join(root, file)));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
 }

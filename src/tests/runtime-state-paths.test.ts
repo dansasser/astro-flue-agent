@@ -81,10 +81,15 @@ test('default mutable stores stay under one explicit runtime root from an unrela
   }
 });
 
-test('relative local capability sources resolve from the runtime root', () => {
+test('relative local capability sources resolve from the runtime coding workspace', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'sim-one-runtime-capability-'));
   const runtimeRoot = join(fixture, '.gorombo');
-  const sourceDirectory = join(runtimeRoot, 'incoming', 'sample-skill');
+  const sourceDirectory = join(
+    runtimeRoot,
+    'workspace',
+    'incoming',
+    'sample-skill',
+  );
   const launchDirectory = join(fixture, 'caller');
   const previousCwd = process.cwd();
 
@@ -101,7 +106,7 @@ test('relative local capability sources resolve from the runtime root', () => {
         id: 'sample-skill',
         kind: 'skill',
         name: 'Sample',
-        description: 'Runtime-root fixture',
+        description: 'Runtime-workspace fixture',
         source: 'local',
         sourceRef: 'incoming/sample-skill',
         version: null,

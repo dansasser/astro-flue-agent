@@ -128,6 +128,53 @@ export function resolveRuntimePath(
   return resolvedPath;
 }
 
+export function resolveCodingWorkspaceRoot(
+  options: ResolveRuntimePathOptions = {},
+): string {
+  const env = options.env ?? process.env;
+  const runtimeRoot = options.runtimeRoot
+    ? validateRuntimeRoot(options.runtimeRoot, 'runtime root')
+    : resolveGoromboRuntimeRoot(options);
+  const configuredRoot =
+    readString(env.GOROMBO_WORKSPACE_ROOT) ??
+    readString(env.GOROMBO_CODING_WORKSPACE_ROOT) ??
+    readString(env.GOROMBO_CODING_REPO_PATH);
+  const workspaceRoot = resolveRuntimePath(configuredRoot ?? 'workspace', {
+    ...options,
+    env,
+    runtimeRoot,
+  });
+  return assertPathInsideRuntimeRoot(
+    workspaceRoot,
+    runtimeRoot,
+    'Coding-worker workspace root',
+  );
+}
+
+export function resolveCodingWorkspacePath(
+  filePath: string,
+  options: ResolveRuntimePathOptions = {},
+): string {
+  const value = filePath.trim();
+  if (!value || isAbsolute(value)) {
+    throw new Error('Coding workspace path must be a non-empty relative path.');
+  }
+
+  const workspaceRoot = resolveCodingWorkspaceRoot(options);
+  const resolvedPath = resolve(workspaceRoot, value);
+  const relativePath = relative(workspaceRoot, resolvedPath);
+  if (
+    relativePath === '..' ||
+    relativePath.startsWith(`..${sep}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new Error(
+      `Relative coding workspace path resolves outside the coding workspace: ${filePath}`,
+    );
+  }
+  return resolvedPath;
+}
+
 export function assertPathInsideRuntimeRoot(
   filePath: string,
   runtimeRoot: string,

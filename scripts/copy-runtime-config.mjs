@@ -27,6 +27,7 @@ if (!includeTscOutput) {
 copyTestFixtures(includeTscOutput ? resolve('.tmp/tsc') : resolve('.gorombo/sim-one-alpha'));
 copySkillDirectories(includeTscOutput ? resolve('.tmp/tsc') : resolve('.gorombo/sim-one-alpha'));
 copyWorkspaceDirectories(includeTscOutput ? resolve('.tmp/tsc') : resolve('.gorombo/sim-one-alpha'));
+copyKnowledgeDocuments(includeTscOutput ? resolve('.tmp/tsc') : resolve('.gorombo/sim-one-alpha'));
 copyModelsYaml(includeTscOutput ? resolve('.tmp/tsc') : resolve('.gorombo/sim-one-alpha'));
 if (!includeTscOutput) {
   copyEmbeddingModel(resolve('.gorombo/sim-one-alpha'));
@@ -125,6 +126,17 @@ function copyDirectoryIfExists(sourceDir, targetDir, options = {}) {
     force: true,
     ...(options.filter ? { filter: options.filter } : {}),
   });
+}
+
+function copyKnowledgeDocuments(outputRoot) {
+  const readmeSource = resolve('README.md');
+  if (existsSync(readmeSource)) {
+    copyFileSync(readmeSource, join(outputRoot, 'README.md'));
+  }
+  copyDirectoryIfExists(
+    resolve('docs/architecture'),
+    join(outputRoot, 'docs/architecture'),
+  );
 }
 
 function copyModelsYaml(outputRoot) {

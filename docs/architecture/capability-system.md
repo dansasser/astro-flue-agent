@@ -66,7 +66,7 @@ CREATE TABLE capabilities (
   name          TEXT NOT NULL,
   description   TEXT NOT NULL,
   source        TEXT NOT NULL,  -- 'github' | 'local' | 'npm' | 'builtin'
-  source_ref    TEXT NOT NULL,  -- URL | path | pkg name
+  source_ref    TEXT NOT NULL,  -- URL | workspace-relative path | built-in ref
   version       TEXT,
   enabled       INTEGER NOT NULL DEFAULT 0,
   config_json   TEXT NOT NULL DEFAULT '{}',
@@ -84,6 +84,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_capabilities_id_unique
 ```
 
 SQLite is authoritative. A config-file mirror (`gorombo.config.json` `capabilities` section) reconciles into SQLite on boot.
+
+The persisted source enum retains `builtin` and the legacy `npm` value for
+registry compatibility. New lifecycle requests accept only `github` and
+`local`; unsupported sources fail before materialization. Relative local
+sources are resolved beneath `<runtime-root>/workspace`, while authenticated
+CLI callers may provide an absolute local source path.
 
 ## Product And Administration Surfaces
 
@@ -193,8 +199,19 @@ scaffolding, validate contracts, scan for secrets and machine host paths, run
 bounded tests, and prepare a content-digest-bound handoff.
 
 A handoff requires passing test evidence for the current content digest and
-protocol directives. The Coding Worker never imports the capability store,
-lifecycle service, materializer, or managed capability path resolver.
+protocol directives. Local approval metadata includes a SHA-256 source identity
+instead of the private path itself, so an approval cannot be reused for a
+different local source. Staging rejects symbolic links and verifies
+`sha256:<digest>` handoffs against the exact materialized package before
+promotion.
+
+MCP connection handoffs carry the validated endpoint, transport, and optional
+canonical token configuration key. Partial MCP updates merge defined fields
+with the stored connection before validation, so changing transport or token
+configuration does not discard the endpoint.
+
+The Coding Worker never imports the capability store, lifecycle service,
+materializer, or managed capability path resolver.
 
 ## Config-File Mirror
 
