@@ -39,7 +39,11 @@ test('coding shell cannot read runtime-owner files through traversal, quoting, o
       targetKind: 'workspace',
     });
     const allowed = await sandbox.exec('node probe.js');
-    assert.equal(allowed.exitCode, 0);
+    assert.equal(
+      allowed.exitCode,
+      0,
+      `allowed workspace command failed: ${allowed.stderr || allowed.stdout}`,
+    );
     assert.match(allowed.stdout, /workspace-ok/);
 
     const approvedHelper = await sandbox.execFile(askpassPath, [], {

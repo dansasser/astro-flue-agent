@@ -30,6 +30,38 @@ require Bubblewrap on Linux; those commands fail closed when Bubblewrap is
 unavailable. The release installer must verify or install that host dependency
 before enabling coding execution.
 
+### Linux Coding Worker Sandbox
+
+Install Bubblewrap before enabling Coding Worker shell, Git, or verification
+commands:
+
+```bash
+sudo apt-get update
+sudo apt-get install --yes bubblewrap
+```
+
+Ubuntu 24.04 enables AppArmor restrictions for unprivileged user namespaces.
+On an affected host, install and load Ubuntu's targeted Bubblewrap profile:
+
+```bash
+sudo apt-get install --yes apparmor-profiles
+sudo install -m 0644 \
+  /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+  /etc/apparmor.d/bwrap-userns-restrict
+sudo apparmor_parser --replace /etc/apparmor.d/bwrap-userns-restrict
+```
+
+Verify the boundary can create its namespace instead of relying on package
+presence alone:
+
+```bash
+/usr/bin/bwrap --ro-bind / / --unshare-all --share-net -- /bin/true
+```
+
+The command must exit successfully. SIM-ONE fails Coding Worker child-process
+execution closed when this boundary is missing or blocked; it never falls back
+to unrestricted execution.
+
 ## Installed Files
 
 The packaged runtime and mutable user data live under one `<runtime-root>`;
@@ -64,7 +96,8 @@ Source builds require:
 - pnpm 10;
 - Rust stable with the `wasm32-unknown-unknown` target;
 - `wasm-pack` 0.13.1;
-- Bubblewrap for Coding Worker shell, Git, and verification commands.
+- the Linux Coding Worker sandbox configured above for Coding Worker shell,
+  Git, and verification commands.
 
 Clone the repository:
 

@@ -30,7 +30,14 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Coding Worker shell sandbox
-        run: sudo apt-get update && sudo apt-get install --yes bubblewrap
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes apparmor-profiles bubblewrap
+          sudo install -m 0644 \
+            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+            /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser --replace /etc/apparmor.d/bwrap-userns-restrict
+          /usr/bin/bwrap --ro-bind / / --unshare-all --share-net -- /bin/true
 
       - name: Create CI runtime configuration
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository

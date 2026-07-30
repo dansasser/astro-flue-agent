@@ -63,7 +63,9 @@ implemented runtime contracts.
 
 Use `pnpm` with Node `>=22.18.0` as declared in `package.json`.
 Install Bubblewrap on Linux before running Coding Worker shell, Git, or
-verification tests.
+verification tests. Ubuntu 24.04 also requires the targeted AppArmor profile
+and canary documented in
+`docs/getting-started/installation.md#linux-coding-worker-sandbox`.
 
 ```sh
 pnpm install

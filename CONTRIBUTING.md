@@ -35,8 +35,9 @@ instead. Use [Support](SUPPORT.md) for installation help and usage questions.
 Start with the toolchain and checkout instructions in
 [Build From Source](README.md#build-from-source). Repository development uses
 Node.js 22.18 or newer and supports either npm, included with Node.js, or pnpm
-10.10.0. Coding Worker process tests also require Bubblewrap on Linux. Choose
-one package manager and use its command path consistently.
+10.10.0. Coding Worker process tests also require the Linux host setup in
+[Linux Coding Worker Sandbox](docs/getting-started/installation.md#linux-coding-worker-sandbox).
+Choose one package manager and use its command path consistently.
 
 Prepare the dependency tree and generated local assets:
 

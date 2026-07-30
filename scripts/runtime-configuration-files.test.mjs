@@ -186,7 +186,12 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
   assert.match(workflow, /- name: Install Coding Worker shell sandbox/);
   assert.match(
     workflow,
-    /sudo apt-get update && sudo apt-get install --yes bubblewrap/,
+    /sudo apt-get install --yes apparmor-profiles bubblewrap/,
+  );
+  assert.match(workflow, /bwrap-userns-restrict/);
+  assert.match(
+    workflow,
+    /\/usr\/bin\/bwrap --ro-bind \/ \/ --unshare-all --share-net -- \/bin\/true/,
   );
   assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
   assert.match(workflow, /chmod 600 sim-one\.config/);

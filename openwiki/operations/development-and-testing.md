@@ -17,6 +17,11 @@ pnpm run build
 pnpm run test:http
 ```
 
+Ubuntu 24.04 developers must also load the packaged
+`bwrap-userns-restrict` AppArmor profile. Follow
+`docs/getting-started/installation.md#linux-coding-worker-sandbox` and run its
+Bubblewrap canary before the test suite.
+
 The full default test command is:
 
 ```sh

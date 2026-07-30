@@ -181,7 +181,9 @@ Prerequisites:
 - npm (included with Node.js) or pnpm 10
 - Rust stable with the `wasm32-unknown-unknown` target
 - `wasm-pack` 0.13.1
-- Bubblewrap on Linux for Coding Worker shell, Git, and verification commands
+- Bubblewrap on Linux for Coding Worker shell, Git, and verification commands;
+  Ubuntu 24.04 hosts with AppArmor user-namespace restrictions must also load
+  the packaged `bwrap-userns-restrict` profile
 
 Clone the repository:
 
@@ -223,7 +225,9 @@ The source build fetches the bundled embedding model, compiles the Rust/WASM str
 
 Coding Worker child processes fail closed when the Linux Bubblewrap isolation
 boundary is unavailable. The gateway and terminal interface do not fall back to
-unrestricted coding execution.
+unrestricted coding execution. On Ubuntu 24.04, follow the host setup in the
+[installation guide](docs/getting-started/installation.md#linux-coding-worker-sandbox)
+before enabling Coding Worker commands.
 
 ## Configuration
 
