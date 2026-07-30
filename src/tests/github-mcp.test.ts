@@ -123,6 +123,12 @@ test('MCP Git operations keep the PAT out of anonymous fetch and checkout', asyn
   });
 
   assert.equal(calls.length, 3);
+  assert.deepEqual(calls[0]?.args, [
+    'fetch',
+    'https://github.com/dansasser/sim-one-alpha.git',
+    'refs/pull/76/head',
+  ]);
+  assert.deepEqual(calls[1]?.args, calls[0]?.args);
   assert.equal(calls[0]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(calls[0]?.options.env?.GIT_ASKPASS, '');
   assert.equal(calls[1]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
@@ -138,6 +144,25 @@ test('MCP Git operations keep the PAT out of anonymous fetch and checkout', asyn
   assert.equal(calls[1]?.options.env?.GIT_CONFIG_VALUE_1, '/dev/null');
   assert.equal(calls[2]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(calls[2]?.options.env?.GIT_ASKPASS, '');
+});
+
+test('MCP PR branch creation rejects owner and repository path injection', async () => {
+  const client = new McpGitHubClient(new Map(), {
+    gitRunner: async () => {
+      throw new Error('Git must not run for an invalid approved repository.');
+    },
+  });
+
+  await assert.rejects(
+    client.createBranchFromPullRequest({
+      owner: 'approved-owner',
+      repo: '../different-repo',
+      pullRequestNumber: 76,
+      branchName: 'review-fix',
+      cwd: '/workspace/repo',
+    }),
+    /plain path segments/,
+  );
 });
 
 test('default Git child environment strips inherited credentials', () => {

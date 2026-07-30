@@ -250,9 +250,10 @@ export class McpGitHubClient implements GitHubClient {
     if (!input.cwd) {
       throw new Error('A coding-worker repository scope is required to create a local branch.');
     }
+    const repositoryUrl = approvedGithubRepositoryUrl(input.owner, input.repo);
     const ref = `refs/pull/${input.pullRequestNumber}/head`;
     await this.runGitWithAnonymousRetry(
-      ['fetch', 'origin', ref],
+      ['fetch', repositoryUrl, ref],
       input.cwd,
     );
     await this.runGit(['checkout', '-b', input.branchName, 'FETCH_HEAD'], input.cwd);
@@ -788,4 +789,19 @@ export function createGitProcessEnvironment(
 function safeErrorMessage(error: unknown, token: string): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.replaceAll(token, '[redacted]');
+}
+
+function approvedGithubRepositoryUrl(owner: string, repo: string): string {
+  const segmentPattern = /^[A-Za-z0-9_.-]+$/;
+  if (
+    !segmentPattern.test(owner)
+    || !segmentPattern.test(repo)
+    || owner === '.'
+    || owner === '..'
+    || repo === '.'
+    || repo === '..'
+  ) {
+    throw new Error('GitHub owner and repository must be plain path segments.');
+  }
+  return `https://github.com/${owner}/${repo}.git`;
 }

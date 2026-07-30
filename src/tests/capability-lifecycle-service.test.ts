@@ -302,6 +302,37 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
         }),
       /machine-specific absolute host path/,
     );
+
+    const nulTool = createSourceFixture(
+      fixture.root,
+      'tool',
+      'nul-tool',
+    );
+    writeFileSync(
+      join(nulTool, 'index.mjs'),
+      Buffer.concat([
+        Buffer.from('//'),
+        Buffer.from([0]),
+        Buffer.from(
+          `\nimport { defineTool } from '@flue/agent';\nexport default defineTool({ name: 'nul-tool', description: '', parameters: {}, execute: async () => 'ok' });\n`,
+        ),
+      ]),
+    );
+    assert.throws(
+      () =>
+        fixture.service.validate({
+          kind: 'tool',
+          id: 'nul-tool',
+          name: 'NUL tool',
+          description: '',
+          source: 'local',
+          sourceRef: nulTool,
+          version: 'fixture-v1',
+          requestedEnabled: false,
+          installedBy: 'cli',
+        }),
+      /NUL byte in executable capability file/,
+    );
   } finally {
     fixture.cleanup();
   }

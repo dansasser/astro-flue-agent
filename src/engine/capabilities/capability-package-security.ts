@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
+import { extname, relative } from 'node:path';
 
 export interface CapabilityPackageScanFinding {
   path: string;
   line: number;
-  category: 'secret' | 'host-path';
+  category: 'secret' | 'host-path' | 'unsafe-source';
   severity: 'error';
   message: string;
 }
@@ -24,6 +24,26 @@ const hostPathPatterns = [
   /(?:^|[\s"'`(=:[,])~\/[^\s"'`),;\]}]+/,
 ];
 
+const executableSourceExtensions = new Set([
+  '.bash',
+  '.bat',
+  '.cjs',
+  '.cmd',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.mts',
+  '.pl',
+  '.ps1',
+  '.py',
+  '.rb',
+  '.sh',
+  '.ts',
+  '.tsx',
+  '.zsh',
+]);
+
 export function scanCapabilityPackage(
   root: string,
   files: string[],
@@ -31,11 +51,35 @@ export function scanCapabilityPackage(
   const findings: CapabilityPackageScanFinding[] = [];
   for (const file of files) {
     const content = readFileSync(file);
+    const path = relative(root, file).split('\\').join('/');
     if (content.includes(0)) {
+      if (isExecutableSource(file, content)) {
+        findings.push({
+          path,
+          line: 1,
+          category: 'unsafe-source',
+          severity: 'error',
+          message: 'NUL byte in executable capability file',
+        });
+      }
       continue;
     }
-    const path = relative(root, file).split('\\').join('/');
-    content.toString('utf8').split(/\r?\n/).forEach((line, index) => {
+    let text: string;
+    try {
+      text = new TextDecoder('utf-8', { fatal: true }).decode(content);
+    } catch {
+      if (isExecutableSource(file, content)) {
+        findings.push({
+          path,
+          line: 1,
+          category: 'unsafe-source',
+          severity: 'error',
+          message: 'invalid UTF-8 in executable capability file',
+        });
+      }
+      continue;
+    }
+    text.split(/\r?\n/).forEach((line, index) => {
       if (secretPatterns.some((pattern) => pattern.test(line))) {
         findings.push({
           path,
@@ -57,4 +101,9 @@ export function scanCapabilityPackage(
     });
   }
   return findings;
+}
+
+function isExecutableSource(file: string, content: Buffer): boolean {
+  return executableSourceExtensions.has(extname(file).toLowerCase())
+    || content.subarray(0, 2).toString('ascii') === '#!';
 }

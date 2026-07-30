@@ -82,6 +82,11 @@ repository and organization access required by enabled operations, rotate by
 replacing the setting and restarting the gateway, and revoke the token in
 GitHub when it is no longer trusted.
 
+Approval-gated PR branch checkout derives an explicit
+`https://github.com/<owner>/<repo>.git` fetch URL from the validated approved
+repository fields. It does not fetch the PR ref from the workspace's mutable
+`origin` alias.
+
 ## Git Clone And Fetch
 
 Public GitHub HTTPS operations do not require MCP or a PAT. The Coding Worker:

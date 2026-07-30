@@ -214,6 +214,8 @@ different local source. Staging rejects symbolic links and verifies
 promotion. Add and update approvals also include a canonical digest of the
 complete lifecycle mutation payload, so changed names, descriptions, sources,
 versions, activation requests, or MCP settings require a distinct approval.
+Executable source files containing NUL bytes or invalid UTF-8 fail validation
+instead of being skipped as binary package assets.
 
 MCP connection handoffs carry the validated endpoint, transport, and optional
 canonical token configuration key. Supported token slots are
