@@ -1,0 +1,87 @@
+src/tests/workspace-isolation.test.ts
+  s_a81fff26d52223::t_f4f3e7793c406e 97-121
+src/engine/capabilities/skill-materializer.ts
+  s_a81fff26d52223::t_4a75ddb894731d 11,19-26,28-32,47,55-60,67,71,75,85,102-127,130-141,163-170
+  s_a81fff26d52223::t_b5c954f69e26ab 128-129
+  s_a81fff26d52223::t_0503e50f4d31ad 171-172
+src/engine/workers/coding-worker/tools/coding-git-tools.ts
+  s_a81fff26d52223::t_193fb6991abda9 2,32,117-120,253-284
+  s_a81fff26d52223::t_c1ad96949807a6 285
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_f4f3e7793c406e 38-41,2024-2045
+  s_a81fff26d52223::t_b5c954f69e26ab 1975-1980,1988-1993,2013-2014,2016
+  s_a81fff26d52223::t_b1c2ac7c4d557e 2,2009-2012,2015,2017-2018
+  s_a81fff26d52223::t_b4d3dff3851725 2046-2048
+src/engine/capabilities/capability-flue-contract.ts
+  s_a81fff26d52223::t_4a75ddb894731d 56,80,92,103-114
+src/engine/workers/coding-worker/tools/sandbox-runtime.ts
+  s_a81fff26d52223::t_cf4dcd1ecf3b9e 14,19,42-48,289,312,322,336,346-355,358-368,379-429
+  s_a81fff26d52223::t_82cab77643feba 430
+src/engine/capabilities/capability-lifecycle-service.ts
+  s_a81fff26d52223::t_4a75ddb894731d 11,20,450-462,840-842,853-855
+  s_a81fff26d52223::t_3f0d2c7d08b9c6 39-42,797-803
+  s_a81fff26d52223::t_be3afafcda739d 804
+docs/architecture/capability-system.md
+  s_a81fff26d52223::t_f2d008f45bdeb3 90-94,222-226
+  s_a81fff26d52223::t_cd7c6af83f6513 54,144,165-168,217-221,233
+docs/guides/extending-sim-one.md
+  s_a81fff26d52223::t_cd7c6af83f6513 104-105,128-129
+  s_a81fff26d52223::t_f2d008f45bdeb3 55-57,145-148
+src/engine/capabilities/mcp-broker.ts
+  s_a81fff26d52223::t_298ebe35d19bff 2,30,86
+src/engine/workers/coding-worker/capability-authoring/capability-authoring.ts
+  s_a81fff26d52223::t_3f0d2c7d08b9c6 19-22,360-365
+  s_a81fff26d52223::t_1c7df634b7ae6d 366-367
+scripts/test-capability-product.mjs
+  s_a81fff26d52223::t_259faa57d89839 110,173
+src/tests/runtime-state-paths.test.ts
+  s_a81fff26d52223::t_298ebe35d19bff 2-9
+  s_a81fff26d52223::t_2f632b4d33416f 15,140-200
+  s_a81fff26d52223::t_00764a92eb7f6e 201-203
+docs/reference/cli.md
+  s_a81fff26d52223::t_b4c2e763937980 121-123,125-126
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_d189244c2b0544 374-378
+  s_a81fff26d52223::t_f2d008f45bdeb3 351-356,381-383
+src/engine/capabilities/capability-loader.ts
+  s_a81fff26d52223::t_298ebe35d19bff 1,21-36,49-54,68-69,73-74,76
+  s_a81fff26d52223::t_e8381296205a9e 55-67,70-72
+  s_a81fff26d52223::t_8d8697bb75c2e7 75
+  s_a81fff26d52223::t_d1b8f064710bbd 77
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_298ebe35d19bff 58,195-199
+src/tests/capability-manager.test.ts
+  s_a81fff26d52223::t_0ad0cfbe8641a4 101-103,105,205-209,485
+  s_a81fff26d52223::t_2f632b4d33416f 355,392,400,421
+src/tests/coding-capability-authoring.test.ts
+  s_a81fff26d52223::t_2f632b4d33416f 51,212,219
+docs/architecture/worker-system.md
+  s_a81fff26d52223::t_f2d008f45bdeb3 90-99
+src/engine/capabilities/index.ts
+  s_a81fff26d52223::t_3f0d2c7d08b9c6 12,18-24
+src/engine/capabilities/mcp-token-env.ts
+  s_a81fff26d52223::t_298ebe35d19bff 1-15
+src/tests/capability-lifecycle-service.test.ts
+  s_a81fff26d52223::t_f4f3e7793c406e 174-192,194-195,216-217,321-336,381-407
+  s_a81fff26d52223::t_2f632b4d33416f 220-235,507,522
+  s_a81fff26d52223::t_b5c954f69e26ab 21,125-126,136,193,417,434,443,454,462,479,559-563,572,621-639,641,673,685-691,823
+  s_a81fff26d52223::t_4e11d6cb492d4e 218-219
+  s_a81fff26d52223::t_e9ff6d74380983 408-410
+  s_a81fff26d52223::t_79448521ea1adb 411-412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "291ae4c5fe8582206de6bef7f7f587de7c8d18d0",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
