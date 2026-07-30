@@ -125,6 +125,9 @@ current turn.
   user enablement.
 - Enablement does not override protocols, trusted scope, owning-agent
   boundaries, sandbox policy, or action-specific approvals.
+- Capability-manager validation and mutation tools receive a persisted event
+  id and reload applicable protocols from SQLite. A model-supplied protocol
+  object is not an authority boundary.
 
 ## Source Map
 

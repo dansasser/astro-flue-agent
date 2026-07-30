@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import type { ToolDefinition } from '@flue/runtime';
-import type { ProtocolBundle } from '../core/types/index.js';
+import type {
+  NormalizedMessageEvent,
+  ProtocolBundle,
+} from '../core/types/index.js';
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
 import { CapabilityLifecycleService } from '../engine/capabilities/capability-lifecycle-service.js';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
@@ -12,6 +15,11 @@ import {
   capabilityManagerAgentName,
   createCapabilityManagerSubagent,
 } from '../engine/workers/capability-manager/capability-manager.js';
+import { createDefaultCapabilityProtocolBundleLoader } from '../engine/workers/capability-manager/capability-manager-tools.js';
+import {
+  forgetProtocolLookupEvent,
+  rememberProtocolLookupEvent,
+} from '../engine/tools/protocol-tool.js';
 
 test('capability-manager owns the complete lifecycle tool surface', () => {
   const fixture = createFixture();
@@ -19,8 +27,17 @@ test('capability-manager owns the complete lifecycle tool surface', () => {
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     assert.equal(profile.name, capabilityManagerAgentName);
+    assert.match(
+      profile.instructions ?? '',
+      /persisted normalized message `eventId`/,
+    );
+    assert.match(
+      profile.instructions ?? '',
+      /never accept a model-authored protocol bundle/i,
+    );
     assert.deepEqual(
       (profile.tools ?? []).map((tool) => tool.name).sort(),
       [
@@ -39,6 +56,45 @@ test('capability-manager owns the complete lifecycle tool surface', () => {
   }
 });
 
+test('default capability protocol loader reloads trusted persisted event state', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'sim-one-capability-protocols-'));
+  const runtimeRoot = join(root, '.gorombo');
+  const event: NormalizedMessageEvent = {
+    id: `capability-event-${Date.now()}`,
+    connector: 'web-api',
+    kind: 'chat.message',
+    text: 'Add a runtime capability.',
+    receivedAt: new Date().toISOString(),
+    actor: { id: 'operator-1' },
+    conversation: { id: 'conversation-1' },
+    context: { task: 'capability-management' },
+  };
+  rememberProtocolLookupEvent(event);
+
+  try {
+    const load = createDefaultCapabilityProtocolBundleLoader({
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+      GOROMBO_PROTOCOL_DB_PATH: join(
+        runtimeRoot,
+        'db',
+        'protocols.sqlite',
+      ),
+    });
+    const bundle = await load(event.id);
+
+    assert.equal(bundle.eventId, event.id);
+    assert.ok(bundle.protocols.length > 0);
+    assert.ok(
+      bundle.protocols.some(
+        (protocol) => protocol.id === 'capabilities.lifecycle-routing',
+      ),
+    );
+  } finally {
+    forgetProtocolLookupEvent(event.id);
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('capability-manager mutations fail closed and executable activation requires a second approval', async () => {
   const fixture = createFixture();
   try {
@@ -51,11 +107,13 @@ test('capability-manager mutations fail closed and executable activation require
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     const add = getTool(profile.tools ?? [], 'capability_add');
     const addArgs = {
       taskId: 'capability-manager-test',
-      protocolBundle: createProtocolBundle('capability-manager-add'),
+      eventId: 'capability-manager-add',
+      protocolBundle: createProtocolBundle('fabricated-model-bundle'),
       kind: 'tool',
       id: 'approved-tool',
       name: 'Approved tool',
@@ -111,7 +169,7 @@ test('capability-manager mutations fail closed and executable activation require
     const enable = getTool(profile.tools ?? [], 'capability_enable');
     const enableArgs = {
       taskId: 'capability-manager-test',
-      protocolBundle: createProtocolBundle('capability-manager-enable'),
+      eventId: 'capability-manager-enable',
       kind: 'tool',
       id: 'approved-tool',
     };
@@ -148,11 +206,12 @@ test('capability-manager approvals distinguish different private local sources',
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     const add = getTool(profile.tools ?? [], 'capability_add');
     const commonArgs = {
       taskId: 'local-source-identity',
-      protocolBundle: createProtocolBundle('local-source-identity'),
+      eventId: 'local-source-identity',
       kind: 'tool',
       id: 'source-bound-tool',
       name: 'Source-bound tool',
@@ -191,17 +250,18 @@ test('capability-manager rejects malformed protocols before creating approval re
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: async (eventId) => ({
+        eventId,
+        loadedAt: new Date().toISOString(),
+        protocols: [],
+      }),
     });
     const add = getTool(profile.tools ?? [], 'capability_add');
     await assert.rejects(
       () =>
         add.execute({
           taskId: 'malformed-protocols',
-          protocolBundle: {
-            eventId: 'malformed-protocols',
-            loadedAt: new Date().toISOString(),
-            protocols: [],
-          },
+          eventId: 'malformed-protocols',
           kind: 'mcp',
           id: 'malformed-protocols',
           name: 'Malformed protocols',
@@ -225,11 +285,12 @@ test('capability-manager stores MCP connections in the runtime capability regist
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     const add = getTool(profile.tools ?? [], 'capability_add');
     const addArgs = {
       taskId: 'runtime-mcp-registry',
-      protocolBundle: createProtocolBundle('runtime-mcp-registry'),
+      eventId: 'runtime-mcp-registry',
       kind: 'mcp',
       id: 'runtime-mcp',
       name: 'Runtime MCP',
@@ -276,11 +337,12 @@ test('capability-manager applies partial MCP updates without resending the store
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     const add = getTool(profile.tools ?? [], 'capability_add');
     const addArgs = {
       taskId: 'partial-mcp-manager',
-      protocolBundle: createProtocolBundle('partial-mcp-manager-add'),
+      eventId: 'partial-mcp-manager-add',
       kind: 'mcp',
       id: 'partial-manager-mcp',
       name: 'Partial manager MCP',
@@ -302,7 +364,7 @@ test('capability-manager applies partial MCP updates without resending the store
     const update = getTool(profile.tools ?? [], 'capability_update');
     const updateArgs = {
       taskId: 'partial-mcp-manager',
-      protocolBundle: createProtocolBundle('partial-mcp-manager-update'),
+      eventId: 'partial-mcp-manager-update',
       kind: 'mcp',
       id: 'partial-manager-mcp',
       mcpTransport: 'sse',
@@ -328,7 +390,7 @@ test('capability-manager applies partial MCP updates without resending the store
 
     const tokenUpdateArgs = {
       taskId: 'partial-mcp-manager',
-      protocolBundle: createProtocolBundle('partial-mcp-manager-token-update'),
+      eventId: 'partial-mcp-manager-token-update',
       kind: 'mcp',
       id: 'partial-manager-mcp',
       mcpTokenEnv: 'REPLACEMENT_MCP_TOKEN',
@@ -365,13 +427,14 @@ test('capability-manager rejects unsupported npm lifecycle sources', async () =>
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
     });
     const validate = getTool(profile.tools ?? [], 'capability_validate');
 
     await assert.rejects(
       () =>
         validate.execute({
-          protocolBundle: createProtocolBundle('unsupported-npm-source'),
+          eventId: 'unsupported-npm-source',
           kind: 'skill',
           id: 'unsupported-npm-source',
           name: 'Unsupported npm source',
@@ -394,6 +457,8 @@ function createFixture() {
     GOROMBO_CAPABILITIES_DIR: join(runtimeRoot, 'capabilities'),
   };
   const approvalService = createInMemoryCodingApprovalService();
+  const protocolBundleLoader = async (eventId: string) =>
+    createProtocolBundle(eventId);
   const stores = new Set<ReturnType<typeof createCapabilityStore>>();
   const serviceFactory = (protocolBundle?: ProtocolBundle) => {
     const store = createCapabilityStore({ dbPath });
@@ -415,6 +480,7 @@ function createFixture() {
     root,
     approvalService,
     serviceFactory,
+    protocolBundleLoader,
     cleanup() {
       for (const store of stores) {
         store.close();

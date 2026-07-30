@@ -71,6 +71,9 @@ The PAT is not copied into:
 For GitHub API calls, Flue receives the PAT only in the remote MCP
 `Authorization` header. A private Git HTTPS retry receives it only in that
 bounded child process so `GIT_ASKPASS` can answer Git's password prompt.
+Anonymous fetch and checkout commands receive an explicit no-credential Git
+environment, and the subprocess runner removes inherited GitHub tokens and Git
+credential configuration before applying command-scoped settings.
 Connection errors redact the exact token. Operators should grant only the
 repository and organization access required by enabled operations, rotate by
 replacing the setting and restarting the gateway, and revoke the token in
@@ -107,8 +110,9 @@ state is connector-independent; approval audience and action scope are not.
   anonymous public Git remains available.
 - Invalid or revoked PAT: connection or operation fails without falling back to
   another credential source.
-- MCP transport failure: GitHub API operations fail explicitly; no GitHub CLI
-  fallback is attempted.
+- MCP transport failure: Coding Worker startup and non-GitHub repository work
+  continue. GitHub API operations report the optional connection as
+  unavailable when requested; no GitHub CLI fallback is attempted.
 - Denied or expired approval: the mutation is not called.
 - Rollback: remove the PAT and restart the gateway. This disables authenticated
   GitHub access without modifying repositories or global Git state.

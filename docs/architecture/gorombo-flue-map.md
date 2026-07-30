@@ -345,7 +345,8 @@ src/engine/workers/coding-worker/github/
   Coding Worker-owned official GitHub MCP connection, PAT isolation,
   anonymous-first Git credential fallback, typed GitHub client, and
   approval-gated mutation tools. No GitHub MCP tool or PAT is attached to the
-  orchestrator or general sandbox.
+  orchestrator or general sandbox. Optional MCP connection failure leaves the
+  Coding Worker available and is surfaced only when GitHub work is requested.
 
 src/workflows/retrieval.ts
   Shared retrieval machinery.
@@ -358,7 +359,8 @@ src/workflows/web-research.ts
   Used by the researcher-owned web_research tool.
 
 src/engine/tools/protocol-tool.ts
-  Orchestrator-safe protocol loading tool.
+  Orchestrator-safe protocol loading tool and trusted persisted-event lookup
+  used by capability lifecycle enforcement.
 
 src/engine/capabilities/
   Runtime capability registry subsystem. SQLite-backed user/agent-added

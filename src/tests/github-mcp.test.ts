@@ -7,6 +7,7 @@ import type { McpServerConnection, ToolDefinition } from '@flue/runtime';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import {
   connectCodingWorkerGithubMcp,
+  createGitProcessEnvironment,
   McpGitHubClient,
 } from '../engine/workers/coding-worker/github/github-mcp.js';
 import {
@@ -91,6 +92,92 @@ test('GitHub MCP connection errors redact the configured PAT', async () => {
       assert.doesNotMatch(String(error), /secret-pat/);
       return true;
     },
+  );
+});
+
+test('MCP Git operations keep the PAT out of anonymous fetch and checkout', async () => {
+  const calls: Array<{
+    args: string[];
+    options: { cwd: string; env?: Record<string, string> };
+  }> = [];
+  const client = new McpGitHubClient(new Map(), {
+    gitEnv: async () => ({
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+      GIT_ASKPASS: '/runtime/auth/github/askpass.sh',
+    }),
+    gitRunner: async (args, options) => {
+      calls.push({ args, options });
+      if (calls.length === 1) {
+        throw new Error('anonymous fetch rejected');
+      }
+      return { stdout: '', stderr: '' };
+    },
+  });
+
+  await client.createBranchFromPullRequest({
+    owner: 'dansasser',
+    repo: 'sim-one-alpha',
+    pullRequestNumber: 76,
+    branchName: 'review-fix',
+    cwd: '/workspace/repo',
+  });
+
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+  assert.equal(calls[0]?.options.env?.GIT_ASKPASS, '');
+  assert.equal(
+    calls[1]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN,
+    'secret-pat',
+  );
+  assert.equal(
+    calls[1]?.options.env?.GIT_ASKPASS,
+    '/runtime/auth/github/askpass.sh',
+  );
+  assert.equal(calls[2]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+  assert.equal(calls[2]?.options.env?.GIT_ASKPASS, '');
+});
+
+test('default Git child environment strips inherited credentials', () => {
+  const anonymous = createGitProcessEnvironment(
+    {
+      GIT_ASKPASS: '',
+      GIT_TERMINAL_PROMPT: '0',
+    },
+    {
+      PATH: '/usr/bin',
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'inherited-pat',
+      GITHUB_TOKEN: 'inherited-token',
+      GH_TOKEN: 'inherited-gh-token',
+      GH_CONFIG_DIR: '/home/user/.config/gh',
+      GIT_ASKPASS: '/tmp/inherited-askpass',
+      GIT_CONFIG_GLOBAL: '/tmp/inherited-gitconfig',
+    },
+  );
+  assert.equal(anonymous.PATH, '/usr/bin');
+  assert.equal(anonymous.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+  assert.equal(anonymous.GITHUB_TOKEN, undefined);
+  assert.equal(anonymous.GH_TOKEN, undefined);
+  assert.equal(anonymous.GH_CONFIG_DIR, undefined);
+  assert.equal(anonymous.GIT_CONFIG_GLOBAL, undefined);
+  assert.equal(anonymous.GIT_ASKPASS, '');
+
+  const authenticated = createGitProcessEnvironment(
+    {
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'command-pat',
+      GIT_ASKPASS: '/runtime/auth/github/askpass.sh',
+    },
+    {
+      PATH: '/usr/bin',
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'inherited-pat',
+    },
+  );
+  assert.equal(
+    authenticated.GITHUB_PERSONAL_ACCESS_TOKEN,
+    'command-pat',
+  );
+  assert.equal(
+    authenticated.GIT_ASKPASS,
+    '/runtime/auth/github/askpass.sh',
   );
 });
 

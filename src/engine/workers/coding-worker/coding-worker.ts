@@ -22,6 +22,7 @@ import {
 import {
   connectCodingWorkerGithubMcp,
   type CodingWorkerGithubMcp,
+  type CodingWorkerGithubMcpOptions,
 } from '../../../engine/workers/coding-worker/github/github-mcp.js';
 import { githubPatEnvironmentKey } from '../../../engine/workers/coding-worker/github/github-pat.js';
 import { createCodingGitHubTools } from '../../../engine/workers/coding-worker/github/github-tools.js';
@@ -54,6 +55,9 @@ export interface CodingWorkerSubagentOptions extends CodingWorkspaceTargetInput 
   allowLocalDevFallback?: boolean;
   githubClient?: GitHubClient;
   githubMcp?: CodingWorkerGithubMcp;
+  connectGithubMcp?: (
+    options: CodingWorkerGithubMcpOptions,
+  ) => Promise<CodingWorkerGithubMcp>;
   /**
    * Root directory for approval persistence. Must be outside workspaceRoot.
    * Falls back to a sibling of workspaceRoot when omitted.
@@ -102,7 +106,10 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
   await assertApprovalRootOutsideWorkspace(approvalRoot, workspaceRoot);
   const approvalService = createSharedCodingApprovalService({ GOROMBO_APPROVAL_ROOT: approvalRoot });
   const githubMcp = resolvedOptions.githubMcp
-    ?? await connectCodingWorkerGithubMcp({ env: resolvedOptions.env });
+    ?? await connectOptionalGithubMcp(
+      resolvedOptions.connectGithubMcp ?? connectCodingWorkerGithubMcp,
+      { env: resolvedOptions.env },
+    );
   const githubClient = resolvedOptions.githubClient ?? githubMcp.client;
   const githubGitEnv = githubMcp.githubGitEnv;
   const executionEnv = withoutGithubCredentials(resolvedOptions.env);
@@ -171,6 +178,7 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
         projectRelativePath: resolvedOptions.projectRelativePath,
         repoPath: resolvedOptions.repoPath,
         client: githubClient,
+        unavailableReason: githubMcp.unavailableReason,
         approvalService,
       }),
       ...githubMcp.readTools,
@@ -217,6 +225,24 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
       githubClient,
     }),
   });
+}
+
+async function connectOptionalGithubMcp(
+  connect: (
+    options: CodingWorkerGithubMcpOptions,
+  ) => Promise<CodingWorkerGithubMcp>,
+  options: CodingWorkerGithubMcpOptions,
+): Promise<CodingWorkerGithubMcp> {
+  try {
+    return await connect(options);
+  } catch {
+    return {
+      readTools: [],
+      unavailableReason:
+        'GitHub MCP connection is unavailable for this worker run.',
+      async close() {},
+    };
+  }
 }
 
 export default createAgent(async ({ env }) => {

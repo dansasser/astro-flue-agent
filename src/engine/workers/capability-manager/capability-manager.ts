@@ -8,7 +8,9 @@ import type { CodingApprovalService } from '../../../engine/workers/coding-worke
 import {
   createCapabilityManagerTools,
   createDefaultCapabilityLifecycleServiceFactory,
+  createDefaultCapabilityProtocolBundleLoader,
   type CapabilityLifecycleServiceFactory,
+  type CapabilityProtocolBundleLoader,
 } from '../../../engine/workers/capability-manager/capability-manager-tools.js';
 
 export const capabilityManagerAgentName = 'capability-manager';
@@ -18,6 +20,7 @@ export interface CapabilityManagerSubagentOptions {
   env?: Record<string, unknown>;
   approvalService?: CodingApprovalService;
   serviceFactory?: CapabilityLifecycleServiceFactory;
+  protocolBundleLoader?: CapabilityProtocolBundleLoader;
 }
 
 export function createCapabilityManagerSubagent(
@@ -30,6 +33,9 @@ export function createCapabilityManagerSubagent(
   const serviceFactory =
     options.serviceFactory ??
     createDefaultCapabilityLifecycleServiceFactory(env);
+  const protocolBundleLoader =
+    options.protocolBundleLoader ??
+    createDefaultCapabilityProtocolBundleLoader(env);
 
   return defineAgentProfile({
     name: capabilityManagerAgentName,
@@ -44,7 +50,7 @@ export function createCapabilityManagerSubagent(
       }),
       `# Lifecycle Contract
 
-Use the attached read tools for list, inspect, and validate. Use the attached mutation tools for add, update, enable, disable, and remove. Validation and mutation tools require the complete applicable \`protocolBundle\` delegated by the orchestrator. Apply \`protocolBundle.protocols[].rules\` before deterministic lifecycle checks and include the bundle unchanged in the tool request. Mutations fail closed until the approval service returns a current matching decision.
+Use the attached read tools for list, inspect, and validate. Use the attached mutation tools for add, update, enable, disable, and remove. Validation and mutation tools require the persisted normalized message \`eventId\` delegated by the orchestrator. Trusted application code reloads the applicable protocol bundle from SQLite for that event; never accept a model-authored protocol bundle. Mutations fail closed until the approval service returns a current matching decision.
 
 Executable tools, workers, and MCP connections are added disabled. Enabling them is a separate approved operation. Skills may be enabled within their approved add operation, but skills never grant undeclared tool authority.
 
@@ -53,6 +59,7 @@ Return the lifecycle result, including validation evidence, activation state, pr
     tools: createCapabilityManagerTools({
       approvalService,
       serviceFactory,
+      protocolBundleLoader,
     }),
   });
 }

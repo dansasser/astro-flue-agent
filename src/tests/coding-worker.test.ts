@@ -892,6 +892,52 @@ test('coding worker profile wires GitHub read context with a client and supports
   }
 });
 
+test('coding worker remains available when optional GitHub MCP connection fails', async () => {
+  const project = createWorkspaceProject();
+
+  try {
+    writeFileSync(join(project.repoPath, 'README.md'), '# available worker\n');
+    const subagent = await createCodingWorkerSubagent({
+      repoPath: project.repoPath,
+      env: {
+        GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+      },
+      connectGithubMcp: async () => {
+        throw new Error('upstream rejected secret-pat');
+      },
+    });
+
+    const readFile = getTool(subagent.tools ?? [], 'coding_repo_read_file');
+    const file = JSON.parse(await readFile.execute({ path: 'README.md' })) as {
+      content?: string;
+    };
+    assert.equal(file.content, '# available worker\n');
+
+    const readContext = getTool(
+      subagent.tools ?? [],
+      'coding_github_read_context',
+    );
+    const context = JSON.parse(
+      await readContext.execute({
+        owner: 'dansasser',
+        repo: 'sim-one-alpha',
+      }),
+    ) as {
+      actions: Array<{
+        payload: { available?: boolean; summary?: string };
+      }>;
+    };
+    assert.equal(context.actions[0]?.payload.available, false);
+    assert.match(
+      context.actions[0]?.payload.summary ?? '',
+      /GitHub MCP connection is unavailable/,
+    );
+    assert.doesNotMatch(JSON.stringify(context), /secret-pat/);
+  } finally {
+    rmrf(project.workspaceRoot);
+  }
+});
+
 test('GitHub tools read extended PR context and gate PR updates through approval service', async () => {
   const approvalService = createInMemoryCodingApprovalService();
   let updateCount = 0;

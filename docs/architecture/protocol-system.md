@@ -189,10 +189,13 @@ When the orchestrator delegates to the Coding Worker, it includes the parsed
 bundle in the delegated task. The worker lead applies
 `protocolBundle.protocols[].rules` to its bounded execution loop.
 
-Capability validation is fail-closed: authoring and manager validation tools
-require a complete parsed bundle, compile ordered directives before
-deterministic checks, and retain protocol ids and rules in their result
-evidence. Missing or malformed bundles cannot fall through to local policy.
+Capability validation is fail-closed. Coding Worker authoring tools require a
+complete parsed bundle. Capability-manager tools instead accept the persisted
+normalized message `eventId`, reload its applicable bundle from the SQLite
+provider in trusted application code, compile ordered directives before
+deterministic checks, and retain protocol ids and rules in result evidence.
+Missing events and malformed or mismatched bundles cannot fall through to
+local policy.
 
 ## Release Enforcement Contract
 

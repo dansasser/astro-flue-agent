@@ -20,6 +20,7 @@ import {
   createGithubGitCredentialEnv,
   readGithubPat,
 } from './github-pat.js';
+import { githubAnonymousCredentialOptions } from '../tools/github-credential-utils.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -61,6 +62,7 @@ export interface CodingWorkerGithubMcp {
   client?: GitHubClient;
   readTools: ToolDefinition[];
   githubGitEnv?: () => Promise<Record<string, string>>;
+  unavailableReason?: string;
   close(): Promise<void>;
 }
 
@@ -492,13 +494,17 @@ export class McpGitHubClient implements GitHubClient {
 
   private async runGit(args: string[], cwd: string): Promise<void> {
     const runner = this.options.gitRunner ?? defaultGitRunner;
-    await runner(args, { cwd });
+    await runner(args, {
+      cwd,
+      env: githubAnonymousCredentialOptions().env,
+    });
   }
 
   private async runGitWithAnonymousRetry(args: string[], cwd: string): Promise<void> {
     const runner = this.options.gitRunner ?? defaultGitRunner;
+    const anonymousEnv = githubAnonymousCredentialOptions().env;
     try {
-      await runner(args, { cwd });
+      await runner(args, { cwd, env: anonymousEnv });
       return;
     } catch (anonymousError) {
       if (!this.options.gitEnv) {
@@ -506,7 +512,10 @@ export class McpGitHubClient implements GitHubClient {
       }
       await runner(args, {
         cwd,
-        env: await this.options.gitEnv(),
+        env: {
+          ...anonymousEnv,
+          ...await this.options.gitEnv(),
+        },
       });
     }
   }
@@ -741,11 +750,31 @@ async function defaultGitRunner(
   return execFileAsync('git', args, {
     cwd: options.cwd,
     timeout: 120_000,
-    env: {
-      ...process.env,
-      ...options.env,
-    },
+    env: createGitProcessEnvironment(options.env),
   });
+}
+
+export function createGitProcessEnvironment(
+  explicitEnv: Record<string, string> | undefined,
+  inherited: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const environment = { ...inherited };
+  for (const key of Object.keys(environment)) {
+    if (
+      key === 'GITHUB_PERSONAL_ACCESS_TOKEN'
+      || key === 'GITHUB_TOKEN'
+      || key === 'GH_TOKEN'
+      || key === 'GH_CONFIG_DIR'
+      || key === 'GIT_ASKPASS'
+      || key.startsWith('GIT_CONFIG_')
+    ) {
+      delete environment[key];
+    }
+  }
+  return {
+    ...environment,
+    ...explicitEnv,
+  };
 }
 
 function safeErrorMessage(error: unknown, token: string): string {

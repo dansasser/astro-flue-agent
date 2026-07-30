@@ -112,8 +112,10 @@ capability database or managed capability directories.
 The `capability-manager` is the only built-in worker that owns
 agent-requested runtime capability lifecycle operations. Its typed tools cover
 list, inspect, validate, add, update, enable, disable, and remove. Validation
-and mutations require the applicable Protocol Tool bundle; mutations also
-require a current matching approval decision.
+and mutations require a persisted normalized message `eventId`; trusted
+application code reloads the applicable protocol bundle from SQLite instead of
+accepting model-authored protocol rules. Mutations also require a current
+matching approval decision.
 
 The manager and authenticated `sim-one` CLI call the same typed lifecycle
 service. The orchestrator routes requests and validates results but has no

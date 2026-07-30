@@ -15,8 +15,12 @@ import type {
   CapabilitySource,
 } from '../../../engine/capabilities/types.js';
 import type { ProtocolBundle } from '../../../core/types/index.js';
-import { protocolBundleSchema } from '../../../core/protocols/protocol-bundle-schema.js';
+import {
+  SqliteProtocolProvider,
+  defaultProtocolDatabasePath,
+} from '../../../core/protocols/sqlite-protocol-provider.js';
 import { compileCapabilityProtocolContext } from '../../../engine/capabilities/capability-protocol-context.js';
+import { createProtocolLookupEvent } from '../../../engine/tools/protocol-tool.js';
 import type { CodingApprovalService } from '../../../engine/workers/coding-worker/approvals/approval-service.js';
 import type { CodingApprovalActionType } from '../../../engine/workers/coding-worker/approvals/approval-types.js';
 
@@ -33,14 +37,19 @@ export type CapabilityLifecycleServiceFactory = (
   protocolBundle?: ProtocolBundle,
 ) => CapabilityLifecycleServiceSession;
 
+export type CapabilityProtocolBundleLoader = (
+  eventId: string,
+) => Promise<ProtocolBundle>;
+
 export interface CapabilityManagerToolsOptions {
   approvalService: CodingApprovalService;
   serviceFactory: CapabilityLifecycleServiceFactory;
+  protocolBundleLoader: CapabilityProtocolBundleLoader;
 }
 
 interface CapabilityToolInputArgs {
   taskId?: string;
-  protocolBundle: ProtocolBundle;
+  eventId: string;
   kind: CapabilityKind;
   id: string;
   name: string;
@@ -69,6 +78,27 @@ export function createDefaultCapabilityLifecycleServiceFactory(
       service: new CapabilityLifecycleService({ store, env, protocolBundle }),
       close: () => store.close(),
     };
+  };
+}
+
+export function createDefaultCapabilityProtocolBundleLoader(
+  env: Record<string, unknown> = process.env,
+): CapabilityProtocolBundleLoader {
+  return async (eventId) => {
+    const configuredDb =
+      typeof env.GOROMBO_PROTOCOL_DB_PATH === 'string'
+        ? env.GOROMBO_PROTOCOL_DB_PATH.trim()
+        : '';
+    const provider = new SqliteProtocolProvider(
+      resolveRuntimePath(configuredDb || defaultProtocolDatabasePath, { env }),
+    );
+    try {
+      return await provider.loadApplicable(
+        createProtocolLookupEvent({ eventId }),
+      );
+    } finally {
+      provider.close();
+    }
   };
 }
 
@@ -106,17 +136,23 @@ export function createCapabilityManagerTools(
       description:
         'Validate a proposed skill, tool, worker, or MCP capability source and metadata without changing the registry.',
       parameters: capabilityInputSchema(false),
-      execute: async (args) =>
-        withService(
+      execute: async (args) => {
+        const typedArgs = args as CapabilityToolInputArgs;
+        const protocolBundle = await loadTrustedProtocolBundle(
+          options.protocolBundleLoader,
+          typedArgs.eventId,
+        );
+        return withService(
           options.serviceFactory,
           (service) =>
             JSON.stringify(
-              service.validate(readAddInput(args as CapabilityToolInputArgs)),
+              service.validate(readAddInput(typedArgs)),
               null,
               2,
             ),
-          (args as CapabilityToolInputArgs).protocolBundle,
-        ),
+          protocolBundle,
+        );
+      },
     }),
     defineTool({
       name: 'capability_add',
@@ -128,7 +164,7 @@ export function createCapabilityManagerTools(
         const input = readAddInput(typedArgs);
         return executeApprovedMutation(options, {
           taskId: typedArgs.taskId,
-          protocolBundle: typedArgs.protocolBundle,
+          eventId: typedArgs.eventId,
           actionType: 'capability.add',
           kind: input.kind,
           id: input.id,
@@ -147,7 +183,7 @@ export function createCapabilityManagerTools(
         'Request approval to update and revalidate an existing runtime capability source or non-secret metadata.',
       parameters: v.object({
         taskId: v.string(),
-        protocolBundle: protocolBundleSchema(),
+        eventId: v.string(),
         kind: kindSchema,
         id: v.string(),
         name: v.optional(v.string()),
@@ -174,7 +210,7 @@ export function createCapabilityManagerTools(
         };
         return executeApprovedMutation(options, {
           taskId: args.taskId,
-          protocolBundle: args.protocolBundle as unknown as ProtocolBundle,
+          eventId: args.eventId,
           actionType: 'capability.update',
           kind: input.kind,
           id: input.id,
@@ -192,14 +228,14 @@ export function createCapabilityManagerTools(
         description: `Request approval to ${operation} one runtime capability.`,
         parameters: v.object({
           taskId: v.string(),
-          protocolBundle: protocolBundleSchema(),
+          eventId: v.string(),
           kind: kindSchema,
           id: v.string(),
         }),
         execute: async (args) =>
           executeApprovedMutation(options, {
             taskId: args.taskId,
-            protocolBundle: args.protocolBundle as unknown as ProtocolBundle,
+            eventId: args.eventId,
             actionType: `capability.${operation}`,
             kind: args.kind,
             id: args.id,
@@ -213,7 +249,7 @@ export function createCapabilityManagerTools(
 function capabilityInputSchema(withTaskId: boolean) {
   return v.object({
     ...(withTaskId ? { taskId: v.string() } : {}),
-    protocolBundle: protocolBundleSchema(),
+    eventId: v.string(),
     kind: kindSchema,
     id: v.string(),
     name: v.string(),
@@ -284,7 +320,7 @@ async function executeApprovedMutation(
   options: CapabilityManagerToolsOptions,
   input: {
     taskId: string;
-    protocolBundle: ProtocolBundle;
+    eventId: string;
     actionType: Extract<
       CodingApprovalActionType,
       'capability.add' | 'capability.update' | 'capability.enable' | 'capability.disable' | 'capability.remove'
@@ -299,7 +335,11 @@ async function executeApprovedMutation(
     run: (service: CapabilityLifecycleService) => unknown;
   },
 ): Promise<string> {
-  const protocolContext = compileCapabilityProtocolContext(input.protocolBundle);
+  const protocolBundle = await loadTrustedProtocolBundle(
+    options.protocolBundleLoader,
+    input.eventId,
+  );
+  const protocolContext = compileCapabilityProtocolContext(protocolBundle);
   const approval = await evaluateApproval({
     approvalService: options.approvalService,
     taskId: input.taskId,
@@ -359,8 +399,25 @@ async function executeApprovedMutation(
   return withService(
     options.serviceFactory,
     (service) => JSON.stringify(input.run(service), null, 2),
-    input.protocolBundle,
+    protocolBundle,
   );
+}
+
+async function loadTrustedProtocolBundle(
+  loader: CapabilityProtocolBundleLoader,
+  eventId: string,
+): Promise<ProtocolBundle> {
+  const trustedEventId = eventId.trim();
+  if (!trustedEventId) {
+    throw new Error('Capability lifecycle operations require a persisted eventId.');
+  }
+  const bundle = await loader(trustedEventId);
+  if (bundle.eventId !== trustedEventId) {
+    throw new Error(
+      `Trusted protocol bundle eventId mismatch: expected ${trustedEventId}.`,
+    );
+  }
+  return bundle;
 }
 
 function withService<T>(

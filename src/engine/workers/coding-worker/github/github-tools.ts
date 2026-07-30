@@ -27,6 +27,7 @@ import type {
 
 export interface CodingGitHubToolsOptions extends CodingWorkspaceTargetInput {
   client?: GitHubClient;
+  unavailableReason?: string;
   approvalService?: CodingApprovalService;
   reporter?: CodingProgressReporter;
   sandbox?: CodingSandboxRuntime;
@@ -80,7 +81,9 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             action: 'read_context',
             payload: {
               available: false,
-              summary: 'No GitHub client is attached to this worker run.',
+              summary:
+                options.unavailableReason
+                ?? 'No GitHub client is attached to this worker run.',
             },
           });
         }
@@ -135,7 +138,9 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             payload: {
               available: false,
               verified: false,
-              summary: 'No GitHub client is attached to this worker run.',
+              summary:
+                options.unavailableReason
+                ?? 'No GitHub client is attached to this worker run.',
             },
           });
         }

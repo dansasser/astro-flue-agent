@@ -110,6 +110,10 @@ test('Flue orchestrator routes research to the researcher instead of owning web 
   assert.match(config.instructions ?? '', /agent: "coding-worker"/);
   assert.match(config.instructions ?? '', /agent: "capability-manager"/);
   assert.match(config.instructions ?? '', /does not own direct capability mutation tools/i);
+  assert.match(
+    config.instructions ?? '',
+    /reload the applicable protocol bundle from trusted SQLite state/i,
+  );
   assert.match(config.instructions ?? '', /Do not call coding-worker internal subagents directly/);
   assert.match(config.instructions ?? '', /do not perform web search directly/i);
   assert.match(config.instructions ?? '', /depth: "deep"/);

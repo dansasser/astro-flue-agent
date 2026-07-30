@@ -102,8 +102,12 @@ implementation.
 
 All three surfaces use `CapabilityLifecycleService` for list, inspect,
 validate, add, update, enable, disable, and remove. Agent mutations require a
-current matching approval. Direct CLI commands are attributable to the
-authenticated user and do not accept model-supplied identity.
+current matching approval. The capability manager accepts only the persisted
+normalized message `eventId` as protocol context, reloads the applicable bundle
+from the SQLite protocol provider, and rejects missing or mismatched event
+state. It does not trust a model-authored protocol bundle. Direct CLI commands
+are attributable to the authenticated user and do not accept model-supplied
+identity.
 
 Enabled capability records are read when the orchestrator initializes. After a
 lifecycle change, restart the gateway through the process or service manager
