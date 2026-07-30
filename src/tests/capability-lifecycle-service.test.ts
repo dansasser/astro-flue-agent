@@ -52,7 +52,7 @@ test('capability lifecycle validates and manages all four capability kinds', () 
       id: 'mcp-fixture',
       name: 'MCP fixture',
       description: 'MCP connection fixture',
-      source: 'builtin',
+      source: 'local',
       sourceRef: 'mcp://mcp-fixture',
       version: null,
       requestedEnabled: false,
@@ -65,6 +65,7 @@ test('capability lifecycle validates and manages all four capability kinds', () 
     });
 
     assert.equal(mcp.record?.enabled, false);
+    assert.equal(mcp.record?.source, 'local');
     assert.equal(mcp.validation.valid, true);
     assert.equal(fixture.service.list().records.length, 4);
     assert.equal(fixture.service.inspect('worker', 'worker-fixture').record?.name, 'worker fixture');
@@ -119,7 +120,7 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
           id: 'bad-mcp-secret',
           name: 'Bad MCP',
           description: '',
-          source: 'builtin',
+          source: 'local',
           sourceRef: 'mcp://bad-mcp-secret',
           version: null,
           requestedEnabled: false,
@@ -139,7 +140,7 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
           id: 'bad-mcp-url-credentials',
           name: 'Bad MCP credentials',
           description: '',
-          source: 'builtin',
+          source: 'local',
           sourceRef: 'mcp://bad-mcp-url-credentials',
           version: null,
           requestedEnabled: false,

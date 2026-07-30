@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 54,
-  "context_version": "capability-protocol-validation:2026-07-29",
+  "graph_version": 55,
+  "context_version": "orchestrator-durable-workspace-routing:2026-07-29",
   "specification_root": "doc",
   "documents": [
     {

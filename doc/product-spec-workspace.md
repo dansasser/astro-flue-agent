@@ -23,6 +23,13 @@ state or miss packaged artifacts.
 7. Source builds do not package agent-created repositories or projects.
 8. Relative path overrides resolve against the runtime root, not the caller
    working directory.
+9. The main orchestrator does not expose Flue's ephemeral virtual filesystem or
+   shell tools as product capabilities.
+10. Durable file, repository, project, and handoff work is delegated to the
+    Coding Worker and verified under `<runtime-root>/workspace`.
+11. Runtime capability lifecycle work is delegated to `capability-manager`,
+    while the Coding Worker remains responsible for source authoring and
+    validation.
 
 ## Non-Goals
 

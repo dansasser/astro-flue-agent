@@ -7744,7 +7744,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 54,
+  "graph_version": 55,
   "nodes": [
     {
       "acceptance": [
@@ -8832,6 +8832,30 @@
           "evidence": "runtime:evidence/implement-agent-runtime/canonical-config-consumers.json",
           "id": "canonical-config-consumers",
           "kind": "test"
+        },
+        {
+          "criterion": "The main orchestrator replaces Flue's default virtual-sandbox tool surface with an explicit adapter that exposes no generic model-facing bash, read, write, edit, or filesystem mutation tools while retaining Flue task delegation, packaged-skill activation, and declared typed application tools.",
+          "evidence": "runtime:evidence/implement-agent-runtime/orchestrator-tool-surface.json",
+          "id": "orchestrator-scratch-tools-removed",
+          "kind": "test"
+        },
+        {
+          "criterion": "Every durable file, repository, generated-project, and handoff request is delegated to the Coding Worker and resolved below <runtime-root>/workspace; capability installation, activation, update, and removal requests are delegated to capability-manager.",
+          "evidence": "runtime:evidence/implement-agent-runtime/durable-routing-contract.json",
+          "id": "durable-work-delegated",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Product verification writes a probe through the Coding Worker workspace, reads the same bytes from the host, reopens the workspace after a runtime restart, repeats under a relocated .gorombo root, and proves that neither src/workspace nor <runtime-root>/sim-one-alpha/workspace receives runtime project writes.",
+          "evidence": "runtime:evidence/implement-agent-runtime/persistent-workspace-product-test.json",
+          "id": "persistent-workspace-product-proof",
+          "kind": "test"
+        },
+        {
+          "criterion": "Main-agent and Coding Worker TOOLS.md guidance distinguish persona source, packaged persona workspace, persistent Coding Worker workspace, and Flue virtual scratch storage and prohibit success claims without host-visible persistence evidence.",
+          "evidence": "runtime:evidence/implement-agent-runtime/workspace-guidance.json",
+          "id": "workspace-guidance-correct",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -8840,11 +8864,11 @@
         "timeout_minutes": 180
       },
       "executor": {
-        "instructions": "Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona workspace and default Coding Worker runtime access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.",
+        "instructions": "Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona source; <runtime-root>/sim-one-alpha/workspace as the packaged persona copy; <runtime-root>/workspace as the persistent Coding Worker access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Do not expose the main orchestrator to Flue's generic virtual-sandbox file or shell tools. Route durable file, repository, generated-project, and handoff work to the Coding Worker, and route runtime capability lifecycle work to capability-manager. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.",
         "kind": "agent",
         "name": "SIM-ONE Coding Worker lead"
       },
-      "goal": "Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while treating company-owned system instructions as read-only, preserving delegation ownership and capability isolation, and keeping the Coding Worker runtime access root separate.",
+      "goal": "Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while preventing ephemeral Flue sandbox storage from being represented as durable product storage and preserving delegation ownership and capability isolation.",
       "id": "implement-agent-runtime",
       "inputs": [
         {
@@ -8880,13 +8904,20 @@
           "src/workspace-loader.ts",
           "docs/architecture/flue-architecture.md",
           "docs/architecture/gorombo-flue-map.md",
+          "docs/architecture/worker-system.md",
+          "docs/reference/configuration.md",
+          "openwiki/architecture/runtime.md",
+          "openwiki/workflows/product-and-agent-workflows.md",
           "src/tests/architecture-contract.test.ts",
           "src/tests/workspace-loader.test.ts",
           "src/tests/coding-worker.test.ts",
           "src/tests/coding-worker-internal-subagents.test.ts",
           "src/tests/research-agent.test.ts",
+          "decision:d2-workspace-root-isolation",
+          "doc/decisions/d2-workspace-root-isolation.md",
           "decision:d5-canonical-runtime-configuration",
-          "doc/decisions/d5-canonical-runtime-configuration.md"
+          "doc/decisions/d5-canonical-runtime-configuration.md",
+          "flue-docs:guide/sandboxes"
         ],
         "write": [
           "src/agents/",
@@ -8896,6 +8927,8 @@
           "src/skills/",
           "src/engine/workers/",
           "src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan",
+          "scripts/ focused product verification assigned exclusively to this workstream",
+          "docs/ and openwiki/ files assigned exclusively to this workstream",
           "src/workspace-loader.ts"
         ]
       },
@@ -8906,7 +8939,7 @@
         "approval_required": true,
         "description": "Changes only approval-service-authorized files in the agent-runtime workstream.",
         "level": "reversible",
-        "rollback": "Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams."
+        "rollback": "Restore this workstream's files from the pre-change Git commit while preserving unrelated workstreams and the persistent runtime workspace."
       },
       "state": "planned",
       "tags": [
@@ -8917,7 +8950,9 @@
         "skills",
         "workers",
         "workspace-boundaries",
-        "delegation"
+        "delegation",
+        "sandbox",
+        "persistence"
       ],
       "title": "Implement Agent Runtime And Workspace Boundaries",
       "type": "work"
@@ -16439,7 +16474,7 @@
     }
   ],
   "project": {
-    "context_version": "capability-protocol-validation:2026-07-29",
+    "context_version": "orchestrator-durable-workspace-routing:2026-07-29",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

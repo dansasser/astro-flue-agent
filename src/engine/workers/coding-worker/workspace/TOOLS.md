@@ -26,6 +26,29 @@ Wired worker-local capability groups:
   `coding_capability_validate`, `coding_capability_test`, and
   `coding_capability_prepare_handoff`.
 
+## Durable Workspace
+
+The canonical host-backed access root is `<runtime-root>/workspace`.
+Repository, project, and handoff paths are relative to it:
+
+- repositories: `repos/<slug>`
+- non-repository projects: `projects/<slug>`
+- handoff notes and todo artifacts: `repos/handoffs/todos/<file>`
+
+Do not use or report `/home/user` as a SIM-ONE Alpha product path. That path can
+belong to Flue's ephemeral virtual sandbox and is not proof of host-visible or
+persistent storage.
+
+`src/workspace/` is main-agent persona source. The packaged
+`<runtime-root>/sim-one-alpha/workspace/` tree is its read-only runtime copy.
+Never create repositories, projects, handoffs, dependencies, or other mutable
+runtime artifacts in either persona tree.
+
+After writing a durable artifact, verify it through the host-backed worker
+sandbox and return its workspace-relative path, byte size, and digest or exact
+readback. When restart persistence is part of the request, recreate the worker
+sandbox and verify the same artifact again before reporting completion.
+
 ## Capability Authoring
 
 Load and apply the applicable Protocol Tool bundle before classification,

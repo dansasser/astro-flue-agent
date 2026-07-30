@@ -172,6 +172,57 @@ test('capability-manager rejects malformed protocols before creating approval re
   }
 });
 
+test('capability-manager stores MCP connections in the runtime capability registry', async () => {
+  const fixture = createFixture();
+  try {
+    const profile = createCapabilityManagerSubagent({
+      approvalService: fixture.approvalService,
+      serviceFactory: fixture.serviceFactory,
+    });
+    const add = getTool(profile.tools ?? [], 'capability_add');
+    const addArgs = {
+      taskId: 'runtime-mcp-registry',
+      protocolBundle: createProtocolBundle('runtime-mcp-registry'),
+      kind: 'mcp',
+      id: 'runtime-mcp',
+      name: 'Runtime MCP',
+      description: 'Runtime MCP registry fixture',
+      mcpUrl: 'https://mcp.example.test/api',
+      mcpTransport: 'streamable-http',
+    };
+
+    const pending = JSON.parse(await add.execute(addArgs)) as {
+      blocked: boolean;
+      request: { id: string };
+    };
+    assert.equal(pending.blocked, true);
+    await fixture.approvalService.recordDecision({
+      requestId: pending.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+
+    const added = JSON.parse(await add.execute(addArgs)) as {
+      record: { kind: string; source: string; enabled: boolean };
+      protocolContext: { directives: Array<{ id: string }> };
+    };
+    assert.equal(added.record.kind, 'mcp');
+    assert.equal(added.record.source, 'local');
+    assert.equal(added.record.enabled, false);
+    assert.ok(
+      added.protocolContext.directives.some(
+        (directive) => directive.id === 'capabilities.lifecycle-routing',
+      ),
+    );
+
+    const stored = fixture.serviceFactory().service.inspect('mcp', 'runtime-mcp').record;
+    assert.equal(stored?.source, 'local');
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 function createFixture() {
   const root = mkdtempSync(join(tmpdir(), 'sim-one-capability-manager-'));
   const runtimeRoot = join(root, '.gorombo');

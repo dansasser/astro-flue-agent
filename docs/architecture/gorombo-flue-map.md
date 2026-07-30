@@ -60,7 +60,7 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 
 | Path | Type | Ownership rule |
 | --- | --- | --- |
-| `src/workspace/` | Main agent workspace content | Source persona markdown copied read-only into the packaged main-agent workspace. It is not the Coding Worker sandbox. No TypeScript runtime code or model-created repositories belong here. |
+| `src/workspace/` | Main agent workspace content | Source persona markdown copied read-only into the packaged main-agent workspace. It is not the Coding Worker sandbox. The main orchestrator exposes no generic Flue virtual filesystem or shell tools; durable artifact work routes to the Coding Worker under `<runtime-root>/workspace`. No TypeScript runtime code or model-created repositories belong here. |
 
 ### `src/tests/` — test suite
 
@@ -78,7 +78,7 @@ Top-level non-`src/` directories:
 | `scripts/` | Build, smoke, and admin scripts. `package-runtime-dependencies.mjs` installs isolated production dependencies beside the Flue Node server. TUI-relevant scripts include `build-ratatui-tui.mjs`, `check-sim-one-product-command.mjs`, `test-ratatui-product.mjs`, `test-ratatui-interactive.py`, `test-ratatui-visible-final.py`, `test-tui-e2e.mjs`, `test-built-http.mjs`, and `capability-admin.mjs`. |
 | `docs/tui/` | User-facing TUI guides. Keep command and behavior descriptions aligned with `docs/architecture/tui-cli-session-flow.md`. |
 | `docs/operations/` | Operator runbooks for packaged runtime and connectors. `product-tui.md` owns packaged launch, runtime paths, env files, and smoke commands. |
-| `.gorombo/` | Movable packaged runtime root. Owns product binaries, root config/environment, packaged persona assets, mutable databases/capabilities/approvals/logs, Coding Worker state, and the separate `workspace/{repos,projects}` model-write boundary. |
+| `.gorombo/` | Movable packaged runtime root. Owns product binaries, root config/environment, packaged persona assets, mutable databases/capabilities/approvals/logs, Coding Worker state, and the separate host-visible, restart-persistent `workspace/{repos,projects}` model-write boundary. Flue virtual paths such as `/home/user` are not part of this tree. |
 
 Root source files:
 

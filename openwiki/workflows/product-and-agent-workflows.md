@@ -100,6 +100,12 @@ tests include:
 
 When changing coding behavior, check the worker workspace and approval paths before changing the main orchestrator.
 
+Durable files, repositories, projects, and handoff notes are Coding Worker
+operations. The worker resolves them under `<runtime-root>/workspace`, returns
+workspace-relative paths, and verifies writes through its host-backed Flue Node
+local sandbox. The main orchestrator intentionally has no generic virtual
+filesystem or shell tools; `/home/user` is not a durable product location.
+
 ## Capability management workflow
 
 Capabilities are managed by the `sim-one` CLI or the dedicated

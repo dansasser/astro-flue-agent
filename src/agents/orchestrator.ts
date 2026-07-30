@@ -1,7 +1,9 @@
 import {
   createAgent,
   type AgentRouteHandler,
+  type SandboxFactory,
 } from '@flue/runtime';
+import { local } from '@flue/runtime/node';
 import {
   assertPathInsideRuntimeRoot,
   createGoromboRuntimePaths,
@@ -84,6 +86,7 @@ export default createAgent(async ({ env }) => {
   });
   const capabilityManager = createCapabilityManagerSubagent({ env });
   const researcher = createResearcherSubagent();
+  const sandbox = createOrchestratorSandbox(runtimePaths.packagedServer);
 
   const builtInTools = [
     loadProtocolsTool,
@@ -139,8 +142,17 @@ export default createAgent(async ({ env }) => {
     skills: [greetingPreflight],
     tools: [...builtInTools, ...userTools],
     subagents: [...builtInSubagents, ...userSubagents],
+    cwd: runtimePaths.packagedServer,
+    sandbox,
   };
 });
+
+export function createOrchestratorSandbox(packagedServerRoot: string): SandboxFactory {
+  return {
+    ...local({ cwd: packagedServerRoot }),
+    tools: () => [],
+  };
+}
 
 /**
  * Creates the orchestrator compaction policy from the selected model card budget.

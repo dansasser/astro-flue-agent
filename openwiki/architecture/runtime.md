@@ -21,10 +21,17 @@ Do not put orchestration logic in `src/app.ts`. The local architecture contract 
 
 The orchestrator routes, loads protocols, retrieves memory when useful, delegates specialized work, and synthesizes responses. It should not directly own web research or coding execution. The runtime capability block in `src/agents/orchestrator.ts` is a useful source of truth for what is actually attached.
 
+The orchestrator explicitly replaces Flue's default virtual-sandbox tools with
+an empty tool list. Flue task delegation remains available, but generic
+filesystem and shell access does not. Consequently, virtual paths such as
+`/home/user` cannot be mistaken for persistent SIM-ONE Alpha storage.
+
 In a packaged build, the main persona is loaded from the read-only
 `<runtime-root>/sim-one-alpha/workspace/` copy. The Coding Worker receives the
 separate model-writable `<runtime-root>/workspace/` tree; source persona files
-are never its production repository root.
+are never its production repository root. Durable file, repository, project,
+and handoff requests route to the Coding Worker. Runtime capability lifecycle
+requests route to `capability-manager`.
 
 ## Workers and delegation
 
@@ -50,6 +57,11 @@ capabilities, approvals, logs, Coding Worker state, and
 `workspace/{repos,projects}`. Packaged executables derive it from their own
 location and pass `GOROMBO_RUNTIME_ROOT` to the gateway. Relative runtime paths
 never use the caller working directory.
+
+The Coding Worker workspace is host-visible and restart-persistent. Its
+workspace-relative paths remain valid when the complete `.gorombo` tree is
+relocated. Neither Flue's virtual filesystem nor the source or packaged persona
+workspace is a mutable product workspace.
 
 `src/core/config/runtime-environment.ts` is the typed registry for every
 supported environment-style setting. `src/app.ts` imports its bootstrap first,

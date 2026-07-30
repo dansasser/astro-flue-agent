@@ -159,6 +159,11 @@ try {
   assertOperation(addedMcp, 'add');
   assertProtocolValidation(addedMcp);
   assertRecord(addedMcp, 'mcp', 'product-mcp', false);
+  if (addedMcp.record?.source !== 'local') {
+    throw new Error(
+      `Packaged MCP add classified a runtime registry record as ${String(addedMcp.record?.source)} instead of local.`,
+    );
+  }
 
   for (const kind of ['skill', 'tool', 'worker', 'mcp']) {
     const inspected = runCli([kind, 'inspect', `product-${kind}`], env);

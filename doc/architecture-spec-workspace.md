@@ -38,6 +38,13 @@ runtimeRoot
 The Coding Worker receives only `codingWorkspace` as its default sandbox root.
 Application services receive only the typed runtime paths they own.
 
+The main orchestrator uses an explicit Flue sandbox factory with no generic
+model-facing filesystem or shell tools. This replaces Flue's default in-memory
+virtual sandbox tools while preserving task delegation. Durable artifact work
+is delegated to the Coding Worker, whose Node local sandbox is rooted at
+`codingWorkspace`. Runtime capability lifecycle work is delegated to
+`capability-manager`.
+
 ## Packaged Launch
 
 The Rust TUI and product CLI derive the owner tree from their executable path.
@@ -57,6 +64,11 @@ The source persona directory is copied to
 `sim-one-alpha/workspace/` with `repos/`, `projects/`, dependency trees, and
 other runtime-created content excluded. Mutable data is never copied into a
 release archive as user state.
+
+An existing source-created repository or handoff artifact is preserved by
+copying it into the matching `codingWorkspace` path and verifying source and
+destination contents before treating the runtime copy as authoritative. Source
+cleanup is a separate, explicit operation.
 
 ## Compatibility
 

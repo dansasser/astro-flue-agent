@@ -44,3 +44,24 @@ root. Invalid or ambiguous roots fail closed with a useful error.
 
 Tests cover POSIX and Windows path forms and use the same platform-specific
 product filenames as the build.
+
+## ACC-ROOT-009: No Ephemeral Orchestrator Storage
+
+The initialized orchestrator replaces Flue's generic virtual filesystem and
+shell tool set with an empty model-facing sandbox tool list. Task delegation,
+declared orchestration tools, skills, and registered workers remain available.
+
+## ACC-ROOT-010: Durable Worker Write
+
+In a relocated temporary runtime tree, the Coding Worker writes an artifact
+under `workspace/repos/handoffs/todos/`. The host reads the same bytes, a
+recreated worker sandbox reads the same bytes, and neither `src/workspace/` nor
+`sim-one-alpha/workspace/` receives mutable content.
+
+## ACC-ROOT-011: Agent Routing Guidance
+
+Main-agent instructions route durable file, repository, project, and handoff
+work to `agent: "coding-worker"` and runtime capability lifecycle work to
+`agent: "capability-manager"`. Coding Worker instructions define
+`<runtime-root>/workspace` as the only mutable workspace root and explicitly
+reject `/home/user` and persona directories as durable locations.

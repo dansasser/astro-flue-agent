@@ -67,6 +67,14 @@ An agent file is a Flue `createAgent(...)` entrypoint. Every agent has a main fi
 
 The main agent entrypoint lives at `src/agents/orchestrator.ts`. Subagent implementations live under `src/engine/workers/<name>/` so they do not sit at the same directory level as the main agent. The main agent workspace lives at `src/workspace/`; subagent workspaces live at `src/engine/workers/<name>/workspace/`.
 
+The main orchestrator replaces Flue's default virtual-sandbox tool set with an
+empty sandbox tool list. This prevents ephemeral virtual paths such as
+`/home/user` from being mistaken for durable product storage while preserving
+Flue task delegation. Durable file, repository, project, and handoff work is
+delegated to the Coding Worker, whose local sandbox is rooted at
+`<runtime-root>/workspace`. Runtime capability lifecycle mutations are
+delegated separately to `capability-manager`.
+
 Agents own:
 
 ```text

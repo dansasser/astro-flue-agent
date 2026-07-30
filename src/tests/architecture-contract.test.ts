@@ -141,6 +141,48 @@ test('Flue orchestrator defaults coding-worker workspace to the canonical runtim
   assert.ok(repoTool);
 });
 
+test('Flue orchestrator replaces virtual sandbox tools with delegation-only tools', async () => {
+  const runtimeRoot = join(mkdtempSync(join(tmpdir(), 'orchestrator-sandbox-')), '.gorombo');
+  try {
+    const config = await orchestratorAgent.initialize({
+      id: 'architecture-contract-orchestrator-sandbox',
+      env: {
+        ...createModelEnv(),
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
+      },
+      payload: undefined,
+    });
+
+    assert.ok(config.sandbox);
+    assert.equal(config.cwd, join(runtimeRoot, 'sim-one-alpha'));
+    assert.equal(typeof config.sandbox.tools, 'function');
+    assert.deepEqual(
+      config.sandbox.tools?.({} as never, { subagents: {} }).map((tool) => tool.name),
+      [],
+    );
+  } finally {
+    rmSync(join(runtimeRoot, '..'), { recursive: true, force: true });
+  }
+});
+
+test('workspace instructions route durable artifacts through the Coding Worker', () => {
+  const mainTools = readText('src/workspace/TOOLS.md');
+  const codingWorkerTools = readText(
+    'src/engine/workers/coding-worker/workspace/TOOLS.md',
+  );
+
+  assert.match(mainTools, /Flue's\s+default virtual sandbox[\s\S]*is ephemeral/i);
+  assert.match(mainTools, /agent: "coding-worker"/);
+  assert.match(mainTools, /<runtime-root>\/workspace/);
+  assert.match(mainTools, /agent: "capability-manager"/);
+  assert.match(codingWorkerTools, /<runtime-root>\/workspace/);
+  assert.match(codingWorkerTools, /repos\/handoffs\/todos/);
+  assert.match(codingWorkerTools, /host-visible/i);
+  assert.match(codingWorkerTools, /src\/workspace/);
+  assert.match(codingWorkerTools, /sim-one-alpha\/workspace/);
+});
+
 test('coding worker owns its workspace-backed lead profile', async () => {
   const workspaceRoot = mkdtempSync(join(tmpdir(), 'coding-worker-workspace-'));
   const approvalRoot = mkdtempSync(join(tmpdir(), 'coding-worker-approvals-'));

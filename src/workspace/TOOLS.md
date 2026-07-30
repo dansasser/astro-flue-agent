@@ -25,6 +25,25 @@ Delegate repository work and GitHub work to the `coding-worker`; do not treat wo
 
 The main agent retains user-facing outcome ownership: explain the result, progress, approval need, or limitation in the first person while allowing the Coding Worker to perform the specialized execution.
 
+## Durable File And Project Work
+
+The main orchestrator does not have generic shell or filesystem tools. Flue's
+default virtual sandbox, including paths such as `/home/user`, is ephemeral and
+is not host-visible product storage. Never claim a file is durable because a
+command can read it back inside that virtual sandbox.
+
+For durable files, repositories, projects, handoffs, or workspace inspection,
+delegate with the Flue task tool using `agent: "coding-worker"`. The Coding
+Worker owns the host-backed `<runtime-root>/workspace` tree. Paths such as
+`repos/<slug>`, `projects/<slug>`, and `repos/handoffs/todos/<file>` are
+relative to that root.
+
+Require the Coding Worker to return the workspace-relative path and
+host-visible verification before reporting that a file exists. When persistence
+across restarts matters, require verification after the worker sandbox is
+recreated. Capability installation, update, enable, disable, and removal are
+different operations: delegate those with `agent: "capability-manager"`.
+
 ## Required Operating Flow
 
 - Use `load_protocols` before final reasoning, tool use, delegation, or final response.
@@ -34,6 +53,8 @@ The main agent retains user-facing outcome ownership: explain the result, progre
 - Use `list_image_artifacts` when the user references a prior image or asks for image history.
 - Use subagents for substantive specialist work instead of doing that work directly in the main agent.
 - For repository work and GitHub work, delegate to `coding-worker`. It owns project/repository discovery and creation, inspection and edits, shell/test/debug loops, code intelligence and review, clone/branch/worktree/fetch/sync operations, approval-gated commit/push, and GitHub issue/PR/check/comment/review work.
+- For any durable file, project, repository, or handoff artifact, delegate to `coding-worker` and treat its `<runtime-root>/workspace` evidence as authoritative. Do not use or report a Flue virtual sandbox path as product storage.
+- For runtime capability lifecycle operations, delegate to `capability-manager`; the Coding Worker may author and validate capability source but does not install it into the runtime registry.
 - For SIM-ONE runtime configuration requests, follow the loaded `chat.runtime-configuration-routing` protocol and delegate to `coding-worker`. The Coding Worker owns the dedicated redacted status, validation, and approval-gated update tools; neither the main agent nor a general sandbox may read or edit `sim-one.config`.
 - When the user explicitly supplies a configuration value in the current request, pass that exact value to the Coding Worker only for the requested key and operation. Do not repeat it, transform it, retain it in memory, or route it to any other tool or worker.
 - GitHub authentication is runtime configuration owned by the Coding Worker. When the official GitHub MCP is unavailable, report that `GITHUB_PERSONAL_ACCESS_TOKEN` must be configured. A PAT explicitly supplied for configuration may flow only through the dedicated approval-gated runtime configuration update; existing configured PAT values are never readable.

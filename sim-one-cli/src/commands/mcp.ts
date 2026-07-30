@@ -101,7 +101,7 @@ function createInput(
     id,
     name,
     description,
-    source: 'builtin',
+    source: 'local',
     sourceRef: `mcp://${id}`,
     version: null,
     requestedEnabled: enable,

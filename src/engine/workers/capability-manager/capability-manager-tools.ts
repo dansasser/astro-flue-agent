@@ -244,7 +244,7 @@ function readAddInput(args: {
     id: args.id,
     name: args.name,
     description: args.description ?? '',
-    source: args.source ?? (isMcp ? 'builtin' : 'local'),
+    source: args.source ?? 'local',
     sourceRef: args.sourceRef ?? (isMcp ? `mcp://${args.id}` : ''),
     version: args.version || null,
     requestedEnabled: args.requestedEnabled ?? args.kind === 'skill',

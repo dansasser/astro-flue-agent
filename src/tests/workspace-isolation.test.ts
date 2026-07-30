@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findAbsolutePathOutsideWorkspace } from '../engine/workers/coding-worker/tools/sandbox-runtime.js';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  createFlueLocalCodingSandbox,
+  findAbsolutePathOutsideWorkspace,
+} from '../engine/workers/coding-worker/tools/sandbox-runtime.js';
+import { resolveCodingWorkerWorkspaceRoot } from '../engine/workers/coding-worker/coding-worker.js';
 
 test('findAbsolutePathOutsideWorkspace: rejects absolute path outside workspace root', () => {
   const result = findAbsolutePathOutsideWorkspace(
@@ -48,4 +55,33 @@ test('findAbsolutePathOutsideWorkspace: catches path after semicolon', () => {
     '/root/.gorombo/workspace',
   );
   assert.equal(result, '/etc/passwd');
+});
+
+test('coding workspace persists across sandbox recreation under a relocated runtime root', async () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'coding-workspace-persistence-'));
+  const runtimeRoot = join(fixture, 'portable-install', '.gorombo');
+  const sourceWorkspace = join(fixture, 'source', 'src', 'workspace');
+  const packagedPersonaWorkspace = join(runtimeRoot, 'sim-one-alpha', 'workspace');
+  const workspaceRoot = resolveCodingWorkerWorkspaceRoot({
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
+  });
+  const relativeProbe = 'repos/handoffs/todos/persistence-probe.md';
+  const content = 'persistent coding workspace probe\n';
+
+  try {
+    const firstSandbox = await createFlueLocalCodingSandbox({ workspaceRoot });
+    await firstSandbox.writeWorkspaceFile(relativeProbe, content);
+
+    assert.equal(
+      readFileSync(join(workspaceRoot, relativeProbe), 'utf8'),
+      content,
+    );
+
+    const restartedSandbox = await createFlueLocalCodingSandbox({ workspaceRoot });
+    assert.equal(await restartedSandbox.readWorkspaceFile(relativeProbe), content);
+    assert.equal(existsSync(join(sourceWorkspace, 'repos')), false);
+    assert.equal(existsSync(join(packagedPersonaWorkspace, 'repos')), false);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
 });
