@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import test from 'node:test';
 import {
   copyRuntimeEnvironmentFiles,
@@ -164,6 +164,19 @@ test('source scripts replace registered shell settings from sim-one.config', () 
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
+});
+
+test('CI builds the Ratatui product smoke with canonical owner configuration', () => {
+  const workflow = readFileSync(resolve('.github/workflows/ci.yml'), 'utf8');
+  const ratatuiStep = workflow.match(
+    /      - name: Ratatui TUI product smoke\n[\s\S]*?(?=\n      - name: )/,
+  )?.[0];
+
+  assert.match(workflow, /- name: Create CI runtime configuration/);
+  assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
+  assert.match(workflow, /chmod 600 sim-one\.config/);
+  assert.ok(ratatuiStep, 'Ratatui product smoke step is missing');
+  assert.doesNotMatch(ratatuiStep, /GOROMBO_TEST_MODE/);
 });
 
 test('script sanitization covers every documented compatibility alias', () => {
