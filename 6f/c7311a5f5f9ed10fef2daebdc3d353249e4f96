@@ -1,0 +1,33 @@
+tui/ratatui/src/main.rs
+  s_a81fff26d52223::t_ba600b00e06e58 275-277
+.github/workflows/ci.yml
+  s_a81fff26d52223::t_222f7cd2155083 76-78
+tui/ratatui/src/gateway.rs
+  s_a81fff26d52223::t_69d8667c3fa0b7 94-98
+scripts/test-ratatui-product.mjs
+  s_a81fff26d52223::t_993844f526c796 166,1019-1021,1026-1033
+  s_a81fff26d52223::t_222f7cd2155083 86,88-89,167
+  s_a81fff26d52223::t_c8a7008906124b 176
+  s_a81fff26d52223::t_ff3f37b83a509f 85,87,173-175,177
+  s_a81fff26d52223::t_8a51d327a7113c 1034-1035
+scripts/runtime-configuration-files.test.mjs
+  s_a81fff26d52223::t_8f4c2e7d95ece0 169,171-174,183-189,199
+  s_a81fff26d52223::t_ff3f37b83a509f 190-198
+  s_a81fff26d52223::t_c8a7008906124b 200-203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "6fc7311a5f5f9ed10fef2daebdc3d353249e4f96",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
