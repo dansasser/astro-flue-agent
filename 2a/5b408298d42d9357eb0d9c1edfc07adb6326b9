@@ -1,0 +1,68 @@
+src/tests/capability-lifecycle-service.test.ts
+  s_a81fff26d52223::t_6cc1e7f5cb92b2 55,123,143
+  s_a81fff26d52223::t_862a8bd540bd46 68
+scripts/test-capability-product.mjs
+  s_a81fff26d52223::t_6cc1e7f5cb92b2 162-166
+specification-manifest.json
+  s_a81fff26d52223::t_9fba537cf8993d 4-5
+sim-one-cli/src/commands/mcp.ts
+  s_a81fff26d52223::t_72b6b892778d92 104
+openwiki/workflows/product-and-agent-workflows.md
+  s_a81fff26d52223::t_064e8308af8a8d 103-108
+openwiki/architecture/runtime.md
+  s_a81fff26d52223::t_064e8308af8a8d 24-28,32-34,61-64
+  s_a81fff26d52223::t_d601ed4da1a150 65
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_3b6930becd018d 4,6,89,145-146,150-155
+  s_a81fff26d52223::t_cd2223841bd751 156
+docs/architecture/worker-system.md
+  s_a81fff26d52223::t_064e8308af8a8d 84-92
+docs/architecture/flue-architecture.md
+  s_a81fff26d52223::t_064e8308af8a8d 70-77
+src/tests/workspace-isolation.test.ts
+  s_a81fff26d52223::t_ab2ba6e8f94ad5 3-10,58-87
+src/engine/workers/coding-worker/workspace/TOOLS.md
+  s_a81fff26d52223::t_6057bdf0044ee1 29-51
+doc/acceptance-spec-workspace.md
+  s_a81fff26d52223::t_064e8308af8a8d 47-67
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_064e8308af8a8d 63,81
+doc/graph-mutations/enforce-orchestrator-durable-workspace-routing.json
+  s_a81fff26d52223::t_0feef21376a6d1 210-211
+  s_a81fff26d52223::t_cbfd8482779fb6 1-209,212
+src/workspace/TOOLS.md
+  s_a81fff26d52223::t_6057bdf0044ee1 28-46,56-57
+src/engine/workers/capability-manager/capability-manager-tools.ts
+  s_a81fff26d52223::t_72b6b892778d92 247
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_ab2ba6e8f94ad5 144-168
+  s_a81fff26d52223::t_86c17f7350ef90 169-174,176-185
+  s_a81fff26d52223::t_fc089ba5d41468 175
+doc/product-spec-workspace.md
+  s_a81fff26d52223::t_064e8308af8a8d 26-32
+src/tests/capability-manager.test.ts
+  s_a81fff26d52223::t_6cc1e7f5cb92b2 175-225
+doc/architecture-spec-workspace.md
+  s_a81fff26d52223::t_064e8308af8a8d 41-47,68-71
+  s_a81fff26d52223::t_7633c5bad928bc 72
+development-graph.json
+  s_a81fff26d52223::t_b18e763b9e5b4c 7747,8835-8858,8867,8871,8907-8910,8916-8917,8919-8920,8930-8931,8942,8953-8955,16477
+development-graph.md
+  s_a81fff26d52223::t_2cc5297dcf72a8 1,12,17,21,762,1634-1635,1638,1641,1653-1656
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "2a5b408298d42d9357eb0d9c1edfc07adb6326b9",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
