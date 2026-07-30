@@ -16,7 +16,7 @@ Tools are not protocols, skills, workers, or registries:
 
 | Layer | Registration | Examples |
 | --- | --- | --- |
-| Product built-ins | Explicit imports and the owning agent's `tools` array | Protocol lookup, memory, schedules, capability administration, image generation |
+| Product built-ins | Explicit imports and the owning agent's `tools` array | Protocol lookup, memory, schedules, image generation |
 | Worker-local tools | Explicitly attached by a worker profile | Coding repository, shell, verification, approval, and GitHub tools |
 | Runtime tools | Enabled SQLite capability records loaded with dynamic `import()` | User- or agent-added `defineTool(...)` modules |
 | MCP tools | Returned by built-in or runtime MCP connections and attached to an owner | Astro Docs MCP and enabled user MCP servers |
@@ -38,7 +38,6 @@ capabilities, including:
 - schedules;
 - image generation and artifact recording;
 - Telegram replies;
-- runtime capability administration;
 - MCP tools attached to the orchestrator.
 
 The orchestrator does not own web search or Coding Worker repository tools.
@@ -55,6 +54,27 @@ The Coding Worker lead owns repository, file, shell, test, Git, GitHub,
 approval, schedule, memory-task, and code-intelligence tools. Internal coding
 subagents receive only the tools assigned by the Coding Worker lead and are not
 exposed to the orchestrator.
+
+It also owns the dedicated canonical runtime configuration tools. These tools
+provide redacted status and validation plus one-key approval-gated atomic
+updates. They do not expose existing values to the model or general sandbox. A
+secret set accepts only a value explicitly supplied by the user for the current
+request and returns no value-bearing output.
+
+The Coding Worker also owns `coding_capability_classify`,
+`coding_capability_scaffold`, `coding_capability_validate`,
+`coding_capability_test`, and `coding_capability_prepare_handoff`. These tools
+require protocol context for classification and validation and cannot mutate
+the runtime capability registry.
+
+### Capability Manager
+
+The capability manager owns `capability_list`, `capability_inspect`,
+`capability_validate`, `capability_add`, `capability_update`,
+`capability_enable`, `capability_disable`, and `capability_remove`. The
+orchestrator does not own these tools. Manager validation and mutations require
+the applicable Protocol Tool bundle, and mutations additionally pass through
+the shared approval service.
 
 ## Built-In Registration
 
@@ -76,7 +96,7 @@ attach tools to an agent.
 Runtime-added tools follow this path:
 
 ```text
-sim-one CLI or agent capability tool
+sim-one CLI or capability-manager
 -> validate id and cross-kind collisions
 -> write disabled or enabled SQLite record
 -> materialize source under <configured-capability-directory>/tools/<id>/
@@ -92,7 +112,8 @@ export, or named exports that resolve to Flue tool definitions. A failed import
 or invalid export is reported and omitted rather than granting a partially
 loaded capability.
 
-The configured capability directory defaults to `~/.gorombo/capabilities/`.
+The configured capability directory defaults to
+`<runtime-root>/capabilities/`.
 `GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
 fallback override.
 

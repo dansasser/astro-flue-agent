@@ -23,7 +23,7 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 
 | Path | Type | Ownership rule |
 | --- | --- | --- |
-| `src/core/config/` | Runtime configuration | Typed config loaders and shipped runtime config source files. |
+| `src/core/config/` | Runtime configuration | Typed config loaders, the canonical `.gorombo` runtime-root resolver, and shipped non-secret config source files. |
 | `src/core/models/` | Model subsystem | Model cards, provider registration, model registry, limits, and runtime bootstrap. |
 | `src/core/protocols/` | Protocol storage/access subsystem | Protocol schemas and provider implementations used by protocol tools. |
 | `src/core/schemas/` | Shared runtime schemas | Valibot schemas for structured-output contracts and cross-subsystem data shapes. Each domain owns a file here when its schemas are reused outside a single file. `memory.ts` is the source of truth for the Rust Memory Helper record/input shapes. Imported by `src/core/types/` and worker type contracts; kept separate so type-only consumers do not pull in schema runtime code. |
@@ -45,7 +45,7 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 | Path | Type | Ownership rule |
 | --- | --- | --- |
 | `src/engine/approvals/` | Shared approval subsystem | Approval service factory and ingress types shared by the coding worker and connectors/HTTP/CLI surfaces. |
-| `src/engine/capabilities/` | Runtime capability registry subsystem | SQLite-backed user/agent-added capability store (skills, tools, workers, MCP). `capability-store.ts` owns CRUD; `capability-loader.ts` reads enabled rows at orchestrator init; `skill-materializer.ts` copies/github-clones user skill dirs into Flue's discovery path; `mcp-broker.ts` connects MCP servers and returns tools. Loaded at `createAgent(...)` init in `src/agents/orchestrator.ts`. See `scripts/capability-admin.mjs` for CLI admin. |
+| `src/engine/capabilities/` | Runtime capability registry subsystem | SQLite-backed runtime store plus the shared protocol-routed lifecycle service, exact source materialization, rollback, loaders, and MCP broker. `sim-one` and `capability-manager` share this service. |
 | `src/engine/commands/` | Pre-LLM command parsing | Slash command definitions and parsing that run before prompts reach the LLM. |
 | `src/engine/embeddings/` | Bundled local embedding model | In-process ONNX + tokenizer path used by the RAG embedding fallback. |
 | `src/engine/memory/` | Shared memory subsystem | Memory retrieval interfaces and routing shared by agents/tools/workflows. Hosts `rust-memory-engine.ts`, the TypeScript shim for the `gorombo-memory` WASM engine (structured memory: checklists, todos, session notes), and `checklist-memory-provider.ts`, the structured-memory RAG provider. Also hosts `knowledge-service.ts` (the shared service module folded in from the removed `src/services/` directory). |
@@ -60,7 +60,7 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 
 | Path | Type | Ownership rule |
 | --- | --- | --- |
-| `src/workspace/` | Main agent workspace content | User-editable persona markdown for the main agent. Also the default coding-worker sandbox root; code work lives under `repos/` and non-git projects under `projects/` inside this directory. No TypeScript runtime code belongs here. |
+| `src/workspace/` | Main agent workspace content | Source persona markdown copied read-only into the packaged main-agent workspace. It is not the Coding Worker sandbox. No TypeScript runtime code or model-created repositories belong here. |
 
 ### `src/tests/` — test suite
 
@@ -75,9 +75,10 @@ Top-level non-`src/` directories:
 | `crates/gorombo-memory/` | Rust engine compiled to WebAssembly via `wasm-pack`. Owns the structured-memory data model, validation (scope non-empty, slug uniqueness, checklist cycle/depth), the in-memory inverted index, and the query planner. Never exposed to the model or agents directly — only via `src/engine/memory/rust-memory-engine.ts`. The TypeScript shim generates ids/timestamps/audit fields (Rust owns no clock/RNG in the WASM target) and passes fully-formed records to the WASM exports. The WASM module keeps a `thread_local` store hydrated by `reconcile_index` from the durable SQLite store on cold start. |
 | `sim-one-cli/` | Product command wrapper. Owns `sim-one` command routing, capability subcommands, and the legacy `--ink` fallback. No-argument `sim-one` launches the packaged Ratatui binary instead of owning terminal UI state itself. |
 | `tui/ratatui/` | Production local terminal client. Owns typed gateway-history loading, one semantic replay/live transcript document, root-only assistant stream consolidation, paged prepend with stable viewport anchors, assistant Markdown-to-terminal rendering, semantic transcript-row formatting, the responsive two-column transcript margin, bold prefix-only color accents, the centralized terminal palette, Unicode display-width-aware word wrapping and vertical cursor movement for transcript/prompt rows, pane-aware mouse routing, logical transcript and prompt selection, OSC52 clipboard handoff, clickable/scrollable slash-command drop-up, draggable transcript scrollbar, multiline prompt editing (including local `\` then Enter newline insertion), the product/explicit-session-name transcript header, explicit session-label status synchronization, immediate display of root Flue `text_delta`/`message_end`, full-range HTTP-result reconciliation, frame-level transcript live-tail enforcement, the virtual blank tail margin, TUI-local slash commands, gateway launch/reuse, stream attach/restart, and the packaged `sim-one-ratatui-tui` binary. Nested worker response payloads remain internal to the orchestrator. It is a connector surface, not an agent runtime and never reads runtime databases directly. |
-| `scripts/` | Build, smoke, and admin scripts. TUI-relevant scripts include `build-ratatui-tui.mjs`, `check-sim-one-product-command.mjs`, `test-ratatui-product.mjs`, `test-ratatui-interactive.py`, `test-ratatui-visible-final.py`, `test-tui-e2e.mjs`, `test-built-http.mjs`, and `capability-admin.mjs`. |
+| `scripts/` | Build, smoke, and admin scripts. `package-runtime-dependencies.mjs` installs isolated production dependencies beside the Flue Node server. TUI-relevant scripts include `build-ratatui-tui.mjs`, `check-sim-one-product-command.mjs`, `test-ratatui-product.mjs`, `test-ratatui-interactive.py`, `test-ratatui-visible-final.py`, `test-tui-e2e.mjs`, `test-built-http.mjs`, and `capability-admin.mjs`. |
 | `docs/tui/` | User-facing TUI guides. Keep command and behavior descriptions aligned with `docs/architecture/tui-cli-session-flow.md`. |
 | `docs/operations/` | Operator runbooks for packaged runtime and connectors. `product-tui.md` owns packaged launch, runtime paths, env files, and smoke commands. |
+| `.gorombo/` | Movable packaged runtime root. Owns product binaries, root config/environment, packaged persona assets, mutable databases/capabilities/approvals/logs, Coding Worker state, and the separate `workspace/{repos,projects}` model-write boundary. |
 
 Root source files:
 
@@ -150,7 +151,10 @@ tui/ratatui/src/diagnostics.rs
 
 tui/ratatui/src/gateway.rs
   Packaged gateway launcher.
-  Resolves server/env/config paths, checks /health, starts `.gorombo/sim-one-alpha/server.mjs` when needed, sets the child cwd to the owner of the `.gorombo` runtime tree, and stops only a child process it started.
+  Derives the owning `.gorombo` tree from the executable, resolves
+  `sim-one-alpha/server.mjs` and root `gorombo.config.json`, checks /health,
+  starts the server with that root as cwd and
+  `GOROMBO_RUNTIME_ROOT`, and stops only a child process it started.
 
 tui/ratatui/src/agent.rs
   TUI HTTP client.
@@ -263,7 +267,9 @@ src/engine/workers/coding-worker/coding-worker.ts
   Coding worker lead subagent profile.
   Owns coding-worker instructions, worker-local GitHub tools, coding-process skills, approval-aware side-effect boundaries, public progress event rules, and worker-local internal subagent profiles.
   The main orchestrator delegates coding work only to this lead profile.
-  Receives the configured runtime workspace root from the orchestrator and passes it to worker-owned tools.
+  Receives `<runtime-root>/workspace` from the orchestrator and passes it to worker-owned tools.
+  Connects the official GitHub MCP through Flue when the trusted runtime PAT is configured.
+  Attaches selected read-only MCP tools and keeps GitHub mutations behind SIM-ONE approval wrappers.
 
 src/engine/workers/coding-worker/workspace/
   Coding worker user-editable workspace persona files.
@@ -278,7 +284,7 @@ src/engine/workers/coding-worker/tools/
   Worker-local workspace/project, shell, git, GitHub, and approval-aware execution tools.
   Includes the LSP code-intelligence tools under `src/engine/workers/coding-worker/tools/code-intelligence/lsp/`.
   File/shell/git/test execution is backed by Flue's Node local sandbox factory.
-  The sandbox is rooted at the configured runtime workspace root. By default this root is `src/workspace/` (the main agent persona workspace). User-editable workspace files live at that root; non-git projects live under `projects/**`; repositories live under `repos/**`.
+  The sandbox is rooted at `<runtime-root>/workspace`, separate from the packaged main-agent persona. Non-git projects live under `projects/**`; repositories live under `repos/**`.
   The coding worker must create or resolve new project work under that runtime workspace root.
   The main orchestrator does not own these tools directly.
 
@@ -296,24 +302,48 @@ src/engine/commands/
   Commands are application machinery; they are not sent to the LLM as prompts.
 
 src/core/config/
-  Typed loader and source JSON for the main SIM-ONE Alpha runtime config file.
+  Typed loader, canonical runtime-root resolver, and source JSON for the main
+  SIM-ONE Alpha runtime config file. Relative operational paths resolve under
+  the one owning `.gorombo` tree, never the caller working directory.
 
-.gorombo/sim-one-alpha/gorombo.config.json
+src/core/config/runtime-environment.ts
+  Authoritative typed registry, parser, validator, migration, redacted status,
+  and atomic owner-file update implementation for every supported
+  environment-style setting. The Coding Worker may write a user-supplied
+  secret only through its dedicated approval-gated tool; existing values are
+  never readable through that tool or the general worker sandbox.
+
+src/core/config/runtime-environment-bootstrap.ts
+  Side-effect bootstrap imported first by `src/app.ts`. Loads the owning
+  `sim-one.config` before Flue, providers, connectors, workers, stores,
+  schedules, and other runtime consumers initialize.
+
+sim-one.config.example
+  Tracked secret-free key catalog generated and reviewed against the typed
+  registry. The ignored owner `sim-one.config` is copied into local runtime
+  builds but is never a public package input.
+
+.gorombo/gorombo.config.json
   Built editable runtime config shipped with the product. Starts with primary and backup model card keys.
+
+.gorombo/sim-one.config.example
+  Runtime repair/onboarding template. A trusted local build also has
+  owner-only `.gorombo/sim-one.config`; public packages exclude that file.
+
+.gorombo/sim-one-alpha/node_modules/
+  Isolated production dependencies for the packaged Flue Node server.
+  Generated by scripts/package-runtime-dependencies.mjs so the server does not
+  resolve packages from the source checkout.
 
 src/workflows/research.ts
   Finite direct research harness for testing or direct research runs.
   Initializes the researcher.
 
-src/workflows/github-auth.ts
-  Finite internal workflow for Coding Worker managed GitHub auth.
-  Requires matching request-local trusted event context, shares the worker auth runtime, returns no device code, and never waits for browser completion.
-  Exports no public route until durable event-scoped workflow admission exists.
-
-src/api/ingress/github-auth-challenge-relay.ts
-  One-time, audience-bound delivery for GitHub browser challenges. See
-  `docs/architecture/github-auth-system.md` for private connector delivery and
-  lease semantics.
+src/engine/workers/coding-worker/github/
+  Coding Worker-owned official GitHub MCP connection, PAT isolation,
+  anonymous-first Git credential fallback, typed GitHub client, and
+  approval-gated mutation tools. No GitHub MCP tool or PAT is attached to the
+  orchestrator or general sandbox.
 
 src/workflows/retrieval.ts
   Shared retrieval machinery.
@@ -340,11 +370,8 @@ src/engine/capabilities/
   modules that export `defineTool(...`/`defineAgentProfile(...)` results.
 
 scripts/capability-admin.mjs
-  CLI admin script for capability CRUD (add/list/enable/disable/remove/update).
-  Follows the `protocol-admin.mjs` pattern. By default, writes to SQLite at
-  `~/.gorombo/db/capabilities.sqlite` and materializes skill/tool/worker
-  files under `~/.gorombo/capabilities/`. Environment overrides may select
-  other locations.
+  Compatibility adapter to the product `sim-one` capability commands. It does
+  not implement SQLite, validation, or materialization.
 
 src/engine/tools/memory-tool.ts
   Orchestrator-safe memory lookup tool.

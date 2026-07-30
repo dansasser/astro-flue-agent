@@ -44,8 +44,10 @@ an SSH tunnel to a local port.
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <requested-version>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable|--disable]
 sim-one skill list
+sim-one skill inspect <id>
+sim-one skill validate <source> <id> "<name>"
 sim-one skill enable <id>
 sim-one skill disable <id>
 sim-one skill update <id>
@@ -62,6 +64,8 @@ when added.
 sim-one tool add <source> <id> "<name>" \
   [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one tool list
+sim-one tool inspect <id>
+sim-one tool validate <source> <id> "<name>"
 sim-one tool enable <id>
 sim-one tool disable <id>
 sim-one tool update <id>
@@ -70,6 +74,8 @@ sim-one tool --help
 ```
 
 Tools are disabled when added unless `--enable` is supplied.
+Updating an enabled tool disables and unmaterializes it until a separate
+`sim-one tool enable <id>` succeeds.
 
 ## Worker Commands
 
@@ -77,6 +83,8 @@ Tools are disabled when added unless `--enable` is supplied.
 sim-one worker add <source> <id> "<name>" \
   [--description "<text>"] [--version <requested-version>] [--enable]
 sim-one worker list
+sim-one worker inspect <id>
+sim-one worker validate <source> <id> "<name>"
 sim-one worker enable <id>
 sim-one worker disable <id>
 sim-one worker update <id>
@@ -85,11 +93,12 @@ sim-one worker --help
 ```
 
 Workers are disabled when added unless `--enable` is supplied.
+Updating an enabled worker disables and unmaterializes it until a separate
+`sim-one worker enable <id>` succeeds.
 
-For Git sources, the pre-release CLI accepts and stores `--version`, but
-materialization shallow-clones the remote default branch. Reliable branch, tag,
-and commit pinning is a release gate. Local directory sources ignore the
-recorded version.
+For Git sources, `--version` resolves the exact requested branch, tag, or
+commit before validation and materialization. Local directory sources are
+content-digested from the selected source tree.
 
 ## MCP Commands
 
@@ -98,6 +107,8 @@ sim-one mcp add <id> "<name>" --url <url> \
   [--transport <streamable-http|sse>] [--token-env <ENV_NAME>] \
   [--description "<text>"] [--enable]
 sim-one mcp list
+sim-one mcp inspect <id>
+sim-one mcp validate <id> "<name>" --url <url>
 sim-one mcp enable <id>
 sim-one mcp disable <id>
 sim-one mcp update <id>
@@ -108,9 +119,10 @@ sim-one mcp --help
 `--url` is required and must use HTTP or HTTPS. The default transport is
 `streamable-http`; `sse` is also supported. `--token-env` stores the
 environment-variable name, not the token. MCP servers are disabled when added
-unless `--enable` is supplied. The pre-release `mcp update` command changes
-only the record's update timestamp. To change connection fields, name, or
-description, remove and re-add the MCP server.
+unless `--enable` is supplied. `mcp update` can change name, description, URL,
+transport, or the canonical token configuration-key name in place. Any MCP
+update returns an enabled connection to disabled until a separate
+`sim-one mcp enable <id>` succeeds.
 
 ## Capability Lifecycle
 
@@ -118,6 +130,11 @@ After adding, enabling, disabling, updating, or removing a capability, restart
 the gateway through the process or service manager that launched it. Restarting
 reloads enabled capability records; it does not rebuild the product. The
 pre-release CLI does not register a `restart` subcommand.
+
+Validation and mutation commands load the applicable protocol bundle before
+running deterministic checks. Source-backed validation does not execute the
+package; it parses the module contract and scans text files for credential
+values and machine-specific absolute paths.
 
 See [Extending SIM-ONE Alpha](../guides/extending-sim-one.md) for source,
 trust, approval, collision, and persistence behavior.
@@ -146,6 +163,11 @@ semantics and restored history.
 Invalid options, missing required arguments, unsafe capability ids, capability
 name collisions, invalid MCP URLs, and invalid token environment-variable
 names fail without changing the runtime registry.
+
+Every validate or mutating command loads the applicable protocol bundle from
+the runtime protocol database and uses the shared lifecycle service. The
+repository compatibility script `scripts/capability-admin.mjs` delegates to
+these same product commands and contains no separate registry implementation.
 
 For the current source checkout, verify the build, launch the terminal
 interface, and confirm an end-to-end orchestrator response. The packaged

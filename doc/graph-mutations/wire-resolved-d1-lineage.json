@@ -1,0 +1,490 @@
+{
+  "schema_version": 1,
+  "mutation_id": "wire-resolved-d1-lineage",
+  "rationale": "A resolved specification decision must be consumed by both the implementation plan and the specification-verification node, with explicit invalidation edges for their outputs. D1 was previously open, so those lineage edges did not exist.",
+  "evidence": [
+    "specctl verify: verification node 'verify-release-reconciliation-specifications' does not consume decision 'd1-github-auth-strategy'",
+    "specctl verify: implementation plan does not consume decision 'd1-github-auth-strategy'",
+    "doc/decisions/d1-github-auth-strategy.md",
+    "specification-manifest.json"
+  ],
+  "expected_graph_version": 46,
+  "expected_graph_checksum": "4a363cf62043f2201836af56bfbbbc6786783109e51dd2b4e9b2c5387377ce51",
+  "new_context_version": "decision:d1-github-auth-strategy:resolved:2026-07-29",
+  "operations": [
+    {
+      "op": "replace-node",
+      "id": "plan-implementation",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "Each workstream has one clear purpose, exact owned source/documentation/test files, declared inputs and outputs, no file concurrently owned by another parallel branch, and no hidden dependency on another branch; collisions are ordered or assigned to integration.",
+            "evidence": "runtime:evidence/plan-implementation/workstreams.json",
+            "id": "workstreams-bounded",
+            "kind": "review"
+          },
+          {
+            "criterion": "The plan maps each acceptance criterion to a focused check and the full applicable project verification matrix.",
+            "evidence": "runtime:evidence/plan-implementation/verification-map.json",
+            "id": "verification-mapped",
+            "kind": "test"
+          },
+          {
+            "criterion": "Every tool execution, worker handoff, plan update, verification result, and state transition has a durable typed progress-event expectation.",
+            "evidence": "runtime:evidence/plan-implementation/progress-contract.json",
+            "id": "progress-events-required",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The file-ownership matrix assigns every planned source, documentation, generated-definition, and focused-test mutation to exactly one producer; shared files are serialized or deferred to integration.",
+            "evidence": "runtime:evidence/plan-implementation/file-ownership.json",
+            "id": "file-ownership-disjoint",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The plan distinguishes src/AGENTS.md, src/workspace/, built-in lead-worker workspaces, Coding Worker internal-subagent workspaces, runtime-loaded user workers, and the Coding Worker runtime access root whenever those layers are affected.",
+            "evidence": "runtime:evidence/plan-implementation/workspace-layers.json",
+            "id": "workspace-layers-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "The implementation plan and doc/implementation-lineage.md map every stable release ID to one producing member, one behavioral verification path, and one exclusive or serialized file owner.",
+            "evidence": "runtime:evidence/plan-implementation/release-ledger-map.json",
+            "id": "release-ledger-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "Before producing any implementation workstream, the planner recomputes the path, byte size, and SHA-256 digest of every external beta source plan and proves an exact match with the manifest bound into artifact:baseline-context and artifact:beta-release-contract; a mismatch stops planning and requires a fresh baseline and approval.",
+            "evidence": "runtime:evidence/plan-implementation/source-plan-lineage.json",
+            "id": "source-plan-lineage-preserved",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Before mapping workstreams, recompute every external beta source-plan path, byte size, and SHA-256 digest and compare the canonical manifest with artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed plan. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution.",
+          "kind": "agent",
+          "name": "SIM-ONE implementation planning adapter"
+        },
+        "goal": "Produce the external executable implementation plan and repository lineage index for every required 0.1.0 member, with exact file ownership, decision boundaries, evidence, approval scopes, and rollback.",
+        "id": "plan-implementation",
+        "inputs": [
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-decision",
+            "name": "architecture decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "name": "runtime-root product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "name": "runtime-root architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "name": "runtime-root acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "name": "runtime-root implementation questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "name": "file authorization product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "name": "file authorization architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "name": "file authorization acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "name": "file authorization and worker-verification questions",
+            "required": true
+          },
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "name": "resolved GitHub auth strategy",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved runtime-root decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "format": "text/markdown",
+            "name": "implementation plan"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:change-contract",
+            "artifact:architecture-decision",
+            "artifact:beta-release-contract",
+            "decision:d1-github-auth-strategy",
+            "docs/getting-started/pre-release-status.md",
+            "external:plans/sim-one-ratatui-tui/plan.md",
+            "external:plans/sim-one-ratatui-tui/work-pane-addendum.md",
+            "external:plans/sim-one-build-structure/plan.md",
+            "external:plans/agent-tui/plan.md",
+            "package.json",
+            ".github/workflows/ci.yml",
+            "src/AGENTS.md",
+            "src/workspace-loader.ts",
+            "src/agents/orchestrator.ts",
+            "src/engine/workers/",
+            "docs/architecture/flue-architecture.md",
+            "docs/architecture/gorombo-flue-map.md",
+            "src/tests/architecture-contract.test.ts",
+            "src/tests/workspace-loader.test.ts",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md"
+          ],
+          "write": [
+            "external:plans/<topic>/plan.md",
+            "doc/implementation-lineage.md"
+          ]
+        },
+        "resources": [
+          "plans:<topic>"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Updates the authorized task plan with the reviewed implementation sequence.",
+          "level": "reversible",
+          "rollback": "Restore the prior plan revision and invalidate downstream work that consumed the superseded plan."
+        },
+        "state": "planned",
+        "tags": [
+          "planning",
+          "handoff",
+          "verification",
+          "progress"
+        ],
+        "title": "Plan Bounded Implementation",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "verify-release-reconciliation-specifications",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "specctl verify passes against the current graph, Markdown, manifest, decisions, and project root.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/specctl-pass.json",
+            "id": "specctl-pass",
+            "kind": "schema"
+          },
+          {
+            "criterion": "D4 blocks only its named consumer, while resolved D1, D2, and D3 are consumed by planning, verification, and their declared affected implementation members.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/open-decisions-isolated.json",
+            "id": "open-decisions-isolated",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every stable 0.1.0 release ID has one producing graph member and behavioral acceptance evidence.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/release-ledger-complete.json",
+            "id": "release-ledger-complete",
+            "kind": "review"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Graph and specification validation pass with no errors or warnings.",
+          "max_attempts": 2,
+          "timeout_minutes": 30
+        },
+        "executor": {
+          "instructions": "Run the graph and specification validators and retain their bounded JSON result.",
+          "kind": "deterministic",
+          "name": "Graph specification verifier"
+        },
+        "goal": "Verify graph/schema/manifest lineage, document containment, resolved-decision coverage, open-decision isolation, and release-ledger completeness.",
+        "id": "verify-release-reconciliation-specifications",
+        "inputs": [
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "name": "runtime-root product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "name": "runtime-root architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "name": "runtime-root acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "name": "runtime-root implementation questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "name": "file authorization product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "name": "file authorization architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "name": "file authorization acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "name": "file authorization and worker-verification questions",
+            "required": true
+          },
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "name": "resolved GitHub auth strategy",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved runtime-root decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:release-reconciliation-specification-verification",
+            "format": "application/json",
+            "name": "release reconciliation specification verification"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "development-graph.json",
+            "development-graph.md",
+            "specification-manifest.json",
+            "decisions.json",
+            "docs/getting-started/pre-release-status.md"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces deterministic verification evidence without project mutation.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "verification",
+          "specification",
+          "release"
+        ],
+        "title": "Verify Reconciled Release Specifications",
+        "type": "verification"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d1-github-auth-strategy-to-spec-verification-consumes",
+      "value": {
+        "artifacts": [
+          "decision:d1-github-auth-strategy"
+        ],
+        "condition": "verify-release-reconciliation-specifications requires the current decision:d1-github-auth-strategy artifact.",
+        "exit_condition": null,
+        "from": "resolve-d1-github-auth-strategy",
+        "id": "resolve-d1-github-auth-strategy-to-spec-verification-consumes",
+        "max_traversals": null,
+        "to": "verify-release-reconciliation-specifications",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d1-github-auth-strategy-to-spec-verification-invalidates",
+      "value": {
+        "artifacts": [
+          "artifact:release-reconciliation-specification-verification"
+        ],
+        "condition": "A material change to decision:d1-github-auth-strategy invalidates artifact:release-reconciliation-specification-verification.",
+        "exit_condition": null,
+        "from": "resolve-d1-github-auth-strategy",
+        "id": "resolve-d1-github-auth-strategy-to-spec-verification-invalidates",
+        "max_traversals": null,
+        "to": "verify-release-reconciliation-specifications",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d1-github-auth-strategy-to-plan-consumes",
+      "value": {
+        "artifacts": [
+          "decision:d1-github-auth-strategy"
+        ],
+        "condition": "plan-implementation requires the current decision:d1-github-auth-strategy artifact.",
+        "exit_condition": null,
+        "from": "resolve-d1-github-auth-strategy",
+        "id": "resolve-d1-github-auth-strategy-to-plan-consumes",
+        "max_traversals": null,
+        "to": "plan-implementation",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d1-github-auth-strategy-to-plan-invalidates",
+      "value": {
+        "artifacts": [
+          "artifact:implementation-plan"
+        ],
+        "condition": "A material change to decision:d1-github-auth-strategy invalidates artifact:implementation-plan.",
+        "exit_condition": null,
+        "from": "resolve-d1-github-auth-strategy",
+        "id": "resolve-d1-github-auth-strategy-to-plan-invalidates",
+        "max_traversals": null,
+        "to": "plan-implementation",
+        "type": "invalidates"
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "plan-implementation",
+      "verify-release-reconciliation-specifications",
+      "implement-coding-worker-github-flow"
+    ],
+    "artifacts": [
+      "artifact:implementation-plan",
+      "artifact:release-reconciliation-specification-verification",
+      "artifact:coding-worker-github-flow-change"
+    ]
+  },
+  "approval": null
+}

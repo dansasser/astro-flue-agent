@@ -31,3 +31,22 @@ export { checkNameCollision } from '../../engine/capabilities/collision-check.js
 export type { CollisionResult } from '../../engine/capabilities/collision-check.js';
 export { connectBuiltinMcpServers, getBuiltinMcpIds, BUILTIN_MCP_ASTRO_DOCS_ID } from '../../engine/capabilities/builtin-mcp.js';
 export type { BuiltinMcpResult } from '../../engine/capabilities/builtin-mcp.js';
+export {
+  CapabilityLifecycleService,
+  inferCapabilitySource,
+} from '../../engine/capabilities/capability-lifecycle-service.js';
+export { compileCapabilityProtocolContext } from '../../engine/capabilities/capability-protocol-context.js';
+export type {
+  CapabilityProtocolContext,
+  CapabilityProtocolDirective,
+} from '../../engine/capabilities/capability-protocol-context.js';
+export type {
+  CapabilityActivationState,
+  CapabilityLifecycleAddInput,
+  CapabilityLifecycleOperation,
+  CapabilityLifecycleProgressEvent,
+  CapabilityLifecycleResult,
+  CapabilityLifecycleServiceOptions,
+  CapabilityLifecycleUpdateInput,
+  CapabilityValidationResult,
+} from '../../engine/capabilities/capability-lifecycle-service.js';

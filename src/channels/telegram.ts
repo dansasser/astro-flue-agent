@@ -15,14 +15,6 @@ import { normalizeTelegramUpdate } from '../api/connectors/telegram/telegram.js'
 import { buildApprovalResolvedMessage, parseApprovalCallback } from '../api/connectors/telegram/approval-ui/index.js';
 import { markTelegramUpdateReceived } from '../api/connectors/telegram/telegram-state.js';
 import { isMentioned } from '../api/connectors/telegram/telegram-api.js';
-import type { NormalizedMessageEvent } from '../core/types/index.js';
-import {
-  getGithubAuthChallengeRelay,
-  githubAuthAudienceFromEvent,
-  type GithubAuthChallengeRelay,
-} from '../api/ingress/github-auth-challenge-relay.js';
-import type { GithubAuthAudience } from '../engine/workers/coding-worker/github/github-auth-types.js';
-import { sameGithubAuthAudience } from '../engine/workers/coding-worker/github/github-auth-utils.js';
 import * as v from 'valibot';
 
 function isTestMode(): boolean {
@@ -159,7 +151,6 @@ function getTelegramWebhookSecret(): string {
 }
 
 let cachedChannel: TelegramChannel | undefined;
-let githubAuthChallengeDeliveryRegistered = false;
 
 function getOrCreateTelegramChannel(): TelegramChannel {
   if (!cachedChannel) {
@@ -186,7 +177,6 @@ function getOrCreateTelegramChannel(): TelegramChannel {
       },
     });
   }
-  registerTelegramGithubAuthChallengeDelivery();
   return cachedChannel;
 }
 
@@ -251,89 +241,18 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
     sessionId: sessionResolution.sessionId,
     deliveryKind: 'direct-agent',
   });
-  const isPrivateChat = incoming.chat.type === 'private';
-  if (isPrivateChat) {
-    await deliverTelegramGithubAuthChallenge(githubAuthAudienceFromEvent(normalized)).catch(() => false);
-  }
-  if (isPrivateChat) {
-    goromboPersistenceRuntime.sessionDatabase.createTrustedEventAdmission({
-      event: normalized,
-      agentInstanceId,
-      purpose: 'github.auth',
-      expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
-    });
-  }
-
   const harness = await dispatch(orchestratorAgent, {
     id: agentInstanceId,
     input: {
       type: 'telegram.message',
       updateId: update.update_id,
       message: incoming,
-      prompt: createChatPrompt(normalized, {
-        githubAuthRequiresPrivateChat: !isPrivateChat,
-      }),
+      prompt: createChatPrompt(normalized),
     },
   });
 
   return harness;
 }
-
-export interface TelegramGithubAuthDeliveryDependencies {
-  relay: GithubAuthChallengeRelay;
-  resolveEvent(eventId: string): NormalizedMessageEvent | undefined;
-  sendMessage(
-    chatId: string,
-    text: string,
-    options: { messageThreadId?: number },
-  ): Promise<void>;
-}
-
-export async function deliverTelegramGithubAuthChallenge(
-  audience: GithubAuthAudience,
-  dependencies: TelegramGithubAuthDeliveryDependencies = defaultTelegramGithubAuthDeliveryDependencies,
-): Promise<boolean> {
-  if (audience.connector !== 'telegram') return false;
-  const event = dependencies.resolveEvent(audience.eventId);
-  if (!event || !sameGithubAuthAudience(githubAuthAudienceFromEvent(event), audience)) {
-    return false;
-  }
-  if (event.actor.id !== event.conversation.id) return false;
-
-  const lease = dependencies.relay.acquire(audience);
-  if (!lease) return false;
-  try {
-    await dependencies.sendMessage(
-      event.actor.id,
-      `Open ${lease.challenge.verificationUri} and enter code ${lease.challenge.userCode} to authorize GitHub.`,
-      {},
-    );
-    return lease.ack();
-  } catch (error) {
-    lease.release();
-    throw error;
-  }
-}
-
-function registerTelegramGithubAuthChallengeDelivery(): void {
-  if (githubAuthChallengeDeliveryRegistered) return;
-  githubAuthChallengeDeliveryRegistered = true;
-  getGithubAuthChallengeRelay().subscribe((audience) => {
-    if (audience.connector !== 'telegram') return;
-    void deliverTelegramGithubAuthChallenge(audience).catch(() => undefined);
-  });
-}
-
-const defaultTelegramGithubAuthDeliveryDependencies: TelegramGithubAuthDeliveryDependencies = {
-  relay: getGithubAuthChallengeRelay(),
-  resolveEvent: (eventId) =>
-    goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(eventId) ?? undefined,
-  sendMessage: async (chatId, text, options) => {
-    await client.sendMessage(chatId, text, {
-      message_thread_id: options.messageThreadId,
-    });
-  },
-};
 
 async function handleCallbackQuery(query: NonNullable<Update['callback_query']>, _update: Update) {
   const data = query.data;

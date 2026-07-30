@@ -477,9 +477,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
-        defaultBranchOnly: v.optional(v.boolean()),
-        clone: v.optional(v.boolean()),
-        forkName: v.optional(v.string()),
+        organization: v.optional(v.string()),
       }),
       execute: async (args) => {
         const taskId = readString(args.taskId) ?? 'unknown';
@@ -493,9 +491,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
           const forkPayload = {
             owner: args.owner,
             repo: args.repo,
-            defaultBranchOnly: args.defaultBranchOnly === true,
-            clone: args.clone,
-            forkName: readString(args.forkName),
+            organization: readString(args.organization),
           };
           const approval = await evaluateGitApproval(options, {
             approvalService,
@@ -506,8 +502,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             risk: 'This creates a new GitHub repository under the authenticated account.',
             target: `${args.owner}/${args.repo}`,
             metadata: {
-              defaultBranchOnly: forkPayload.defaultBranchOnly,
-              ...(forkPayload.forkName ? { forkName: forkPayload.forkName } : {}),
+              ...(forkPayload.organization ? { organization: forkPayload.organization } : {}),
               payloadHash: hashApprovalPayload(forkPayload),
             },
           });
@@ -525,8 +520,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
               payload: { blocked: true, ...approval },
             });
           }
-          const cwd = await getCwd();
-          const result = await options.client.forkRepository({ ...forkPayload, cwd });
+          const result = await options.client.forkRepository(forkPayload);
           return toGithubResult({
             action: 'fork_repo',
             payload: {
@@ -869,7 +863,11 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       description: 'Approval-gated GitHub PR review-thread reply or resolution update.',
       parameters: v.object({
         taskId: v.optional(v.string()),
+        owner: v.string(),
+        repo: v.string(),
+        pullRequestNumber: v.number(),
         threadId: v.string(),
+        commentId: v.optional(v.number()),
         replyBody: v.optional(v.string()),
         resolve: v.optional(v.boolean()),
       }),
@@ -883,6 +881,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             });
           }
           const threadPayload = {
+            commentId: typeof args.commentId === 'number' ? args.commentId : undefined,
             replyBody: readString(args.replyBody),
             resolve: typeof args.resolve === 'boolean' ? args.resolve : undefined,
           };
@@ -893,8 +892,9 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             summary: `Update GitHub review thread ${args.threadId} (${hashApprovalPayload(threadPayload)})`,
             reason: 'Review-thread replies and resolution mutate remote review state.',
             risk: 'This affects reviewer-visible PR review state.',
-            target: args.threadId,
+            target: `${args.owner}/${args.repo}#${args.pullRequestNumber}:${args.threadId}`,
             metadata: {
+              ...(threadPayload.commentId ? { commentId: threadPayload.commentId } : {}),
               ...(threadPayload.replyBody ? { replyBody: threadPayload.replyBody } : {}),
               ...(threadPayload.resolve !== undefined ? { resolve: threadPayload.resolve } : {}),
               payloadHash: hashApprovalPayload(threadPayload),
@@ -915,7 +915,11 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
             });
           }
           const result = await options.client.updateReviewThread({
+            owner: args.owner,
+            repo: args.repo,
+            pullRequestNumber: args.pullRequestNumber,
             threadId: args.threadId,
+            commentId: typeof args.commentId === 'number' ? args.commentId : undefined,
             replyBody: readString(args.replyBody),
             resolve: typeof args.resolve === 'boolean' ? args.resolve : undefined,
           });

@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "graph_id": "sim-one-alpha-lifecycle",
+  "graph_version": 54,
+  "context_version": "capability-protocol-validation:2026-07-29",
+  "specification_root": "doc",
+  "documents": [
+    {
+      "id": "product-spec-github-access",
+      "kind": "product",
+      "path": "doc/product-spec.md",
+      "artifact": "artifact:product-spec",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "constraints-and-risks",
+      "kind": "constraints",
+      "path": "doc/constraints-and-risks.md",
+      "artifact": "artifact:constraints-and-risks",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "architecture-spec-github-access",
+      "kind": "architecture",
+      "path": "doc/architecture-spec.md",
+      "artifact": "artifact:architecture-spec",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "acceptance-spec-github-access",
+      "kind": "acceptance",
+      "path": "doc/acceptance-spec.md",
+      "artifact": "artifact:acceptance-spec",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "open-questions-github-access",
+      "kind": "open-questions",
+      "path": "doc/open-questions.md",
+      "artifact": "artifact:open-questions",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "product-spec-runtime-root",
+      "kind": "product",
+      "path": "doc/product-spec-workspace.md",
+      "artifact": "artifact:product-spec-workspace",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "architecture-spec-runtime-root",
+      "kind": "architecture",
+      "path": "doc/architecture-spec-workspace.md",
+      "artifact": "artifact:architecture-spec-workspace",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "acceptance-spec-runtime-root",
+      "kind": "acceptance",
+      "path": "doc/acceptance-spec-workspace.md",
+      "artifact": "artifact:acceptance-spec-workspace",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "open-questions-runtime-root",
+      "kind": "open-questions",
+      "path": "doc/open-questions-workspace.md",
+      "artifact": "artifact:open-questions-workspace",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "product-spec-file-authorization",
+      "kind": "product",
+      "path": "doc/product-spec-file-access-history.md",
+      "artifact": "artifact:product-spec-file-access",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "architecture-spec-file-authorization",
+      "kind": "architecture",
+      "path": "doc/architecture-spec-file-access-history.md",
+      "artifact": "artifact:architecture-spec-file-access",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "acceptance-spec-file-authorization",
+      "kind": "acceptance",
+      "path": "doc/acceptance-spec-file-access-history.md",
+      "artifact": "artifact:acceptance-spec-file-access",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "open-questions-file-authorization",
+      "kind": "open-questions",
+      "path": "doc/open-questions-file-access-history.md",
+      "artifact": "artifact:open-questions-file-access",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "product-spec-runtime-configuration",
+      "kind": "product",
+      "path": "doc/product-spec-runtime-configuration.md",
+      "artifact": "artifact:product-spec-runtime-configuration",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "architecture-spec-runtime-configuration",
+      "kind": "architecture",
+      "path": "doc/architecture-spec-runtime-configuration.md",
+      "artifact": "artifact:architecture-spec-runtime-configuration",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "acceptance-spec-runtime-configuration",
+      "kind": "acceptance",
+      "path": "doc/acceptance-spec-runtime-configuration.md",
+      "artifact": "artifact:acceptance-spec-runtime-configuration",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "open-questions-runtime-configuration",
+      "kind": "open-questions",
+      "path": "doc/open-questions-runtime-configuration.md",
+      "artifact": "artifact:open-questions-runtime-configuration",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    },
+    {
+      "id": "runtime-configuration-inventory",
+      "kind": "research",
+      "path": "doc/runtime-configuration-inventory.md",
+      "artifact": "artifact:runtime-configuration-inventory",
+      "producer_node": "specify-release-reconciliation",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ],
+      "required": true
+    }
+  ],
+  "decisions": [
+    {
+      "id": "d1-github-auth-strategy",
+      "status": "resolved",
+      "source_path": "doc/decisions/d1-github-auth-strategy.md",
+      "decision_node": "resolve-d1-github-auth-strategy",
+      "artifact": "decision:d1-github-auth-strategy",
+      "affected_nodes": [
+        "implement-coding-worker-github-flow"
+      ]
+    },
+    {
+      "id": "d2-workspace-root-isolation",
+      "status": "resolved",
+      "source_path": "doc/decisions/d2-workspace-root-isolation.md",
+      "decision_node": "resolve-d2-workspace-root-isolation",
+      "artifact": "decision:d2-workspace-root-isolation",
+      "affected_nodes": [
+        "implement-runtime-root-layout",
+        "implement-file-access-approval-gate",
+        "implement-coding-worker-github-flow",
+        "implement-coding-worker-scaffold-tooling",
+        "implement-coding-worker-capability-authoring",
+        "implement-orchestrator-worker-verification"
+      ]
+    },
+    {
+      "id": "d3-file-access-gate",
+      "status": "resolved",
+      "source_path": "doc/decisions/d3-file-access-gate.md",
+      "decision_node": "resolve-d3-file-access-gate",
+      "artifact": "decision:d3-file-access-gate",
+      "affected_nodes": [
+        "implement-file-access-approval-gate",
+        "implement-connector-approval-controls"
+      ]
+    },
+    {
+      "id": "d4-orchestrator-history-visibility",
+      "status": "open",
+      "source_path": "doc/decisions/d4-orchestrator-history-visibility.md",
+      "decision_node": "resolve-d4-orchestrator-history-visibility",
+      "artifact": "decision:d4-orchestrator-history-visibility",
+      "affected_nodes": [
+        "implement-orchestrator-worker-verification"
+      ]
+    },
+    {
+      "id": "d5-canonical-runtime-configuration",
+      "status": "resolved",
+      "source_path": "doc/decisions/d5-canonical-runtime-configuration.md",
+      "decision_node": "resolve-d5-canonical-runtime-configuration",
+      "artifact": "decision:d5-canonical-runtime-configuration",
+      "affected_nodes": [
+        "implement-runtime-configuration-consolidation",
+        "verify-runtime-configuration-consolidation",
+        "implement-runtime-root-layout",
+        "implement-agent-runtime",
+        "implement-capabilities-security",
+        "implement-capability-management-worker",
+        "implement-ingress-operations",
+        "implement-coding-worker-github-flow",
+        "implement-coding-worker-capability-authoring",
+        "implement-connector-approval-controls",
+        "implement-sim-one-onboarding-distribution",
+        "build-release-package",
+        "verify-onboarding-distribution",
+        "implement-product-delivery"
+      ]
+    },
+    {
+      "id": "d6-tui-approval-surface-placement",
+      "status": "resolved",
+      "source_path": "doc/decisions/d6-tui-approval-surface-placement.md",
+      "decision_node": "resolve-d6-tui-approval-surface-placement",
+      "artifact": "decision:d6-tui-approval-surface-placement",
+      "affected_nodes": [
+        "implement-tui-status-context-meter",
+        "implement-connector-approval-controls"
+      ]
+    }
+  ],
+  "verification_node": "verify-release-reconciliation-specifications",
+  "approval": {
+    "node": "approve-beta-release-contract",
+    "artifact": "artifact:beta-release-contract",
+    "targets": [
+      "plan-implementation"
+    ]
+  },
+  "implementation_plan": {
+    "node": "plan-implementation",
+    "path": "doc/implementation-lineage.md",
+    "artifact": "artifact:implementation-plan",
+    "implementation_nodes": [
+      "implement-core-contracts",
+      "implement-agent-runtime",
+      "implement-memory-retrieval",
+      "implement-capabilities-security",
+      "implement-capability-management-worker",
+      "implement-ingress-operations",
+      "implement-runtime-root-layout",
+      "implement-runtime-configuration-consolidation",
+      "implement-file-access-approval-gate",
+      "implement-coding-worker-progress",
+      "implement-coding-worker-github-flow",
+      "implement-coding-worker-scaffold-tooling",
+      "implement-coding-worker-capability-authoring",
+      "implement-orchestrator-worker-verification",
+      "implement-tui-message-queue",
+      "implement-tui-status-context-meter",
+      "implement-tui-prompt-editor-polish",
+      "implement-tui-thinking-transcript",
+      "implement-connector-approval-controls",
+      "implement-image-reasoning-worker",
+      "implement-document-index",
+      "implement-protocol-scoring",
+      "implement-sim-one-tui-work-pane",
+      "implement-sim-one-onboarding-distribution",
+      "implement-product-delivery"
+    ]
+  }
+}

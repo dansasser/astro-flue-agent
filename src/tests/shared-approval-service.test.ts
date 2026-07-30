@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join, resolve as resolvePath } from 'node:path';
 import { describe, it } from 'node:test';
 import {
@@ -27,9 +27,9 @@ describe('shared approval service', () => {
     }
   });
 
-  it('falls back to ~/.gorombo/approvals when env is not set', () => {
+  it('falls back to the canonical runtime approval root when env is not set', () => {
     const resolved = resolveCodingApprovalRoot({});
-    assert.equal(resolved, resolvePath(homedir(), '.gorombo', 'approvals'));
+    assert.equal(resolved, resolvePath('.gorombo', 'approvals'));
   });
 
   it('prefers the env root over the default fallback', () => {

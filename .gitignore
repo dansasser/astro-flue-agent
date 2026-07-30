@@ -3,9 +3,10 @@ dist/
 dist-flue/
 .env
 .env.*
+sim-one.config
 .claude/
 .opencode/
-!.env.example
+!sim-one.config.example
 coverage/
 .tmp/
 *.tsbuildinfo

@@ -21,6 +21,11 @@ Do not put orchestration logic in `src/app.ts`. The local architecture contract 
 
 The orchestrator routes, loads protocols, retrieves memory when useful, delegates specialized work, and synthesizes responses. It should not directly own web research or coding execution. The runtime capability block in `src/agents/orchestrator.ts` is a useful source of truth for what is actually attached.
 
+In a packaged build, the main persona is loaded from the read-only
+`<runtime-root>/sim-one-alpha/workspace/` copy. The Coding Worker receives the
+separate model-writable `<runtime-root>/workspace/` tree; source persona files
+are never its production repository root.
+
 ## Workers and delegation
 
 Workers live under `src/engine/workers/`, not beside the main agent. The currently wired built-in workers are:
@@ -31,6 +36,32 @@ Workers live under `src/engine/workers/`, not beside the main agent. The current
 The main orchestrator delegates to workers through Flue task delegation. Workspace instructions in `src/workspace/` define when the orchestrator should delegate; worker workspace files under each worker directory define internal worker guidance.
 
 The architecture docs and orchestrator runtime block are explicit that current/external/web/source-backed work belongs to the `researcher`, and coding work belongs to `coding-worker`.
+
+The Coding Worker also owns the official GitHub MCP connection. A trusted
+`GITHUB_PERSONAL_ACCESS_TOKEN` is used only for the Flue MCP authorization
+header and bounded private Git fallback. Selected read tools are attached to
+the lead; mutations remain behind typed SIM-ONE approval tools.
+
+## Runtime root
+
+`src/core/config/runtime-root.ts` resolves one absolute `.gorombo` owner for
+packaged binaries, root configuration, persona assets, databases,
+capabilities, approvals, logs, Coding Worker state, and
+`workspace/{repos,projects}`. Packaged executables derive it from their own
+location and pass `GOROMBO_RUNTIME_ROOT` to the gateway. Relative runtime paths
+never use the caller working directory.
+
+`src/core/config/runtime-environment.ts` is the typed registry for every
+supported environment-style setting. `src/app.ts` imports its bootstrap first,
+which loads `<runtime-root>/sim-one.config` before Flue or any provider,
+connector, worker, store, schedule, or tool consumes a registered key. The
+tracked `sim-one.config.example` is the complete secret-free contract; public
+packages never contain the owner file.
+
+When a module executes from inside that runtime root, package-owned persona,
+embedding, image-catalog, WASM, language-server, and Node dependency assets win
+even if a source checkout surrounds the installed tree. Production code does
+not reach outward into checkout assets or checkout `node_modules`.
 
 ## HTTP ingress and sessions
 

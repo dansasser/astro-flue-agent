@@ -1,0 +1,290 @@
+import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+import type { McpServerConnection, ToolDefinition } from '@flue/runtime';
+import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
+import {
+  connectCodingWorkerGithubMcp,
+  McpGitHubClient,
+} from '../engine/workers/coding-worker/github/github-mcp.js';
+import {
+  createGithubGitCredentialEnv,
+  readGithubPat,
+} from '../engine/workers/coding-worker/github/github-pat.js';
+import { createCodingGitHubTools } from '../engine/workers/coding-worker/github/github-tools.js';
+
+test('GitHub PAT uses the official environment key only', () => {
+  assert.equal(readGithubPat({ GH_TOKEN: 'legacy' }), undefined);
+  assert.equal(
+    readGithubPat({ GITHUB_PERSONAL_ACCESS_TOKEN: '  pat-value  ' }),
+    'pat-value',
+  );
+});
+
+test('Coding Worker connects through Flue and exposes only read-only GitHub MCP tools', async () => {
+  const calls: Array<{ name: string; options: Record<string, unknown> }> = [];
+  const connection = fakeConnection();
+  const integration = await connectCodingWorkerGithubMcp({
+    env: {
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+      GOROMBO_RUNTIME_ROOT: '/tmp/github-mcp-test/.gorombo',
+    },
+    connect: async (name, options) => {
+      calls.push({ name, options: options as unknown as Record<string, unknown> });
+      return connection;
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.name, 'github');
+  const headers = new Headers(calls[0]?.options.headers as HeadersInit);
+  assert.equal(headers.get('authorization'), 'Bearer secret-pat');
+  assert.match(headers.get('x-mcp-tools') ?? '', /issue_read/);
+  assert.match(headers.get('x-mcp-tools') ?? '', /update_pull_request/);
+  assert.match(headers.get('x-mcp-tools') ?? '', /add_comment_to_pending_review/);
+  assert.doesNotMatch(
+    headers.get('x-mcp-tools') ?? '',
+    /add_pull_request_review_comment/,
+  );
+  assert.deepEqual(
+    integration.readTools.map((tool) => tool.name),
+    [
+      'mcp__github__issue_read',
+      'mcp__github__list_issues',
+      'mcp__github__pull_request_read',
+      'mcp__github__list_pull_requests',
+    ],
+  );
+  assert.doesNotMatch(JSON.stringify(integration.readTools), /secret-pat/);
+  assert.ok(integration.client);
+});
+
+test('missing GitHub PAT leaves MCP disconnected without falling back to gh', async () => {
+  let connected = false;
+  const integration = await connectCodingWorkerGithubMcp({
+    env: {},
+    connect: async () => {
+      connected = true;
+      return fakeConnection();
+    },
+  });
+  assert.equal(connected, false);
+  assert.equal(integration.client, undefined);
+  assert.deepEqual(integration.readTools, []);
+});
+
+test('GitHub MCP connection errors redact the configured PAT', async () => {
+  await assert.rejects(
+    connectCodingWorkerGithubMcp({
+      env: {
+        GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+        GOROMBO_RUNTIME_ROOT: '/tmp/github-mcp-test/.gorombo',
+      },
+      connect: async () => {
+        throw new Error('upstream rejected Bearer secret-pat');
+      },
+    }),
+    (error: unknown) => {
+      assert.match(String(error), /Bearer \[redacted\]/);
+      assert.doesNotMatch(String(error), /secret-pat/);
+      return true;
+    },
+  );
+});
+
+test('MCP GitHub client maps issue and PR reads to official tools', async () => {
+  const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const client = new McpGitHubClient(new Map(fakeConnection(calls).tools.map((tool) => [tool.name, tool])));
+
+  const issue = await client.getIssue('dansasser', 'sim-one-alpha', 42);
+  const pr = await client.getPullRequest('dansasser', 'sim-one-alpha', 56);
+  const checks = await client.listPullRequestChecks('dansasser', 'sim-one-alpha', 56);
+
+  assert.equal(issue.number, 42);
+  assert.equal(pr.baseRef, 'main');
+  assert.equal(checks[0]?.name, 'CI');
+  assert.deepEqual(calls.slice(0, 3).map((call) => call.args.method), [
+    'get',
+    'get',
+    'get_check_runs',
+  ]);
+});
+
+test('MCP GitHub client uses the official pending-review and thread contracts', async () => {
+  const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const client = new McpGitHubClient(
+    new Map(fakeConnection(calls).tools.map((tool) => [tool.name, tool])),
+  );
+
+  const threads = await client.listPullRequestReviewThreads(
+    'dansasser',
+    'sim-one-alpha',
+    56,
+  );
+  await client.createReviewComment({
+    owner: 'dansasser',
+    repo: 'sim-one-alpha',
+    pullRequestNumber: 56,
+    body: 'Please cover this branch.',
+    path: 'src/example.ts',
+    line: 14,
+  });
+
+  assert.equal(threads[0]?.id, 'PRRT_thread');
+  assert.equal(threads[0]?.path, 'src/example.ts');
+  assert.equal(threads[0]?.line, 14);
+  assert.equal(threads[0]?.comments[0]?.author, 'reviewer');
+  assert.equal(threads[0]?.comments[0]?.id, '12345');
+  assert.deepEqual(
+    calls.map((call) => call.name),
+    [
+      'pull_request_read',
+      'pull_request_review_write',
+      'add_comment_to_pending_review',
+      'pull_request_review_write',
+    ],
+  );
+  assert.equal(calls[2]?.args.subjectType, 'LINE');
+});
+
+test('approval gate blocks MCP mutation until the exact request is approved', async () => {
+  let updates = 0;
+  const approvalService = createInMemoryCodingApprovalService();
+  const tools = createCodingGitHubTools({
+    approvalService,
+    client: {
+      async getIssue() {
+        throw new Error('unused');
+      },
+      async getPullRequest() {
+        throw new Error('unused');
+      },
+      async listPullRequestChecks() {
+        return [];
+      },
+      async updateIssue() {
+        updates += 1;
+        return { status: 'updated' };
+      },
+    },
+  });
+  const update = getTool(tools, 'coding_github_update_issue');
+  const args = {
+    taskId: 'task-mcp-approval',
+    owner: 'dansasser',
+    repo: 'sim-one-alpha',
+    issueNumber: 7,
+    title: 'Updated title',
+  };
+  const blocked = JSON.parse(await update.execute(args)) as {
+    actions: Array<{ payload: { request?: { id: string }; blocked?: boolean } }>;
+  };
+  assert.equal(updates, 0);
+  const requestId = blocked.actions[0]?.payload.request?.id;
+  assert.ok(requestId);
+  await approvalService.recordDecision({
+    requestId,
+    approved: true,
+    decidedBy: 'operator',
+    principal: { id: 'operator', roles: ['operator'] },
+  });
+  await update.execute(args);
+  assert.equal(updates, 1);
+});
+
+test('Git credential helper stores no PAT and lives under the canonical runtime auth root', async () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'sim-one-github-pat-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  mkdirSync(runtimeRoot, { recursive: true });
+  try {
+    const env = await createGithubGitCredentialEnv({
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+    });
+    assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, 'secret-pat');
+    assert.match(env.GIT_ASKPASS, new RegExp(`^${escapeRegExp(join(runtimeRoot, 'auth', 'github'))}`));
+    assert.doesNotMatch(readFileSync(env.GIT_ASKPASS, 'utf8'), /secret-pat/);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+function fakeConnection(
+  calls: Array<{ name: string; args: Record<string, unknown> }> = [],
+): McpServerConnection {
+  const outputs: Record<string, (args: Record<string, unknown>) => unknown> = {
+    issue_read: (args) => ({
+      number: args.issue_number,
+      title: 'Issue',
+      state: 'OPEN',
+      url: 'https://github.com/dansasser/sim-one-alpha/issues/42',
+    }),
+    list_issues: () => ({ issues: [] }),
+    pull_request_read: (args) => args.method === 'get_check_runs'
+      ? { check_runs: [{ name: 'CI', status: 'completed', conclusion: 'success' }] }
+      : args.method === 'get_review_comments'
+        ? {
+            review_threads: [{
+              id: 'PRRT_thread',
+              is_resolved: false,
+              is_outdated: false,
+              comments: [{
+                author: 'reviewer',
+                body: 'Please cover this branch.',
+                path: 'src/example.ts',
+                line: 14,
+                html_url: 'https://github.com/dansasser/sim-one-alpha/pull/56#discussion_r12345',
+              }],
+            }],
+          }
+        : {
+          number: args.pullNumber,
+          title: 'PR',
+          state: 'OPEN',
+          base: { ref: 'main' },
+          head: { ref: 'feature' },
+          draft: false,
+        },
+    list_pull_requests: () => [],
+  };
+  const names = [
+    'issue_read',
+    'list_issues',
+    'pull_request_read',
+    'list_pull_requests',
+    'actions_run_trigger',
+    'add_issue_comment',
+    'add_comment_to_pending_review',
+    'add_reply_to_pull_request_comment',
+    'create_pull_request',
+    'fork_repository',
+    'issue_write',
+    'pull_request_review_write',
+    'update_pull_request',
+  ];
+  return {
+    name: 'github',
+    tools: names.map((name): ToolDefinition => ({
+      name: `mcp__github__${name}`,
+      description: name,
+      parameters: { type: 'object', properties: {} },
+      async execute(args) {
+        calls.push({ name, args });
+        return JSON.stringify(outputs[name]?.(args) ?? { id: 'result-id' });
+      },
+    })),
+    async close() {},
+  };
+}
+
+function getTool(tools: ToolDefinition[], name: string): ToolDefinition {
+  const tool = tools.find((candidate) => candidate.name === name);
+  assert.ok(tool, `Missing tool ${name}`);
+  return tool;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

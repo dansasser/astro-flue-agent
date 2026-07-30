@@ -1,0 +1,1009 @@
+{
+  "schema_version": 1,
+  "mutation_id": "resolve-d6-tui-approval-drop-up",
+  "rationale": "Record the owner clarification that the status bar is a fixed two-row surface split at messages: N and context remaining, while a separate implementation node creates a drop-up approval interface above the prompt using the slash-command menu display pattern.",
+  "evidence": [
+    "doc/decisions/d6-tui-approval-surface-placement.md",
+    "structured-memory:01KYN630AJPW6CYGNDNDE87SHC",
+    "structured-memory:01KYN5NZRB7JA87WE1K3VXX3F9",
+    "tui/ratatui/src/ui.rs"
+  ],
+  "expected_graph_version": 51,
+  "expected_graph_checksum": "03dd8c7ab3f8988d2af5f5fc539f0350c28e86c39f35031822f4908039d2d4da",
+  "new_context_version": "decision:d6-tui-approval-drop-up:2026-07-29",
+  "operations": [
+    {
+      "op": "replace-node",
+      "id": "resolve-d6-tui-approval-surface-placement",
+      "value": {
+        "acceptance": [
+          {
+            "id": "decision-status-consistent",
+            "kind": "policy",
+            "criterion": "doc/decisions/d6-tui-approval-surface-placement.md, decisions.json, specification-manifest.json, and runtime evidence all record Resolved with the drop-up approval interface selected.",
+            "evidence": "runtime:evidence/resolve-d6-tui-approval-surface-placement/decision-status.json"
+          },
+          {
+            "id": "drop-up-contract-recorded",
+            "kind": "review",
+            "criterion": "The decision fixes a two-row status surface and a separate approval drop-up above the prompt using the slash-command menu display pattern, with no temporary third status row.",
+            "evidence": "runtime:evidence/resolve-d6-tui-approval-surface-placement/drop-up-contract.json"
+          }
+        ],
+        "execution": {
+          "completion_condition": "The drop-up placement decision and all status surfaces agree.",
+          "max_attempts": 1,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "kind": "agent",
+          "name": "SIM-ONE architecture adapter",
+          "instructions": "Record and verify the owner-selected drop-up approval interface above the prompt. Preserve a fixed two-row status surface and do not retain the temporary-row alternative as an open option."
+        },
+        "goal": "Record the owner-selected drop-up approval interface above the prompt, following the slash-command menu display pattern while keeping the status surface at two rows.",
+        "id": "resolve-d6-tui-approval-surface-placement",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "open questions",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "format": "decision-record",
+            "name": "Resolve D6 TUI Approval Surface Placement decision"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "artifact:product-spec",
+            "artifact:architecture-spec",
+            "artifact:acceptance-spec",
+            "artifact:open-questions",
+            "doc/product-spec.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/decisions/d6-tui-approval-surface-placement.md",
+            "decisions.json",
+            "specification-manifest.json",
+            "tui/ratatui/src/ui.rs",
+            "tui/ratatui/src/app.rs"
+          ],
+          "write": [
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ]
+        },
+        "resources": [
+          "project:resolve-d6-tui-approval-surface-placement"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces or updates one owner-visible TUI layout decision record.",
+          "level": "reversible",
+          "rollback": "Restore the prior decision record and invalidate only the two declared TUI consumers."
+        },
+        "state": "planned",
+        "tags": [
+          "decision",
+          "d6",
+          "tui",
+          "approval",
+          "layout"
+        ],
+        "title": "Resolve D6 TUI Approval Surface Placement",
+        "type": "decision"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-tui-status-context-meter",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared files are serialized and no parallel member edits the same file.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every repository write has a current fail-closed approval-service decision bound to the exact path, mutation or command digest, run, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/repository-mutations-approved.json",
+            "id": "repository-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Durable typed progress covers work admission, handoffs, tool execution, approval, verification, blockers, and completion.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused automated tests and output-level product evidence pass for every changed behavior.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-TUI-002: two status rows fit supported widths without overlapping prompt, transcript, slash palette, or work pane.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/rel-tui-002-two-row-status.json",
+            "id": "rel-tui-002-two-row-status",
+            "kind": "test"
+          },
+          {
+            "criterion": "Context-left percentage derives from the selected model/session budget and reports unavailable instead of estimating when authoritative data is missing.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/context-left-authoritative.json",
+            "id": "context-left-authoritative",
+            "kind": "test"
+          },
+          {
+            "criterion": "The status surface stays exactly two rows: row one preserves the established field order and ends with messages: N, while row two starts with authoritative context remaining and carries overflow state including pending approval status; the separate approval drop-up does not change this geometry.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/approval-surface-layout-contract.json",
+            "id": "approval-surface-layout-contract",
+            "kind": "test"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 240
+        },
+        "executor": {
+          "instructions": "Use typed gateway/Flue usage data, preserve the prompt and transcript geometry, keep the status surface exactly two rows, end row one at messages: N, and start row two with authoritative context remaining before overflow state. Follow artifact:implementation-plan exactly, use only worker-local internal specialists, emit durable typed progress, and stop before any unassigned file or unapproved mutation.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Render a stable two-row status surface split at the messages marker, with authoritative context-left percentage and overflow state on row two.",
+        "id": "implement-tui-status-context-meter",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-message-queue-change",
+            "name": "TUI message-queue change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval-surface placement decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:tui-status-context-meter-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "TUI status and context-meter change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:tui-message-queue-change",
+            "tui/ratatui/",
+            "src/engine/session/",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ],
+          "write": [
+            "tui/ratatui/ files assigned to this member",
+            "typed context/usage status files assigned to this member",
+            "focused framebuffer and product tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:tui-status-context-meter"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for Implement TUI Status And Context Meter.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit while preserving unrelated members."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "tui",
+          "status",
+          "context",
+          "meter"
+        ],
+        "title": "Implement TUI Status And Context Meter",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-connector-approval-controls",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared files are serialized and no parallel member edits the same file.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every repository write has a current fail-closed approval-service decision bound to the exact path, mutation or command digest, run, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/repository-mutations-approved.json",
+            "id": "repository-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Durable typed progress covers work admission, handoffs, tool execution, approval, verification, blockers, and completion.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused automated tests and output-level product evidence pass for every changed behavior.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-APP-001: TUI and Telegram create, display, approve, deny, expire, and settle the same typed request under their own connector identity.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/rel-app-001-actionable-controls.json",
+            "id": "rel-app-001-actionable-controls",
+            "kind": "test"
+          },
+          {
+            "criterion": "The response and control surface use the current trusted connector and never describe Telegram behavior to a TUI request or vice versa.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/connector-awareness.json",
+            "id": "connector-awareness",
+            "kind": "test"
+          },
+          {
+            "criterion": "A connector that cannot render or settle an approval leaves the mutation blocked and reports an actionable non-secret status.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/missing-surface-fails-closed.json",
+            "id": "missing-surface-fails-closed",
+            "kind": "test"
+          },
+          {
+            "criterion": "Telegram connector credentials and approval behavior resolve through canonical typed configuration without connector-local .env discovery or secret-bearing status output.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/canonical-telegram-config.json",
+            "id": "canonical-telegram-config",
+            "kind": "test"
+          },
+          {
+            "criterion": "The TUI renders a drop-up approval selector above the prompt using the slash-command menu display pattern, with Deny, Allow once, and Allow for session choices while preserving the fixed two-row status bar, prompt input, transcript scrolling and selection, slash-command navigation, resize behavior, and visible pending state.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/tui-approval-selector-placement.json",
+            "id": "tui-approval-selector-placement",
+            "kind": "test"
+          },
+          {
+            "criterion": "Deny blocks the exact request, allow_once settles only the exact approved operation and cannot replay, and allow_for_session expires when the bound session changes; unavailable or ambiguous selector state remains fail-closed.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/approval-scope-semantics.json",
+            "id": "approval-scope-semantics",
+            "kind": "test"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 240
+        },
+        "executor": {
+          "instructions": "Bridge the shared approval service through typed gateway/connector contracts; do not put orchestration or approval authority in the TUI. Implement the TUI selector as a drop-up above the prompt using the slash-command menu display pattern, never as a third status row. Follow artifact:implementation-plan exactly, use only worker-local internal specialists, emit durable typed progress, and stop before any unassigned file or unapproved mutation.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Render and settle action approvals in a TUI drop-up matching the slash-command menu display pattern and in Telegram with connector-aware identity, explicit allow scopes, and fail-closed unavailable states.",
+        "id": "implement-connector-approval-controls",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:file-access-approval-gate-change",
+            "name": "file access approval-gate change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:ingress-operations-change",
+            "name": "ingress operations change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-thinking-transcript-change",
+            "name": "TUI thinking-transcript change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-configuration-consolidation-change",
+            "name": "canonical runtime configuration change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval-surface placement decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-status-context-meter-change",
+            "name": "stable two-row TUI status geometry",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:connector-approval-controls-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "connector approval-controls change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:file-access-approval-gate-change",
+            "artifact:ingress-operations-change",
+            "artifact:tui-thinking-transcript-change",
+            "decision:d3-file-access-gate",
+            "src/api/",
+            "src/channels/",
+            "tui/ratatui/",
+            "decision:d5-canonical-runtime-configuration",
+            "doc/decisions/d5-canonical-runtime-configuration.md",
+            "artifact:runtime-configuration-consolidation-change",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md",
+            "artifact:tui-status-context-meter-change"
+          ],
+          "write": [
+            "approval ingress/route files assigned to this member",
+            "Telegram approval delivery files assigned to this member",
+            "tui/ratatui/ approval UI files assigned to this member",
+            "focused connector and packaged approval tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:connector-approval-controls"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for Implement Connector Approval Controls.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit while preserving unrelated members."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "connector",
+          "approval",
+          "controls"
+        ],
+        "title": "Implement Connector Approval Controls",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "verify-release-reconciliation-specifications",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "specctl verify passes against the current graph, Markdown, manifest, decisions, and project root.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/specctl-pass.json",
+            "id": "specctl-pass",
+            "kind": "schema"
+          },
+          {
+            "criterion": "D4 blocks only its named consumer, while resolved D1, D2, D3, D5, and D6 are consumed by planning, verification, and every declared affected implementation or release member.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/open-decisions-isolated.json",
+            "id": "open-decisions-isolated",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every stable 0.1.0 release ID has one producing graph member and behavioral acceptance evidence.",
+            "evidence": "runtime:evidence/verify-release-reconciliation-specifications/release-ledger-complete.json",
+            "id": "release-ledger-complete",
+            "kind": "review"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Graph and specification validation pass with no errors or warnings.",
+          "max_attempts": 2,
+          "timeout_minutes": 30
+        },
+        "executor": {
+          "instructions": "Run the graph and specification validators and retain their bounded JSON result.",
+          "kind": "deterministic",
+          "name": "Graph specification verifier"
+        },
+        "goal": "Verify graph/schema/manifest lineage, document containment, resolved-decision coverage, open-decision isolation, and release-ledger completeness.",
+        "id": "verify-release-reconciliation-specifications",
+        "inputs": [
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "name": "runtime-root product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "name": "runtime-root architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "name": "runtime-root acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "name": "runtime-root implementation questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "name": "file authorization product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "name": "file authorization architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "name": "file authorization acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "name": "file authorization and worker-verification questions",
+            "required": true
+          },
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "name": "resolved GitHub auth strategy",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved runtime-root decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-runtime-configuration",
+            "name": "runtime configuration product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-runtime-configuration",
+            "name": "runtime configuration architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-runtime-configuration",
+            "name": "runtime configuration acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-runtime-configuration",
+            "name": "runtime configuration open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-configuration-inventory",
+            "name": "runtime configuration key inventory",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval drop-up decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:release-reconciliation-specification-verification",
+            "format": "application/json",
+            "name": "release reconciliation specification verification"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "development-graph.json",
+            "development-graph.md",
+            "specification-manifest.json",
+            "decisions.json",
+            "docs/getting-started/pre-release-status.md",
+            "doc/product-spec-runtime-configuration.md",
+            "doc/architecture-spec-runtime-configuration.md",
+            "doc/acceptance-spec-runtime-configuration.md",
+            "doc/open-questions-runtime-configuration.md",
+            "doc/runtime-configuration-inventory.md",
+            "doc/decisions/d5-canonical-runtime-configuration.md",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces deterministic verification evidence without project mutation.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "verification",
+          "specification",
+          "release"
+        ],
+        "title": "Verify Reconciled Release Specifications",
+        "type": "verification"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "plan-implementation",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "Each workstream has one clear purpose, exact owned source/documentation/test files, declared inputs and outputs, no file concurrently owned by another parallel branch, and no hidden dependency on another branch; collisions are ordered or assigned to integration.",
+            "evidence": "runtime:evidence/plan-implementation/workstreams.json",
+            "id": "workstreams-bounded",
+            "kind": "review"
+          },
+          {
+            "criterion": "The plan maps each acceptance criterion to a focused check and the full applicable project verification matrix.",
+            "evidence": "runtime:evidence/plan-implementation/verification-map.json",
+            "id": "verification-mapped",
+            "kind": "test"
+          },
+          {
+            "criterion": "Every tool execution, worker handoff, plan update, verification result, and state transition has a durable typed progress-event expectation.",
+            "evidence": "runtime:evidence/plan-implementation/progress-contract.json",
+            "id": "progress-events-required",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The file-ownership matrix assigns every planned source, documentation, generated-definition, and focused-test mutation to exactly one producer; shared files are serialized or deferred to integration.",
+            "evidence": "runtime:evidence/plan-implementation/file-ownership.json",
+            "id": "file-ownership-disjoint",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The plan distinguishes src/AGENTS.md, src/workspace/, built-in lead-worker workspaces, Coding Worker internal-subagent workspaces, runtime-loaded user workers, and the Coding Worker runtime access root whenever those layers are affected.",
+            "evidence": "runtime:evidence/plan-implementation/workspace-layers.json",
+            "id": "workspace-layers-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "The implementation plan and doc/implementation-lineage.md map every stable release ID to one producing member, one behavioral verification path, and one exclusive or serialized file owner.",
+            "evidence": "runtime:evidence/plan-implementation/release-ledger-map.json",
+            "id": "release-ledger-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "Before producing any implementation workstream, the planner verifies current graph, manifest, decision, specification, implementation-lineage, and release-ledger bindings; a mismatch stops planning and requires a fresh baseline and approval.",
+            "evidence": "runtime:evidence/plan-implementation/repository-planning-lineage.json",
+            "id": "repository-planning-lineage-preserved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-CFG-001 is assigned to one serialized configuration implementation member and one integrated-build verification member; every environment-sensitive downstream member consumes D5 or the consolidated configuration artifact without parallel file ownership.",
+            "evidence": "runtime:evidence/plan-implementation/runtime-configuration-lineage.json",
+            "id": "runtime-configuration-lineage-mapped",
+            "kind": "policy"
+          },
+          {
+            "id": "tui-status-approval-lineage-mapped",
+            "kind": "policy",
+            "criterion": "REL-TUI-002 and REL-APP-001 use separate serialized members: the status member owns the exact two-row split through messages: N and context remaining, then the approval member consumes that geometry and owns the slash-menu-style drop-up interface.",
+            "evidence": "runtime:evidence/plan-implementation/tui-status-approval-lineage.json"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Verify the current graph, manifest, decision catalog, repository specifications, implementation lineage, and release ledger against artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed planning artifact. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution. Update doc/implementation-lineage.md; do not create an external plan.",
+          "kind": "agent",
+          "name": "SIM-ONE implementation planning adapter"
+        },
+        "goal": "Produce the repository-owned executable implementation lineage for every required 0.1.0 member, with exact file ownership, decision boundaries, evidence, approval scopes, and rollback under the development graph.",
+        "id": "plan-implementation",
+        "inputs": [
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-decision",
+            "name": "architecture decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "name": "runtime-root product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "name": "runtime-root architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "name": "runtime-root acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "name": "runtime-root implementation questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "name": "file authorization product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "name": "file authorization architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "name": "file authorization acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "name": "file authorization and worker-verification questions",
+            "required": true
+          },
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "name": "resolved GitHub auth strategy",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved runtime-root decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-runtime-configuration",
+            "name": "runtime configuration product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-runtime-configuration",
+            "name": "runtime configuration architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-runtime-configuration",
+            "name": "runtime configuration acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-runtime-configuration",
+            "name": "runtime configuration open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-configuration-inventory",
+            "name": "runtime configuration key inventory",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval drop-up decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "format": "text/markdown",
+            "name": "implementation plan"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:change-contract",
+            "artifact:architecture-decision",
+            "artifact:beta-release-contract",
+            "decision:d1-github-auth-strategy",
+            "docs/getting-started/pre-release-status.md",
+            "package.json",
+            ".github/workflows/ci.yml",
+            "src/AGENTS.md",
+            "src/workspace-loader.ts",
+            "src/agents/orchestrator.ts",
+            "src/engine/workers/",
+            "docs/architecture/flue-architecture.md",
+            "docs/architecture/gorombo-flue-map.md",
+            "src/tests/architecture-contract.test.ts",
+            "src/tests/workspace-loader.test.ts",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "development-graph.json",
+            "doc/implementation-lineage.md",
+            "doc/product-spec-runtime-configuration.md",
+            "doc/architecture-spec-runtime-configuration.md",
+            "doc/acceptance-spec-runtime-configuration.md",
+            "doc/open-questions-runtime-configuration.md",
+            "doc/runtime-configuration-inventory.md",
+            "doc/decisions/d5-canonical-runtime-configuration.md",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ],
+          "write": [
+            "doc/implementation-lineage.md"
+          ]
+        },
+        "resources": [
+          "project:implementation-lineage"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Updates the repository-owned implementation lineage consumed by the development graph.",
+          "level": "reversible",
+          "rollback": "Restore the prior implementation-lineage revision and invalidate downstream work that consumed it."
+        },
+        "state": "planned",
+        "tags": [
+          "planning",
+          "handoff",
+          "verification",
+          "progress"
+        ],
+        "title": "Plan Bounded Implementation",
+        "type": "work"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d6-tui-approval-surface-placement-to-spec-verification-consumes",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-spec-verification-consumes",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "verify-release-reconciliation-specifications",
+        "type": "consumes",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "verify-release-reconciliation-specifications requires the current resolved decision:d6-tui-approval-surface-placement artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d6-tui-approval-surface-placement-to-spec-verification-invalidates",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-spec-verification-invalidates",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "verify-release-reconciliation-specifications",
+        "type": "invalidates",
+        "artifacts": [
+          "artifact:release-reconciliation-specification-verification"
+        ],
+        "condition": "A material change to decision:d6-tui-approval-surface-placement invalidates artifact:release-reconciliation-specification-verification.",
+        "exit_condition": null,
+        "max_traversals": null
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d6-tui-approval-surface-placement-to-plan-consumes",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-plan-consumes",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "plan-implementation",
+        "type": "consumes",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "plan-implementation requires the current resolved decision:d6-tui-approval-surface-placement artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "resolve-d6-tui-approval-surface-placement-to-plan-invalidates",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-plan-invalidates",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "plan-implementation",
+        "type": "invalidates",
+        "artifacts": [
+          "artifact:implementation-plan"
+        ],
+        "condition": "A material change to decision:d6-tui-approval-surface-placement invalidates artifact:implementation-plan.",
+        "exit_condition": null,
+        "max_traversals": null
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "resolve-d6-tui-approval-surface-placement",
+      "implement-tui-status-context-meter",
+      "implement-connector-approval-controls",
+      "verify-release-reconciliation-specifications",
+      "plan-implementation"
+    ],
+    "artifacts": [
+      "decision:d6-tui-approval-surface-placement",
+      "artifact:tui-status-context-meter-change",
+      "artifact:connector-approval-controls-change",
+      "artifact:release-reconciliation-specification-verification",
+      "artifact:implementation-plan"
+    ]
+  },
+  "approval": null
+}

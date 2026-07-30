@@ -7,7 +7,6 @@ import orchestratorAgent from '../agents/orchestrator.js';
 import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import { resolveCodingWorkerWorkspaceRoot as resolveCodingWorkerWorkspaceRootFromOrchestrator } from '../agents/orchestrator.js';
-import { runWithTrustedMessageEvent } from '../api/ingress/trusted-event-context.js';
 
 test('root and architecture docs preserve the Flue component contract', () => {
   const agents = readText('AGENTS.md');
@@ -71,10 +70,6 @@ test('low-level web retrieval workflows are internal machinery, not public route
   assert.doesNotMatch(readText('src/workflows/web-research.ts'), /export const route/);
 });
 
-test('GitHub auth workflow stays internal until it has durable event-scoped admission', () => {
-  assert.doesNotMatch(readText('src/workflows/github-auth.ts'), /export const route/);
-});
-
 test('Flue orchestrator routes research to the researcher instead of owning web tools', async () => {
   const config = await orchestratorAgent.initialize({
     id: 'architecture-contract',
@@ -84,6 +79,7 @@ test('Flue orchestrator routes research to the researcher instead of owning web 
 
   assert.equal(config.subagents?.some((agent) => agent.name === 'researcher'), true);
   assert.equal(config.subagents?.some((agent) => agent.name === 'coding-worker'), true);
+  assert.equal(config.subagents?.some((agent) => agent.name === 'capability-manager'), true);
   assert.equal(config.skills?.some((skill) => skill.name === 'greeting-preflight'), true);
   const orchestratorExposedInternal = (config.subagents ?? [])
     .map((agent) => agent.name)
@@ -101,28 +97,36 @@ test('Flue orchestrator routes research to the researcher instead of owning web 
   assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_clone'), false);
   assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_branch_create'), false);
   assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_sync'), false);
+  assert.equal(config.tools?.some((tool) => tool.name === 'add_skill'), false);
+  assert.equal(config.tools?.some((tool) => tool.name === 'add_tool'), false);
+  assert.equal(config.tools?.some((tool) => tool.name === 'add_worker'), false);
+  assert.equal(config.tools?.some((tool) => tool.name === 'add_mcp_server'), false);
+  assert.equal(config.tools?.some((tool) => tool.name === 'list_capabilities'), false);
   assert.equal(config.tools?.some((tool) => tool.name === 'github_auth_start'), false);
   assert.equal(config.tools?.some((tool) => tool.name === 'github_auth_status'), false);
   assert.match(config.instructions ?? '', /Main Agent Workspace Instructions/);
   assert.match(config.instructions ?? '', /Runtime Capabilities/);
   assert.match(config.instructions ?? '', /delegate with the Flue task tool using agent: "researcher"/);
   assert.match(config.instructions ?? '', /agent: "coding-worker"/);
+  assert.match(config.instructions ?? '', /agent: "capability-manager"/);
+  assert.match(config.instructions ?? '', /does not own direct capability mutation tools/i);
   assert.match(config.instructions ?? '', /Do not call coding-worker internal subagents directly/);
   assert.match(config.instructions ?? '', /do not perform web search directly/i);
   assert.match(config.instructions ?? '', /depth: "deep"/);
   assert.match(config.instructions ?? '', /providerFailures/);
   assert.match(config.instructions ?? '', /Worker-backed capabilities count as capabilities of this main agent/);
   assert.match(config.instructions ?? '', /repository work and GitHub work through the Coding Worker/i);
-  assert.match(config.instructions ?? '', /does not establish that a specific provider account is authenticated/i);
-  assert.match(config.instructions ?? '', /trusted current `eventId`/i);
-  assert.match(config.instructions ?? '', /`request\.id` as `approvalRequestId`/i);
+  assert.match(config.instructions ?? '', /GitHub work through the Coding Worker/i);
+  assert.match(config.instructions ?? '', /chat\.runtime-configuration-routing/);
+  assert.match(config.instructions ?? '', /explicitly supplies a configuration value/i);
+  assert.match(config.instructions ?? '', /dedicated approval-gated runtime configuration update/i);
 });
 
-test('Flue orchestrator defaults coding-worker workspace root to src/workspace/', async () => {
+test('Flue orchestrator defaults coding-worker workspace to the canonical runtime root', async () => {
   const { GOROMBO_WORKSPACE_ROOT: _workspaceRoot, ...envWithoutWorkspaceRoot } = createModelEnv();
 
   const defaultRoot = resolveCodingWorkerWorkspaceRootFromOrchestrator(envWithoutWorkspaceRoot);
-  assert.ok(defaultRoot.endsWith('src/workspace'), `expected root ending in src/workspace, got ${defaultRoot}`);
+  assert.ok(defaultRoot.endsWith('.gorombo/workspace'), `expected root ending in .gorombo/workspace, got ${defaultRoot}`);
 
   const config = await orchestratorAgent.initialize({
     id: 'architecture-contract-default-workspace-root',
@@ -135,42 +139,6 @@ test('Flue orchestrator defaults coding-worker workspace root to src/workspace/'
 
   const repoTool = codingWorker.tools?.find((tool) => tool.name === 'coding_repo_apply_patch');
   assert.ok(repoTool);
-});
-
-test('Flue orchestrator forwards the configured managed GitHub auth root to the Coding Worker', async () => {
-  const workspaceRoot = mkdtempSync(join(tmpdir(), 'orchestrator-github-workspace-'));
-  const authRoot = mkdtempSync(join(tmpdir(), 'orchestrator-github-auth-'));
-  const event = {
-    id: 'event-orchestrator-auth-root',
-    connector: 'web-api',
-    kind: 'chat.message',
-    text: 'check GitHub auth',
-    receivedAt: new Date().toISOString(),
-    actor: { id: 'actor-1' },
-    conversation: { id: 'conversation-1' },
-  } as const;
-
-  try {
-    const config = await orchestratorAgent.initialize({
-      id: 'architecture-contract-github-auth-root',
-      env: {
-        ...createModelEnv(),
-        GOROMBO_WORKSPACE_ROOT: workspaceRoot,
-        GOROMBO_GITHUB_AUTH_ROOT: authRoot,
-      },
-      payload: undefined,
-    });
-    const codingWorker = config.subagents?.find((agent) => agent.name === 'coding-worker');
-    const status = codingWorker?.tools?.find((tool) => tool.name === 'github_auth_status');
-    assert.ok(status);
-
-    await runWithTrustedMessageEvent(event, () => status.execute({ eventId: event.id }));
-
-    assert.equal(existsSync(join(authRoot, 'profiles', 'default', 'gh')), true);
-  } finally {
-    rmSync(workspaceRoot, { recursive: true, force: true });
-    rmSync(authRoot, { recursive: true, force: true });
-  }
 });
 
 test('coding worker owns its workspace-backed lead profile', async () => {
@@ -203,16 +171,19 @@ test('coding worker owns its workspace-backed lead profile', async () => {
   assert.equal(subagent.tools?.some((tool) => tool.name === 'coding_repo_sync'), true);
   assert.equal(subagent.tools?.some((tool) => tool.name === 'coding_shell_run'), true);
   assert.equal(subagent.tools?.some((tool) => tool.name === 'coding_git_commit'), true);
-  assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_status'), true);
-  assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_start'), true);
+  assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_status'), false);
+  assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_start'), false);
   assert.equal(
     subagent.subagents?.find((agent) => agent.name === 'coding-worker-implementer')?.tools?.some(
       (tool) => tool.name === 'coding_repo_apply_patch',
     ),
     true,
   );
-  assert.match(subagent.instructions ?? '', /GitHub authentication is runtime state, not a `?TOOLS\.md`? flag/i);
-  assert.match(subagent.instructions ?? '', /first GitHub operation/i);
+  assert.match(subagent.instructions ?? '', /official GitHub MCP/i);
+  assert.match(subagent.instructions ?? '', /## Runtime Configuration/);
+  assert.match(subagent.instructions ?? '', /coding_runtime_config_update/);
+  assert.match(subagent.instructions ?? '', /exact value explicitly supplied by the\s+user/i);
+  assert.match(subagent.instructions ?? '', /does not bypass the approval record/i);
   assert.equal(
     subagent.subagents?.find((agent) => agent.name === 'coding-worker-test-debug')?.tools?.some(
       (tool) => tool.name === 'coding_shell_run',
@@ -333,10 +304,12 @@ function escapeRegExp(value: string): string {
 }
 
 function createModelEnv(): Record<string, string> {
+  const runtimeRoot = join(process.cwd(), '.gorombo');
   return {
     OLLAMA_API_KEY: 'test-key',
     CODEX_BRAIN_LOCAL_API_KEY: 'test-key',
     CODEX_BRAIN_LOCAL_API_URL: 'https://dt1.example.test/v1',
-    GOROMBO_WORKSPACE_ROOT: process.cwd(),
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
+    GOROMBO_WORKSPACE_ROOT: join(runtimeRoot, 'workspace'),
   };
 }

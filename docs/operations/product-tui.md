@@ -41,7 +41,12 @@ If no healthy gateway is available, the launcher starts the packaged server:
 .gorombo/sim-one-alpha/server.mjs
 ```
 
-The child server runs from the owner of the `.gorombo` runtime tree, so packaged runtime files and default data paths resolve from the product runtime root instead of the caller's arbitrary shell directory.
+The launcher derives the owner of the `.gorombo` runtime tree from its own
+executable, passes it as `GOROMBO_RUNTIME_ROOT`, and runs the child server from
+that root. Packaged files and mutable state therefore remain with the product
+when the tree is moved or launched from an arbitrary shell directory. The
+server also resolves external Node packages from its own isolated production
+`node_modules`, not from a source checkout.
 
 When the TUI exits, it only cleans up the child server it started. It does not stop a gateway that was already running.
 
@@ -53,9 +58,16 @@ Build outputs:
 .gorombo/sim-one-cli/sim-one
 .gorombo/sim-one-ratatui/sim-one-ratatui-tui
 .gorombo/sim-one-alpha/server.mjs
-.gorombo/sim-one-alpha/gorombo.config.json
+.gorombo/sim-one-alpha/package.json
+.gorombo/sim-one-alpha/node_modules/
+.gorombo/gorombo.config.json
 .gorombo/sim-one-alpha/memory/gorombo_memory.js
 ```
+
+Flue's Node target externalizes package dependencies. The runtime build follows
+the Flue build with `pnpm deploy --prod`, installing an isolated dependency
+tree beside `server.mjs` so the complete `.gorombo` directory is a movable
+product unit.
 
 Runtime data:
 
@@ -63,8 +75,18 @@ Runtime data:
 .gorombo/db/flue.sqlite
 .gorombo/db/sessions.sqlite
 .gorombo/db/structured-memory.sqlite
-~/.gorombo/db/capabilities.sqlite
+.gorombo/db/capabilities.sqlite
+.gorombo/capabilities/
+.gorombo/approvals/
+.gorombo/logs/
+.gorombo/coding-worker/
+.gorombo/workspace/repos/
+.gorombo/workspace/projects/
 ```
+
+The packaged main-agent persona is read-only content at
+`.gorombo/sim-one-alpha/workspace/`. It is not the Coding Worker project
+workspace.
 
 Normal no-argument launch starts without an agent session id. The TUI creates a fresh durable session through `POST /api/chat/sessions`, stores the returned `tui-*` id, then attaches its live stream. There is no default `primary` session and no implicit last-TUI-session reuse. Passing `--session <selector>` validates and resumes an exact owned id or explicit name before stream attachment. A missing selector creates a fresh session and greeting; forbidden or ambiguous selectors fail startup. TUI session commands can then clear, create, resume, or switch durable sessions inside the running app.
 
@@ -86,15 +108,17 @@ With no selector, every launch creates a fresh session. For `sim-one --session <
 
 The resume path loads the newest gateway transcript snapshot before enabling prompt input. It restores prior visible user prompts, settled public operation/thinking/tool/task rows, final root-assistant Markdown, the canonical id, and any explicit name. Internal startup instructions, raw tool results, nested worker response bodies, and TUI-local command output remain hidden. The stream attaches after the snapshot's `nextOffset`; scrolling to the first loaded exchange fetches and prepends older pages without moving the visible anchor.
 
-## Environment Files
+## Runtime Configuration
 
-The launcher accepts an explicit env path:
+The packaged CLI, TUI launcher, and Node gateway use the canonical owner file
+at `<runtime-root>/sim-one.config`. They derive `<runtime-root>` from the
+packaged command and do not search the caller working directory, `HOME`, or a
+legacy `.env` file. The product has no `--env-path` option.
 
-```sh
-./.gorombo/sim-one-cli/sim-one --env-path /path/to/.env
-```
-
-Without `--env-path`, it uses the packaged launcher's env-file resolution. In local development, `.env` in the repository root is the normal source. In packaged runtime layouts, `.gorombo/.env` is supported as the production runtime env file.
+For a source build, create repository-root `sim-one.config` from
+`sim-one.config.example`. `pnpm run build` copies both into `.gorombo`; the
+owner file is mode `0600`. Public packages include only the example, and
+onboarding must create the owner file before first live startup.
 
 Important provider variables for real prompt smoke tests include:
 
@@ -103,6 +127,7 @@ OLLAMA_API_KEY
 OLLAMA_CLOUD_API_KEY
 CODEX_BRAIN_LOCAL_API_KEY
 CODEX_BRAIN_LOCAL_API_URL
+GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ## Production Smoke Test
@@ -152,6 +177,11 @@ exact multiline prompt payload submitted to the gateway
 renamed session name in final TUI status and stable session id on exit
 fresh, renamed, and resumed transcript header values without status-bar changes
 temporary session-database isolation for product smoke data
+complete `.gorombo` tree relocation before launch
+arbitrary caller working directory with no leaked runtime state
+packaged server dependency resolution without source-checkout `node_modules`
+no packaged dependency link escapes to a source checkout
+root configuration, databases, logs, and Coding Worker workspace remain under the moved tree
 /new
 /clear
 /session
@@ -189,7 +219,8 @@ Exited SIM-ONE Alpha TUI. Session: <active-session-id>
 
 If the binary is missing, rebuild with `pnpm run build:all`.
 
-If the product smoke reports a missing model key, set `OLLAMA_API_KEY` or `OLLAMA_CLOUD_API_KEY` in the environment or `.env`.
+If the product smoke reports a missing model key, set `OLLAMA_API_KEY` or
+`OLLAMA_CLOUD_API_KEY` in repository-root `sim-one.config`, then rebuild.
 
 If gateway startup fails, rerun:
 

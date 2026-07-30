@@ -60,8 +60,8 @@ It is a name-reservation manifest, not a model-callable discovery service.
 The runtime registry is authoritative for post-build extensions:
 
 ```text
-~/.gorombo/db/capabilities.sqlite
-~/.gorombo/capabilities/
+<runtime-root>/db/capabilities.sqlite
+<runtime-root>/capabilities/
 ```
 
 Each `CapabilityRecord` includes:
@@ -137,6 +137,10 @@ current turn.
 | Cross-kind collision checks | `src/engine/capabilities/collision-check.ts` |
 | SQLite capability store | `src/engine/capabilities/capability-store.ts` |
 | Runtime capability loading | `src/engine/capabilities/capability-loader.ts` |
+| Shared lifecycle service | `src/engine/capabilities/capability-lifecycle-service.ts` |
+| Protocol validation context | `src/engine/capabilities/capability-protocol-context.ts` |
+| Agent lifecycle owner | `src/engine/workers/capability-manager/` |
+| Source authoring and handoff | `src/engine/workers/coding-worker/capability-authoring/` |
 | Orchestrator attachment | `src/agents/orchestrator.ts` |
 | SQLite protocol provider | `src/core/protocols/sqlite-protocol-provider.ts` |
 

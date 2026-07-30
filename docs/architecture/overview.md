@@ -257,5 +257,5 @@ governing authority between every admitted request and every executable action.
 - [Model System](model-system.md)
 - [Session Context Budget](session-context-budget.md)
 - [Schedules System](schedules-system.md)
-- [Managed GitHub Authentication](github-auth-system.md)
+- [GitHub MCP And Repository Authentication](github-auth-system.md)
 - [Execution Workflows](execution-workflows.md)

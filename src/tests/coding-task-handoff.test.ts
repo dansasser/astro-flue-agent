@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -7,6 +7,7 @@ import test from 'node:test';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import { createCodingTaskMemoryTools } from '../engine/workers/coding-worker/tools/coding-task-memory-tools.js';
 import { InMemoryCodingTaskRunStore } from '../engine/workers/coding-worker/session/task-run-store.js';
+import { JsonFileCodingTaskRunStore } from '../engine/workers/coding-worker/session/task-run-store.js';
 import { InMemoryMemoryEngine } from '../engine/memory/rust-memory-engine.js';
 import type { CodingTaskRunRecord } from '../engine/workers/coding-worker/session/task-run-store.js';
 import type { ToolDefinition } from '@flue/runtime';
@@ -85,5 +86,54 @@ test('coding_task_handoff_plan_to_checklist rejects an unknown source task', asy
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('coding task handoff reads task runs from the injected canonical state root', async () => {
+  const engine = new InMemoryMemoryEngine();
+  await engine.reconcile({ records: [] });
+  const fixture = mkdtempSync(join(tmpdir(), 'handoff-state-root-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const workspaceRoot = join(runtimeRoot, 'workspace-custom');
+  const stateRoot = join(runtimeRoot, 'coding-worker');
+  const store = JsonFileCodingTaskRunStore.atStateRoot(stateRoot);
+
+  try {
+    await store.upsert({
+      taskId: 'state-root-task',
+      status: 'completed',
+      sessionPlan: { harness: 'coding-worker', session: 'state-root-task' } as never,
+      plan: [
+        { id: 'p1', description: 'Verify canonical state', owner: 'test-debug', status: 'completed' },
+      ],
+      events: [],
+      verificationEvidence: [],
+      createdAt: '2026-07-29T00:00:00.000Z',
+      updatedAt: '2026-07-29T00:00:00.000Z',
+    });
+
+    const tools = createCodingTaskMemoryTools({
+      engineLoader: () => Promise.resolve(engine),
+      projectId: 'proj-state-root',
+      approvalService: createInMemoryCodingApprovalService(),
+      workspaceRoot,
+      stateRoot,
+    });
+    const handoff = getTool(tools, 'coding_task_handoff_plan_to_checklist');
+    const result = JSON.parse(
+      await handoff.execute({
+        taskId: 'handoff-state-root',
+        sourceTaskId: 'state-root-task',
+      }),
+    ) as { checklist?: { items?: Array<{ title?: string }> } };
+
+    assert.equal(result.checklist?.items?.[0]?.title, 'Verify canonical state');
+    assert.equal(existsSync(join(stateRoot, 'task-runs.json')), true);
+    assert.equal(
+      existsSync(join(runtimeRoot, 'workspace-custom', '.gorombo', 'coding-worker', 'task-runs.json')),
+      false,
+    );
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
   }
 });

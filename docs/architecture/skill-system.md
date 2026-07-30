@@ -44,7 +44,8 @@ tool or a protocol.
 ## Worker-Local Skills
 
 Worker-local skills belong only to the worker that uses them. The Coding Worker
-registers five process skills:
+keeps five process catalog entries and imports five application-owned Flue
+Agent Skills for capability authoring:
 
 | Skill | Purpose |
 | --- | --- |
@@ -53,10 +54,18 @@ registers five process skills:
 | `coding-worker.ci-debug-loop` | Diagnose and resolve failing checks |
 | `coding-worker.code-review-loop` | Perform independent requirements and regression review |
 | `coding-worker.github-pr-loop` | Manage approval-aware Git and GitHub workflows |
+| `capability-design` | Classify extension responsibility and prepare the authoring boundary |
+| `skill-authoring` | Author Agent Skills-compatible packages |
+| `tool-authoring` | Author Flue `defineTool(...)` packages |
+| `worker-authoring` | Author Flue worker profiles and workspaces |
+| `mcp-authoring` | Build MCP server packages or prepare MCP connection manifests |
 
 These skills guide the Coding Worker lead and its internal specialists. They do
 not replace the local sandbox, typed tools, verification evidence, approval
 service, or progress events.
+
+Capability authoring skills require the applicable Protocol Tool bundle before
+classification, validation, security scanning, tests, packaging, or handoff.
 
 The orchestrator does not inherit worker-local skills. Flue subagent profiles
 own their own tools, skills, subagents, and instructions.
@@ -69,7 +78,7 @@ Users and the agent can add a skill without rebuilding SIM-ONE Alpha. The
 Runtime skill records are stored in:
 
 ```text
-~/.gorombo/db/capabilities.sqlite
+<runtime-root>/db/capabilities.sqlite
 ```
 
 Enabled skill files are materialized under:
@@ -78,7 +87,7 @@ Enabled skill files are materialized under:
 <configured-capability-directory>/skills/<id>/
 ```
 
-The directory defaults to `~/.gorombo/capabilities/`.
+The directory defaults to `<runtime-root>/capabilities/`.
 `GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
 fallback override.
 

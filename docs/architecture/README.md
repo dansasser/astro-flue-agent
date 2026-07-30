@@ -22,7 +22,7 @@ runtime flow or inspect a specific subsystem.
 | [Protocol System](protocol-system.md) | SQLite protocol storage, trusted selectors, loading, matching, enforcement, and failure behavior |
 | [Worker System](worker-system.md) | Researcher, Coding Worker, internal subagents, runtime-added workers, progress, and authority boundaries |
 | [Schedules System](schedules-system.md) | Durable schedule definitions, in-process firing, dispatch, retries, run history, and management surfaces |
-| [Managed GitHub Authentication](github-auth-system.md) | Coding Worker authentication, credential isolation, approvals, and audience-bound device challenges |
+| [GitHub MCP And Repository Authentication](github-auth-system.md) | Coding Worker MCP ownership, PAT isolation, anonymous Git, and mutation approvals |
 
 ## Capabilities And Extensibility
 

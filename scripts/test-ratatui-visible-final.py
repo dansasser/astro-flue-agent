@@ -22,7 +22,12 @@ from urllib.parse import parse_qs, urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SIM_ONE = ROOT / ".gorombo" / "sim-one-cli" / "sim-one"
+SIM_ONE = Path(
+    os.environ.get(
+        "SIM_ONE_PRODUCT_PATH",
+        str(ROOT / ".gorombo" / "sim-one-cli" / "sim-one"),
+    )
+)
 LIVE_MARKER = b"LIVE_ASSISTANT_STREAM_MARKER"
 CHILD_MARKER = b"CHILD_RAW_OUTPUT_MARKER"
 FINAL_MARKER = b"FINAL_VISIBLE_MARKER"

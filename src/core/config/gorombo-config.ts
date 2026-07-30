@@ -1,13 +1,20 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  createGoromboRuntimePaths,
+  findSourceProjectRoot,
+  resolveGoromboRuntimeRoot,
+} from '../../core/config/runtime-root.js';
 
 export const goromboRuntimeConfigFilename = 'gorombo.config.json';
-export const goromboRuntimeConfigPath = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  goromboRuntimeConfigFilename,
-);
-export const goromboSourceConfigPath = resolve(process.cwd(), 'src/core/config/gorombo.config.json');
+export const goromboRuntimeConfigPath = createGoromboRuntimePaths(
+  resolveGoromboRuntimeRoot(),
+).config;
+const sourceProjectRoot = findSourceProjectRoot(import.meta.url);
+export const goromboSourceConfigPath = sourceProjectRoot
+  ? resolve(sourceProjectRoot, 'src/core/config/gorombo.config.json')
+  : '';
 
 export interface GoromboConfig {
   version: 1;
@@ -278,12 +285,26 @@ function resolveRuntimeConfigPath(): string | undefined {
 }
 
 function runtimeConfigCandidates(): string[] {
-  const moduleDirectory = dirname(fileURLToPath(import.meta.url));
+  const modulePath = fileURLToPath(import.meta.url);
+  const moduleDirectory = dirname(modulePath);
+  const runtimeRoot = dirname(goromboRuntimeConfigPath);
+  if (isWithin(runtimeRoot, modulePath)) {
+    return [goromboRuntimeConfigPath];
+  }
 
   return [
+    goromboRuntimeConfigPath,
+    ...(sourceProjectRoot ? [goromboSourceConfigPath] : []),
     resolve(moduleDirectory, goromboRuntimeConfigFilename),
-    goromboSourceConfigPath,
-  ];
+  ].filter((candidate, index, candidates) => candidate && candidates.indexOf(candidate) === index);
+}
+
+function isWithin(rootPath: string, candidatePath: string): boolean {
+  const relativePath = relative(resolve(rootPath), resolve(candidatePath));
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !isAbsolute(relativePath))
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

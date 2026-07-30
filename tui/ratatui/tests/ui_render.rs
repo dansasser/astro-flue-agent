@@ -43,6 +43,87 @@ fn renders_static_shell_with_transcript_status_and_prompt() {
 }
 
 #[test]
+fn status_uses_two_rows_with_messages_and_context_at_fixed_boundaries() {
+    for width in [42, 96, 180] {
+        let backend = TestBackend::new(width, 28);
+        let mut terminal = Terminal::new(backend).expect("test backend should initialize");
+        let mut app = App::new_for_test();
+        app.set_authoritative_context_usage(250, 1_000);
+
+        terminal
+            .draw(|frame| render(frame, &mut app))
+            .expect("two-row status should render");
+
+        let status_row = find_buffer_row(&terminal, "messages:");
+        let first = buffer_row_text(&terminal, status_row);
+        let second = buffer_row_text(&terminal, status_row + 1);
+        let prompt_row = find_buffer_row(&terminal, "Prompt");
+
+        assert!(
+            first.trim_end().ends_with("messages: 2"),
+            "row one must end at the messages field for width {width}:\n{}",
+            terminal_buffer_lines(&terminal)
+        );
+        assert!(
+            second.starts_with("context: 75% remaining"),
+            "row two must start with authoritative context for width {width}:\n{}",
+            terminal_buffer_lines(&terminal)
+        );
+        assert_eq!(
+            prompt_row,
+            status_row + 2,
+            "prompt must start after exactly two status rows at width {width}"
+        );
+        assert!(
+            !first.contains("...") && !second.contains("..."),
+            "status fields must not be cut at arbitrary characters for width {width}"
+        );
+
+        if width == 96 {
+            assert!(
+                first.find("SIM-ONE Alpha") < first.find("session: resolving")
+                    && first.find("session: resolving")
+                        < first.find("gateway: offline placeholder")
+                    && first.find("gateway: offline placeholder") < first.find("messages: 2"),
+                "row-one field order changed:\n{frame}",
+                frame = terminal_buffer_lines(&terminal)
+            );
+            assert!(
+                second.find("context: 75% remaining") < second.find("stream: not attached")
+                    && second.find("stream: not attached") < second.find("agent: ready")
+                    && second.find("agent: ready") < second.find("tail: live"),
+                "row-two overflow order changed:\n{frame}",
+                frame = terminal_buffer_lines(&terminal)
+            );
+        }
+    }
+}
+
+#[test]
+fn unavailable_context_and_tail_remain_visible_in_narrow_status() {
+    let backend = TestBackend::new(42, 12);
+    let mut terminal = Terminal::new(backend).expect("test backend should initialize");
+    let mut app = App::new(
+        "http://127.0.0.1:3940 started:true with a very long status segment",
+        "http://127.0.0.1:3940",
+    );
+
+    terminal
+        .draw(|frame| render(frame, &mut app))
+        .expect("narrow two-row status should render");
+
+    let status_row = find_buffer_row(&terminal, "messages:");
+    let first = buffer_row_text(&terminal, status_row);
+    let second = buffer_row_text(&terminal, status_row + 1);
+    let frame = terminal_buffer_lines(&terminal);
+
+    assert!(first.trim_end().ends_with("messages: 2"), "{frame}");
+    assert!(second.starts_with("context: unavailable"), "{frame}");
+    assert!(second.trim_end().ends_with("tail: live"), "{frame}");
+    assert!(!first.contains("...") && !second.contains("..."), "{frame}");
+}
+
+#[test]
 fn slash_command_palette_overlays_transcript_without_moving_prompt() {
     let backend = TestBackend::new(100, 24);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
@@ -69,6 +150,10 @@ fn slash_command_palette_overlays_transcript_without_moving_prompt() {
     assert_eq!(
         find_buffer_row(&terminal, "SIM-ONE Alpha | session:"),
         status_row_before
+    );
+    assert!(
+        find_buffer_row(&terminal, "Commands 1-6/9") < status_row_before,
+        "command palette must remain above both status rows"
     );
 
     let selected = find_buffer_text_position(&terminal, "/new [title]");
@@ -458,6 +543,7 @@ fn renamed_session_title_is_rendered_in_header_without_changing_status_bar() {
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("rename".to_string()),
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
     );
@@ -494,6 +580,7 @@ fn lifecycle_startup_rows_and_resumed_title_are_rendered() {
                 session_title: None,
                 command_name: None,
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
         Arc::new(|_| {
@@ -904,6 +991,7 @@ fn retry_completion_renders_final_response_at_live_tail() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -979,6 +1067,7 @@ fn flue_final_message_is_visible_before_http_request_settles() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1057,6 +1146,7 @@ fn live_assistant_stream_is_dimmed_until_final_message_replaces_it() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1241,32 +1331,6 @@ fn renders_pending_spinner_status_without_covering_prompt() {
 }
 
 #[test]
-fn narrow_status_truncates_instead_of_overlapping_prompt() {
-    let backend = TestBackend::new(42, 12);
-    let mut terminal = Terminal::new(backend).expect("test backend should initialize");
-    let mut app = App::new(
-        "http://127.0.0.1:3940 started:true with a very long status segment",
-        "http://127.0.0.1:3940",
-    );
-
-    terminal
-        .draw(|frame| render(frame, &mut app))
-        .expect("narrow shell should render");
-
-    let buffer = terminal
-        .backend()
-        .buffer()
-        .content()
-        .iter()
-        .map(|cell| cell.symbol())
-        .collect::<String>();
-    assert!(buffer.contains("SIM-ONE Alpha"), "{buffer}");
-    assert!(buffer.contains("..."), "{buffer}");
-    assert!(buffer.contains("Prompt"), "{buffer}");
-    assert!(buffer.contains("> Type a message"), "{buffer}");
-}
-
-#[test]
 fn renders_thinking_and_tool_activity_rows() {
     let backend = TestBackend::new(120, 28);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
@@ -1420,6 +1484,7 @@ fn semantic_prefix_formatting_preserves_body_and_continuation_styles() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1482,6 +1547,7 @@ fn assistant_markdown_renders_inline_styles_without_source_markers() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1560,6 +1626,7 @@ fn assistant_markdown_renders_blocks_and_preserves_word_wrapping() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1769,10 +1836,11 @@ fn transcript_scrollbar_thumb_reaches_bottom_at_tail() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
+    let status_row = find_buffer_row(&terminal, "messages:");
     let bottom_track_symbol = terminal
         .backend()
         .buffer()
-        .cell(Position::new(39, 9))
+        .cell(Position::new(39, status_row.saturating_sub(2)))
         .expect("bottom transcript scrollbar track cell should exist")
         .symbol();
 
@@ -1897,6 +1965,7 @@ fn transcript_reverse_drag_copies_rendered_markdown_text_without_markers() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );
@@ -1993,13 +2062,11 @@ fn live_tail_renders_final_content_above_blank_margin_row() {
         .draw(|frame| render(frame, &mut app))
         .expect("tail margin shell should render");
 
+    let content_row_index = find_buffer_row(&terminal, "TAIL_MARGIN_MARKER");
+    let content_row = buffer_row_text(&terminal, content_row_index);
     let buffer = terminal.backend().buffer();
-    let content_row = (1..39)
-        .filter_map(|x| buffer.cell(Position::new(x, 4)))
-        .map(|cell| cell.symbol())
-        .collect::<String>();
-    let margin_row = (1..39)
-        .filter_map(|x| buffer.cell(Position::new(x, 5)))
+    let margin_row = (1..buffer.area.width.saturating_sub(1))
+        .filter_map(|x| buffer.cell(Position::new(x, content_row_index + 1)))
         .map(|cell| cell.symbol())
         .collect::<String>();
     assert!(content_row.contains("TAIL_MARGIN_MARKER"), "{content_row}");
@@ -2050,6 +2117,7 @@ fn streamed_final_remains_visible_across_terminal_and_prompt_sizes() {
                     session_title: None,
                     command_name: None,
                     session_created: None,
+                    context_usage: None,
                 })
             }),
         );
@@ -2110,6 +2178,7 @@ fn app_with_pending_response() -> App {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     )
@@ -2136,7 +2205,8 @@ fn click_mouse(app: &mut App, position: Position) {
 }
 
 fn select_buffer_text(app: &mut App, terminal: &Terminal<TestBackend>, text: &str) {
-    let start = find_buffer_cell_text_position(terminal, text);
+    let prompt_row = find_buffer_row(terminal, "Prompt");
+    let start = find_buffer_cell_text_position_from_row(terminal, text, prompt_row + 1);
     let end = Position::new(start.x + text.len() as u16 - 1, start.y);
     app.handle_event(AppEvent::Mouse(mouse_at(
         MouseEventKind::Down(MouseButton::Left),
@@ -2210,8 +2280,16 @@ fn find_buffer_text_position(terminal: &Terminal<TestBackend>, needle: &str) -> 
 }
 
 fn find_buffer_cell_text_position(terminal: &Terminal<TestBackend>, needle: &str) -> Position {
+    find_buffer_cell_text_position_from_row(terminal, needle, 0)
+}
+
+fn find_buffer_cell_text_position_from_row(
+    terminal: &Terminal<TestBackend>,
+    needle: &str,
+    start_row: u16,
+) -> Position {
     let buffer = terminal.backend().buffer();
-    for y in 0..buffer.area.height {
+    for y in start_row..buffer.area.height {
         for x in 0..buffer.area.width {
             let suffix = (x..buffer.area.width)
                 .filter_map(|column| buffer.cell(Position::new(column, y)))

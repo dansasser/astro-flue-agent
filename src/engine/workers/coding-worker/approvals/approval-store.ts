@@ -37,10 +37,8 @@ export class InMemoryCodingApprovalStore implements CodingApprovalStore {
 export class JsonFileCodingApprovalStore implements CodingApprovalStore {
   constructor(private readonly filePath: string) {}
 
-  static atWorkspaceRoot(workspaceRoot: string): JsonFileCodingApprovalStore {
-    return new JsonFileCodingApprovalStore(
-      join(workspaceRoot, '.gorombo', 'coding-worker', 'approvals.json'),
-    );
+  static atStateRoot(stateRoot: string): JsonFileCodingApprovalStore {
+    return new JsonFileCodingApprovalStore(join(stateRoot, 'approvals.json'));
   }
 
   async getRecord(requestId: string): Promise<CodingApprovalRecord | undefined> {

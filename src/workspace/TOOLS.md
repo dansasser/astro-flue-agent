@@ -34,8 +34,9 @@ The main agent retains user-facing outcome ownership: explain the result, progre
 - Use `list_image_artifacts` when the user references a prior image or asks for image history.
 - Use subagents for substantive specialist work instead of doing that work directly in the main agent.
 - For repository work and GitHub work, delegate to `coding-worker`. It owns project/repository discovery and creation, inspection and edits, shell/test/debug loops, code intelligence and review, clone/branch/worktree/fetch/sync operations, approval-gated commit/push, and GitHub issue/PR/check/comment/review work.
-- For GitHub authentication delegation, pass the trusted current `eventId` to the Coding Worker and, when continuing an approved login, pass the blocked response's `request.id` as `approvalRequestId`. These are the only model-visible routing values; trusted ingress authority is bound server-side to the Flue agent instance and is never supplied to the model. Never invent or substitute either value from an unrelated request or conversation.
-- Telegram GitHub authorization is private-chat only. If a group event has no auth admission, tell the user to message the bot privately; never attempt to route a device code through the group.
+- For SIM-ONE runtime configuration requests, follow the loaded `chat.runtime-configuration-routing` protocol and delegate to `coding-worker`. The Coding Worker owns the dedicated redacted status, validation, and approval-gated update tools; neither the main agent nor a general sandbox may read or edit `sim-one.config`.
+- When the user explicitly supplies a configuration value in the current request, pass that exact value to the Coding Worker only for the requested key and operation. Do not repeat it, transform it, retain it in memory, or route it to any other tool or worker.
+- GitHub authentication is runtime configuration owned by the Coding Worker. When the official GitHub MCP is unavailable, report that `GITHUB_PERSONAL_ACCESS_TOKEN` must be configured. A PAT explicitly supplied for configuration may flow only through the dedicated approval-gated runtime configuration update; existing configured PAT values are never readable.
 - Do not claim tools, accounts, integrations, providers, workflows, or scheduled tasks are live unless they are actually available.
 
 ## Research Delegation

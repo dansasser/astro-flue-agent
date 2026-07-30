@@ -2,6 +2,7 @@ import { defineTool } from '@flue/runtime';
 import * as v from 'valibot';
 import { join } from 'node:path';
 import type { ToolDefinition } from '@flue/runtime';
+import { resolveRuntimePath } from '../../../../../core/config/runtime-root.js';
 import {
   createFlueLocalCodingSandbox,
   normalizeRepoRelativePath,
@@ -88,7 +89,7 @@ export function createCodingCodeIntelligenceTools(
       lspToolsPromise = (async () => {
         const sandbox = await getSandbox();
         return createLspTools({
-          workspaceRoot: options.workspaceRoot ?? process.cwd(),
+          workspaceRoot: options.workspaceRoot ?? resolveRuntimePath('workspace'),
           sandbox,
           reporter: options.reporter,
           taskId: options.taskId,

@@ -6,7 +6,15 @@ The capability system lets users and agents add skills, tools, workers (subagent
 
 Built-in Flue runtime capabilities are source-time application code. Built-in Agent Skills live under `src/skills/<name>/SKILL.md`, are imported with `with { type: 'skill' }`, and are registered directly on the owning agent or workflow. Example: `src/skills/greeting-preflight/SKILL.md` is registered on `src/agents/orchestrator.ts`.
 
-The capability registry is the post-build extension lane. Its default paths are `~/.gorombo/db/capabilities.sqlite` and `~/.gorombo/capabilities/`, resolved from the user's home directory. `GOROMBO_CAPABILITY_DB_PATH` and `GOROMBO_CAPABILITIES_DIR` can override them; `GOROMBO_CAPABILITY_DIR` remains a supported fallback for the capability directory. The orchestrator reads the store at agent init (`createAgent(...)`) and merges user-defined capabilities into the same `tools`, `skills`, and `subagents` arrays that hold built-in capabilities. A service restart picks up changes — no rebuild needed.
+The capability registry is the post-build extension lane. Its default paths are
+`<runtime-root>/db/capabilities.sqlite` and
+`<runtime-root>/capabilities/`. `GOROMBO_CAPABILITY_DB_PATH` and
+`GOROMBO_CAPABILITIES_DIR` can override them; relative overrides resolve under
+the same canonical runtime root. `GOROMBO_CAPABILITY_DIR` remains a supported
+fallback for the capability directory. The orchestrator reads the store at
+agent init (`createAgent(...)`) and merges user-defined capabilities into the
+same `tools`, `skills`, and `subagents` arrays that hold built-in capabilities.
+A service restart picks up changes; no rebuild is needed.
 
 Four capability kinds:
 
@@ -20,9 +28,26 @@ Four capability kinds:
 ## Architecture
 
 ```text
-User/Agent adds capability
--> sim-one CLI or agent capability tool
+User CLI request
+-> sim-one command
+-> applicable protocol bundle
+-> shared lifecycle service
 -> SQLite capabilities table
+-> managed capability files
+
+Agent lifecycle request
+-> orchestrator and Protocol Tool
+-> capability-manager
+-> approval gate for mutations
+-> shared lifecycle service
+-> SQLite capabilities table
+-> managed capability files
+
+Capability implementation request
+-> Coding Worker authoring skills and tools
+-> protocol-routed classification, validation, scan, and tests
+-> typed source handoff
+-> capability-manager
 -> Service restart
 -> createAgent(...) init
 -> loadUserCapabilities(env) reads SQLite
@@ -62,11 +87,17 @@ SQLite is authoritative. A config-file mirror (`gorombo.config.json` `capabiliti
 
 ## Product And Administration Surfaces
 
-The `sim-one` binary is the product interface for capability management. A
-source checkout also includes `scripts/capability-admin.mjs` for repository
-administration. Both surfaces validate and mutate the same registry contract;
-neither bypasses enablement, collision checks, protocol rules, ownership, or
-approval requirements.
+The `sim-one` binary is the authenticated user interface for capability
+management. Agent requests are delegated to the built-in
+`capability-manager`; the orchestrator has no direct capability mutation tools.
+A source checkout also includes `scripts/capability-admin.mjs` as a
+compatibility adapter to `sim-one`. It contains no SQLite or materialization
+implementation.
+
+All three surfaces use `CapabilityLifecycleService` for list, inspect,
+validate, add, update, enable, disable, and remove. Agent mutations require a
+current matching approval. Direct CLI commands are attributable to the
+authenticated user and do not accept model-supplied identity.
 
 Enabled capability records are read when the orchestrator initializes. After a
 lifecycle change, restart the gateway through the process or service manager
@@ -82,16 +113,20 @@ product commands.
   workers/<id>/index.mjs
 ```
 
-The default is `~/.gorombo/capabilities/`, resolved from the user's home
-directory. `GOROMBO_CAPABILITIES_DIR` overrides it;
-`GOROMBO_CAPABILITY_DIR` is the fallback override. Capabilities live outside
-`dist/` and survive upgrades.
+The default is `<runtime-root>/capabilities/`.
+`GOROMBO_CAPABILITIES_DIR` overrides it; relative overrides remain under the
+same canonical root. `GOROMBO_CAPABILITY_DIR` is the fallback override.
+Capabilities live outside the compiled server and survive upgrades.
 
 ## Source Code
 
 ```text
 src/engine/capabilities/
   types.ts                 CapabilityRecord, CapabilityStore interfaces
+  capability-lifecycle-service.ts
+                           shared validation, mutation, rollback, and result contract
+  capability-protocol-context.ts
+                           fail-closed Protocol Tool bundle compiler
   capability-store.ts      SQLite CRUD
   capability-loader.ts     loadUserCapabilities(env) — reads SQLite, returns grouped by kind
   skill-materializer.ts    copies/github-clones user skill dirs into Flue's discovery path
@@ -99,7 +134,13 @@ src/engine/capabilities/
   index.ts                 barrel exports
 
 scripts/
-  capability-admin.mjs     CLI admin script (add/list/enable/disable/remove/update)
+  capability-admin.mjs     compatibility adapter to the sim-one CLI
+
+src/engine/workers/
+  capability-manager/      Flue lifecycle owner for agent requests
+  coding-worker/
+    capability-authoring/  scoped scaffold, validation, test, and handoff tools
+    skills/                imported capability authoring skills
 
 src/agents/
   orchestrator.ts          Modified — calls loadUserCapabilitiesFromStore(env) at init,
@@ -112,19 +153,48 @@ Adding a capability writes to SQLite. When the gateway process restarts,
 `createAgent(...)` initialization re-reads SQLite and re-scans the capability
 directory. No product rebuild is required.
 User-defined capabilities live in SQLite and
-`~/.gorombo/capabilities/`, outside the packaged application artifact.
+`<runtime-root>/capabilities/`, outside the packaged application artifact.
 
 ## Enablement And Approval
 
-Agent-added skills are enabled automatically because they contain instructions
-and supporting content rather than executable code. Agent-added tools, workers,
-and MCP servers are installed disabled and require user enablement through the
-product control surface before they can enter the runtime. Direct CLI actions
-use the authenticated user as the principal.
+Agent-added skills may be enabled inside the approved add transaction because
+they contain instructions and supporting content rather than executable code.
+Agent-added tools, workers, and MCP connections are installed disabled and
+require a separate approved enable operation before they can enter the runtime.
+Updating an executable tool, worker, or MCP connection also returns it to the
+disabled state; the changed capability requires a separate enable operation.
+Direct CLI actions use the authenticated user as the principal.
 
 After enablement, executable capabilities remain subject to protocols, trusted
 scope, owning-agent attachment, sandbox policy, and action-specific approval
 requirements.
+
+## Protocol-Routed Validation
+
+The `capabilities.lifecycle-routing` base protocol governs capability work.
+Coding Worker classification, source validation, security scanning, tests,
+packaging, and handoff require the applicable Protocol Tool bundle.
+Capability-manager validation and every mutation require it as well.
+
+These paths fail closed when the bundle is missing or malformed. Successful
+validation and handoff results include redacted protocol context with applied
+protocol ids and rules. Deterministic checks do not replace protocols; they run
+after protocol directives have been compiled. Source-backed validation uses a
+non-executing TypeScript syntax check for exported Flue factories and a shared
+package scan for credential values and machine-specific absolute paths.
+
+## Coding Worker Authoring
+
+The Coding Worker owns source development inside the selected
+`workspace/projects/<slug>` or `workspace/repos/<slug>` target. It imports
+Flue skills for capability design, skill authoring, tool authoring, worker
+authoring, and MCP authoring. Its typed tools classify, approval-gate
+scaffolding, validate contracts, scan for secrets and machine host paths, run
+bounded tests, and prepare a content-digest-bound handoff.
+
+A handoff requires passing test evidence for the current content digest and
+protocol directives. The Coding Worker never imports the capability store,
+lifecycle service, materializer, or managed capability path resolver.
 
 ## Config-File Mirror
 

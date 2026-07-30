@@ -10,7 +10,7 @@ use ratatui::text::Span;
 
 use crate::agent::{
     create_chat_session, list_chat_sessions, resume_chat_session, send_agent_prompt_reply,
-    AgentPromptOrigin, AgentReply, SessionLifecycleReply, SessionSummary,
+    AgentContextUsage, AgentPromptOrigin, AgentReply, SessionLifecycleReply, SessionSummary,
 };
 use crate::diagnostics;
 use crate::flue::events::FlueEvent;
@@ -300,6 +300,39 @@ pub struct MouseRegions {
     pub command_palette: Option<CommandPaletteMouseRegion>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ContextUsageState {
+    #[default]
+    Unavailable,
+    Authoritative {
+        used_tokens: u64,
+        total_capacity: u64,
+    },
+}
+
+impl ContextUsageState {
+    fn remaining_percent(self) -> Option<u64> {
+        match self {
+            Self::Unavailable => None,
+            Self::Authoritative {
+                used_tokens,
+                total_capacity,
+            } => {
+                let remaining = total_capacity.saturating_sub(used_tokens.min(total_capacity));
+                Some(((remaining as u128 * 100) / total_capacity as u128) as u64)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StatusFields {
+    pub runtime: Vec<String>,
+    pub messages: String,
+    pub context: String,
+    pub tail: String,
+}
+
 pub struct App {
     prompt: String,
     prompt_cursor: usize,
@@ -354,6 +387,7 @@ pub struct App {
     palette_pressed: Option<usize>,
     startup_phase: StartupPhase,
     startup_attach_stream: bool,
+    context_usage: ContextUsageState,
 }
 
 #[derive(Debug)]
@@ -684,6 +718,7 @@ impl App {
             palette_pressed: None,
             startup_phase: StartupPhase::Idle,
             startup_attach_stream: false,
+            context_usage: ContextUsageState::Unavailable,
         };
         app.rebuild_transcript_render_cache();
         app.jump_to_tail();
@@ -1153,6 +1188,7 @@ impl App {
                                 self.session_title = None;
                             }
                         }
+                        self.apply_context_usage(reply.context_usage);
                         self.continue_startup_after_agent_reply(&reply_for_startup);
                     }
                     Err(error) => {
@@ -1334,8 +1370,36 @@ impl App {
         self.last_stream_event.as_deref()
     }
 
-    pub fn status_text(&self) -> String {
-        let mut parts = vec![
+    pub fn set_authoritative_context_usage(&mut self, used_tokens: u64, total_capacity: u64) {
+        self.context_usage = if total_capacity == 0 {
+            ContextUsageState::Unavailable
+        } else {
+            ContextUsageState::Authoritative {
+                used_tokens: used_tokens.min(total_capacity),
+                total_capacity,
+            }
+        };
+    }
+
+    pub fn context_usage(&self) -> ContextUsageState {
+        self.context_usage
+    }
+
+    fn apply_context_usage(&mut self, context_usage: Option<AgentContextUsage>) {
+        match context_usage {
+            Some(AgentContextUsage::Unavailable) => {
+                self.context_usage = ContextUsageState::Unavailable;
+            }
+            Some(AgentContextUsage::Authoritative {
+                used_tokens,
+                total_capacity,
+            }) => self.set_authoritative_context_usage(used_tokens, total_capacity),
+            None => {}
+        }
+    }
+
+    pub fn status_fields(&self) -> StatusFields {
+        let mut runtime = vec![
             "SIM-ONE Alpha".to_string(),
             format!("session: {}", self.status_session_label()),
             format!("gateway: {}", self.gateway_status),
@@ -1343,26 +1407,43 @@ impl App {
         ];
 
         if let Some(pending) = &self.pending_response {
-            parts.push(format!("agent: thinking {}", pending.spinner_frame_text()));
-            parts.push(format!(
+            runtime.push(format!("agent: thinking {}", pending.spinner_frame_text()));
+            runtime.push(format!(
                 "turn: {}",
                 format_duration(pending.elapsed((self.clock)()))
             ));
             if pending.duplicate_submit_notice {
-                parts.push("input locked: waiting for current response".to_string());
+                runtime.push("input locked: waiting for current response".to_string());
             }
         } else {
-            parts.push(format!("agent: {}", self.agent_status));
+            runtime.push(format!("agent: {}", self.agent_status));
         }
 
         if let Some(event_type) = &self.last_stream_event {
-            parts.push(format!("last: {event_type}"));
+            runtime.push(format!("last: {event_type}"));
         }
-        parts.push(format!("messages: {}", self.transcript_lines.len()));
-        parts.push(format!(
-            "tail: {}",
-            if self.follow_tail { "live" } else { "scrolled" }
-        ));
+
+        let context = self.context_usage.remaining_percent().map_or_else(
+            || "context: unavailable".to_string(),
+            |remaining| format!("context: {remaining}% remaining"),
+        );
+
+        StatusFields {
+            runtime,
+            messages: format!("messages: {}", self.transcript_lines.len()),
+            context,
+            tail: format!(
+                "tail: {}",
+                if self.follow_tail { "live" } else { "scrolled" }
+            ),
+        }
+    }
+
+    pub fn status_text(&self) -> String {
+        let fields = self.status_fields();
+        let mut parts = fields.runtime;
+        parts.push(fields.messages);
+        parts.push(fields.tail);
         parts.join(" | ")
     }
 
@@ -2296,6 +2377,7 @@ impl App {
         self.stream_start_offset = "-1".to_string();
         self.last_stream_event = None;
         self.legacy_submission_id = None;
+        self.context_usage = ContextUsageState::Unavailable;
         if had_stream {
             self.stream_status = StreamStatus::Connecting;
             self.start_stream();
@@ -2341,6 +2423,7 @@ impl App {
         };
         self.last_stream_event = None;
         self.legacy_submission_id = None;
+        self.context_usage = ContextUsageState::Unavailable;
         self.stream_status = StreamStatus::NotAttached;
         self.transcript_document = TranscriptDocument::default();
         self.transcript_selection = None;
@@ -2975,6 +3058,7 @@ fn agent_reply(text: impl Into<String>) -> AgentReply {
         session_title: None,
         command_name: None,
         session_created: None,
+        context_usage: None,
     }
 }
 

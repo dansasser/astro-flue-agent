@@ -1,5 +1,9 @@
-import { homedir } from 'node:os';
 import { isAbsolute, resolve } from 'node:path';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../core/config/runtime-root.js';
 import type { CapabilityKind, CapabilityRecord, CapabilityStore } from '../../engine/capabilities/types.js';
 
 export interface LoadedUserCapabilities {
@@ -31,10 +35,10 @@ export function resolveCapabilitiesDir(env: Record<string, unknown> = process.en
     readEnv(env, 'GOROMBO_CAPABILITY_DIR');
 
   if (configured) {
-    return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
+    return resolveRuntimePath(configured, { env });
   }
 
-  return resolve(homedir(), '.gorombo', 'capabilities');
+  return createGoromboRuntimePaths(resolveGoromboRuntimeRoot({ env })).capabilities;
 }
 
 export function resolveCapabilityPath(

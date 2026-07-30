@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 
 if (!existsSync('.gorombo/sim-one-alpha/server.mjs')) {
   throw new Error('.gorombo/sim-one-alpha/server.mjs does not exist. Run pnpm run build before the TUI e2e test.');
@@ -14,22 +14,29 @@ if (!existsSync('.gorombo/sim-one-cli/cli.js')) {
 
 const port = await getFreePort();
 const baseUrl = `http://127.0.0.1:${port}`;
-const envFileValues = parseEnvFile('.env');
-const requestSecret = process.env.GOROMBO_HTTP_TEST_API_SECRET || envFileValues.API_SECRET || 'tui-e2e-test-secret';
-const nodeArgs = existsSync('.env') ? ['--env-file=.env', '.gorombo/sim-one-alpha/server.mjs'] : ['.gorombo/sim-one-alpha/server.mjs'];
-const codingWorkspaceRoot = mkdtempSync(join(tmpdir(), 'tui-e2e-coding-workspace-'));
+const runtimeRoot = resolve('.gorombo');
+const runtimeConfigPath = join(runtimeRoot, 'sim-one.config');
+if (!existsSync(runtimeConfigPath)) {
+  throw new Error(
+    `${runtimeConfigPath} does not exist. Build after creating sim-one.config.`,
+  );
+}
+const runtimeConfigValues = parseEnv(readFileSync(runtimeConfigPath, 'utf8'));
+const requestSecret = process.env.GOROMBO_HTTP_TEST_API_SECRET || runtimeConfigValues.API_SECRET || 'tui-e2e-test-secret';
+const nodeArgs = ['.gorombo/sim-one-alpha/server.mjs'];
+const codingWorkspaceRoot = mkdtempSync(join(runtimeRoot, '.test-tui-e2e-workspace-'));
 
 // Use real Ollama Cloud key from env (CI passes it via secrets).
 // Codex Brain gets a placeholder — validation passes, server boots, test uses the primary model.
-const ollamaKey = process.env.OLLAMA_API_KEY || envFileValues.OLLAMA_API_KEY;
+const ollamaKey = runtimeConfigValues.OLLAMA_API_KEY || runtimeConfigValues.OLLAMA_CLOUD_API_KEY;
 if (!ollamaKey) {
-  throw new Error('OLLAMA_API_KEY is required for the TUI e2e test. Set it in env or .env.');
+  throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required in sim-one.config for the TUI e2e test.');
 }
 
 const modelEnv = {
   OLLAMA_API_KEY: ollamaKey,
-  CODEX_BRAIN_LOCAL_API_KEY: process.env.CODEX_BRAIN_LOCAL_API_KEY || envFileValues.CODEX_BRAIN_LOCAL_API_KEY || 'tui-e2e-placeholder',
-  CODEX_BRAIN_LOCAL_API_URL: process.env.CODEX_BRAIN_LOCAL_API_URL || envFileValues.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
+  CODEX_BRAIN_LOCAL_API_KEY: runtimeConfigValues.CODEX_BRAIN_LOCAL_API_KEY || 'tui-e2e-placeholder',
+  CODEX_BRAIN_LOCAL_API_URL: runtimeConfigValues.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
 };
 
 const child = spawn(process.execPath, nodeArgs, {
@@ -39,6 +46,7 @@ const child = spawn(process.execPath, nodeArgs, {
     ...modelEnv,
     PORT: String(port),
     API_SECRET: requestSecret,
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
     GOROMBO_WORKSPACE_ROOT: codingWorkspaceRoot,
     GOROMBO_TEST_MODE: '1',
   },
@@ -114,19 +122,6 @@ function runCliCommand(args) {
     cliChild.on('error', reject);
     cliChild.on('close', (code) => resolve({ exitCode: code ?? 1, stdout: cliStdout, stderr: cliStderr }));
   });
-}
-
-function parseEnvFile(path) {
-  const values = {};
-  if (!existsSync(path)) return values;
-  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const separator = trimmed.indexOf('=');
-    if (separator === -1) continue;
-    values[trimmed.slice(0, separator)] = trimmed.slice(separator + 1).replace(/^['"]|['"]$/g, '');
-  }
-  return values;
 }
 
 async function getFreePort() {

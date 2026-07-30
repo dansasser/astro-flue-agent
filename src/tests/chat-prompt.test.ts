@@ -63,15 +63,3 @@ test('chat prompt carries the non-secret event id without exposing an auth admis
   assert.ok(prompt.includes(event.id));
   assert.doesNotMatch(prompt, /admissionId/i);
 });
-
-test('chat prompt directs Telegram group authorization to a private bot chat', () => {
-  const event = normalizeWebApiMessage({
-    text: 'Authenticate GitHub from a group.',
-    actorId: 'telegram-user',
-    conversationId: 'telegram-group',
-  });
-  const prompt = createChatPrompt(event, { githubAuthRequiresPrivateChat: true });
-
-  assert.match(prompt, /GitHub authorization.*private chat/i);
-  assert.match(prompt, /do not attempt.*GitHub auth/i);
-});

@@ -585,9 +585,10 @@ Always run the relevant verification commands before calling work complete.
 - Each worktree must fetch it — gitignored, not shared across worktrees.
 - Server startup blocks ~30s for ONNX load (event loop blocked, HTTP doesn't respond until done).
 
-**.env file:**
-- Copy from `.env.example` and fill in provider secrets. `API_SECRET` optional (external connectors only — local TUI bypasses via loopback). Optional: `OLLAMA_API_KEY`, `RUNPOD_API_KEY`, `CODEX_BRAIN_LOCAL_API_KEY`, `JINA_API_KEY`, etc.
-- No TELEGRAM_* — Telegram is optional. No GOROMBO_APPROVAL_ROOT — approval not configured.
+**Canonical runtime environment:**
+- Copy `sim-one.config.example` to the ignored owner file `sim-one.config` and fill in only the provider, connector, and service values needed for the behavior being tested. `API_SECRET` is optional for loopback-only TUI use.
+- `sim-one.config.example` is the complete tracked key catalog and never contains secret values. `sim-one.config` is owner-only runtime state and must remain mode `0600`.
+- Local builds copy both files to `.gorombo/`; public packages include only `sim-one.config.example`. Do not restore production `.env` discovery.
 
 **curl 400 known issue:** `curl`/`wget` to Flue routes return 400 with empty body when `x-api-secret` header is long (48+ chars). This is a `@hono/node-server` issue, not our bug. Use Node's `fetch()` or `@flue/sdk` for testing agent endpoints. Note: local TUI connections don't send `x-api-secret` (loopback bypass), so this only affects external connector testing.
 
@@ -596,8 +597,9 @@ Always run the relevant verification commands before calling work complete.
 ```sh
 nvm use 22                                  # Node >= 22.18 required
 source ~/.cargo/env 2>/dev/null             # Rust/wasm-pack on PATH
-cp .env.example .env           # if .env missing
-$EDITOR .env                  # or: nano .env, vim .env, etc.
+cp sim-one.config.example sim-one.config   # if owner config is missing
+chmod 600 sim-one.config
+$EDITOR sim-one.config
 pnpm install
 pnpm fetch-embedding-model                  # if ONNX model missing
 pnpm run wasm:build                         # if WASM artifact missing

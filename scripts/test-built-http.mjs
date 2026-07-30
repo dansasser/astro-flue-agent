@@ -1,31 +1,32 @@
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { acquireProductArtifactLock } from './product-artifact-lock.mjs';
 
-if (!existsSync('.gorombo/sim-one-alpha/server.mjs')) {
+const runtimeRoot = resolve('.gorombo');
+const serverPath = join(runtimeRoot, 'sim-one-alpha', 'server.mjs');
+
+if (!existsSync(serverPath)) {
   throw new Error('.gorombo/sim-one-alpha/server.mjs does not exist. Run pnpm run build before the built HTTP test.');
 }
 
 const port = await getFreePort();
 const baseUrl = `http://127.0.0.1:${port}`;
-const envFileValues = parseEnvFile('.env');
-const requestSecret = process.env.GOROMBO_HTTP_TEST_API_SECRET || envFileValues.API_SECRET || 'built-http-test-secret';
-const nodeArgs = existsSync('.env') ? ['--env-file=.env', '.gorombo/sim-one-alpha/server.mjs'] : ['.gorombo/sim-one-alpha/server.mjs'];
-const codingWorkspaceRoot = mkdtempSync(join(tmpdir(), 'built-http-coding-workspace-'));
-const configPath = '.gorombo/sim-one-alpha/gorombo.config.json';
+const requestSecret = process.env.GOROMBO_HTTP_TEST_API_SECRET || 'built-http-test-secret';
+const nodeArgs = [serverPath];
+const codingWorkspaceRoot = mkdtempSync(join(runtimeRoot, '.test-built-http-workspace-'));
+const configPath = join(runtimeRoot, 'gorombo.config.json');
 const releaseArtifactLock = await acquireProductArtifactLock();
 let originalConfig;
 const sessionDatabasePath = join(codingWorkspaceRoot, 'sessions.sqlite');
 const modelEnv = {
-  OLLAMA_API_KEY: process.env.OLLAMA_API_KEY || envFileValues.OLLAMA_API_KEY || 'built-http-test-key',
+  OLLAMA_API_KEY: process.env.OLLAMA_API_KEY || 'built-http-test-key',
   CODEX_BRAIN_LOCAL_API_KEY:
-    process.env.CODEX_BRAIN_LOCAL_API_KEY || envFileValues.CODEX_BRAIN_LOCAL_API_KEY || 'built-http-test-key',
+    process.env.CODEX_BRAIN_LOCAL_API_KEY || 'built-http-test-key',
   CODEX_BRAIN_LOCAL_API_URL:
-    process.env.CODEX_BRAIN_LOCAL_API_URL || envFileValues.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
+    process.env.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
 };
 
 let stderr = '';
@@ -44,16 +45,17 @@ try {
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
 
   child = spawn(process.execPath, nodeArgs, {
-    cwd: process.cwd(),
+    cwd: runtimeRoot,
     env: {
       ...process.env,
       ...modelEnv,
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
       PORT: String(port),
       API_SECRET: requestSecret,
       GOROMBO_WORKSPACE_ROOT: codingWorkspaceRoot,
       GOROMBO_TEST_MODE: '1',
-      TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || envFileValues.TELEGRAM_BOT_TOKEN || 'built-http-test-bot-token',
-      TELEGRAM_WEBHOOK_SECRET_TOKEN: process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN || envFileValues.TELEGRAM_WEBHOOK_SECRET_TOKEN || 'built-http-test-webhook-secret',
+      TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN || 'built-http-test-bot-token',
+      TELEGRAM_WEBHOOK_SECRET_TOKEN: process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN || 'built-http-test-webhook-secret',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

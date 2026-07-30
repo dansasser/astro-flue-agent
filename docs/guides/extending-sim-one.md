@@ -31,15 +31,15 @@ SQLite and loaded through the Protocol Tool.
 The authoritative registry is:
 
 ```text
-~/.gorombo/db/capabilities.sqlite
+<runtime-root>/db/capabilities.sqlite
 ```
 
 File-backed capabilities are materialized under:
 
 ```text
-~/.gorombo/capabilities/skills/<id>/
-~/.gorombo/capabilities/tools/<id>/
-~/.gorombo/capabilities/workers/<id>/
+<runtime-root>/capabilities/skills/<id>/
+<runtime-root>/capabilities/tools/<id>/
+<runtime-root>/capabilities/workers/<id>/
 ```
 
 MCP definitions store their endpoint, transport, and token
@@ -56,10 +56,9 @@ Skills, tools, and workers accept:
 - another supported Git remote;
 - a local directory path.
 
-The pre-release CLI accepts and stores `--version`, but materialization
-shallow-clones the remote default branch. Reliable branch, tag, and commit
-pinning remains a release gate. Local directory sources ignore the recorded
-version.
+The CLI resolves an exact requested branch, tag, or commit from `--version`
+before validation and materialization. Local directory sources are
+content-digested for reproducible handoff and lifecycle evidence.
 
 Capability ids must be safe slugs and cannot collide with built-in or existing
 runtime capability names.
@@ -68,7 +67,7 @@ runtime capability names.
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <requested-version>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable|--disable]
 ```
 
 Skills are enabled when added because they contain workflow knowledge rather
@@ -109,30 +108,42 @@ Each capability family supports:
 
 ```text
 list
+inspect <id>
+validate ...
 enable <id>
 disable <id>
 update <id>
 remove <id>
 ```
 
-Updating a skill, tool, or worker re-fetches its recorded source. Removing it
-deletes the registry record and managed files. In the pre-release CLI, MCP
-update changes only the record's update timestamp. Change an MCP connection,
-name, or description by removing and re-adding it. MCP removal deletes the
-connection record.
+Updating a skill, tool, or worker re-fetches and revalidates its recorded
+source. MCP update validates connection, name, and description changes in
+place. Updating a tool, worker, or MCP connection disables it and removes its
+active materialization until a separate `enable` command succeeds. Removal
+deletes the registry record and managed files.
 
 Apply lifecycle changes by restarting the gateway through the process or
 service manager that launched it.
 
 ## Agent-Added Capabilities
 
-The agent can propose or add runtime capabilities through governed tools:
+The agent can propose runtime capability lifecycle work through the dedicated
+`capability-manager`:
 
 - skills can be enabled immediately;
 - executable tools, workers, and MCP servers require approval before
   activation;
 - all additions are checked for identity, scope, source validity, and name
   collisions.
+- validation and mutations require the applicable Protocol Tool bundle and
+  retain applied protocol ids and rules in redacted evidence.
+- source packages must pass non-executing Flue export checks, credential-value
+  scanning, and machine-specific absolute-path scanning.
+
+Capability source implementation is delegated to the Coding Worker. Its
+capability authoring skills and tools classify, scaffold, validate, scan, test,
+and prepare a content-digest-bound handoff inside the selected workspace. It
+cannot write the runtime registry or managed capability directories.
 
 Registration does not grant unrestricted authority. Enabled capabilities
 remain subject to:

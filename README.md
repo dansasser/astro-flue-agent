@@ -218,7 +218,7 @@ Start SIM-ONE with:
 ./.gorombo/sim-one-cli/sim-one
 ```
 
-Both source-build paths fetch the bundled embedding model, compile the Rust/WASM structured-memory engine, build the Flue Node runtime, build the terminal interface, and create the `sim-one` product wrapper. Source builds currently use file-based configuration; the packaged onboarding command is a release gate.
+The source build fetches the bundled embedding model, compiles the Rust/WASM structured-memory engine, builds the Flue Node runtime with isolated production dependencies, builds the terminal interface, and creates the `sim-one` product wrapper. Source builds currently use file-based configuration; the packaged onboarding command is a release gate.
 
 ## Configuration
 
@@ -228,13 +228,18 @@ source build uses these checkout-local files:
 | File | Purpose |
 | --- | --- |
 | `src/core/config/gorombo.config.json` | Source configuration seed copied by the runtime build |
-| `.gorombo/sim-one-alpha/gorombo.config.json` | Generated configuration loaded by the locally built server |
-| `.env` | Provider API keys, connector tokens, service credentials, and operational overrides |
+| `.gorombo/gorombo.config.json` | Generated configuration loaded by the locally built server |
+| `sim-one.config.example` | Tracked complete catalog of supported environment-style settings; all secrets blank |
+| `sim-one.config` | Ignored owner configuration used by source development and local product builds |
+| `.gorombo/sim-one.config.example` | Packaged configuration template |
+| `.gorombo/sim-one.config` | Owner-only local runtime copy, present only when a trusted owner config was supplied |
 
-Edit the source seed before building; rebuilding replaces the generated copy.
-The packaged onboarding flow will own the installed files under
-`~/.gorombo/`. Keep secrets in `.env` or your deployment secret manager. Do
-not commit `.env` or place credentials in `gorombo.config.json`.
+Edit the source seed before building; rebuilding replaces the generated JSON
+copy. Create `sim-one.config` from the example and keep it mode `0600`.
+Rebuilding copies it into the local `.gorombo` runtime. Public packages contain
+only the example; onboarding creates the installed owner file. Do not commit
+`sim-one.config`, expose its values to an agent, or place credentials in
+`gorombo.config.json`.
 
 ### Select Models
 
@@ -279,6 +284,7 @@ Add only the integrations you enable:
 | Telegram | Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET_TOKEN`; approved/admin user IDs and group mention settings are optional |
 | Web research | Uses Ollama Search and the configured Ollama key by default; `OLLAMA_WEB_SEARCH_BASE_URL` and `OLLAMA_WEB_SEARCH_TIMEOUT_MS` are optional |
 | Runpod image generation | Set `RUNPOD_API_KEY`; endpoint, model-catalog, and output-directory overrides are optional |
+| GitHub Coding Worker access | Set `GITHUB_PERSONAL_ACCESS_TOKEN` for the official GitHub MCP and private HTTPS access; public clone attempts anonymous access first |
 
 Telegram remains disabled when `TELEGRAM_BOT_TOKEN` is omitted. Telegram access
 is paired and governed through trusted connector and local administration
@@ -286,23 +292,27 @@ surfaces.
 
 ### Runtime Data
 
-The pre-release source build uses both checkout-relative and user-level
-durable state:
+The source build and packaged product use one relocatable `.gorombo` runtime
+root:
 
 | Data | Default location |
 | --- | --- |
 | Flue persistence and sessions | `.gorombo/db/flue.sqlite`, `.gorombo/db/sessions.sqlite` |
 | Protocols, structured memory, and schedules | `.gorombo/db/` |
 | Vector retrieval data | `.gorombo/vector/` |
-| Capability registry and installed definitions | `~/.gorombo/db/capabilities.sqlite`, `~/.gorombo/capabilities/` |
-| Approval records and managed GitHub authentication | `~/.gorombo/approvals/`, `~/.gorombo/auth/github/` |
+| Capability registry and installed definitions | `.gorombo/db/capabilities.sqlite`, `.gorombo/capabilities/` |
+| Approval, auth-helper, log, and Coding Worker state | `.gorombo/approvals/`, `.gorombo/auth/`, `.gorombo/logs/`, `.gorombo/coding-worker/` |
+| Coding Worker repositories and projects | `.gorombo/workspace/repos/`, `.gorombo/workspace/projects/` |
+| Packaged Node runtime dependencies | `.gorombo/sim-one-alpha/node_modules/` |
 
-Relative paths resolve from the checkout working directory. The packaged
-release will place installed runtime data under `~/.gorombo/`. Storage paths
-can be changed in the `storage`, `memory`, and `schedules` blocks or through
-their documented `GOROMBO_*` deployment overrides. These locations contain
-runtime-managed state; back them up as needed, but do not edit the SQLite
-databases directly.
+Relative runtime paths resolve from the owning `.gorombo` root rather than the
+caller working directory. The conventional installed root is
+`~/.gorombo`, but the complete tree can be moved. Storage paths can be changed
+in the `storage`, `memory`, and `schedules` blocks or through their documented
+`GOROMBO_*` deployment overrides. These locations contain runtime-managed
+state; back up the complete active root, but do not edit the SQLite databases
+directly. Package-owned assets and dependencies resolve from the moved tree and
+do not fall back into a surrounding source checkout.
 
 ### Apply Changes
 
@@ -422,7 +432,7 @@ SIM-ONE Alpha exposes capabilities through two layers:
 | Layer | What it contains | How it enters the runtime |
 | --- | --- | --- |
 | Flue / built-in | Product-shipped skills, tools, worker profiles, and MCP servers | Defined with the application and attached through Flue |
-| SIM-ONE runtime registry | User- or agent-added skills, tools, workers, and MCP servers | Stored in SQLite; file-backed capabilities are materialized under `~/.gorombo/capabilities/` and enabled capabilities load after restart without rebuilding |
+| SIM-ONE runtime registry | User- or agent-added skills, tools, workers, and MCP servers | Stored in SQLite; file-backed capabilities are materialized under `<runtime-root>/capabilities/` and enabled capabilities load after restart without rebuilding |
 
 Enabled runtime tools and MCP tools join the built-in Flue tool surface, worker profiles join the available subagents, and skills join Flue skill discovery. Registration does not grant unrestricted authority: enablement, identity and scope, collision checks, protocols, and approval requirements still apply.
 
@@ -471,12 +481,17 @@ pre-execution activation are identified in
 
 ### Runtime Capability Lifecycle
 
-The SQLite registry at `~/.gorombo/db/capabilities.sqlite` is authoritative. Each record tracks its kind, id, name, description, source, source reference, version, enabled state, configuration, timestamps, and whether it was installed by the CLI, an agent, or product configuration.
+The SQLite registry at `<runtime-root>/db/capabilities.sqlite` is
+authoritative. Each record tracks its kind, id, name, description, source,
+source reference, version, enabled state, configuration, timestamps, and
+whether it was installed by the CLI, an agent, or product configuration.
 
 ```text
-User or agent requests a capability
--> Validate id, source, and built-in/runtime collisions
--> Write the capability record to SQLite
+User CLI request or orchestrator delegation to capability-manager
+-> Load and apply the applicable protocol bundle
+-> Validate id, source, version, contracts, and built-in/runtime collisions
+-> Require approval for agent-requested mutations
+-> Write the capability record through the shared lifecycle service
 -> Materialize file-backed skill, tool, or worker files
 -> Enable immediately or wait for approval
 -> Restart the gateway
@@ -484,9 +499,13 @@ User or agent requests a capability
 -> Merge skills, tools, workers, and MCP tools into Flue
 ```
 
-File-backed skills, tools, and workers are materialized under `~/.gorombo/capabilities/`. MCP server URLs, transports, and token environment-variable names remain in SQLite; authentication tokens remain in the environment. Capabilities survive product upgrades because their records and managed files live outside the built artifact.
+File-backed skills, tools, and workers are materialized under
+`<runtime-root>/capabilities/`. MCP server URLs, transports, and token
+environment-variable names remain in SQLite; authentication tokens remain in
+the environment. Capabilities survive product upgrades because their records
+and managed files live outside the built server artifact.
 
-Skill, tool, and worker sources can be Git repository URLs or local directories. Capability ids must be safe slugs rather than filesystem paths, and ids cannot collide with built-in or existing runtime capabilities. The pre-release CLI accepts and records `--version`, but file materialization shallow-clones the remote default branch; reliable branch, tag, and commit pinning remains a release gate. Local directory sources ignore the recorded version. Updating re-fetches file-backed sources, while removal deletes the registry record and any managed files. A gateway restart reloads capability changes without rebuilding SIM-ONE Alpha.
+Skill, tool, and worker sources can be Git repository URLs or local directories. Capability ids must be safe slugs rather than filesystem paths, and ids cannot collide with built-in or existing runtime capabilities. Git branches, tags, and commits are resolved at the requested `--version`; local sources are content-digested. Updating re-fetches file-backed sources, while removal deletes the registry record and any managed files. A gateway restart reloads capability changes without rebuilding SIM-ONE Alpha.
 
 ### Trust And Governance
 
@@ -504,7 +523,7 @@ Add skills from a Git repository URL or local directory. Skills are enabled when
 
 ```bash
 sim-one skill add <source> <id> "<name>" \
-  [--description "<text>"] [--version <requested-version>] [--enable]
+  [--description "<text>"] [--version <requested-version>] [--enable|--disable]
 sim-one skill list
 sim-one skill enable <id>
 sim-one skill disable <id>
@@ -565,7 +584,7 @@ sim-one mcp remove <id>
 sim-one mcp --help
 ```
 
-`--url` is required. The default transport is `streamable-http`; `sse` is also supported. `--token-env` records the name of an environment variable containing the authentication token, not the token itself; names must start with a letter or underscore and contain only letters, numbers, and underscores. In the pre-release CLI, `mcp update` changes only the record's update timestamp. To change the URL, transport, token environment-variable name, name, or description, remove and re-add the MCP server. Removing an MCP server deletes its connection record.
+`--url` is required. The default transport is `streamable-http`; `sse` is also supported. `--token-env` records the name of an environment variable containing the authentication token, not the token itself; names must start with a letter or underscore and contain only letters, numbers, and underscores. `mcp update` changes validated connection metadata in place. Removing an MCP server deletes its connection record.
 
 After adding, enabling, disabling, updating, or removing a capability, restart
 the gateway through the process or service manager that launched it. This

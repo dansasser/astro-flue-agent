@@ -3,7 +3,7 @@ use std::fmt;
 use std::fs::read_to_string;
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpStream};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -21,7 +21,6 @@ const MIN_NODE_MINOR: u64 = 18;
 pub struct GatewayOptions {
     pub port: Option<u16>,
     pub server_path: Option<PathBuf>,
-    pub env_path: Option<PathBuf>,
 }
 
 pub struct GatewayHandle {
@@ -61,7 +60,11 @@ impl Drop for GatewayHandle {
 }
 
 pub fn ensure_server_running(options: &GatewayOptions) -> Result<GatewayHandle, String> {
-    let port = options.port.or_else(read_gateway_port).unwrap_or(3000);
+    let runtime_root = resolve_runtime_root()?;
+    let port = options
+        .port
+        .or_else(|| read_gateway_port(&runtime_root))
+        .unwrap_or(3000);
     let base_url = format!("http://127.0.0.1:{port}");
 
     if check_health(port) {
@@ -74,7 +77,7 @@ pub fn ensure_server_running(options: &GatewayOptions) -> Result<GatewayHandle, 
         });
     }
 
-    let server_path = resolve_server_path(options)?;
+    let server_path = resolve_server_path_with_root(options, &runtime_root)?;
     if !server_path.exists() {
         return Err(format!(
             "Agent package not found at {}. Run 'sim-one install' first.",
@@ -82,8 +85,7 @@ pub fn ensure_server_running(options: &GatewayOptions) -> Result<GatewayHandle, 
         ));
     }
 
-    let env_path = resolve_env_path(options);
-    let mut server = start_server(&server_path, &env_path, port)?;
+    let mut server = start_server(&server_path, port, &runtime_root)?;
     if let Err(error) = wait_for_health(port, &mut server.child) {
         stop_server(&mut server.child);
         server.log_drain.join();
@@ -101,62 +103,25 @@ pub fn ensure_server_running(options: &GatewayOptions) -> Result<GatewayHandle, 
 }
 
 pub fn resolve_server_path(options: &GatewayOptions) -> Result<PathBuf, String> {
+    let runtime_root = resolve_runtime_root()?;
+    resolve_server_path_with_root(options, &runtime_root)
+}
+
+fn resolve_server_path_with_root(
+    options: &GatewayOptions,
+    runtime_root: &Path,
+) -> Result<PathBuf, String> {
     if let Some(path) = &options.server_path {
-        return Ok(path.clone());
+        return resolve_runtime_path(runtime_root, path);
     }
 
     if let Ok(path) = env::var("SIM_ONE_SERVER_PATH") {
-        return Ok(PathBuf::from(path));
+        return resolve_runtime_path(runtime_root, Path::new(&path));
     }
 
-    let exe_dir = env::current_exe()
-        .ok()
-        .and_then(|path| path.parent().map(Path::to_path_buf));
-
-    if let Some(dir) = exe_dir {
-        let sibling = dir.join("..").join("sim-one-alpha").join("server.mjs");
-        if sibling.exists() {
-            return Ok(sibling);
-        }
-
-        let dev = env::current_dir()
-            .map_err(|error| format!("Could not read current directory: {error}"))?
-            .join(".gorombo")
-            .join("sim-one-alpha")
-            .join("server.mjs");
-        if dev.exists() {
-            return Ok(dev);
-        }
-
-        return Ok(sibling);
-    }
-
-    Ok(env::current_dir()
-        .map_err(|error| format!("Could not read current directory: {error}"))?
-        .join(".gorombo")
+    Ok(runtime_root
         .join("sim-one-alpha")
         .join("server.mjs"))
-}
-
-pub fn resolve_env_path(options: &GatewayOptions) -> PathBuf {
-    if let Some(path) = &options.env_path {
-        return path.clone();
-    }
-
-    if let Ok(path) = env::var("SIM_ONE_ENV_PATH") {
-        return PathBuf::from(path);
-    }
-
-    for home in home_dir_candidates() {
-        let prod_env = home.join(".gorombo").join(".env");
-        if prod_env.exists() {
-            return prod_env;
-        }
-    }
-
-    env::current_dir()
-        .unwrap_or_else(|_| PathBuf::from("."))
-        .join(".env")
 }
 
 pub fn read_gateway_port_from_config(path: &Path) -> Option<u16> {
@@ -165,51 +130,23 @@ pub fn read_gateway_port_from_config(path: &Path) -> Option<u16> {
     u16::try_from(port).ok().filter(|port| *port != 0)
 }
 
-fn read_gateway_port() -> Option<u16> {
-    let mut candidates = Vec::new();
-    if let Ok(exe) = env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            candidates.push(
-                dir.join("..")
-                    .join("sim-one-alpha")
-                    .join("gorombo.config.json"),
-            );
-        }
-    }
-    if let Ok(cwd) = env::current_dir() {
-        candidates.push(
-            cwd.join(".gorombo")
-                .join("sim-one-alpha")
-                .join("gorombo.config.json"),
-        );
-        candidates.push(
-            cwd.join("src")
-                .join("core")
-                .join("config")
-                .join("gorombo.config.json"),
-        );
-    }
-
-    candidates
-        .iter()
-        .find_map(|path| read_gateway_port_from_config(path))
+fn read_gateway_port(runtime_root: &Path) -> Option<u16> {
+    read_gateway_port_from_config(&runtime_root.join("gorombo.config.json"))
 }
 
-fn start_server(server_path: &Path, env_path: &Path, port: u16) -> Result<StartedServer, String> {
-    let server_cwd = resolve_server_cwd(server_path)?;
+fn start_server(
+    server_path: &Path,
+    port: u16,
+    runtime_root: &Path,
+) -> Result<StartedServer, String> {
     let server_arg = server_path
         .canonicalize()
         .unwrap_or_else(|_| server_path.to_path_buf());
     let mut command = Command::new(resolve_node_executable()?);
-    if env_path.exists() {
-        let env_arg = env_path
-            .canonicalize()
-            .unwrap_or_else(|_| env_path.to_path_buf());
-        command.arg(format!("--env-file={}", env_arg.display()));
-    }
     command.arg(server_arg);
+    command.env("GOROMBO_RUNTIME_ROOT", runtime_root);
     command.env("PORT", port.to_string());
-    command.current_dir(server_cwd);
+    command.current_dir(runtime_root);
     command.stdin(Stdio::null());
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
@@ -233,15 +170,111 @@ pub fn resolve_server_cwd(server_path: &Path) -> Result<PathBuf, String> {
                 let is_gorombo_runtime =
                     gorombo_dir.file_name().and_then(|name| name.to_str()) == Some(".gorombo");
                 if is_gorombo_runtime {
-                    if let Some(runtime_root) = gorombo_dir.parent() {
-                        return Ok(runtime_root.to_path_buf());
-                    }
+                    return Ok(gorombo_dir.to_path_buf());
                 }
             }
         }
     }
 
     env::current_dir().map_err(|error| format!("Could not read current directory: {error}"))
+}
+
+pub fn resolve_runtime_root() -> Result<PathBuf, String> {
+    if let Ok(configured) = env::var("GOROMBO_RUNTIME_ROOT") {
+        if !configured.trim().is_empty() {
+            return validate_runtime_root(PathBuf::from(configured), "GOROMBO_RUNTIME_ROOT");
+        }
+    }
+
+    let executable = env::current_exe()
+        .map_err(|error| format!("Could not resolve the TUI executable path: {error}"))?;
+    if let Some(root) = find_ancestor_named(&executable, ".gorombo") {
+        return validate_runtime_root(root, "packaged executable owner");
+    }
+
+    if let Some(project_root) = find_source_project_root(&executable) {
+        return validate_runtime_root(project_root.join(".gorombo"), "source checkout");
+    }
+
+    Err(
+        "Could not resolve the GOROMBO runtime root. Set GOROMBO_RUNTIME_ROOT to the absolute path of the owning .gorombo directory."
+            .to_string(),
+    )
+}
+
+fn validate_runtime_root(path: PathBuf, source: &str) -> Result<PathBuf, String> {
+    if !path.is_absolute() {
+        return Err(format!("{source} must be absolute: {}", path.display()));
+    }
+    if path.file_name().and_then(|name| name.to_str()) != Some(".gorombo") {
+        return Err(format!("{source} must end in .gorombo: {}", path.display()));
+    }
+    Ok(path)
+}
+
+fn resolve_runtime_path(runtime_root: &Path, path: &Path) -> Result<PathBuf, String> {
+    if path.is_absolute() {
+        return Ok(path.to_path_buf());
+    }
+
+    let mut resolved = runtime_root.to_path_buf();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::Normal(value) if value != ".gorombo" => resolved.push(value),
+            Component::Normal(_) => {
+                return Err(format!(
+                    "Relative runtime path must not include a nested .gorombo segment: {}",
+                    path.display()
+                ));
+            }
+            Component::ParentDir => {
+                return Err(format!(
+                    "Relative runtime path must not traverse outside the GOROMBO runtime root: {}",
+                    path.display()
+                ));
+            }
+            Component::RootDir | Component::Prefix(_) => unreachable!(),
+        }
+    }
+    Ok(resolved)
+}
+
+fn find_ancestor_named(start: &Path, name: &str) -> Option<PathBuf> {
+    let mut current = if start.is_dir() {
+        start.to_path_buf()
+    } else {
+        start.parent()?.to_path_buf()
+    };
+    loop {
+        if current.file_name().and_then(|value| value.to_str()) == Some(name) {
+            return Some(current);
+        }
+        if !current.pop() {
+            return None;
+        }
+    }
+}
+
+fn find_source_project_root(start: &Path) -> Option<PathBuf> {
+    let mut current = if start.is_dir() {
+        start.to_path_buf()
+    } else {
+        start.parent()?.to_path_buf()
+    };
+    loop {
+        let package_path = current.join("package.json");
+        if let Ok(contents) = read_to_string(package_path) {
+            if let Ok(value) = serde_json::from_str::<serde_json::Value>(&contents) {
+                if value.get("name").and_then(|name| name.as_str()) == Some("sim-one-alpha") {
+                    return Some(current);
+                }
+            }
+        }
+        if !current.pop() {
+            return None;
+        }
+    }
 }
 
 struct StartedServer {
@@ -541,23 +574,4 @@ fn request_shutdown(child: &mut Child) {
 #[cfg(not(unix))]
 fn request_shutdown(child: &mut Child) {
     let _ = child.kill();
-}
-
-fn home_dir_candidates() -> Vec<PathBuf> {
-    let mut candidates = Vec::new();
-    if let Ok(home) = env::var("HOME") {
-        candidates.push(PathBuf::from(home));
-    }
-    if let Ok(home) = env::var("USERPROFILE") {
-        candidates.push(PathBuf::from(home));
-    }
-    if let Ok(user) = env::var("USER") {
-        if user == "root" {
-            candidates.push(PathBuf::from("/root"));
-        } else {
-            candidates.push(PathBuf::from("/home").join(user));
-        }
-    }
-    candidates.push(PathBuf::from("/root"));
-    dedupe_paths(candidates)
 }

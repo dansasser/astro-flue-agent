@@ -1,0 +1,1247 @@
+{
+  "schema_version": 1,
+  "mutation_id": "add-capability-management-worker-path",
+  "rationale": "Give SIM-ONE Alpha one dedicated Flue worker for governed runtime capability administration while separately equipping the Coding Worker to author and validate skills, tools, workers, and MCP packages without granting it registry authority.",
+  "evidence": [
+    "docs/architecture/capability-system.md",
+    "docs/architecture/registry-system.md",
+    "docs/architecture/worker-system.md",
+    "docs/architecture/skill-system.md",
+    "src/engine/tools/capability-tools.ts",
+    "src/engine/workers/coding-worker/coding-worker.ts",
+    "sim-one-cli/src/cli.tsx",
+    "user-direction:2026-07-29-capability-management-worker"
+  ],
+  "expected_graph_version": 52,
+  "expected_graph_checksum": "a3a75e228a7419b92b6f04861cbd0c6e5d975e42be88b13d41a1a6a67bc7da56",
+  "new_context_version": "capability-management-worker:2026-07-29",
+  "operations": [
+    {
+      "op": "replace-node",
+      "id": "approve-beta-release-contract",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/approval.json",
+            "id": "all-release-items-required",
+            "kind": "manual"
+          },
+          {
+            "criterion": "The owner-approved contract covers every stable release ID in docs/getting-started/pre-release-status.md with no deferred or optional branch: REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-RUNTIME-001, TUI-WORK-001, REL-TUI-001, REL-TUI-002, REL-TUI-003, REL-TUI-004, REL-APP-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-CW-003, REL-CW-004, REL-CW-005, REL-CW-006, REL-CW-007, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-CAP-002, REL-MCP-001, REL-DOC-001, REL-IMG-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-PROTO-004, REL-REL-001.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/coverage.json",
+            "id": "release-ledger-covered",
+            "kind": "review"
+          },
+          {
+            "criterion": "The decision binds every repository release ID to the current development graph, specification manifest, decision catalog, repository specifications, and implementation lineage without relying on an external plan directory.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/repository-planning-lineage.json",
+            "id": "repository-planning-lineage-bound",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The owner authorizes every repository-mutating Coding Worker implementation and integration lane only under the project approval service, including the capabilities/security lane's first bootstrap write; each repository write must produce a current path- and mutation-bound decision and fail closed when approval is denied, missing, expired, or mismatched.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/workstream-mutation-policy.json",
+            "id": "implementation-mutation-policy-approved",
+            "kind": "manual"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 1,
+          "timeout_minutes": 1440
+        },
+        "executor": {
+          "instructions": "Review the stable release ledger, current development graph, specification manifest, decision catalog, repository specifications, implementation lineage, and every repository-mutating Coding Worker implementation and integration scope. Approve the fixed contract only with fail-closed per-write approval-service enforcement, including the first write that implements or changes approval enforcement itself. Every listed release ID is required for 0.1.0 Beta. Any repository planning-artifact change, scope reduction, lineage mismatch, or approval-service bypass requires a fresh owner decision and graph revision rather than a runtime deferral.",
+          "kind": "human",
+          "name": "SIM-ONE project owner"
+        },
+        "goal": "Bind the fixed owner decision that every stable release-ledger item and reconciled specification member is required for 0.1.0 Beta before architecture and implementation planning.",
+        "id": "approve-beta-release-contract",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:affected-domain-map",
+            "name": "affected domain map",
+            "required": true
+          },
+          {
+            "artifact": "artifact:release-reconciliation-specification-verification",
+            "name": "reconciled specification verification",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:beta-release-contract",
+            "format": "approval-record",
+            "name": "0.1.0 Beta release contract approval"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "artifact:change-contract",
+            "artifact:affected-domain-map",
+            "docs/getting-started/pre-release-status.md",
+            "artifact:release-reconciliation-specification-verification",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "development-graph.json",
+            "doc/implementation-lineage.md"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces an owner-bound approval of the fixed 0.1.0 Beta contract without mutating project or external state.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "human-gate",
+          "release-contract",
+          "lineage",
+          "tui",
+          "onboarding"
+        ],
+        "title": "Approve 0.1.0 Beta Release Contract",
+        "type": "human_gate"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "integrate-and-repair",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The integrated Git diff contains only authorized files and no dependency-approval, generated-asset, secret, or unrelated worktree fallout.",
+            "evidence": "runtime:evidence/integrate-and-repair/diff-scope.json",
+            "id": "diff-authorized",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every integration or repair write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, failed evidence, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write.",
+            "evidence": "runtime:evidence/integrate-and-repair/mutation-approvals.json",
+            "id": "integration-repair-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Shared types, schemas, registries, handoff contracts, docs, and consumers agree across every changed domain.",
+            "evidence": "runtime:evidence/integrate-and-repair/contract-check.json",
+            "id": "contracts-consistent",
+            "kind": "schema"
+          },
+          {
+            "criterion": "Each repair cites the failed evidence, preserves unrelated verified work, and remains within the declared feedback and attempt bounds.",
+            "evidence": "runtime:evidence/integrate-and-repair/repair-ledger.json",
+            "id": "repair-bounded",
+            "kind": "policy"
+          },
+          {
+            "criterion": "A repair caused by post-merge package or onboarding evidence records the superseded merged candidate and cannot return to post-merge verification until the repaired integrated diff completes fresh pre-merge verification, architecture review, owner approval, non-draft pull request checks, merge, and main-branch readback as a new artifact:release-candidate.",
+            "evidence": "runtime:evidence/integrate-and-repair/post-merge-republication.json",
+            "id": "post-merge-repair-republication-required",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every changed file has one recorded producer; shared or cross-domain files were serialized or assigned to integration, and no parallel branch silently overwrote another branch.",
+            "evidence": "runtime:evidence/integrate-and-repair/file-ownership.json",
+            "id": "parallel-file-ownership-reconciled",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Integration and repair never writes src/AGENTS.md. Any company-owned system-instruction change remains outside this ordinary lifecycle and requires a separately scoped owner-approved gate.",
+            "evidence": "runtime:evidence/integrate-and-repair/company-instruction-exclusion.json",
+            "id": "company-instruction-exclusion-preserved",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 180
+        },
+        "executor": {
+          "instructions": "Integrate only authorized outputs. Before every integration or repair mutation, call the already active Coding Worker approval service with the exact run, failed evidence, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.",
+          "kind": "hybrid",
+          "name": "SIM-ONE Coding Worker integration adapter"
+        },
+        "goal": "Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.",
+        "id": "integrate-and-repair",
+        "inputs": [
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:core-contracts-change",
+            "name": "core contracts change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:agent-runtime-change",
+            "name": "agent runtime change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:memory-retrieval-change",
+            "name": "memory retrieval change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capabilities-security-change",
+            "name": "capabilities security change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:ingress-operations-change",
+            "name": "ingress operations change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-delivery-change",
+            "name": "product delivery change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:dependency-environment",
+            "name": "dependency environment",
+            "required": true
+          },
+          {
+            "artifact": "artifact:embedding-model-assets",
+            "name": "embedding model assets",
+            "required": true
+          },
+          {
+            "artifact": "artifact:memory-wasm",
+            "name": "memory WASM artifact",
+            "required": true
+          },
+          {
+            "artifact": "artifact:typecheck-report",
+            "name": "typecheck report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:unit-test-report",
+            "name": "unit test report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:documentation-verification-report",
+            "name": "documentation verification report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:rust-test-report",
+            "name": "rust test report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:runtime-build",
+            "name": "runtime build",
+            "required": false
+          },
+          {
+            "artifact": "artifact:sim-one-tui-build",
+            "name": "SIM-ONE TUI build",
+            "required": false
+          },
+          {
+            "artifact": "artifact:sim-one-tui-product-report",
+            "name": "SIM-ONE TUI product report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:onboarding-distribution-report",
+            "name": "onboarding and distribution report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:release-package",
+            "name": "release package record",
+            "required": false
+          },
+          {
+            "artifact": "artifact:cli-build",
+            "name": "cli build",
+            "required": false
+          },
+          {
+            "artifact": "artifact:cli-behavior-report",
+            "name": "cli behavior report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:http-test-report",
+            "name": "http test report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:tui-e2e-report",
+            "name": "tui e2e report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:memory-smoke-report",
+            "name": "memory smoke report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:verification-summary",
+            "name": "verification summary",
+            "required": false
+          },
+          {
+            "artifact": "artifact:architecture-security-review",
+            "name": "architecture security review",
+            "required": false
+          },
+          {
+            "artifact": "artifact:canary-behavior-report",
+            "name": "canary behavior report",
+            "required": false
+          },
+          {
+            "artifact": "artifact:production-observation",
+            "name": "production observation",
+            "required": false
+          },
+          {
+            "artifact": "artifact:coding-worker-progress-change",
+            "name": "live Coding Worker progress change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:coding-worker-github-flow-change",
+            "name": "Coding Worker GitHub flow change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:coding-worker-scaffold-tooling-change",
+            "name": "Coding Worker scaffold tooling change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:orchestrator-worker-verification-change",
+            "name": "orchestrator worker-verification change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:image-reasoning-worker-change",
+            "name": "image reasoning worker change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:document-index-change",
+            "name": "document-index subsystem change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:protocol-scoring-change",
+            "name": "protocol enforcement and scoring change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-configuration-consolidation-change",
+            "name": "canonical runtime configuration change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capability-management-worker-change",
+            "name": "capability management worker change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:coding-worker-capability-authoring-change",
+            "name": "Coding Worker capability authoring change",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:integrated-change",
+            "format": "git-diff",
+            "name": "integrated change set"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:beta-release-contract",
+            "authorized project tree",
+            "domain change artifacts",
+            "verification evidence",
+            "artifact:runtime-configuration-consolidation-change"
+          ],
+          "write": [
+            "authorized project files across affected domains, excluding src/AGENTS.md"
+          ]
+        },
+        "resources": [
+          "project:core-contracts",
+          "project:agent-runtime",
+          "project:memory-retrieval",
+          "project:capabilities-security",
+          "project:ingress-operations",
+          "project:product-delivery"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Integrates and repairs only approval-service-authorized project files in the isolated worktree.",
+          "level": "reversible",
+          "rollback": "Restore the affected files from the pre-integration Git commit while preserving unrelated branches and evidence."
+        },
+        "state": "planned",
+        "tags": [
+          "integration",
+          "repair",
+          "diff",
+          "progress"
+        ],
+        "title": "Integrate Change And Apply Bounded Repairs",
+        "type": "work"
+      }
+    },
+    {
+      "op": "add-node",
+      "id": "implement-capability-management-worker",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared orchestrator, capability-service, CLI, documentation, and test files are serialized after their existing owners.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every agent-requested registry mutation has a current fail-closed approval-service decision bound to actor, session, capability kind/id, operation, source/version or MCP endpoint metadata, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/registry-mutations-approved.json",
+            "id": "registry-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-CAP-002: capability lifecycle requests from the orchestrator are delegated to one built-in capability-manager worker; the orchestrator no longer owns direct add/update/remove/enable/disable capability tools, while authenticated users retain the sim-one CLI.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/rel-cap-002-dedicated-worker.json",
+            "id": "rel-cap-002-dedicated-worker",
+            "kind": "test"
+          },
+          {
+            "criterion": "The capability-manager worker and sim-one CLI use one typed lifecycle service for list, inspect, validate, add, update, enable, disable, and remove across skill, tool, worker, and MCP records; neither surface reimplements SQLite or materialization rules.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/shared-lifecycle-service.json",
+            "id": "shared-lifecycle-service",
+            "kind": "test"
+          },
+          {
+            "criterion": "Agent-added executable tools, workers, and MCP servers remain disabled until an explicit enable approval; skills may activate only inside the approved installation transaction and remain subordinate to protocols and attached capabilities.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/enablement-policy.json",
+            "id": "enablement-policy",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Capability validation enforces safe ids, cross-kind and built-in collision checks, exact source version resolution, expected Flue export/skill contracts, managed runtime-root paths, and rollback of partial registry/materialization failures.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/capability-validation.json",
+            "id": "capability-validation",
+            "kind": "test"
+          },
+          {
+            "criterion": "MCP records store endpoint, transport, and canonical configuration key references without storing credential values; results, progress, approval evidence, and diagnostics remain redacted.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/mcp-secret-boundary.json",
+            "id": "mcp-secret-boundary",
+          "kind": "policy"
+          },
+          {
+            "criterion": "Every lifecycle operation emits durable typed progress and returns the resulting record, materialization/connection validation, activation state, and whether a gateway restart is required.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/progress-and-result.json",
+            "id": "progress-and-result",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused service, worker-routing, CLI-parity, approval, restart, rollback, and packaged-product tests pass for all four capability kinds.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 300
+        },
+        "executor": {
+          "instructions": "Implement the built-in capability-manager as a Flue lead worker owned by the orchestrator. Reuse one typed lifecycle service from both worker tools and the sim-one CLI. Preserve the runtime capability registry as authority, keep secrets in canonical runtime configuration, require trusted approvals for agent-driven mutations, emit public typed progress, and stop before any unassigned file or approval boundary.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Create the dedicated capability-manager worker and shared lifecycle service that safely administer user- and agent-added skills, tools, workers, and MCP servers through the existing runtime registry.",
+        "id": "implement-capability-management-worker",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capabilities-security-change",
+            "name": "capability registry and security foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:agent-runtime-change",
+            "name": "agent runtime and worker registration foundation",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:capability-management-worker-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "capability management worker change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:capabilities-security-change",
+            "artifact:agent-runtime-change",
+            "decision:d5-canonical-runtime-configuration",
+            "src/engine/capabilities/",
+            "src/engine/approvals/",
+            "src/agents/orchestrator.ts",
+            "sim-one-cli/",
+            "scripts/capability-admin.mjs",
+            "docs/architecture/capability-system.md",
+            "docs/architecture/registry-system.md",
+            "docs/architecture/worker-system.md"
+          ],
+          "write": [
+            "src/engine/workers/capability-manager/",
+            "shared capability lifecycle service files assigned to this member",
+            "serialized orchestrator and sim-one CLI capability-routing files assigned to this member",
+            "focused capability-manager tests and documentation assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:capability-management-worker"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for the dedicated capability-management worker and shared lifecycle service.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit and restore the prior orchestrator/CLI routing after disabling the new worker."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "capabilities",
+          "registry",
+          "worker",
+          "cli",
+          "approvals"
+        ],
+        "title": "Implement Capability Management Worker",
+        "type": "work"
+      }
+    },
+    {
+      "op": "add-node",
+      "id": "implement-coding-worker-capability-authoring",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership and is serialized after Coding Worker scaffold tooling and file-approval enforcement for every shared worker file.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every generated or edited capability source file is scoped to the selected workspace repository/project and has a current file-edit approval; the authoring member cannot write the runtime capability database or managed capability directory.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/authoring-boundary.json",
+            "id": "authoring-boundary",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-CW-007: the Coding Worker owns registered process skills for capability classification/design plus skill, tool, worker, and MCP authoring, validation, testing, and handoff.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/rel-cw-007-authoring-skills.json",
+            "id": "rel-cw-007-authoring-skills",
+            "kind": "test"
+          },
+          {
+            "criterion": "Worker-local typed tools scaffold and validate SKILL.md packages, defineTool modules, defineAgentProfile worker packages, and MCP server/connection packages without requiring direct registry access.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/scaffold-and-validate-tools.json",
+            "id": "scaffold-and-validate-tools",
+            "kind": "test"
+          },
+          {
+            "criterion": "Authoring validation uses current Flue and SIM-ONE contracts, verifies imports/exports and tests in the selected repository, scans for secrets and unsafe host paths, and produces a reproducible source/version/content-digest handoff.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/reproducible-handoff.json",
+            "id": "reproducible-handoff",
+            "kind": "test"
+          },
+          {
+            "criterion": "MCP authoring distinguishes building an MCP server from registering an MCP connection; credentials are represented only by canonical configuration key names and never written into source or handoff artifacts.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/mcp-authoring-boundary.json",
+            "id": "mcp-authoring-boundary",
+          "kind": "policy"
+          },
+          {
+            "criterion": "The final handoff names kind, id, display metadata, source reference, exact version, content digest, validation evidence, required configuration keys, requested activation state, and the capability-manager operation to perform.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/handoff-contract.json",
+            "id": "handoff-contract",
+            "kind": "schema"
+          },
+          {
+            "criterion": "Durable typed progress covers classification, scaffold, edits, tests, security validation, packaging, and handoff without exposing hidden reasoning or secrets.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused tests generate, validate, package, and hand off fixtures for each capability kind and prove the capability-manager, not the Coding Worker, owns runtime installation and activation.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 300
+        },
+        "executor": {
+          "instructions": "Extend only the Coding Worker authoring surface. Add worker-local skills and typed scaffold/validation/handoff tools for skills, tools, workers, and MCP packages. Keep all source changes inside the selected repository/project, use current Flue contracts, emit public progress, and hand validated artifacts to the capability-manager instead of mutating the runtime registry.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Give the Coding Worker the skills and tools to design, build, validate, test, and package every supported capability kind while leaving runtime installation and activation to the capability-manager worker.",
+        "id": "implement-coding-worker-capability-authoring",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capabilities-security-change",
+            "name": "capability contracts and validation foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:coding-worker-scaffold-tooling-change",
+            "name": "Coding Worker scaffold tooling foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:file-access-approval-gate-change",
+            "name": "Coding Worker file authorization foundation",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved workspace-root isolation decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:coding-worker-capability-authoring-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "Coding Worker capability authoring change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:capabilities-security-change",
+            "artifact:coding-worker-scaffold-tooling-change",
+            "artifact:file-access-approval-gate-change",
+            "decision:d2-workspace-root-isolation",
+            "decision:d5-canonical-runtime-configuration",
+            "src/engine/workers/coding-worker/",
+            "docs/architecture/capability-system.md",
+            "docs/architecture/skill-system.md",
+            "docs/architecture/tool-system.md",
+            "docs/architecture/worker-system.md",
+            "Flue documentation through the worker-owned documentation capability"
+          ],
+          "write": [
+            "Coding Worker capability-authoring skills and tools assigned to this member",
+            "Coding Worker workspace guidance assigned to this member",
+            "selected workspace repo/project capability source files after file-edit approval",
+            "focused capability-authoring fixtures and tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:coding-worker-capability-authoring"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized Coding Worker authoring files and selected workspace capability source files.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned Coding Worker files and generated workspace source changes from their pre-change revisions without altering the runtime capability registry."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "coding",
+          "worker",
+          "capabilities",
+          "skills",
+          "tools",
+          "mcp"
+        ],
+        "title": "Implement Coding Worker Capability Authoring",
+        "type": "work"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "plan-to-implement-capability-management-worker-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:implementation-plan"
+        ],
+        "condition": "The dedicated capability-management worker requires the current bounded implementation plan.",
+        "exit_condition": null,
+        "from": "plan-implementation",
+        "id": "plan-to-implement-capability-management-worker-consumes",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "plan-invalidates-implement-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "A material implementation-plan change invalidates the capability-management worker change.",
+        "exit_condition": null,
+        "from": "plan-implementation",
+        "id": "plan-invalidates-implement-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-to-implement-capability-management-worker-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "The dedicated capability-management worker requires the current owner-approved beta contract.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-to-implement-capability-management-worker-consumes",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-approves-implement-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "The current owner-approved beta contract authorizes this bounded reversible implementation member; each runtime mutation still requires its own trusted approval.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-approves-implement-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "approves"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-invalidates-implement-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "A material beta-contract change invalidates the capability-management worker change.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-invalidates-implement-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capabilities-security-to-capability-management-worker-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:capabilities-security-change"
+        ],
+        "condition": "The capability-manager consumes the current registry, validation, materialization, and security foundation.",
+        "exit_condition": null,
+        "from": "implement-capabilities-security",
+        "id": "capabilities-security-to-capability-management-worker-consumes",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capabilities-security-invalidates-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "A material capability-security change invalidates the capability-management worker change.",
+        "exit_condition": null,
+        "from": "implement-capabilities-security",
+        "id": "capabilities-security-invalidates-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "agent-runtime-to-capability-management-worker-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:agent-runtime-change"
+        ],
+        "condition": "The capability-manager consumes the current Flue worker registration and orchestrator-routing foundation.",
+        "exit_condition": null,
+        "from": "implement-agent-runtime",
+        "id": "agent-runtime-to-capability-management-worker-consumes",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "agent-runtime-invalidates-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "A material agent-runtime change invalidates the capability-management worker change.",
+        "exit_condition": null,
+        "from": "implement-agent-runtime",
+        "id": "agent-runtime-invalidates-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d5-to-capability-management-worker-consumes",
+      "value": {
+        "artifacts": [
+          "decision:d5-canonical-runtime-configuration"
+        ],
+        "condition": "Capability and MCP configuration references require the resolved canonical runtime configuration decision.",
+        "exit_condition": null,
+        "from": "resolve-d5-canonical-runtime-configuration",
+        "id": "d5-to-capability-management-worker-consumes",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d5-invalidates-capability-management-worker",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "A material D5 change invalidates the capability-management worker change.",
+        "exit_condition": null,
+        "from": "resolve-d5-canonical-runtime-configuration",
+        "id": "d5-invalidates-capability-management-worker",
+        "max_traversals": null,
+        "to": "implement-capability-management-worker",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capability-management-worker-to-integration-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:capability-management-worker-change"
+        ],
+        "condition": "Integration requires the dedicated capability-management worker change.",
+        "exit_condition": null,
+        "from": "implement-capability-management-worker",
+        "id": "capability-management-worker-to-integration-consumes",
+        "max_traversals": null,
+        "to": "integrate-and-repair",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capability-management-worker-invalidates-integration",
+      "value": {
+        "artifacts": [
+          "artifact:integrated-change"
+        ],
+        "condition": "A material capability-management worker change invalidates the integrated change.",
+        "exit_condition": null,
+        "from": "implement-capability-management-worker",
+        "id": "capability-management-worker-invalidates-integration",
+        "max_traversals": null,
+        "to": "integrate-and-repair",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "plan-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:implementation-plan"
+        ],
+        "condition": "Coding Worker capability authoring requires the current bounded implementation plan.",
+        "exit_condition": null,
+        "from": "plan-implementation",
+        "id": "plan-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "plan-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material implementation-plan change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "plan-implementation",
+        "id": "plan-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "Coding Worker capability authoring requires the current owner-approved beta contract.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-approves-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "The current owner-approved beta contract authorizes this bounded reversible implementation member; each workspace write still requires file-edit approval.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-approves-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "approves"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "beta-contract-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material beta-contract change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-contract-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capabilities-security-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:capabilities-security-change"
+        ],
+        "condition": "Capability authoring consumes the current capability formats, validation, and collision contracts.",
+        "exit_condition": null,
+        "from": "implement-capabilities-security",
+        "id": "capabilities-security-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "capabilities-security-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material capability-contract change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "implement-capabilities-security",
+        "id": "capabilities-security-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "scaffold-tooling-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-scaffold-tooling-change"
+        ],
+        "condition": "Capability authoring extends the verified Coding Worker scaffold and documentation tooling.",
+        "exit_condition": null,
+        "from": "implement-coding-worker-scaffold-tooling",
+        "id": "scaffold-tooling-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "scaffold-tooling-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material scaffold-tooling change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "implement-coding-worker-scaffold-tooling",
+        "id": "scaffold-tooling-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "file-access-gate-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:file-access-approval-gate-change"
+        ],
+        "condition": "Capability source generation requires the current Coding Worker file-approval boundary.",
+        "exit_condition": null,
+        "from": "implement-file-access-approval-gate",
+        "id": "file-access-gate-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "file-access-gate-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material file-approval change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "implement-file-access-approval-gate",
+        "id": "file-access-gate-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d2-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "decision:d2-workspace-root-isolation"
+        ],
+        "condition": "Capability authoring requires the resolved workspace-root isolation decision.",
+        "exit_condition": null,
+        "from": "resolve-d2-workspace-root-isolation",
+        "id": "d2-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d2-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material D2 change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "resolve-d2-workspace-root-isolation",
+        "id": "d2-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d5-to-coding-worker-capability-authoring-consumes",
+      "value": {
+        "artifacts": [
+          "decision:d5-canonical-runtime-configuration"
+        ],
+        "condition": "MCP and capability configuration manifests require the resolved canonical runtime configuration decision.",
+        "exit_condition": null,
+        "from": "resolve-d5-canonical-runtime-configuration",
+        "id": "d5-to-coding-worker-capability-authoring-consumes",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "d5-invalidates-coding-worker-capability-authoring",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "A material D5 change invalidates Coding Worker capability authoring.",
+        "exit_condition": null,
+        "from": "resolve-d5-canonical-runtime-configuration",
+        "id": "d5-invalidates-coding-worker-capability-authoring",
+        "max_traversals": null,
+        "to": "implement-coding-worker-capability-authoring",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "coding-worker-capability-authoring-to-integration-consumes",
+      "value": {
+        "artifacts": [
+          "artifact:coding-worker-capability-authoring-change"
+        ],
+        "condition": "Integration requires the Coding Worker capability-authoring change.",
+        "exit_condition": null,
+        "from": "implement-coding-worker-capability-authoring",
+        "id": "coding-worker-capability-authoring-to-integration-consumes",
+        "max_traversals": null,
+        "to": "integrate-and-repair",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "add-edge",
+      "id": "coding-worker-capability-authoring-invalidates-integration",
+      "value": {
+        "artifacts": [
+          "artifact:integrated-change"
+        ],
+        "condition": "A material Coding Worker capability-authoring change invalidates the integrated change.",
+        "exit_condition": null,
+        "from": "implement-coding-worker-capability-authoring",
+        "id": "coding-worker-capability-authoring-invalidates-integration",
+        "max_traversals": null,
+        "to": "integrate-and-repair",
+        "type": "invalidates"
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "approve-beta-release-contract",
+      "plan-implementation",
+      "integrate-and-repair"
+    ],
+    "artifacts": [
+      "artifact:beta-release-contract",
+      "artifact:implementation-plan",
+      "artifact:integrated-change"
+    ]
+  },
+  "approval": null
+}

@@ -1,22 +1,28 @@
-import { homedir } from 'node:os';
-import { isAbsolute, resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { createCapabilityStore } from '../../../src/engine/capabilities/index.js';
-import { resolveCapabilitiesDir, assertSafeCapabilityId } from '../../../src/engine/capabilities/index.js';
-import type { CapabilityKind, CapabilityStore } from '../../../src/engine/capabilities/index.js';
+import { resolveRuntimePath } from '../../../src/core/config/runtime-root.js';
+import type { CapabilityStore } from '../../../src/engine/capabilities/index.js';
+import {
+  CapabilityLifecycleService,
+  type CapabilityLifecycleResult,
+} from '../../../src/engine/capabilities/index.js';
+import { SqliteProtocolProvider } from '../../../src/core/protocols/sqlite-protocol-provider.js';
 
 /**
  * Resolve the capability SQLite database path using the same rules as the
  * runtime {@link createCapabilityStore}: honor `GOROMBO_CAPABILITY_DB_PATH`
- * (default `.gorombo/db/capabilities.sqlite`), resolving relative to
- * `process.cwd()` when not absolute.
+ * (default `db/capabilities.sqlite`), resolving relative to the canonical
+ * GOROMBO runtime root.
  */
 export function resolveCapabilityDbPath(env: Record<string, unknown> = process.env): string {
   const configured =
     typeof env.GOROMBO_CAPABILITY_DB_PATH === 'string'
       ? env.GOROMBO_CAPABILITY_DB_PATH.trim()
       : undefined;
-  const rawPath = configured ?? resolve(homedir(), '.gorombo', 'db', 'capabilities.sqlite');
-  return isAbsolute(rawPath) ? rawPath : resolve(process.cwd(), rawPath);
+  return resolveRuntimePath(configured ?? 'db/capabilities.sqlite', {
+    env,
+    modulePath: import.meta.url,
+  });
 }
 
 /**
@@ -31,29 +37,45 @@ export function createStore(): CapabilityStore {
  * Run an operation against a fresh {@link CapabilityStore} and close it when
  * done, even on errors. Exits with code 1 on uncaught errors.
  */
-export function withStore<T>(fn: (store: CapabilityStore) => T): T {
+export async function withLifecycleService<T>(
+  fn: (service: CapabilityLifecycleService) => T | Promise<T>,
+): Promise<T> {
+  const protocolDbPath = resolveRuntimePath(
+    process.env.GOROMBO_PROTOCOL_DB_PATH ?? 'db/protocols.sqlite',
+    { env: process.env },
+  );
+  const provider = new SqliteProtocolProvider(protocolDbPath);
   const store = createStore();
   try {
-    return fn(store);
+    const protocolBundle = await provider.loadApplicable({
+      id: `cli-capability-${randomUUID()}`,
+      connector: 'unknown',
+      kind: 'command',
+      text: 'sim-one capability lifecycle command',
+      receivedAt: new Date().toISOString(),
+      actor: { id: 'authenticated-cli-user' },
+      conversation: { id: 'sim-one-cli' },
+      context: {
+        workflow: 'capability-management',
+        task: 'capability-validation',
+      },
+    });
+    return await fn(
+      new CapabilityLifecycleService({
+        store,
+        env: process.env,
+        protocolBundle,
+      }),
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   } finally {
     store.close();
+    provider.close();
   }
 }
 
-/**
- * Re-exported from the runtime capability-loader.ts to avoid duplication.
- * Single source of truth for capabilities directory resolution.
- */
-export { resolveCapabilitiesDir as getCapabilitiesDir, assertSafeCapabilityId };
-
-/**
- * Resolve the on-disk path for a capability under the capabilities root.
- * Format: `<capabilitiesDir>/<kind>s/<id>` (e.g. `skills/my-skill`).
- */
-export function getCapabilityPath(kind: CapabilityKind, id: string): string {
-  assertSafeCapabilityId(id);
-  return resolve(resolveCapabilitiesDir(), kind + 's', id);
+export function printLifecycleResult(result: CapabilityLifecycleResult): void {
+  console.log(JSON.stringify(result, null, 2));
 }

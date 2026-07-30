@@ -8,7 +8,7 @@ use ratatui::Frame;
 
 use crate::app::{
     App, CommandPaletteMouseRegion, MouseRegions, PromptMouseRegion, RenderedTranscriptRow,
-    TranscriptRowKind,
+    StatusFields, TranscriptRowKind,
 };
 use crate::text_wrap::{display_width, display_width_between, wrap_words, WrappedLine};
 use crate::theme::{
@@ -24,6 +24,8 @@ const PROMPT_MAX_VISIBLE_ROWS: usize = 5;
 const TRANSCRIPT_LEFT_MARGIN_WIDTH: usize = 2;
 const COMMAND_PALETTE_MAX_ROWS: usize = 6;
 const COMMAND_PALETTE_USAGE_WIDTH: usize = 28;
+const STATUS_ROWS: usize = 2;
+const STATUS_SEPARATOR: &str = " | ";
 
 #[derive(Debug, Clone, Copy)]
 struct PromptCursorPosition {
@@ -39,7 +41,7 @@ pub fn render(frame: &mut Frame<'_>, app: &mut App) {
         .areas(frame.area());
     let [status_area, prompt_area] = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(1), Constraint::Min(3)])
+        .constraints([Constraint::Length(STATUS_ROWS as u16), Constraint::Min(3)])
         .areas(bottom_area);
 
     let transcript_inner_width = transcript_area.width.saturating_sub(2) as usize;
@@ -222,13 +224,17 @@ fn transcript_content_width(visible_width: usize) -> usize {
 }
 
 fn render_bottom(frame: &mut Frame<'_>, app: &mut App, status_area: Rect, prompt_area: Rect) {
-    let status = Line::from(Span::styled(
-        visible_status_text(&app.status_text(), status_area.width as usize),
-        Style::default()
-            .fg(Color::Green)
-            .add_modifier(Modifier::BOLD),
-    ));
-    frame.render_widget(Paragraph::new(status), status_area);
+    let status_style = Style::default()
+        .fg(Color::Green)
+        .add_modifier(Modifier::BOLD);
+    let [row_one, row_two] = status_rows(&app.status_fields(), status_area.width as usize);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from(Span::styled(row_one, status_style)),
+            Line::from(Span::styled(row_two, status_style)),
+        ]),
+        status_area,
+    );
 
     app.set_prompt_viewport_width(prompt_text_width(prompt_area.width as usize));
     render_prompt(frame, app, prompt_area);
@@ -372,33 +378,69 @@ fn render_prompt(frame: &mut Frame<'_>, app: &mut App, prompt_area: ratatui::lay
     }
 }
 
-fn visible_status_text(status: &str, width: usize) -> String {
-    if width == 0 {
-        return String::new();
+fn status_rows(fields: &StatusFields, width: usize) -> [String; STATUS_ROWS] {
+    let mut row_one_fields = Vec::new();
+    let mut overflow_start = fields.runtime.len();
+
+    for (index, field) in fields.runtime.iter().enumerate() {
+        let mut candidate = row_one_fields.clone();
+        candidate.push(field.clone());
+        candidate.push(fields.messages.clone());
+        if joined_status_width(&candidate) <= width {
+            row_one_fields.push(field.clone());
+        } else {
+            overflow_start = index;
+            break;
+        }
+    }
+    row_one_fields.push(fields.messages.clone());
+
+    let overflow = &fields.runtime[overflow_start..];
+    let mut row_two_fields = vec![fields.context.clone()];
+    let reserve_tail = joined_status_width(&[fields.context.clone(), fields.tail.clone()]) <= width;
+
+    for field in overflow {
+        let mut candidate = row_two_fields.clone();
+        candidate.push(field.clone());
+        if reserve_tail {
+            candidate.push(fields.tail.clone());
+        }
+        if joined_status_width(&candidate) <= width {
+            row_two_fields.push(field.clone());
+        } else {
+            break;
+        }
     }
 
-    let count = status.chars().count();
-    if count <= width {
-        return status.to_string();
+    if reserve_tail {
+        row_two_fields.push(fields.tail.clone());
     }
 
-    if width <= 3 {
-        return status.chars().take(width).collect();
-    }
+    [
+        row_one_fields.join(STATUS_SEPARATOR),
+        row_two_fields.join(STATUS_SEPARATOR),
+    ]
+}
 
-    let mut visible = status.chars().take(width - 3).collect::<String>();
-    visible.push_str("...");
-    visible
+fn joined_status_width(fields: &[String]) -> usize {
+    let separators = fields.len().saturating_sub(1) * display_width(STATUS_SEPARATOR);
+    fields
+        .iter()
+        .map(|field| display_width(field))
+        .sum::<usize>()
+        + separators
 }
 
 fn bottom_panel_height(app: &App, width: usize, frame_height: u16) -> u16 {
     let prompt_rows = wrap_prompt_rows(app.prompt(), prompt_text_width(width)).len();
     let visible_prompt_rows = prompt_rows.clamp(PROMPT_MIN_VISIBLE_ROWS, PROMPT_MAX_VISIBLE_ROWS);
-    let desired = 1 + visible_prompt_rows + 2;
+    let desired = STATUS_ROWS + visible_prompt_rows + 2;
     let max_bottom = (frame_height as usize)
         .saturating_sub(5)
-        .max(1 + PROMPT_MIN_VISIBLE_ROWS + 2);
-    desired.min(max_bottom).max(4) as u16
+        .max(STATUS_ROWS + PROMPT_MIN_VISIBLE_ROWS + 2);
+    desired
+        .min(max_bottom)
+        .max(STATUS_ROWS + PROMPT_MIN_VISIBLE_ROWS + 2) as u16
 }
 
 fn prompt_text_width(area_width: usize) -> usize {

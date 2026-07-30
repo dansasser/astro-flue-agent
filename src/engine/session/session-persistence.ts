@@ -8,9 +8,17 @@ import type {
   SessionStore,
 } from '@flue/runtime/adapter';
 import type { GoromboConfig } from '../../core/config/gorombo-config.js';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../core/config/runtime-root.js';
 import { createEmbeddingClient } from '../../engine/rag/embeddings.js';
 import { runBackgroundIndexing } from '../../engine/rag/indexers/background-indexer.js';
-import { LanceDbVectorStore } from '../../engine/rag/vector/index.js';
+import {
+  defaultVectorStorePath,
+  LanceDbVectorStore,
+} from '../../engine/rag/vector/index.js';
 import {
   defaultSessionDatabasePath,
   GoromboSessionDatabase,
@@ -21,7 +29,7 @@ import {
   type FlueSessionStorageParts,
 } from '../../engine/session/flue-session-store.js';
 
-export const defaultFlueDatabasePath = '.gorombo/db/flue.sqlite';
+export const defaultFlueDatabasePath = 'db/flue.sqlite';
 
 export interface GoromboPersistenceRuntime {
   adapter: PersistenceAdapter;
@@ -38,23 +46,36 @@ export interface GoromboPersistenceRuntime {
 }
 
 export function createGoromboPersistenceRuntime(config: GoromboConfig): GoromboPersistenceRuntime {
-  const flueDatabasePath = config.storage?.flueDatabasePath ?? defaultFlueDatabasePath;
-  const sessionDatabasePath = config.storage?.sessionDatabasePath ?? defaultSessionDatabasePath;
-  const vectorStorePath = config.storage?.vectorStorePath;
+  const runtimePaths = createGoromboRuntimePaths(resolveGoromboRuntimeRoot());
+  const flueDatabasePath = resolveRuntimePath(
+    config.storage?.flueDatabasePath ?? defaultFlueDatabasePath,
+    { runtimeRoot: runtimePaths.runtimeRoot },
+  );
+  const sessionDatabasePath = resolveRuntimePath(
+    config.storage?.sessionDatabasePath ?? defaultSessionDatabasePath,
+    { runtimeRoot: runtimePaths.runtimeRoot },
+  );
+  const vectorStorePath = resolveRuntimePath(
+    config.storage?.vectorStorePath ?? defaultVectorStorePath,
+    { runtimeRoot: runtimePaths.runtimeRoot },
+  );
   const flueAdapter = sqlite(flueDatabasePath);
   const vectorStore = new LanceDbVectorStore({ path: vectorStorePath });
   const embeddingClient = createEmbeddingClient();
   const sessionDatabase = new GoromboSessionDatabase(sessionDatabasePath, { vectorStore, embeddingClient });
 
-  // Index project files and knowledge docs in the background so startup is not blocked.
-  // Skip in test mode: the indexer defaults `projectRoot` to `process.cwd()`, which under
-  // the test runner is the repository root, so it embeds the ENTIRE repo's source/docs into
-  // Lance vectors. That consumes gigabytes of native memory (ONNX + Arrow) and OOMs the CI
-  // runner (spawn ENOMEM). Tests don't need this production RAG warmup. CI sets
+  // Index packaged knowledge and the separate Coding Worker workspace in the background.
+  // Tests skip this production warmup because ONNX and Arrow allocations can exhaust CI
+  // memory while the full suite runs. CI sets
   // GOROMBO_TEST_MODE=1 (see .github/workflows/ci.yml), matching the guard used elsewhere
   // (e.g. src/memory/structured-memory-runtime.ts).
   if (process.env.GOROMBO_TEST_MODE !== '1' && process.env.NODE_ENV !== 'test') {
-    runBackgroundIndexing({ vectorStore, embeddingClient }).catch((error) =>
+    runBackgroundIndexing({
+      vectorStore,
+      embeddingClient,
+      projectRoot: runtimePaths.packagedServer,
+      workspaceRoot: runtimePaths.codingWorkspace,
+    }).catch((error) =>
       console.error('[WARN] Background vector indexing failed:', error instanceof Error ? error.message : String(error)),
     );
   }

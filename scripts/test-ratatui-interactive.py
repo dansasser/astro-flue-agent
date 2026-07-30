@@ -25,7 +25,19 @@ from urllib.parse import parse_qs, urlparse
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SIM_ONE = ROOT / ".gorombo" / "sim-one-cli" / "sim-one"
+TERMINAL_ROWS = 24
+TERMINAL_COLUMNS = 100
+STATUS_ROWS = 2
+PROMPT_VISIBLE_ROWS = 2
+PROMPT_BORDER_ROWS = 2
+BOTTOM_PANEL_ROWS = STATUS_ROWS + PROMPT_VISIBLE_ROWS + PROMPT_BORDER_ROWS
+TRANSCRIPT_SCROLLBAR_BOTTOM_ROW = TERMINAL_ROWS - BOTTOM_PANEL_ROWS - 1
+SIM_ONE = Path(
+    os.environ.get(
+        "SIM_ONE_PRODUCT_PATH",
+        str(ROOT / ".gorombo" / "sim-one-cli" / "sim-one"),
+    )
+)
 REQUESTS = []
 REQUEST_PATHS = []
 RESTORED_OLDEST_PROMPT = "RESTORED_OLDEST_PROMPT"
@@ -392,7 +404,11 @@ def main():
         )
 
     try:
-        fcntl.ioctl(master_fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 100, 0, 0))
+        fcntl.ioctl(
+            master_fd,
+            termios.TIOCSWINSZ,
+            struct.pack("HHHH", TERMINAL_ROWS, TERMINAL_COLUMNS, 0, 0),
+        )
         startup_output = read_until(
             master_fd,
             RESTORED_NEWEST_FINAL.encode(),
@@ -452,7 +468,11 @@ def main():
                 f"scrollback prompt payload mismatch: {REQUESTS[0]!r}"
             )
 
-        click_mouse(master_fd, 100, 18)
+        click_mouse(
+            master_fd,
+            TERMINAL_COLUMNS,
+            TRANSCRIPT_SCROLLBAR_BOTTOM_ROW,
+        )
         read_until(master_fd, RESPONSE_FINAL_MARKERS[0].encode(), 5)
 
         os.write(master_fd, b"/res")
@@ -538,7 +558,11 @@ def main():
                 f"scrollbar top click did not reveal the oldest restored prompt: {top_redraw!r}"
             )
         drain_output(master_fd)
-        click_mouse(master_fd, 100, 18)
+        click_mouse(
+            master_fd,
+            TERMINAL_COLUMNS,
+            TRANSCRIPT_SCROLLBAR_BOTTOM_ROW,
+        )
         tail_redraw = read_output(master_fd, 0.5)
         if RESPONSE_FINAL_MARKERS[3].encode() not in tail_redraw:
             raise AssertionError(

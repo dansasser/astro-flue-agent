@@ -81,6 +81,25 @@ The Coding Worker also persists task checkpoints and uses structured task
 memory, including notes, todos, and checklists, to maintain execution state
 outside the prompt.
 
+For capability implementation, the Coding Worker owns imported Flue skills and
+typed tools for classification, workspace-scoped scaffolding, contract
+validation, secret and host-path scanning, bounded tests, and reproducible
+handoff. These operations require the applicable Protocol Tool bundle.
+Scaffolding requires file-edit approval. The worker cannot write the runtime
+capability database or managed capability directories.
+
+### Capability Manager
+
+The `capability-manager` is the only built-in worker that owns
+agent-requested runtime capability lifecycle operations. Its typed tools cover
+list, inspect, validate, add, update, enable, disable, and remove. Validation
+and mutations require the applicable Protocol Tool bundle; mutations also
+require a current matching approval decision.
+
+The manager and authenticated `sim-one` CLI call the same typed lifecycle
+service. The orchestrator routes requests and validates results but has no
+direct capability mutation tools.
+
 ## Internal Coding Subagents
 
 The Coding Worker coordinates five worker-local profiles:
@@ -121,7 +140,8 @@ under:
 <configured-capability-directory>/workers/<id>/
 ```
 
-The configured capability directory defaults to `~/.gorombo/capabilities/`.
+The configured capability directory defaults to
+`<runtime-root>/capabilities/`.
 `GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
 fallback override.
 
@@ -188,6 +208,8 @@ gate.
 | Approval service | `src/engine/workers/coding-worker/approvals/` |
 | Progress events | `src/engine/workers/coding-worker/events/` |
 | Runtime worker loading | `src/engine/capabilities/worker-loader.ts` |
+| Capability manager | `src/engine/workers/capability-manager/` |
+| Capability authoring | `src/engine/workers/coding-worker/capability-authoring/` |
 
 ## Related Documentation
 

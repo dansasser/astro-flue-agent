@@ -13,7 +13,6 @@ import {
   createInMemoryCodingApprovalService,
 } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import { createCodingGitHubTools } from '../engine/workers/coding-worker/github/github-tools.js';
-import { GhCliGitHubClient } from '../engine/workers/coding-worker/github/gh-cli-client.js';
 import type { GitHubClient } from '../engine/workers/coding-worker/github/github-client.js';
 import {
   createCodingWorkerSubagent,
@@ -293,42 +292,51 @@ test('coding workspace resolver stores projects and repos under the runtime work
   }
 });
 
-test('coding worker workspace root defaults to src/workspace/ when no env var is set', () => {
+test('coding worker workspace root defaults to the canonical runtime workspace', () => {
   const root = resolveCodingWorkerWorkspaceRoot({});
-  assert.equal(root, resolve('src/workspace'));
+  assert.equal(root, resolve('.gorombo/workspace'));
 });
 
-test('coding worker workspace root env overrides are respected in order', () => {
-  const defaultRoot = resolveCodingWorkerWorkspaceRoot({});
-  assert.equal(defaultRoot, resolve('src/workspace'));
+test('coding worker workspace overrides stay inside the canonical runtime root', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'coding-worker-runtime-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const externalRoot = join(fixture, 'external-workspace');
+  mkdirSync(runtimeRoot, { recursive: true });
 
-  assert.equal(
-    resolveCodingWorkerWorkspaceRoot({ GOROMBO_WORKSPACE_ROOT: '/custom/a' }),
-    '/custom/a',
-  );
-  assert.equal(
-    resolveCodingWorkerWorkspaceRoot({
-      GOROMBO_CODING_WORKSPACE_ROOT: '/custom/b',
-    }),
-    '/custom/b',
-  );
-  assert.equal(
-    resolveCodingWorkerWorkspaceRoot({
-      GOROMBO_CODING_REPO_PATH: '/custom/c',
-    }),
-    '/custom/c',
-  );
-  assert.equal(
-    resolveCodingWorkerWorkspaceRoot({
-      GOROMBO_WORKSPACE_ROOT: '/override/a',
-      GOROMBO_CODING_WORKSPACE_ROOT: '/override/b',
-      GOROMBO_CODING_REPO_PATH: '/override/c',
-    }),
-    '/override/a',
-  );
+  try {
+    const baseEnv = { GOROMBO_RUNTIME_ROOT: runtimeRoot };
+    assert.equal(
+      resolveCodingWorkerWorkspaceRoot(baseEnv),
+      join(runtimeRoot, 'workspace'),
+    );
+    assert.equal(
+      resolveCodingWorkerWorkspaceRoot({
+        ...baseEnv,
+        GOROMBO_WORKSPACE_ROOT: 'workspace-custom',
+      }),
+      join(runtimeRoot, 'workspace-custom'),
+    );
+    assert.equal(
+      resolveCodingWorkerWorkspaceRoot({
+        ...baseEnv,
+        GOROMBO_WORKSPACE_ROOT: join(runtimeRoot, 'workspace-custom'),
+      }),
+      join(runtimeRoot, 'workspace-custom'),
+    );
+    assert.throws(
+      () =>
+        resolveCodingWorkerWorkspaceRoot({
+          ...baseEnv,
+          GOROMBO_WORKSPACE_ROOT: externalRoot,
+        }),
+      /must stay inside the GOROMBO runtime root/,
+    );
+  } finally {
+    rmrf(fixture);
+  }
 });
 
-test('coding workspace resolver recognizes src/workspace/repos/ as a valid repo scope', () => {
+test('coding workspace resolver recognizes runtime workspace repos as a valid repo scope', () => {
   const workspaceRoot = resolveCodingWorkerWorkspaceRoot({});
   const repoTarget = resolveCodingWorkspaceTarget({
     workspaceRoot,
@@ -829,58 +837,6 @@ test('approval service expires stale requests fail closed', async () => {
   );
 });
 
-test('GitHub CLI client validates repository identifiers before running gh', async () => {
-  const client = new GhCliGitHubClient();
-
-  await assert.rejects(
-    () => client.getIssue('--bad', 'repo', 1),
-    /Invalid GitHub owner/,
-  );
-  await assert.rejects(
-    () => client.getPullRequest('owner', 'bad repo', 1),
-    /Invalid GitHub repo/,
-  );
-  await assert.rejects(
-    () => client.listPullRequestChecks('owner', 'repo', 0),
-    /Invalid GitHub pullRequestNumber/,
-  );
-});
-
-test('GitHub CLI client requests valid PR check fields and maps them to worker summaries', async () => {
-  let capturedArgs: string[] = [];
-  const client = new GhCliGitHubClient(undefined, undefined, async (args: string[]) => {
-    capturedArgs = args;
-    return [
-      {
-        name: 'unit',
-        state: 'SUCCESS',
-        bucket: 'pass',
-        link: 'https://github.example/checks/unit',
-      },
-    ];
-  });
-
-  const checks = await client.listPullRequestChecks('owner', 'repo', 13);
-
-  assert.deepEqual(capturedArgs, [
-    'pr',
-    'checks',
-    '13',
-    '--repo',
-    'owner/repo',
-    '--json',
-    'name,state,bucket,link',
-  ]);
-  assert.deepEqual(checks, [
-    {
-      name: 'unit',
-      status: 'SUCCESS',
-      conclusion: 'pass',
-      detailsUrl: 'https://github.example/checks/unit',
-    },
-  ]);
-});
-
 test('coding worker profile wires GitHub read context with a client and supports repoPath-only scope', async () => {
   const project = createWorkspaceProject();
 
@@ -1091,50 +1047,7 @@ test('GitHub tools verify explicit PR base, head, draft status, and checks', asy
   assert.match(mismatch.actions[0]?.payload.mismatches?.join('\\n') ?? '', /Expected draft status true/);
 });
 
-test('GitHub CLI client lists issues and pull requests with normalized summaries', async () => {
-  const client = new GhCliGitHubClient(undefined, undefined, async (args) => {
-    if (args[0] === 'issue') {
-      return [
-        { number: 1, title: 'Bug', state: 'OPEN', url: 'https://github.example/issues/1' },
-        { number: 2, title: 'Feature', state: 'CLOSED', url: 'https://github.example/issues/2' },
-      ];
-    }
-    return [
-      {
-        number: 10,
-        title: 'Fix',
-        state: 'OPEN',
-        url: 'https://github.example/pull/10',
-        headRefName: 'fix',
-        baseRefName: 'main',
-        isDraft: true,
-      },
-    ];
-  });
-
-  const issues = await client.listIssues('owner', 'repo', 'open');
-  const pullRequests = await client.listPullRequests('owner', 'repo', 'open');
-
-  assert.deepEqual(issues, [
-    { number: 1, title: 'Bug', state: 'OPEN', url: 'https://github.example/issues/1' },
-    { number: 2, title: 'Feature', state: 'CLOSED', url: 'https://github.example/issues/2' },
-  ]);
-  assert.deepEqual(pullRequests, [
-    {
-      number: 10,
-      title: 'Fix',
-      state: 'OPEN',
-      url: 'https://github.example/pull/10',
-      headRef: 'fix',
-      baseRef: 'main',
-      headRefName: 'fix',
-      baseRefName: 'main',
-      isDraft: true,
-    },
-  ]);
-});
-
-test('GitHub CLI client creates a local branch from a PR', async () => {
+test('GitHub client creates a local branch from a PR', async () => {
   let capturedArgs: string[] = [];
   const mockClient: GitHubClient = {
     async getIssue() {
@@ -1164,7 +1077,7 @@ test('GitHub CLI client creates a local branch from a PR', async () => {
   assert.equal(result.branchName, 'pr-13-branch');
 });
 
-test('GitHub CLI client creates line-specific review comments with required fields', async () => {
+test('GitHub client creates line-specific review comments with required fields', async () => {
   const mockClient: GitHubClient = {
     async getIssue() {
       throw new Error('not implemented');
@@ -1197,7 +1110,7 @@ test('GitHub CLI client creates line-specific review comments with required fiel
   assert.equal(result.id, 'review-comment-1');
 });
 
-test('GitHub CLI client reruns a workflow run by id', async () => {
+test('GitHub client reruns a workflow run by id', async () => {
   const mockClient: GitHubClient = {
     async getIssue() {
       throw new Error('not implemented');
@@ -1228,7 +1141,7 @@ test('GitHub CLI client reruns a workflow run by id', async () => {
   assert.equal(result.runId, '12345');
 });
 
-test('GitHub CLI client forks a repository', async () => {
+test('GitHub client forks a repository', async () => {
   const mockClient: GitHubClient = {
     async getIssue() {
       throw new Error('not implemented');
@@ -1242,7 +1155,7 @@ test('GitHub CLI client forks a repository', async () => {
     async forkRepository(input) {
       return {
         status: 'forked',
-        forkName: input.forkName ?? `${input.owner}/${input.repo}`,
+        forkName: `${input.organization ?? input.owner}/${input.repo}`,
         stdout: '',
       };
     },
@@ -1251,11 +1164,11 @@ test('GitHub CLI client forks a repository', async () => {
   const result = await mockClient.forkRepository!({
     owner: 'owner',
     repo: 'repo',
-    defaultBranchOnly: true,
+    organization: 'organization',
   });
 
   assert.equal(result.status, 'forked');
-  assert.equal(result.forkName, 'owner/repo');
+  assert.equal(result.forkName, 'organization/repo');
 });
 
 test('GitHub tools list issues and pull requests through the configured client', async () => {
@@ -1747,15 +1660,77 @@ test('repo workflow tools clone, register, and discover workspace repositories t
   }
 });
 
+test('repo workflow metadata uses the injected canonical coding-worker state root', async () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'coding-worker-state-root-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const workspaceRoot = join(runtimeRoot, 'workspace-custom');
+  const stateRoot = join(runtimeRoot, 'coding-worker');
+  const repoRelativePath = 'repos/example';
+  const approvalService = createInMemoryCodingApprovalService();
+
+  try {
+    mkdirSync(join(workspaceRoot, repoRelativePath, '.git'), { recursive: true });
+    const tools = createCodingRepoWorkflowTools({
+      workspaceRoot,
+      stateRoot,
+      targetKind: 'workspace',
+      approvalService,
+    });
+    const register = getTool(tools, 'coding_repo_register');
+    const blocked = JSON.parse(
+      await register.execute({
+        taskId: 'task-state-root',
+        slug: 'example',
+        repoRelativePath,
+      }),
+    ) as { request?: { id?: string } };
+    assert.ok(blocked.request?.id);
+    await approvalService.recordDecision({
+      requestId: blocked.request.id,
+      approved: true,
+      decidedBy: 'operator',
+      principal: { id: 'operator', roles: ['operator'] },
+    });
+
+    const registered = JSON.parse(
+      await register.execute({
+        taskId: 'task-state-root',
+        slug: 'example',
+        repoRelativePath,
+      }),
+    ) as { status?: string };
+
+    assert.equal(registered.status, 'registered');
+    assert.equal(existsSync(join(stateRoot, 'repos.json')), true);
+    assert.equal(
+      existsSync(join(runtimeRoot, 'workspace-custom', '.gorombo', 'coding-worker', 'repos.json')),
+      false,
+    );
+  } finally {
+    rmrf(fixture);
+  }
+});
+
 test('orchestrator exposes repo execution only through the coding-worker lead', async () => {
-  const project = createExecutableWorkspaceProject();
+  const fixture = mkdtempSync(join(tmpdir(), 'coding-worker-orchestrator-runtime-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const workspaceRoot = join(runtimeRoot, 'workspace');
+  const projectRelativePath = 'projects/answer-app';
+  const project = {
+    workspaceRoot,
+    projectRelativePath,
+    repoPath: join(workspaceRoot, projectRelativePath),
+  };
+  mkdirSync(project.repoPath, { recursive: true });
+  writeExecutableProjectFiles(project.repoPath);
 
   try {
     const config = await orchestratorAgent.initialize({
       id: 'coding-worker-orchestrator-surface',
       env: {
         ...createModelEnv(),
-        GOROMBO_WORKSPACE_ROOT: project.workspaceRoot,
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
       },
       payload: undefined,
     });
@@ -1779,7 +1754,7 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
 
     assert.equal(output.exitCode, 0);
   } finally {
-    rmrf(project.workspaceRoot);
+    rmrf(fixture);
   }
 });
 
@@ -1965,6 +1940,20 @@ test('coding worker git commit tool requires approval and commits when approved'
 
 test('coding worker GitHub PR creation tool is approval-gated', async () => {
   const project = createGitWorkspaceProject();
+  const githubClient: GitHubClient = {
+    async getIssue() {
+      throw new Error('not implemented');
+    },
+    async getPullRequest() {
+      throw new Error('not implemented');
+    },
+    async listPullRequestChecks() {
+      return [];
+    },
+    async createPullRequest() {
+      throw new Error('approval gate should block before GitHub MCP execution');
+    },
+  };
 
   try {
     const createPr = getTool(
@@ -1972,14 +1961,19 @@ test('coding worker GitHub PR creation tool is approval-gated', async () => {
         workspaceRoot: project.workspaceRoot,
         targetKind: 'project',
         projectRelativePath: project.projectRelativePath,
+        githubClient,
       }),
       'coding_github_create_pr',
     );
     const output = JSON.parse(
       await createPr.execute({
         taskId: 'task-pr',
+        owner: 'dansasser',
+        repo: 'sim-one-alpha',
         title: 'Test PR',
         body: 'Test body',
+        base: 'main',
+        head: 'codex/test-pr',
       }),
     ) as {
       actions: Array<{
@@ -3071,11 +3065,13 @@ function getTool(tools: ToolDefinition[], name: string) {
 }
 
 function createModelEnv(): Record<string, string> {
+  const runtimeRoot = join(process.cwd(), '.gorombo');
   return {
     OLLAMA_API_KEY: 'test-key',
     CODEX_BRAIN_LOCAL_API_KEY: 'test-key',
     CODEX_BRAIN_LOCAL_API_URL: 'https://dt1.example.test/v1',
-    GOROMBO_WORKSPACE_ROOT: process.cwd(),
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
+    GOROMBO_WORKSPACE_ROOT: join(runtimeRoot, 'workspace'),
   };
 }
 

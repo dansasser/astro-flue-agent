@@ -53,6 +53,13 @@ pre-execution enforcement remains a release gate.
 
 When delegating to `coding-worker`, the orchestrator runtime instructions require parsing the `load_protocols` result and including the parsed object as `protocolBundle` in the delegated task input. This keeps worker execution under the same runtime governance model.
 
+The `chat.runtime-configuration-routing` base protocol handles requests to
+inspect or change SIM-ONE runtime configuration. The main agent delegates these
+requests to the Coding Worker lead. Redacted inspection never returns values;
+a user-supplied secret can be used only for the requested one-key update after
+backend approval and cannot be echoed in approval, progress, logs, tool results,
+or the response.
+
 ## Research workflow
 
 The researcher owns current, external, web, source-backed, and research tasks. The orchestrator should decide that research is needed and delegate to the `researcher` subagent rather than directly calling web search.
@@ -73,7 +80,12 @@ Recent history fixed web research event dependency and fallback propagation, so 
 
 The coding worker is created in `src/engine/workers/coding-worker/coding-worker.ts` and attached by `src/agents/orchestrator.ts`. The orchestrator delegates coding work to `coding-worker`; it should not call coding-worker internals directly.
 
-The coding worker owns coding-specific tools, approval service integration, task memory, code intelligence/LSP behavior, verification parsing, GitHub-related capabilities, and worker-local subagents. Representative tests include:
+The coding worker owns coding-specific tools, approval service integration,
+task memory, code intelligence/LSP behavior, verification parsing, the
+official GitHub MCP connection, anonymous-first Git access, approval-gated
+GitHub mutations, and worker-local subagents. The PAT remains trusted runtime
+configuration and is removed from general shell environments. Representative
+tests include:
 
 - `src/tests/coding-worker.test.ts`
 - `src/tests/coding-task-handoff.test.ts`
@@ -82,21 +94,29 @@ The coding worker owns coding-specific tools, approval service integration, task
 - `src/tests/code-intelligence.test.ts`
 - `src/tests/lsp-tools.test.ts`
 - `src/tests/verification-parsers.test.ts`
+- `src/tests/github-mcp.test.ts`
+- `src/tests/github-mcp.test.ts`
+- `src/tests/github-private-clone.test.ts`
 
 When changing coding behavior, check the worker workspace and approval paths before changing the main orchestrator.
 
 ## Capability management workflow
 
-Capabilities can be managed by developer scripts, agent tools, and the `sim-one` CLI package.
+Capabilities are managed by the `sim-one` CLI or the dedicated
+`capability-manager` worker through one shared lifecycle service.
 
 Current source surfaces:
 
-- `scripts/capability-admin.mjs` for developer/admin CRUD.
-- `src/engine/tools/capability-tools.ts` for orchestrator-visible capability management tools.
+- `scripts/capability-admin.mjs` as a compatibility adapter to `sim-one`.
+- `src/engine/workers/capability-manager/` for approval-gated agent lifecycle requests.
+- `src/engine/workers/coding-worker/capability-authoring/` for workspace-scoped source validation, tests, and handoff.
 - `sim-one-cli/src/cli.tsx` for product CLI subcommands.
 - `src/engine/capabilities/` for SQLite store, loaders, materializers, MCP broker, user tools, and user workers.
 
-The current `sim-one` CLI declares `skill`, `tool`, `worker`, and `mcp` subcommands with add/list/enable/disable/remove/update behavior. Skills default to enabled on add; tools/workers/MCP default to disabled unless enabled explicitly.
+The current `sim-one` CLI declares `skill`, `tool`, `worker`, and `mcp`
+subcommands with list/inspect/validate/add/update/enable/disable/remove
+behavior. Agent requests require Protocol Tool context and approval for
+mutations.
 
 ## CLI and TUI workflow
 
@@ -116,7 +136,8 @@ pnpm run test:tui
 pnpm run test:tui:ratatui
 ```
 
-`build:all` builds the runtime, terminal interface, and CLI package, then runs
+`build:all` builds the runtime, packages isolated production dependencies beside
+the Flue Node server, builds the terminal interface and CLI package, then runs
 the product-command validation script.
 
 ## Telegram and connector workflow

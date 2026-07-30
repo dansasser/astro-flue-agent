@@ -66,17 +66,22 @@ test('workspace file resolution rejects paths outside the workspace directory', 
   }
 });
 
-test('workspace directory resolver falls back to dist when src workspace is absent', () => {
+test('workspace directory resolver uses the explicitly detected source checkout', () => {
   const dir = mkdtempSync(join(tmpdir(), 'workspace-resolver-'));
 
   try {
-    const distWorkspace = join(dir, 'dist', 'workers', 'researcher', 'workspace');
-    mkdirSync(distWorkspace, { recursive: true });
-    writeFileSync(join(distWorkspace, '.keep'), '');
+    const sourceWorkspace = join(dir, 'src', 'engine', 'workers', 'researcher', 'workspace');
+    const runtimeRoot = join(dir, '.gorombo');
+    mkdirSync(sourceWorkspace, { recursive: true });
+    mkdirSync(runtimeRoot, { recursive: true });
+    writeFileSync(join(sourceWorkspace, '.keep'), '');
 
     assert.equal(
-      resolveWorkspaceDirectory('workers/researcher/workspace', dir),
-      distWorkspace,
+      resolveWorkspaceDirectory('workers/researcher/workspace', {
+        runtimeRoot,
+        sourceProjectRoot: dir,
+      }),
+      sourceWorkspace,
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -92,7 +97,10 @@ test('workspace directory resolver falls back to packaged .gorombo runtime works
     writeFileSync(join(packagedWorkspace, '.keep'), '');
 
     assert.equal(
-      resolveWorkspaceDirectory('workspace', dir),
+      resolveWorkspaceDirectory('workspace', {
+        runtimeRoot: join(dir, '.gorombo'),
+        modulePath: join(packagedWorkspace, '..', 'server.mjs'),
+      }),
       packagedWorkspace,
     );
   } finally {
@@ -100,7 +108,32 @@ test('workspace directory resolver falls back to packaged .gorombo runtime works
   }
 });
 
-test('workspace directory resolver prefers the packaged runtime over an unrelated cwd workspace', () => {
+test('packaged module ownership wins when source and packaged personas both exist', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'workspace-packaged-owner-'));
+
+  try {
+    const sourceWorkspace = join(dir, 'src', 'workspace');
+    const runtimeRoot = join(dir, '.gorombo');
+    const packagedWorkspace = join(runtimeRoot, 'sim-one-alpha', 'workspace');
+    mkdirSync(sourceWorkspace, { recursive: true });
+    mkdirSync(packagedWorkspace, { recursive: true });
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'sim-one-alpha' }));
+    writeFileSync(join(sourceWorkspace, '.keep'), 'source');
+    writeFileSync(join(packagedWorkspace, '.keep'), 'packaged');
+
+    assert.equal(
+      resolveWorkspaceDirectory('workspace', {
+        runtimeRoot,
+        modulePath: join(runtimeRoot, 'sim-one-alpha', 'server.mjs'),
+      }),
+      packagedWorkspace,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('workspace directory resolver ignores an unrelated caller workspace', () => {
   const dir = mkdtempSync(join(tmpdir(), 'workspace-packaged-precedence-'));
 
   try {
@@ -112,7 +145,10 @@ test('workspace directory resolver prefers the packaged runtime over an unrelate
     writeFileSync(join(packagedWorkspace, '.keep'), '');
 
     assert.equal(
-      resolveWorkspaceDirectory('workspace', dir),
+      resolveWorkspaceDirectory('workspace', {
+        runtimeRoot: join(dir, '.gorombo'),
+        modulePath: join(packagedWorkspace, '..', 'server.mjs'),
+      }),
       packagedWorkspace,
     );
   } finally {
@@ -120,17 +156,23 @@ test('workspace directory resolver prefers the packaged runtime over an unrelate
   }
 });
 
-test('workspace directory resolver finds a workspace directly under cwd', () => {
+test('workspace directory resolver does not accept a caller-relative workspace fallback', () => {
   const dir = mkdtempSync(join(tmpdir(), 'workspace-runtime-root-'));
 
   try {
-    const runtimeWorkspace = join(dir, 'workers', 'researcher', 'workspace');
-    mkdirSync(runtimeWorkspace, { recursive: true });
-    writeFileSync(join(runtimeWorkspace, '.keep'), '');
+    const unrelatedWorkspace = join(dir, 'workers', 'researcher', 'workspace');
+    const runtimeRoot = join(dir, '.gorombo');
+    mkdirSync(unrelatedWorkspace, { recursive: true });
+    mkdirSync(runtimeRoot, { recursive: true });
+    writeFileSync(join(unrelatedWorkspace, '.keep'), '');
 
-    assert.equal(
-      resolveWorkspaceDirectory('workers/researcher/workspace', dir),
-      runtimeWorkspace,
+    assert.throws(
+      () =>
+        resolveWorkspaceDirectory('workers/researcher/workspace', {
+          runtimeRoot,
+          modulePath: join(runtimeRoot, 'sim-one-alpha', 'server.mjs'),
+        }),
+      /workspace directory not found/i,
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });

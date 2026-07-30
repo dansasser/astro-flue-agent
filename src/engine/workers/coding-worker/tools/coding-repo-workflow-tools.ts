@@ -1,5 +1,6 @@
 import { defineTool, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
+import { rm } from 'node:fs/promises';
 import {
   createInMemoryCodingApprovalService,
   type CodingApprovalService,
@@ -26,11 +27,15 @@ import {
 } from '../../../../engine/workers/coding-worker/tools/sandbox-runtime.js';
 import {
   githubCredentialOptions,
+  githubAnonymousCredentialOptions,
   githubUrlCredentialOptions,
+  isManagedGithubHttpsRemote,
 } from './github-credential-utils.js';
 
 export interface CodingRepoWorkflowToolsOptions extends CodingWorkspaceTargetInput {
   env?: Record<string, string | undefined>;
+  /** Trusted metadata root. Production uses <runtime-root>/coding-worker. */
+  stateRoot?: string;
   sandbox?: CodingSandboxRuntime;
   sessionId?: string;
   approvalService?: CodingApprovalService;
@@ -61,6 +66,12 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
   const getRepoRegistry = async () => {
     if (options.repoRegistry) {
       return options.repoRegistry;
+    }
+    if (options.stateRoot) {
+      repoRegistryPromise ??= Promise.resolve(
+        JsonFileCodingRepoRegistry.atStateRoot(options.stateRoot),
+      );
+      return repoRegistryPromise;
     }
     repoRegistryPromise ??= getSandbox().then((sandbox) => {
       if (sandbox.workspaceRoot) {
@@ -185,14 +196,29 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
         }
         await sandbox.mkdirWorkspace('repos', { recursive: true });
         const repoPath = sandbox.resolveWorkspacePath(repoRelativePath);
-        const clone = await sandbox.execFile(
+        let clone = await sandbox.execFile(
           'git',
           ['clone', ...(branch ? ['--branch', branch] : []), '--', remoteUrl, repoPath],
           {
             timeoutSeconds: 300,
-            ...(await githubUrlCredentialOptions(remoteUrl, options.githubGitEnv)),
+            ...githubAnonymousCredentialOptions(),
           },
         );
+        if (
+          clone.exitCode !== 0
+          && options.githubGitEnv
+          && isManagedGithubHttpsRemote(remoteUrl)
+        ) {
+          await rm(repoPath, { recursive: true, force: true });
+          clone = await sandbox.execFile(
+            'git',
+            ['clone', ...(branch ? ['--branch', branch] : []), '--', remoteUrl, repoPath],
+            {
+              timeoutSeconds: 300,
+              ...(await githubUrlCredentialOptions(remoteUrl, options.githubGitEnv)),
+            },
+          );
+        }
         let record: CodingRegisteredRepo | undefined;
         if (clone.exitCode === 0) {
           const registry = await getRepoRegistry();

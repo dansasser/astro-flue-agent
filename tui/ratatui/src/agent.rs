@@ -10,6 +10,15 @@ const AGENT_WRITE_TIMEOUT: Duration = Duration::from_secs(10);
 const SESSION_LIFECYCLE_READ_TIMEOUT: Duration = Duration::from_secs(10);
 const LOCAL_TUI_SCOPE_ID: &str = "local-tui";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentContextUsage {
+    Unavailable,
+    Authoritative {
+        used_tokens: u64,
+        total_capacity: u64,
+    },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AgentReply {
     pub text: String,
@@ -19,6 +28,7 @@ pub struct AgentReply {
     pub session_title: Option<String>,
     pub command_name: Option<String>,
     pub session_created: Option<bool>,
+    pub context_usage: Option<AgentContextUsage>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -303,6 +313,7 @@ fn extract_agent_reply(value: &serde_json::Value) -> Option<AgentReply> {
         .get("session")
         .and_then(|session| session.get("created"))
         .and_then(|created| created.as_bool());
+    let context_usage = extract_context_usage(value);
 
     Some(AgentReply {
         text,
@@ -312,7 +323,35 @@ fn extract_agent_reply(value: &serde_json::Value) -> Option<AgentReply> {
         session_title,
         command_name,
         session_created,
+        context_usage,
     })
+}
+
+fn extract_context_usage(value: &serde_json::Value) -> Option<AgentContextUsage> {
+    let context_usage = value.get("contextUsage")?;
+    match context_usage
+        .get("available")
+        .and_then(serde_json::Value::as_bool)
+    {
+        Some(false) => Some(AgentContextUsage::Unavailable),
+        Some(true) => {
+            let used_tokens = context_usage
+                .get("usedTokens")
+                .and_then(serde_json::Value::as_u64)?;
+            let total_capacity = context_usage
+                .get("capacityTokens")
+                .and_then(serde_json::Value::as_u64)?;
+            if total_capacity == 0 {
+                Some(AgentContextUsage::Unavailable)
+            } else {
+                Some(AgentContextUsage::Authoritative {
+                    used_tokens: used_tokens.min(total_capacity),
+                    total_capacity,
+                })
+            }
+        }
+        None => None,
+    }
 }
 
 fn parse_session_list_response(response: HttpResponse) -> Result<Vec<SessionSummary>, String> {

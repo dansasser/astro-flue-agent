@@ -162,16 +162,18 @@ policy, and action-specific approvals. Tools, workers, and MCP servers remain
 disabled until the user enables them. Registry state, validation, runtime
 attachment, protocol rules, and approval policy all remain part of execution.
 
-## GitHub Authentication Workflow
+## GitHub MCP And Repository Access
 
-The GitHub authentication workflow binds an authorization request to the
-current trusted event context. It manages device authorization and credential
-state outside the model prompt, then exposes approved GitHub operations to the
-Coding Worker.
+The Coding Worker lead connects to the official remote GitHub MCP server
+through Flue when `GITHUB_PERSONAL_ACCESS_TOKEN` is configured. Only selected
+read tools are attached to the model. Typed SIM-ONE GitHub mutation tools call
+the remaining official MCP tools only after an action-specific approval is
+settled.
 
 Raw GitHub credentials are not passed into the worker's local execution
-sandbox. Git and GitHub tools receive managed credentials only through their
-application-owned service boundary.
+sandbox, connector payloads, or model context. Public HTTPS Git operations run
+anonymously first; private access can retry through a command-scoped askpass
+environment. There is no device-login workflow or GitHub CLI fallback.
 
 ## Progress And Terminal States
 
@@ -216,7 +218,7 @@ Coding Worker checkpoint forwarding remains a release gate.
 | Application ingress | `src/app.ts` |
 | Retrieval workflow | `src/workflows/retrieval.ts` |
 | Research workflows | `src/workflows/research.ts`, `src/workflows/web-research.ts` |
-| GitHub authentication workflow | `src/workflows/github-auth.ts` |
+| GitHub MCP and credential boundary | `src/engine/workers/coding-worker/github/` |
 | Coding loop | `src/engine/workers/coding-worker/workflow/` |
 | Schedule manager | `src/engine/schedules/schedule-manager.ts` |
 | Schedule dispatch | `src/engine/schedules/schedule-dispatch.ts` |

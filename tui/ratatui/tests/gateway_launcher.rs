@@ -7,7 +7,7 @@ use std::process::Command;
 use std::os::fd::AsRawFd;
 
 use sim_one_ratatui_tui::gateway::{
-    read_gateway_port_from_config, resolve_env_path, resolve_node_executable, resolve_server_cwd,
+    read_gateway_port_from_config, resolve_node_executable, resolve_server_cwd,
     resolve_server_path, GatewayOptions,
 };
 
@@ -55,20 +55,10 @@ fn server_cwd_uses_owner_of_packaged_gorombo_runtime_tree() {
     assert_eq!(
         resolved,
         root.path()
+            .join(".gorombo")
             .canonicalize()
-            .expect("temp root should canonicalize")
+            .expect("runtime root should canonicalize")
     );
-}
-
-#[test]
-fn env_path_prefers_explicit_option_over_candidates() {
-    let explicit = PathBuf::from("/tmp/custom.env");
-    let options = GatewayOptions {
-        env_path: Some(explicit.clone()),
-        ..GatewayOptions::default()
-    };
-
-    assert_eq!(resolve_env_path(&options), explicit);
 }
 
 #[test]
@@ -217,12 +207,14 @@ if (listenFd) {
         .arg("--smoke-startup")
         .arg("--server-path")
         .arg(&server_path)
-        .arg("--env-path")
-        .arg(runtime_root.path().join("missing.env"))
         .arg("--port")
         .arg(reserved_port.port().to_string())
         .env("SIM_ONE_TEST_LISTEN_FD", reserved_port.raw_fd().to_string())
         .env("SIM_ONE_TEST_CWD_MARKER", &cwd_marker)
+        .env(
+            "GOROMBO_RUNTIME_ROOT",
+            runtime_root.path().join(".gorombo"),
+        )
         .env(
             "SIM_ONE_TUI_LOG_PATH",
             runtime_root.path().join("tui.jsonl"),
@@ -238,6 +230,7 @@ if (listenFd) {
     let observed_cwd = read_to_string(&cwd_marker).expect("server should write cwd marker");
     let expected_cwd = runtime_root
         .path()
+        .join(".gorombo")
         .canonicalize()
         .expect("runtime root should canonicalize")
         .display()
@@ -288,8 +281,6 @@ process.on('SIGTERM', () => {
         .arg("--smoke-startup")
         .arg("--server-path")
         .arg(&server_path)
-        .arg("--env-path")
-        .arg(root.path().join("missing.env"))
         .arg("--port")
         .arg(reserved_port.port().to_string())
         .env("SIM_ONE_TEST_LISTEN_FD", reserved_port.raw_fd().to_string())

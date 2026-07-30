@@ -1,6 +1,7 @@
 import { defineTool, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 
+import { resolveRuntimePath } from '../../../../core/config/runtime-root.js';
 import { renderChecklistTree } from '../../../../core/types/memory.js';
 import type { Checklist, ChecklistItem, MemoryRecordScope } from '../../../../core/types/memory.js';
 import type { MemoryEngine } from '../../../../engine/memory/memory-engine.js';
@@ -23,6 +24,8 @@ export interface CodingTaskMemoryToolsOptions {
   projectRelativePath?: string;
   repoPath?: string;
   workspaceRoot?: string;
+  /** Trusted metadata root. Production uses <runtime-root>/coding-worker. */
+  stateRoot?: string;
   approvalService: CodingApprovalService;
   /** Optional task-run store for the plan->checklist handoff. */
   taskRunStore?: CodingTaskRunStore;
@@ -318,7 +321,12 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
       execute: async ({ taskId, sourceTaskId }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
-        const store = options.taskRunStore ?? JsonFileCodingTaskRunStore.atWorkspaceRoot(options.workspaceRoot ?? process.cwd());
+        const store = options.taskRunStore
+          ?? (options.stateRoot
+            ? JsonFileCodingTaskRunStore.atStateRoot(options.stateRoot)
+            : JsonFileCodingTaskRunStore.atWorkspaceRoot(
+                options.workspaceRoot ?? resolveRuntimePath('workspace'),
+              ));
         const run = await store.get(String(sourceTaskId));
         if (!run) {
           throw new Error(`coding_task_handoff_plan_to_checklist: task run ${sourceTaskId} not found.`);

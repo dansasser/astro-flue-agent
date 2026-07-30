@@ -1,5 +1,5 @@
 ﻿import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import type { CodingWorkerEvent } from '../../../../engine/workers/coding-worker/events/coding-worker-events.js';
 import type {
   CodingPlanItem,
@@ -74,9 +74,13 @@ export class JsonFileCodingTaskRunStore implements CodingTaskRunStore {
     this.#lock = getOrCreateFileLock(filePath);
   }
 
+  static atStateRoot(stateRoot: string): JsonFileCodingTaskRunStore {
+    return new JsonFileCodingTaskRunStore(join(stateRoot, 'task-runs.json'));
+  }
+
   static atWorkspaceRoot(workspaceRoot: string): JsonFileCodingTaskRunStore {
-    return new JsonFileCodingTaskRunStore(
-      join(workspaceRoot, '.gorombo', 'coding-worker', 'task-runs.json'),
+    return JsonFileCodingTaskRunStore.atStateRoot(
+      compatibilityStateRootForWorkspace(workspaceRoot),
     );
   }
 
@@ -261,4 +265,12 @@ function isMissingFileError(error: unknown): boolean {
       'code' in error &&
       (error as { code?: unknown }).code === 'ENOENT',
   );
+}
+
+function compatibilityStateRootForWorkspace(workspaceRoot: string): string {
+  const workspaceOwner = dirname(resolve(workspaceRoot));
+  const runtimeRoot = basename(workspaceOwner) === '.gorombo'
+    ? workspaceOwner
+    : join(workspaceOwner, '.gorombo');
+  return join(runtimeRoot, 'coding-worker');
 }

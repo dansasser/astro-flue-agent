@@ -27,6 +27,7 @@ export const codingWorkerInternalSubagentNames = [
 export interface CodingWorkerInternalSubagentsOptions extends CodingWorkspaceTargetInput {
   model?: string;
   env?: Record<string, string | undefined>;
+  stateRoot?: string;
   approvalService?: CodingApprovalService;
   githubClient?: GitHubClient;
 }
@@ -87,6 +88,7 @@ function createInternalToolsets(options: CodingWorkerInternalSubagentsOptions): 
   const repoWorkflowTools = createCodingRepoWorkflowTools({
     ...commonTarget,
     sessionId: 'coding-worker-internal-repo-workflow-tools',
+    stateRoot: options.stateRoot,
     approvalService: options.approvalService,
   });
   const githubTools = createCodingGitHubTools({

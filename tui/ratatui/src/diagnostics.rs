@@ -1,6 +1,6 @@
 use std::fs::{create_dir_all, metadata, remove_file, rename, OpenOptions};
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -13,11 +13,21 @@ const LOG_FILE_NAME: &str = "sim-one-ratatui.jsonl";
 static DIAGNOSTICS: OnceLock<Mutex<DiagnosticWriter>> = OnceLock::new();
 
 pub fn init() {
-    let override_path = std::env::var_os("SIM_ONE_TUI_LOG_PATH").map(PathBuf::from);
+    let runtime_root = crate::gateway::resolve_runtime_root().ok();
+    let canonical_config = runtime_root
+        .as_deref()
+        .map(|root| root.join("sim-one.config"));
+    let override_path = match canonical_config.as_deref() {
+        Some(config_path) if config_path.exists() => runtime_root
+            .as_deref()
+            .and_then(configured_tui_log_path),
+        _ => std::env::var_os("SIM_ONE_TUI_LOG_PATH").map(PathBuf::from),
+    };
     let executable = std::env::current_exe().ok();
     let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let path = resolve_log_path(
         override_path.as_deref(),
+        runtime_root.as_deref(),
         executable.as_deref(),
         &current_dir,
     );
@@ -26,6 +36,43 @@ pub fn init() {
         DEFAULT_MAX_BYTES,
         DEFAULT_ROTATIONS,
     )));
+}
+
+fn configured_tui_log_path(runtime_root: &Path) -> Option<PathBuf> {
+    let entries = dotenvy::from_path_iter(runtime_root.join("sim-one.config")).ok()?;
+    for entry in entries {
+        let (key, value) = entry.ok()?;
+        if key != "SIM_ONE_TUI_LOG_PATH" {
+            continue;
+        }
+        let value = value.trim();
+        if value.is_empty() {
+            return None;
+        }
+        return resolve_configured_runtime_path(runtime_root, Path::new(value));
+    }
+    None
+}
+
+fn resolve_configured_runtime_path(runtime_root: &Path, configured: &Path) -> Option<PathBuf> {
+    if configured.is_absolute() {
+        return configured
+            .starts_with(runtime_root)
+            .then(|| configured.to_path_buf());
+    }
+
+    let mut resolved = runtime_root.to_path_buf();
+    for component in configured.components() {
+        match component {
+            Component::CurDir => {}
+            Component::Normal(value) if value != ".gorombo" => resolved.push(value),
+            Component::Normal(_)
+            | Component::ParentDir
+            | Component::RootDir
+            | Component::Prefix(_) => return None,
+        }
+    }
+    Some(resolved)
 }
 
 pub fn launch_started(session_explicit: bool, selector: &str) {
@@ -181,11 +228,19 @@ fn record(event: &str, fields: Value) {
 
 fn resolve_log_path(
     override_path: Option<&Path>,
+    runtime_root: Option<&Path>,
     executable: Option<&Path>,
     current_dir: &Path,
 ) -> PathBuf {
     if let Some(path) = override_path {
         return path.to_path_buf();
+    }
+
+    if let Some(runtime_root) = runtime_root
+        .filter(|path| path.is_absolute())
+        .filter(|path| path.file_name().is_some_and(|name| name == ".gorombo"))
+    {
+        return runtime_root.join("logs").join(LOG_FILE_NAME);
     }
 
     if let Some(gorombo_dir) = executable
@@ -344,17 +399,39 @@ fn unix_timestamp_ms() -> u128 {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::{read_to_string, remove_dir_all};
+    use std::fs::{create_dir_all, read_to_string, remove_dir_all, write};
     use std::path::{Path, PathBuf};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use serde_json::json;
 
-    use super::{resolve_log_path, selector_kind, DiagnosticWriter};
+    use super::{
+        configured_tui_log_path, resolve_log_path, selector_kind,
+        DiagnosticWriter,
+    };
+
+    #[test]
+    fn canonical_configuration_owns_the_tui_diagnostics_path() {
+        let root = temp_path("canonical-config").join(".gorombo");
+        create_dir_all(&root).expect("runtime root should be creatable");
+        write(
+            root.join("sim-one.config"),
+            "SIM_ONE_TUI_LOG_PATH=logs/custom-tui.jsonl\n",
+        )
+        .expect("canonical config should be writable");
+
+        assert_eq!(
+            configured_tui_log_path(&root),
+            Some(root.join("logs/custom-tui.jsonl"))
+        );
+        remove_dir_all(root.parent().expect("fixture should have a parent"))
+            .expect("fixture should be removable");
+    }
 
     #[test]
     fn packaged_log_path_uses_the_runtime_gorombo_directory() {
         let path = resolve_log_path(
+            None,
             None,
             Some(Path::new(
                 "/home/dan/.gorombo/sim-one-ratatui/sim-one-ratatui-tui",
@@ -365,6 +442,21 @@ mod tests {
         assert_eq!(
             path,
             PathBuf::from("/home/dan/.gorombo/logs/sim-one-ratatui.jsonl")
+        );
+    }
+
+    #[test]
+    fn explicit_runtime_root_owns_diagnostics_from_an_arbitrary_directory() {
+        let path = resolve_log_path(
+            None,
+            Some(Path::new("/opt/sim-one-package/.gorombo")),
+            Some(Path::new("/tmp/copied-tui")),
+            Path::new("/tmp/arbitrary-launch-directory"),
+        );
+
+        assert_eq!(
+            path,
+            PathBuf::from("/opt/sim-one-package/.gorombo/logs/sim-one-ratatui.jsonl")
         );
     }
 

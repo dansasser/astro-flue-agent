@@ -41,6 +41,10 @@ export async function githubUrlCredentialOptions(
   return { env: managedEnv ? { ...createNoCredentialGitEnv(), ...managedEnv } : createNoCredentialGitEnv() };
 }
 
+export function githubAnonymousCredentialOptions(): { env: Record<string, string> } {
+  return { env: createNoCredentialGitEnv() };
+}
+
 export function isManagedGithubHttpsRemote(remoteUrl: string): boolean {
   try {
     const parsed = new URL(remoteUrl);

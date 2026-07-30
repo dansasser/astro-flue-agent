@@ -7,19 +7,24 @@
 The main durable data areas are:
 
 - chat/session persistence under `src/engine/session/`,
-- capability records in `~/.gorombo/db/capabilities.sqlite` by default,
+- capability records in `<runtime-root>/db/capabilities.sqlite` by default,
 - structured memory records in SQLite through the memory runtime,
 - protocol records in SQLite through protocol tooling,
 - schedule records and run history through the schedules system,
 - research caches and RAG/vector stores where configured.
 
-Do not read or document live `.env` values. Use `.env.example` and architecture docs for non-secret setup shape.
+Do not read or document live `sim-one.config` values. Use
+`sim-one.config.example` and architecture docs for the non-secret setup shape.
 
 ## Capabilities
 
 The capability system lets users add skills, tools, workers, and MCP servers without rebuilding the product artifact. The source of truth is `docs/architecture/capability-system.md` plus `src/engine/capabilities/`.
 
-`src/engine/capabilities/capability-store.ts` creates and manages a SQLite table with `(kind, id)` as the primary key, a unique id index, enabled state, source metadata, config JSON, install/update timestamps, and install origin. The default DB path is `~/.gorombo/db/capabilities.sqlite`, overrideable with `GOROMBO_CAPABILITY_DB_PATH`.
+`src/engine/capabilities/capability-store.ts` creates and manages a SQLite
+table with `(kind, id)` as the primary key, a unique id index, enabled state,
+source metadata, config JSON, install/update timestamps, and install origin.
+The default DB path is `<runtime-root>/db/capabilities.sqlite`; a relative
+`GOROMBO_CAPABILITY_DB_PATH` remains rooted in the same `.gorombo` tree.
 
 Runtime loading happens during orchestrator initialization in `src/agents/orchestrator.ts`:
 
@@ -30,7 +35,14 @@ Runtime loading happens during orchestrator initialization in `src/agents/orches
 - `loadUserWorkers()` imports user worker profiles.
 - The orchestrator merges user tools into `tools` and user workers into `subagents`.
 
-Skills are instruction assets. Tools, workers, and MCP servers can execute code or external calls, so approval and enablement behavior matters. CLI/user-initiated operations and agent-initiated operations are different trust contexts; check `docs/architecture/capability-system.md` and `src/engine/tools/capability-tools.ts` before changing this area.
+Skills are instruction assets. Tools, workers, and MCP servers can execute code
+or external calls, so approval and enablement behavior matters. CLI/user
+operations and agent operations are different trust contexts. Check
+`docs/architecture/capability-system.md`,
+`src/engine/workers/capability-manager/`, and
+`src/engine/workers/coding-worker/capability-authoring/` before changing this
+area. Validation on both paths is governed by the applicable Protocol Tool
+bundle.
 
 ## Protocols
 

@@ -1,13 +1,15 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../../src/core/config/runtime-root.js';
+import { runtimeEnvironmentDefinitions } from '../../../src/core/config/runtime-environment.js';
 
 export interface ServerManagerOptions {
   port?: number;
   serverPath?: string;
-  envPath?: string;
 }
 
 export interface ServerManagerResult {
@@ -21,7 +23,8 @@ const HEALTH_POLL_INTERVAL_MS = 2000;
 const HEALTH_TIMEOUT_MS = 120_000;
 
 export async function ensureServerRunning(options: ServerManagerOptions = {}): Promise<ServerManagerResult> {
-  const port = options.port ?? readGatewayPort() ?? 3000;
+  const runtimeRoot = resolveGoromboRuntimeRoot({ modulePath: import.meta.url });
+  const port = options.port ?? readGatewayPort(runtimeRoot) ?? 3000;
   const baseUrl = `http://127.0.0.1:${port}`;
 
   const healthOk = await checkHealth(baseUrl);
@@ -29,14 +32,13 @@ export async function ensureServerRunning(options: ServerManagerOptions = {}): P
     return { started: false, port, baseUrl };
   }
 
-  const serverPath = options.serverPath ?? resolveServerPath();
+  const serverPath = resolveServerPath(runtimeRoot, options.serverPath);
   if (!existsSync(serverPath)) {
     console.error(`Agent package not found at ${serverPath}. Run 'sim-one install' first.`);
     process.exit(1);
   }
 
-  const envPath = options.envPath ?? resolveEnvPath();
-  const child = startServer(serverPath, envPath, port);
+  const child = startServer(serverPath, port, runtimeRoot);
   serverChild = child;
 
   try {
@@ -76,70 +78,47 @@ export async function cleanupServer(): Promise<void> {
   }
 }
 
-function resolveServerPath(): string {
-  const moduleDir = dirname(fileURLToPath(import.meta.url));
-
-  if (process.env.SIM_ONE_SERVER_PATH) {
-    return resolve(process.env.SIM_ONE_SERVER_PATH);
+function resolveServerPath(runtimeRoot: string, explicitPath?: string): string {
+  const configuredPath = explicitPath ?? process.env.SIM_ONE_SERVER_PATH;
+  if (configuredPath) {
+    return resolveRuntimePath(configuredPath, { runtimeRoot });
   }
-
-  const siblingCandidate = resolve(moduleDir, '..', 'sim-one-alpha', 'server.mjs');
-  if (existsSync(siblingCandidate)) {
-    return siblingCandidate;
-  }
-
-  const devCandidate = resolve(process.cwd(), '.gorombo', 'sim-one-alpha', 'server.mjs');
-  if (existsSync(devCandidate)) {
-    return devCandidate;
-  }
-
-  return siblingCandidate;
+  return createGoromboRuntimePaths(runtimeRoot).packagedServer + '/server.mjs';
 }
 
-function resolveEnvPath(): string {
-  if (process.env.SIM_ONE_ENV_PATH) {
-    return resolve(process.env.SIM_ONE_ENV_PATH);
+function readGatewayPort(runtimeRoot: string): number | undefined {
+  const configPath = createGoromboRuntimePaths(runtimeRoot).config;
+  if (!existsSync(configPath)) {
+    return undefined;
   }
-
-  const prodEnv = resolve(homedir(), '.gorombo', '.env');
-  if (existsSync(prodEnv)) {
-    return prodEnv;
-  }
-
-  return resolve(process.cwd(), '.env');
-}
-
-function readGatewayPort(): number | undefined {
-  const moduleDir = dirname(fileURLToPath(import.meta.url));
-
-  const candidates = [
-    resolve(moduleDir, '..', 'sim-one-alpha', 'gorombo.config.json'),
-    resolve(process.cwd(), '.gorombo', 'sim-one-alpha', 'gorombo.config.json'),
-    resolve(process.cwd(), 'src', 'config', 'gorombo.config.json'),
-  ];
-
-  for (const candidate of candidates) {
-    if (!existsSync(candidate)) continue;
-    try {
-      const config = JSON.parse(readFileSync(candidate, 'utf8'));
-      if (typeof config.gateway?.port === 'number') {
-        return config.gateway.port;
-      }
-    } catch {
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    if (typeof config.gateway?.port === 'number') {
+      return config.gateway.port;
     }
+  } catch {
   }
-
   return undefined;
 }
 
-function startServer(serverPath: string, envPath: string, port: number): ChildProcess {
-  const args = existsSync(envPath)
-    ? ['--env-file=' + envPath, serverPath]
-    : [serverPath];
+function startServer(
+  serverPath: string,
+  port: number,
+  runtimeRoot: string,
+): ChildProcess {
+  const childEnv = { ...process.env };
+  for (const definition of runtimeEnvironmentDefinitions) {
+    delete childEnv[definition.key];
+    for (const alias of definition.deprecatedAliases ?? []) {
+      delete childEnv[alias];
+    }
+  }
+  childEnv.GOROMBO_RUNTIME_ROOT = runtimeRoot;
+  childEnv.PORT = String(port);
 
-  const child = spawn(process.execPath, args, {
-    cwd: process.cwd(),
-    env: { ...process.env, PORT: String(port) },
+  const child = spawn(process.execPath, [serverPath], {
+    cwd: runtimeRoot,
+    env: childEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

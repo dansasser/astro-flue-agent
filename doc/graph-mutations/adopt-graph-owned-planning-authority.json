@@ -1,0 +1,1409 @@
+{
+  "schema_version": 1,
+  "mutation_id": "adopt-graph-owned-planning-authority",
+  "rationale": "Remove obsolete external-plan authority from the active SIM-ONE Alpha lifecycle. The development graph and repository-bound specifications, decisions, implementation lineage, and release ledger are the executable project plan and must not delegate scheduling or approval lineage to /opt/ai/plans.",
+  "evidence": [
+    "doc/implementation-lineage.md",
+    "docs/getting-started/pre-release-status.md",
+    "development-graph.json",
+    "specification-manifest.json",
+    "decisions.json"
+  ],
+  "expected_graph_version": 47,
+  "expected_graph_checksum": "a52b956cd681788307edbf0fac7cac1cd190f16f9defee502806d20c47746bb1",
+  "new_context_version": "governance:graph-owned-planning:2026-07-29",
+  "operations": [
+    {
+      "op": "update-root",
+      "field": "assumptions",
+      "value": [
+        "Each runtime run governs one explicitly authorized change against a named Git commit.",
+        "The current commit is project context, not proof that historical implementation is verified.",
+        "The project owner supplies target-specific authority for GitHub, private release-asset staging, irreversible post-observation public release, release-ledger, canary, and production mutations at the declared gates.",
+        "Canary and production deployment commands remain adapter bindings until the project documents an approved deployment mechanism.",
+        "Full live-model TUI probes require valid provider credentials supplied through the canonical runtime configuration, never stored in this graph.",
+        "Every changed source, documentation, generated-definition, and focused-test file is assigned to exactly one implementation workstream; overlapping files are serialized or reconciled by integration.",
+        "development-graph.json is the executable project plan; specification-manifest.json, decisions.json, repository doc/ artifacts, doc/implementation-lineage.md, and docs/getting-started/pre-release-status.md are its bound planning sources. Historical external plans are non-authoritative reference evidence and are not graph inputs.",
+        "Every stable release and planned-work ID in docs/getting-started/pre-release-status.md is required for 0.1.0 Beta; changing that fixed scope requires a new explicit owner decision and graph revision.",
+        "The checked-in definition is deliberately bound to the canonical host checkout . under the project-local graph contract; review worktrees and CI clones may validate or render it, but executable claims require an explicit canonical-root authorization or a separately reviewed rebind.",
+        "The configured pnpm run test:tui smoke proves only the direct built-gateway prompt path and CLI help surface; pnpm run test:tui:ratatui owns packaged sim-one/SIM-ONE TUI session, transcript, interaction, and visible-final evidence, while TypeScript and Rust suites own their narrower contracts.",
+        "Company-owned src/AGENTS.md is an immutable input to ordinary implementation workstreams; changing it requires a separately scoped lifecycle and explicit owner human gate.",
+        "A snapshot:sha256 project context version hashes a newline-delimited manifest of sorted Git-tracked and nonignored untracked project inputs, excluding development-graph.json, generated development-graph.md, specification-manifest.json, ignored build/runtime state, and missing tracked paths; each record contains project-relative path, NUL, file SHA-256, and newline."
+      ]
+    },
+    {
+      "op": "replace-node",
+      "id": "baseline-context",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The context record names the exact Git commit, instruction files, requested outcome, explicit non-goals, affected domains, and external effects.",
+            "evidence": "runtime:evidence/baseline-context/context.json",
+            "id": "context-bound-to-commit",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "The context record binds the current development graph, specification manifest, decision catalog, repository specifications, implementation lineage, and release ledger by project-relative path and SHA-256 digest; a changed planning artifact invalidates the baseline and blocks reuse of its approval.",
+            "evidence": "runtime:evidence/baseline-context/repository-planning-digests.json",
+            "id": "repository-planning-artifacts-bound",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The context preserves Flue discovery paths; company-owned src/AGENTS.md authority; main-agent, lead-worker, and worker-local internal-subagent workspace ownership; Coding Worker runtime-root scope; orchestrator/worker ownership; protocol/tool/skill separation; and project naming rules.",
+            "evidence": "runtime:evidence/baseline-context/boundary-review.json",
+            "id": "boundaries-confirmed",
+            "kind": "review"
+          },
+          {
+            "criterion": "The context record proves that the checkout containing development-graph.json matches the declared canonical project.root, or records explicit operator authority to execute against that canonical root; an unapproved worktree/CI mismatch blocks executable claims.",
+            "evidence": "runtime:evidence/baseline-context/execution-root.json",
+            "id": "execution-root-authorized",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 45
+        },
+        "executor": {
+          "instructions": "Read the authorized request, current Git state, AGENTS.md, architecture documents, development graph, specification manifest, decision catalog, repository specifications, implementation lineage, release ledger, and relevant history. Record project-relative paths and SHA-256 digests for the graph-owned planning artifacts before approval. Do not mark historical implementation as verified. Classify every workspace-related path as company-owned system instructions, the main-agent persona workspace, a lead-worker persona workspace, a worker-local internal-subagent workspace, or the Coding Worker runtime access root. Before any executable node is claimed, compare the active checkout containing development-graph.json with project.root. If they differ, record explicit operator authority for canonical-root execution or stop; never silently execute against another checkout.",
+          "kind": "agent",
+          "name": "SIM-ONE project context adapter"
+        },
+        "goal": "Bind one authorized change request to the current SIM-ONE Alpha commit, applicable instructions, graph-owned planning artifacts, architecture contracts, affected domains, and external-effect boundaries.",
+        "id": "baseline-context",
+        "inputs": [
+          {
+            "artifact": "external:authorized-change-request",
+            "name": "authorized change request",
+            "required": true
+          },
+          {
+            "artifact": "external:repository-checkout",
+            "name": "repository checkout",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "format": "application/json",
+            "name": "grounded project context"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "AGENTS.md",
+            "docs/architecture/",
+            "package.json",
+            "pnpm-lock.yaml",
+            ".github/workflows/",
+            "current Git metadata",
+            "src/AGENTS.md",
+            "src/workspace-loader.ts",
+            "src/agents/orchestrator.ts",
+            "src/workspace/",
+            "src/engine/workers/*/workspace/",
+            "src/engine/workers/coding-worker/subagents/*/workspace/",
+            "development-graph.json",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/",
+            "doc/implementation-lineage.md",
+            "docs/getting-started/pre-release-status.md"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces evidence without mutating project or external state.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "context",
+          "provenance",
+          "flue"
+        ],
+        "title": "Bind Change To Current Project Context",
+        "type": "operation"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "define-change-contract",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The requested change is represented by graph-owned specification, decision, acceptance, and implementation-lineage artifacts rather than an external loose plan.",
+            "evidence": "runtime:evidence/define-change-contract/graph-owned-change-contract.json",
+            "id": "graph-owned-change-contract",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Success criteria prove correct outputs or target-system effects; process, port, file existence, and zero exit alone are not treated as behavioral proof.",
+            "evidence": "runtime:evidence/define-change-contract/acceptance-review.json",
+            "id": "acceptance-is-behavioral",
+            "kind": "review"
+          },
+          {
+            "criterion": "The contract lists exact authorized mutations and separates read-only discovery from local, GitHub, deployment, sending, spending, and destructive effects.",
+            "evidence": "runtime:evidence/define-change-contract/authority.json",
+            "id": "authority-is-bounded",
+            "kind": "policy"
+          },
+          {
+            "criterion": "A workspace-affecting contract names whether it changes company-owned instructions, the main-agent persona workspace, a lead-worker persona workspace, an internal-subagent workspace, or the Coding Worker runtime access root; non-workspace changes explicitly record this criterion as not applicable.",
+            "evidence": "runtime:evidence/define-change-contract/workspace-scope.json",
+            "id": "workspace-scope-explicit",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 45
+        },
+        "executor": {
+          "instructions": "Create or update repository specification, decision, acceptance, and implementation-lineage artifacts and name every behavioral acceptance test, external effect, approval gate, and rollback. When workspace-related behavior is in scope, distinguish instruction/persona ownership from Coding Worker sandbox and project-root access. Do not create an external plan as a second scheduler.",
+          "kind": "agent",
+          "name": "SIM-ONE planning adapter"
+        },
+        "goal": "Turn the authorized request into a project-specific purpose, scope, non-goals, evidence plan, permission boundary, rollback, and user-visible progress contract.",
+        "id": "define-change-contract",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:change-contract",
+            "format": "text/markdown",
+            "name": "change acceptance contract"
+          },
+          {
+            "artifact": "artifact:affected-domain-map",
+            "format": "application/json",
+            "name": "affected domain map"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "AGENTS.md",
+            "src/AGENTS.md",
+            "docs/architecture/flue-architecture.md",
+            "docs/architecture/gorombo-flue-map.md",
+            "development-graph.json",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/",
+            "docs/getting-started/pre-release-status.md"
+          ],
+          "write": [
+            "doc/implementation-lineage.md"
+          ]
+        },
+        "resources": [
+          "project:implementation-lineage"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Updates the repository-owned change contract and implementation lineage.",
+          "level": "reversible",
+          "rollback": "Restore the prior repository artifacts and invalidate downstream work that consumed the superseded contract."
+        },
+        "state": "planned",
+        "tags": [
+          "contract",
+          "planning",
+          "approval",
+          "progress"
+        ],
+        "title": "Define Purpose And Acceptance Contract",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "approve-beta-release-contract",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The owner approval records every stable ID in docs/getting-started/pre-release-status.md as required for 0.1.0 Beta with no deferred or optional branch.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/approval.json",
+            "id": "all-release-items-required",
+            "kind": "manual"
+          },
+          {
+            "criterion": "The owner-approved contract covers every stable release ID in docs/getting-started/pre-release-status.md with no deferred or optional branch: REL-PKG-001, REL-PKG-002, REL-ONB-001, REL-OPS-001, REL-RUNTIME-001, TUI-WORK-001, REL-TUI-001, REL-TUI-002, REL-TUI-003, REL-TUI-004, REL-APP-001, REL-WEB-001, REL-DISCORD-001, REL-TG-001, REL-TG-002, REL-SEC-001, REL-CW-001, REL-CW-002, REL-CW-003, REL-CW-004, REL-CW-005, REL-CW-006, REL-SCH-001, REL-SCH-002, REL-CAP-001, REL-MCP-001, REL-DOC-001, REL-IMG-001, REL-PROTO-001, REL-PROTO-002, REL-PROTO-003, REL-PROTO-004, REL-REL-001.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/coverage.json",
+            "id": "release-ledger-covered",
+            "kind": "review"
+          },
+          {
+            "criterion": "The decision binds every repository release ID to the current development graph, specification manifest, decision catalog, repository specifications, and implementation lineage without relying on an external plan directory.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/repository-planning-lineage.json",
+            "id": "repository-planning-lineage-bound",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The owner authorizes every repository-mutating Coding Worker implementation and integration lane only under the project approval service, including the capabilities/security lane's first bootstrap write; each repository write must produce a current path- and mutation-bound decision and fail closed when approval is denied, missing, expired, or mismatched.",
+            "evidence": "runtime:evidence/approve-beta-release-contract/workstream-mutation-policy.json",
+            "id": "implementation-mutation-policy-approved",
+            "kind": "manual"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 1,
+          "timeout_minutes": 1440
+        },
+        "executor": {
+          "instructions": "Review the stable release ledger, current development graph, specification manifest, decision catalog, repository specifications, implementation lineage, and every repository-mutating Coding Worker implementation and integration scope. Approve the fixed contract only with fail-closed per-write approval-service enforcement, including the first write that implements or changes approval enforcement itself. Every listed release ID is required for 0.1.0 Beta. Any repository planning-artifact change, scope reduction, lineage mismatch, or approval-service bypass requires a fresh owner decision and graph revision rather than a runtime deferral.",
+          "kind": "human",
+          "name": "SIM-ONE project owner"
+        },
+        "goal": "Bind the fixed owner decision that every stable release-ledger item and reconciled specification member is required for 0.1.0 Beta before architecture and implementation planning.",
+        "id": "approve-beta-release-contract",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:affected-domain-map",
+            "name": "affected domain map",
+            "required": true
+          },
+          {
+            "artifact": "artifact:release-reconciliation-specification-verification",
+            "name": "reconciled specification verification",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:beta-release-contract",
+            "format": "approval-record",
+            "name": "0.1.0 Beta release contract approval"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "artifact:change-contract",
+            "artifact:affected-domain-map",
+            "docs/getting-started/pre-release-status.md",
+            "artifact:release-reconciliation-specification-verification",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "development-graph.json",
+            "doc/implementation-lineage.md"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces an owner-bound approval of the fixed 0.1.0 Beta contract without mutating project or external state.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "human-gate",
+          "release-contract",
+          "lineage",
+          "tui",
+          "onboarding"
+        ],
+        "title": "Approve 0.1.0 Beta Release Contract",
+        "type": "human_gate"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "decide-architecture",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The decision records alternatives, decision criteria, supporting evidence, the selected approach, consequences, and a revisit trigger.",
+            "evidence": "runtime:evidence/decide-architecture/decision.json",
+            "id": "alternatives-recorded",
+            "kind": "review"
+          },
+          {
+            "criterion": "The decision keeps app.ts thin, protocols in SQLite through the Protocol Tool, executable capabilities as tools, workflow knowledge as skills, specialists as workers, and registries outside orchestrator logic.",
+            "evidence": "runtime:evidence/decide-architecture/ownership-review.json",
+            "id": "ownership-preserved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The researcher owns web/current/source-backed retrieval and neither the orchestrator nor Coding Worker gains a direct web-capable path.",
+            "evidence": "runtime:evidence/decide-architecture/research-boundary.json",
+            "id": "research-boundary-preserved",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Read local architecture sources before version-matched Flue docs. Record alternatives, evidence, ownership, consequences, and revisit triggers; write an ADR only when material.",
+          "kind": "agent",
+          "name": "SIM-ONE architecture adapter"
+        },
+        "goal": "Choose the smallest design that satisfies the change contract while preserving SIM-ONE Alpha domain ownership and Flue architecture.",
+        "id": "decide-architecture",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:affected-domain-map",
+            "name": "affected domain map",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:architecture-decision",
+            "format": "decision-record",
+            "name": "architecture decision"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "docs/architecture/",
+            "src/",
+            "version-matched Flue documentation"
+          ],
+          "write": [
+            "docs/adr/"
+          ]
+        },
+        "resources": [
+          "architecture-decision:<topic>"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Records the reviewed architecture decision in the project ADR area or task plan.",
+          "level": "reversible",
+          "rollback": "Restore the prior decision record and invalidate downstream work that consumed the superseded decision."
+        },
+        "state": "planned",
+        "tags": [
+          "architecture",
+          "decision",
+          "flue",
+          "ownership"
+        ],
+        "title": "Resolve Architecture And Ownership",
+        "type": "decision"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "plan-implementation",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "Each workstream has one clear purpose, exact owned source/documentation/test files, declared inputs and outputs, no file concurrently owned by another parallel branch, and no hidden dependency on another branch; collisions are ordered or assigned to integration.",
+            "evidence": "runtime:evidence/plan-implementation/workstreams.json",
+            "id": "workstreams-bounded",
+            "kind": "review"
+          },
+          {
+            "criterion": "The plan maps each acceptance criterion to a focused check and the full applicable project verification matrix.",
+            "evidence": "runtime:evidence/plan-implementation/verification-map.json",
+            "id": "verification-mapped",
+            "kind": "test"
+          },
+          {
+            "criterion": "Every tool execution, worker handoff, plan update, verification result, and state transition has a durable typed progress-event expectation.",
+            "evidence": "runtime:evidence/plan-implementation/progress-contract.json",
+            "id": "progress-events-required",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The file-ownership matrix assigns every planned source, documentation, generated-definition, and focused-test mutation to exactly one producer; shared files are serialized or deferred to integration.",
+            "evidence": "runtime:evidence/plan-implementation/file-ownership.json",
+            "id": "file-ownership-disjoint",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The plan distinguishes src/AGENTS.md, src/workspace/, built-in lead-worker workspaces, Coding Worker internal-subagent workspaces, runtime-loaded user workers, and the Coding Worker runtime access root whenever those layers are affected.",
+            "evidence": "runtime:evidence/plan-implementation/workspace-layers.json",
+            "id": "workspace-layers-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "The implementation plan and doc/implementation-lineage.md map every stable release ID to one producing member, one behavioral verification path, and one exclusive or serialized file owner.",
+            "evidence": "runtime:evidence/plan-implementation/release-ledger-map.json",
+            "id": "release-ledger-mapped",
+            "kind": "review"
+          },
+          {
+            "criterion": "Before producing any implementation workstream, the planner verifies current graph, manifest, decision, specification, implementation-lineage, and release-ledger bindings; a mismatch stops planning and requires a fresh baseline and approval.",
+            "evidence": "runtime:evidence/plan-implementation/repository-planning-lineage.json",
+            "id": "repository-planning-lineage-preserved",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Verify the current graph, manifest, decision catalog, repository specifications, implementation lineage, and release ledger against artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed planning artifact. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution. Update doc/implementation-lineage.md; do not create an external plan.",
+          "kind": "agent",
+          "name": "SIM-ONE implementation planning adapter"
+        },
+        "goal": "Produce the repository-owned executable implementation lineage for every required 0.1.0 member, with exact file ownership, decision boundaries, evidence, approval scopes, and rollback under the development graph.",
+        "id": "plan-implementation",
+        "inputs": [
+          {
+            "artifact": "artifact:change-contract",
+            "name": "change acceptance contract",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-decision",
+            "name": "architecture decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "name": "runtime-root product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "name": "runtime-root architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "name": "runtime-root acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "name": "runtime-root implementation questions",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "name": "file authorization product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "name": "file authorization architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "name": "file authorization acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "name": "file authorization and worker-verification questions",
+            "required": true
+          },
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "name": "resolved GitHub auth strategy",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved runtime-root decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "format": "text/markdown",
+            "name": "implementation plan"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:change-contract",
+            "artifact:architecture-decision",
+            "artifact:beta-release-contract",
+            "decision:d1-github-auth-strategy",
+            "docs/getting-started/pre-release-status.md",
+            "package.json",
+            ".github/workflows/ci.yml",
+            "src/AGENTS.md",
+            "src/workspace-loader.ts",
+            "src/agents/orchestrator.ts",
+            "src/engine/workers/",
+            "docs/architecture/flue-architecture.md",
+            "docs/architecture/gorombo-flue-map.md",
+            "src/tests/architecture-contract.test.ts",
+            "src/tests/workspace-loader.test.ts",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md",
+            "development-graph.json",
+            "doc/implementation-lineage.md"
+          ],
+          "write": [
+            "doc/implementation-lineage.md"
+          ]
+        },
+        "resources": [
+          "project:implementation-lineage"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Updates the repository-owned implementation lineage consumed by the development graph.",
+          "level": "reversible",
+          "rollback": "Restore the prior implementation-lineage revision and invalidate downstream work that consumed it."
+        },
+        "state": "planned",
+        "tags": [
+          "planning",
+          "handoff",
+          "verification",
+          "progress"
+        ],
+        "title": "Plan Bounded Implementation",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-sim-one-tui-work-pane",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "TUI-WORK-001 implements the required SIM-ONE TUI work pane without regressing the existing transcript and prompt interaction.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/scope.json",
+            "id": "tui-work-001-scope-obeyed",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/mutation-approvals.json",
+            "id": "tui-work-pane-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "At supported widths, the SIM-ONE TUI renders transcript and prompt with a right-side work pane near 30 percent width; constrained terminals use the planned overlay or alternate view without overlap or inaccessible content.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/responsive-layout.json",
+            "id": "responsive-work-pane-rendered",
+            "kind": "test"
+          },
+          {
+            "criterion": "The task checklist has independent focus and scrolling, displays stable checkboxes, persists task state through the Rust/WASM helper contract, and never steals transcript or prompt scrolling.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/task-checklist.json",
+            "id": "task-checklist-independent",
+            "kind": "test"
+          },
+          {
+            "criterion": "Usage input, output, total spend, Git status, and runtime status are sourced from typed data rather than decorative placeholders and remain readable in loading, unavailable, empty, error, and populated states.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/work-pane-data.json",
+            "id": "work-pane-data-real",
+            "kind": "test"
+          },
+          {
+            "criterion": "Focused Rust state, framebuffer, interaction, persistence/WASM, and packaged-product tests cover pane sizing, focus, independent scrolling, task mutations, data states, and narrow-terminal behavior.",
+            "evidence": "runtime:evidence/implement-sim-one-tui-work-pane/focused-verification.json",
+            "id": "work-pane-tests-passed",
+            "kind": "test"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 240
+        },
+        "executor": {
+          "instructions": "Follow the SIM-ONE TUI work-pane graph contract, repository specifications, release ledger, and artifact:implementation-plan using SIM-ONE TUI product terminology. Before every repository mutation, call the Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction.",
+        "id": "implement-sim-one-tui-work-pane",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:connector-approval-controls-change",
+            "name": "connector approval-controls change",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:sim-one-tui-work-pane-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "SIM-ONE TUI work-pane change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "docs/architecture/tui-cli-session-flow.md",
+            "docs/operations/product-tui.md",
+            "docs/tui/",
+            "tui/ratatui/",
+            "crates/",
+            "doc/implementation-lineage.md",
+            "docs/getting-started/pre-release-status.md"
+          ],
+          "write": [
+            "tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan",
+            "Rust/WASM helper files assigned exclusively to this member by artifact:implementation-plan",
+            "focused test files assigned exclusively to this member by artifact:implementation-plan"
+          ]
+        },
+        "resources": [
+          "project:sim-one-tui-work-pane"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes only approval-service-authorized TUI work-pane implementation files and exclusively assigned tests.",
+          "level": "reversible",
+          "rollback": "Restore this member's files from the pre-change Git commit while preserving the existing two-pane TUI and unrelated workstreams."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "tui",
+          "work-pane",
+          "tasks",
+          "usage",
+          "git-status"
+        ],
+        "title": "Implement SIM-ONE TUI Work Pane",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-sim-one-onboarding-distribution",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "REL-PKG-001: the packaging implementation can assemble a versioned release archive containing the documented runtime, sim-one command, sim-one.sh entrypoint, service assets, and checksum manifest.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-001-release-archive.json",
+            "id": "rel-pkg-001-release-archive",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Every repository write is preceded by a fail-closed Coding Worker approval-service decision bound to the exact run, file path, proposed mutation or command, approval scope, approver, and time; denied, missing, expired, or mismatched approval prevents the write.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/mutation-approvals.json",
+            "id": "onboarding-distribution-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-PKG-002: installation verifies checksums before materializing the runtime, refuses mismatches, uses the runtime owner directory independent of caller cwd, and leaves a recoverable prior installation.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-pkg-002-integrity-install.json",
+            "id": "rel-pkg-002-integrity-install",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-ONB-001: sim-one install runs packaged onboarding, stores validated configuration and secrets in documented user-owned locations, verifies a real model response, and enters the first secure SIM-ONE TUI session.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-onb-001-onboarding.json",
+            "id": "rel-onb-001-packaged-onboarding",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-OPS-001: sim-one config, doctor, status, start, restart, and stop expose documented behavior for local-process and service-managed runtime modes, with output-level health evidence and idempotent lifecycle handling.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/rel-ops-001-lifecycle-commands.json",
+            "id": "rel-ops-001-lifecycle-commands",
+            "kind": "test"
+          },
+          {
+            "criterion": "Onboarding and lifecycle output never prints secret values, distinguishes warnings from blockers, and provides actionable recovery without requiring a source checkout or Cargo command.",
+            "evidence": "runtime:evidence/implement-sim-one-onboarding-distribution/secret-and-recovery-review.json",
+            "id": "onboarding-secrets-and-recovery-safe",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 300
+        },
+        "executor": {
+          "instructions": "Use the current runtime-root, onboarding, configuration, packaging, and acceptance specifications plus artifact:implementation-plan as the implementation authority. Before every repository mutation, call the Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Keep install and service probes isolated from host production services.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Implement versioned SIM-ONE packaging, integrity-verified installation, packaged onboarding, configuration, diagnostics, and local or service-managed lifecycle commands.",
+        "id": "implement-sim-one-onboarding-distribution",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-root-layout-change",
+            "name": "runtime-root layout change",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:sim-one-onboarding-distribution-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "SIM-ONE onboarding and distribution change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "sim-one-cli/",
+            "scripts/",
+            "package.json",
+            "docs/getting-started/",
+            "docs/operations/",
+            "doc/implementation-lineage.md",
+            "docs/getting-started/pre-release-status.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md"
+          ],
+          "write": [
+            "sim-one-cli/ files assigned exclusively to this member by artifact:implementation-plan",
+            "release packaging and service files assigned exclusively to this member by artifact:implementation-plan",
+            "focused test files assigned exclusively to this member by artifact:implementation-plan"
+          ]
+        },
+        "resources": [
+          "project:sim-one-onboarding-distribution"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes only approval-service-authorized onboarding, packaging, installer, lifecycle, and focused-test files assigned to this member.",
+          "level": "reversible",
+          "rollback": "Restore this member's files from the pre-change Git commit and retain the last verified packaged runtime for recovery."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "onboarding",
+          "packaging",
+          "installer",
+          "cli",
+          "service"
+        ],
+        "title": "Implement SIM-ONE Onboarding And Distribution",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "review-architecture-security",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change preserves the local Flue map, company/main-agent/lead-worker/internal-subagent instruction ownership, orchestrator/worker/tool/skill/protocol/registry boundaries, and required typed contracts.",
+            "evidence": "runtime:evidence/review-architecture-security/architecture.json",
+            "id": "architecture-contract-passes",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Model-selected inputs cannot choose trusted actor, project, repository, credential, approval, or external destination boundaries.",
+            "evidence": "runtime:evidence/review-architecture-security/security.json",
+            "id": "trust-boundaries-pass",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every tool execution, subagent delegation, verification, approval, and state transition reaches the user through durable typed progress events.",
+            "evidence": "runtime:evidence/review-architecture-security/progress.json",
+            "id": "progress-contract-passes",
+            "kind": "review"
+          },
+          {
+            "criterion": "src/AGENTS.md remains company-owned; src/workspace/ remains the main-agent persona workspace even when used as the default Coding Worker runtime root; built-in lead workers and Coding Worker internal subagents compose only their own workspace guidance; runtime-loaded user workers remain capability profiles; and only lead workers are orchestrator-addressable.",
+            "evidence": "runtime:evidence/review-architecture-security/workspaces.json",
+            "id": "workspace-boundaries-pass",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The final diff matches the plan's one-producer-per-file matrix; any shared file was serialized or reconciled by integration with no hidden parallel overwrite.",
+            "evidence": "runtime:evidence/review-architecture-security/file-ownership.json",
+            "id": "parallel-ownership-passes",
+            "kind": "review"
+          },
+          {
+            "criterion": "Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust TUI state/rendering tests, packaged SIM-ONE TUI PTY tests, isolated onboarding/distribution tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval.",
+            "evidence": "runtime:evidence/review-architecture-security/probe-claim-map.json",
+            "id": "verification-claims-match-probes",
+            "kind": "review"
+          },
+          {
+            "criterion": "Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior, required release gates, and owner-scoped planned product work without making speculative promises.",
+            "evidence": "runtime:evidence/review-architecture-security/release-documentation.json",
+            "id": "release-documentation-reviewed",
+            "kind": "review"
+          },
+          {
+            "criterion": "The release ledger, graph members, owner scope decision, repository specification lineage, and verification summary contain the same complete set of stable release IDs and no required item is hidden by a generic workstream.",
+            "evidence": "runtime:evidence/review-architecture-security/release-lineage.json",
+            "id": "release-lineage-consistent",
+            "kind": "review"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 90
+        },
+        "executor": {
+          "instructions": "Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, documented rollback, and release-document accuracy and readability.",
+          "kind": "agent",
+          "name": "SIM-ONE review adapter"
+        },
+        "goal": "Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability.",
+        "id": "review-architecture-security",
+        "inputs": [
+          {
+            "artifact": "artifact:integrated-change",
+            "name": "integrated change set",
+            "required": true
+          },
+          {
+            "artifact": "artifact:verification-summary",
+            "name": "verification summary",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:architecture-security-review",
+            "format": "review-report",
+            "name": "architecture and security review"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:integrated-change",
+            "artifact:verification-summary",
+            "AGENTS.md",
+            "AUTHORS.md",
+            "CHANGELOG.md",
+            "CODE_OF_CONDUCT.md",
+            "CONTRIBUTING.md",
+            "LICENSE",
+            "README.md",
+            "SECURITY.md",
+            "SUPPORT.md",
+            "THIRD_PARTY_NOTICES.md",
+            "docs/README.md",
+            "docs/architecture/",
+            "docs/getting-started/",
+            "docs/guides/",
+            "docs/operations/",
+            "docs/reference/",
+            "docs/tui/",
+            "openwiki/",
+            "src/AGENTS.md",
+            "src/workspace-loader.ts",
+            "src/agents/orchestrator.ts",
+            "src/workspace/",
+            "src/engine/workers/*/workspace/",
+            "src/engine/workers/coding-worker/subagents/*/workspace/",
+            "src/tests/architecture-contract.test.ts",
+            "src/tests/workspace-loader.test.ts",
+            "src/tests/coding-worker.test.ts",
+            "src/tests/coding-worker-internal-subagents.test.ts",
+            "src/tests/research-agent.test.ts"
+          ],
+          "write": []
+        },
+        "resources": [],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces evidence without mutating project or external state.",
+          "level": "none",
+          "rollback": "none"
+        },
+        "state": "planned",
+        "tags": [
+          "review",
+          "architecture",
+          "security",
+          "progress"
+        ],
+        "title": "Review Architecture, Security, And Product Boundaries",
+        "type": "verification"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "closeout-release",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The closeout names files changed, commands and tests run, pass/fail results, approvals, PR/release URLs, immutable release assets, the verified repository ledger update, production evidence, assumptions, risks, rollback, and next step.",
+            "evidence": "runtime:evidence/closeout-release/handoff.json",
+            "id": "handoff-complete",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Superseded evidence and failed attempts remain addressable through the append-only graph ledger and version control.",
+            "evidence": "runtime:evidence/closeout-release/history.json",
+            "id": "history-preserved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The verified main-branch release ledger contains every stable beta ID exactly once in a completed and verified state; closeout is blocked if any required row still describes absent, unavailable, awaiting, pending, planned, incomplete, or otherwise pre-release behavior.",
+            "evidence": "runtime:evidence/closeout-release/release-ledger-complete.json",
+            "id": "release-ledger-complete-at-closeout",
+            "kind": "probe"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 2,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Update the task handoff and issue/PR records without erasing superseded evidence. Confirm the final graph-bound evidence and leave unrelated future work explicit.",
+          "kind": "agent",
+          "name": "SIM-ONE release closeout adapter"
+        },
+        "goal": "Record the shipped outcome, exact commit and PR/release references, verification and observation evidence, remaining risks, rollback, and follow-up work.",
+        "id": "closeout-release",
+        "inputs": [
+          {
+            "artifact": "artifact:release-candidate",
+            "name": "published release candidate",
+            "required": true
+          },
+          {
+            "artifact": "artifact:production-observation",
+            "name": "production observation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:release-ledger-update",
+            "name": "verified release ledger update",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:release-closeout",
+            "format": "handoff-record",
+            "name": "release closeout record"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [
+            "GitHub issue or pull-request metadata write"
+          ],
+          "read": [
+            "all graph evidence",
+            "Git and GitHub state",
+            "development-graph.json",
+            "specification-manifest.json",
+            "decisions.json",
+            "doc/implementation-lineage.md"
+          ],
+          "write": [
+            "doc/release-handoff.md",
+            "authorized issue or pull-request closeout fields"
+          ]
+        },
+        "resources": [
+          "project:release-handoff",
+          "external:github-repository"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Writes the durable task handoff and authorized GitHub closeout metadata.",
+          "level": "reversible",
+          "rollback": "Restore the prior handoff revision and amend GitHub metadata while preserving the audit history."
+        },
+        "state": "planned",
+        "tags": [
+          "closeout",
+          "handoff",
+          "evidence",
+          "history"
+        ],
+        "title": "Close Out And Preserve Evidence",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "specify-release-reconciliation",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "D1 and D4 remain explicitly open, while D2 and D3 state only the owner-established decisions.",
+            "evidence": "runtime:evidence/specify-release-reconciliation/decision-neutrality.json",
+            "id": "decision-neutrality",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every pending structured-memory todo and checklist item is mapped to one stable release ID and explicit graph member.",
+            "evidence": "runtime:evidence/specify-release-reconciliation/memory-work-promoted.json",
+            "id": "memory-work-promoted",
+            "kind": "review"
+          },
+          {
+            "criterion": "The runtime-root specification is movable, install-relative, and separates packaged persona, mutable state, and model-writable workspace.",
+            "evidence": "runtime:evidence/specify-release-reconciliation/runtime-root-install-relative.json",
+            "id": "runtime-root-install-relative",
+            "kind": "review"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every required document exists, is status-consistent, and maps to graph lineage.",
+          "max_attempts": 2,
+          "timeout_minutes": 90
+        },
+        "executor": {
+          "instructions": "Maintain the reconciled repository specification documents, decision catalog, specification manifest, and implementation lineage. Preserve open decisions and development-graph authority. Do not create or depend on an external plan.",
+          "kind": "agent",
+          "name": "SIM-ONE specification adapter"
+        },
+        "goal": "Maintain the neutral product, architecture, acceptance, risk, and open-question documents that bind the reconciled 0.1.0 release graph without fabricating open decisions.",
+        "id": "specify-release-reconciliation",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:product-spec",
+            "format": "markdown-document",
+            "name": "GitHub access product specification"
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "format": "markdown-document",
+            "name": "constraints and risks"
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "format": "markdown-document",
+            "name": "GitHub access architecture specification"
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "format": "markdown-document",
+            "name": "GitHub access acceptance specification"
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "format": "markdown-document",
+            "name": "GitHub access open questions"
+          },
+          {
+            "artifact": "artifact:product-spec-workspace",
+            "format": "markdown-document",
+            "name": "runtime-root product specification"
+          },
+          {
+            "artifact": "artifact:architecture-spec-workspace",
+            "format": "markdown-document",
+            "name": "runtime-root architecture specification"
+          },
+          {
+            "artifact": "artifact:acceptance-spec-workspace",
+            "format": "markdown-document",
+            "name": "runtime-root acceptance specification"
+          },
+          {
+            "artifact": "artifact:open-questions-workspace",
+            "format": "markdown-document",
+            "name": "runtime-root implementation questions"
+          },
+          {
+            "artifact": "artifact:product-spec-file-access",
+            "format": "markdown-document",
+            "name": "file authorization product specification"
+          },
+          {
+            "artifact": "artifact:architecture-spec-file-access",
+            "format": "markdown-document",
+            "name": "file authorization architecture specification"
+          },
+          {
+            "artifact": "artifact:acceptance-spec-file-access",
+            "format": "markdown-document",
+            "name": "file authorization acceptance specification"
+          },
+          {
+            "artifact": "artifact:open-questions-file-access",
+            "format": "markdown-document",
+            "name": "file authorization and worker-verification questions"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "decisions.json",
+            "docs/getting-started/pre-release-status.md",
+            "development-graph.json",
+            "specification-manifest.json",
+            "doc/implementation-lineage.md"
+          ],
+          "write": [
+            "doc/product-spec.md",
+            "doc/constraints-and-risks.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/product-spec-workspace.md",
+            "doc/architecture-spec-workspace.md",
+            "doc/acceptance-spec-workspace.md",
+            "doc/open-questions-workspace.md",
+            "doc/product-spec-file-access-history.md",
+            "doc/architecture-spec-file-access-history.md",
+            "doc/acceptance-spec-file-access-history.md",
+            "doc/open-questions-file-access-history.md"
+          ]
+        },
+        "resources": [
+          "project:release-reconciliation-specification"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Updates repository specification documents without product implementation.",
+          "level": "reversible",
+          "rollback": "Restore the previous specification documents and invalidate their consumers."
+        },
+        "state": "planned",
+        "tags": [
+          "specification",
+          "release",
+          "reconciliation"
+        ],
+        "title": "Specify Reconciled 0.1.0 Release Work",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-edge",
+      "id": "baseline-to-beta-release-contract",
+      "value": {
+        "artifacts": [
+          "artifact:baseline-context"
+        ],
+        "condition": "The current source state, release ledger, and repository planning-artifact digest manifest are bound to the same authorized run.",
+        "exit_condition": null,
+        "from": "baseline-context",
+        "id": "baseline-to-beta-release-contract",
+        "max_traversals": null,
+        "to": "approve-beta-release-contract",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "replace-edge",
+      "id": "beta-release-contract-to-implementation-plan",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "The fixed owner-approved 0.1.0 Beta contract and repository planning-artifact lineage are current and bound to this run.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-release-contract-to-implementation-plan",
+        "max_traversals": null,
+        "to": "plan-implementation",
+        "type": "consumes"
+      }
+    },
+    {
+      "op": "replace-edge",
+      "id": "baseline-invalidates-beta-release-contract",
+      "value": {
+        "artifacts": [
+          "artifact:beta-release-contract"
+        ],
+        "condition": "A changed commit, release ledger, repository planning artifact, artifact digest, or authorized request makes the former beta contract approval stale.",
+        "exit_condition": null,
+        "from": "baseline-context",
+        "id": "baseline-invalidates-beta-release-contract",
+        "max_traversals": null,
+        "to": "approve-beta-release-contract",
+        "type": "invalidates"
+      }
+    },
+    {
+      "op": "replace-edge",
+      "id": "beta-release-contract-invalidates-plan",
+      "value": {
+        "artifacts": [
+          "artifact:implementation-plan"
+        ],
+        "condition": "A changed owner-approved beta contract or repository planning-artifact lineage invalidates the implementation sequence and file-ownership map.",
+        "exit_condition": null,
+        "from": "approve-beta-release-contract",
+        "id": "beta-release-contract-invalidates-plan",
+        "max_traversals": null,
+        "to": "plan-implementation",
+        "type": "invalidates"
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "baseline-context",
+      "define-change-contract",
+      "approve-beta-release-contract",
+      "decide-architecture",
+      "plan-implementation",
+      "implement-sim-one-tui-work-pane",
+      "implement-sim-one-onboarding-distribution",
+      "review-architecture-security",
+      "closeout-release",
+      "specify-release-reconciliation"
+    ],
+    "artifacts": [
+      "artifact:baseline-context",
+      "artifact:change-contract",
+      "artifact:beta-release-contract",
+      "artifact:architecture-decision",
+      "artifact:implementation-plan",
+      "artifact:sim-one-tui-work-pane-change",
+      "artifact:sim-one-onboarding-distribution-change",
+      "artifact:architecture-security-review",
+      "artifact:release-closeout"
+    ]
+  },
+  "approval": null
+}

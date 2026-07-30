@@ -21,8 +21,9 @@
  */
 
 import { mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import { ulid } from '../../engine/memory/ulid.js';
 import {
   isTransientScheduleError,
@@ -36,15 +37,11 @@ import {
   type ScheduleTargetAgent,
 } from '../../engine/schedules/schedule-types.js';
 
-export const defaultScheduleDatabasePath = '.gorombo/db/schedules.sqlite';
+export const defaultScheduleDatabasePath = 'db/schedules.sqlite';
 
 const SCHEDULE_KINDS: readonly ScheduleKind[] = ['cron', 'every', 'at'];
 const TARGET_AGENTS: readonly ScheduleTargetAgent[] = ['orchestrator', 'coding-worker'];
 const TERMINAL_STATUSES: readonly ScheduleRunStatus[] = ['ok', 'error', 'skipped', 'timeout', 'lost'];
-
-function resolveRuntimePath(filePath: string): string {
-  return isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath);
-}
 
 function isScheduleKind(value: string): value is ScheduleKind {
   return (SCHEDULE_KINDS as readonly string[]).includes(value);

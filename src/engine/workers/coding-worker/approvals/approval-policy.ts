@@ -30,6 +30,12 @@ const defaultApprovalRequiredActions = new Set<CodingApprovalActionType>([
   'github.fork_repo',
   'github.auth.login',
   'github.auth.logout',
+  'runtime.config.update',
+  'capability.add',
+  'capability.update',
+  'capability.enable',
+  'capability.disable',
+  'capability.remove',
 ]);
 
 export function requiresCodingApproval(actionType: CodingApprovalActionType): boolean {

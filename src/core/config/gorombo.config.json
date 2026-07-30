@@ -5,8 +5,9 @@
     "backup": "codex-brain"
   },
   "storage": {
-    "flueDatabasePath": ".gorombo/db/flue.sqlite",
-    "sessionDatabasePath": ".gorombo/db/sessions.sqlite"
+    "flueDatabasePath": "db/flue.sqlite",
+    "sessionDatabasePath": "db/sessions.sqlite",
+    "vectorStorePath": "vector"
   },
   "memory": {
     "enabled": true,

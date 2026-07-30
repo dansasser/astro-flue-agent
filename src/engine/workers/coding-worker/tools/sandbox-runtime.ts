@@ -139,6 +139,14 @@ class FlueLocalCodingSandboxRuntime implements CodingSandboxRuntime {
   }
 
   async exec(command: string, options: CodingShellOptions = {}): Promise<ShellResult> {
+    const offending = findAbsolutePathOutsideWorkspace(command, this.workspaceRoot);
+    if (offending) {
+      return {
+        stdout: '',
+        stderr: `File access gate: command references path "${offending}" which is outside the workspace root "${this.workspaceRoot}". Use a path inside the configured coding workspace.`,
+        exitCode: 1,
+      };
+    }
     return this.sessionEnv.exec(command, {
       cwd: options.cwd ? this.resolveScopePath(options.cwd) : this.scopePath,
       env: options.env,
@@ -265,4 +273,19 @@ export function normalizeRepoRelativePath(repoPath: string, path: string): strin
   const resolvedPath = assertInsideRepo(repoPath, path);
   const relativePath = relative(resolve(repoPath), resolvedPath);
   return normalizeAgentRelativePath(relativePath || '.');
+}
+
+const ABSOLUTE_PATH_RE = /(?<=^|[\s;|&])((?:\/[\w@.\-]+)+)/g;
+
+export function findAbsolutePathOutsideWorkspace(command: string, workspaceRoot: string): string | null {
+  const root = resolve(workspaceRoot);
+  for (const match of command.matchAll(ABSOLUTE_PATH_RE)) {
+    const candidate = match[1];
+    const resolved = resolve(candidate);
+    const rel = relative(root, resolved);
+    if (rel.startsWith('..')) {
+      return candidate;
+    }
+  }
+  return null;
 }

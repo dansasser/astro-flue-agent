@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type { CapabilityKind, CapabilityRecord } from '../../engine/capabilities/types.js';
 import { resolveCapabilityPath } from '../../engine/capabilities/capability-loader.js';
 
@@ -32,7 +33,7 @@ export function materializeCapability(options: MaterializeOptions): MaterializeR
     case 'github':
       return materializeFromGithub(record, targetPath);
     case 'local':
-      return materializeFromLocal(record, targetPath);
+      return materializeFromLocal(record, targetPath, env);
     default:
       return { path: targetPath, action: 'skipped' };
   }
@@ -43,32 +44,51 @@ function materializeFromGithub(record: CapabilityRecord, targetPath: string): Ma
     rmSync(targetPath, { recursive: true, force: true });
   }
 
-  execSync(`git clone --depth 1 ${shellQuote(record.sourceRef)} ${shellQuote(targetPath)}`, {
-    stdio: 'pipe',
-    timeout: 30_000,
-  });
-
-  if (record.version && record.version !== 'latest') {
-    try {
-      execSync(`git -C ${shellQuote(targetPath)} checkout ${shellQuote(record.version)}`, {
+  try {
+    if (record.version && isCommitReference(record.version)) {
+      execFileSync('git', ['clone', '--no-checkout', record.sourceRef, targetPath], {
+        stdio: 'pipe',
+        timeout: 30_000,
+      });
+      execFileSync('git', ['-C', targetPath, 'fetch', '--depth', '1', 'origin', record.version], {
+        stdio: 'pipe',
+        timeout: 30_000,
+      });
+      execFileSync('git', ['-C', targetPath, 'checkout', '--detach', 'FETCH_HEAD'], {
         stdio: 'pipe',
         timeout: 10_000,
       });
-    } catch (error) {
-      rmSync(resolve(targetPath, '.git'), { recursive: true, force: true });
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to pin version "${record.version}" for capability "${record.id}": ${message}`);
+    } else {
+      const args = ['clone', '--depth', '1'];
+      if (record.version && record.version !== 'latest') {
+        args.push('--branch', record.version);
+      }
+      args.push(record.sourceRef, targetPath);
+      execFileSync('git', args, {
+        stdio: 'pipe',
+        timeout: 30_000,
+      });
     }
+  } catch (error) {
+    rmSync(targetPath, { recursive: true, force: true });
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to materialize version "${record.version ?? 'latest'}" for capability "${record.id}": ${message}`,
+    );
   }
 
   rmSync(resolve(targetPath, '.git'), { recursive: true, force: true });
   return { path: targetPath, action: 'cloned' };
 }
 
-function materializeFromLocal(record: CapabilityRecord, targetPath: string): MaterializeResult {
+function materializeFromLocal(
+  record: CapabilityRecord,
+  targetPath: string,
+  env: Record<string, unknown>,
+): MaterializeResult {
   const sourcePath = isAbsolute(record.sourceRef)
     ? record.sourceRef
-    : resolve(process.cwd(), record.sourceRef);
+    : resolveRuntimePath(record.sourceRef, { env });
 
   if (!existsSync(sourcePath)) {
     throw new Error(`Local capability source not found: ${sourcePath}`);
@@ -82,6 +102,6 @@ function materializeFromLocal(record: CapabilityRecord, targetPath: string): Mat
   return { path: targetPath, action: 'copied' };
 }
 
-function shellQuote(value: string): string {
-  return "'" + value.replace(/'/g, "'\\''") + "'";
+function isCommitReference(value: string): boolean {
+  return /^[a-f0-9]{7,40}$/i.test(value);
 }

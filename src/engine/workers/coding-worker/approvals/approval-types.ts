@@ -21,6 +21,12 @@ export type CodingApprovalActionType =
   | 'github.fork_repo'
   | 'github.auth.login'
   | 'github.auth.logout'
+  | 'runtime.config.update'
+  | 'capability.add'
+  | 'capability.update'
+  | 'capability.enable'
+  | 'capability.disable'
+  | 'capability.remove'
   | 'memory.write'
   | 'memory.handoff';
 

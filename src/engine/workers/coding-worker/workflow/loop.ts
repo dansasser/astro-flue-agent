@@ -50,6 +50,8 @@ export interface CodingWorkerLoopDependencies {
   reporter?: CodingProgressReporter;
   sandbox?: CodingSandboxRuntime;
   taskRunStore?: CodingTaskRunStore;
+  /** Trusted metadata root. Production uses <runtime-root>/coding-worker. */
+  stateRoot?: string;
   approvalService?: CodingApprovalService;
   githubClient?: GitHubClient;
   preflight?: (scopePath: string, target: ResolvedCodingWorkspaceTarget) => CodingRepoPreflight;
@@ -83,7 +85,10 @@ export async function runCodingWorkerLoop(
   dependencies.reporter = reporter;
   const workspaceTarget = resolveCodingWorkspaceTarget(task);
   const sessionPlan = createCodingWorkerSessionPlan(task.taskId, task.sessionId);
-  const taskRunStore = dependencies.taskRunStore ?? JsonFileCodingTaskRunStore.atWorkspaceRoot(workspaceTarget.workspaceRoot);
+  const taskRunStore = dependencies.taskRunStore
+    ?? (dependencies.stateRoot
+      ? JsonFileCodingTaskRunStore.atStateRoot(dependencies.stateRoot)
+      : JsonFileCodingTaskRunStore.atWorkspaceRoot(workspaceTarget.workspaceRoot));
   const createdAt = new Date().toISOString();
   const maxTurns = dependencies.maxTurns ?? task.maxTurns ?? DEFAULT_MAX_TURNS;
 

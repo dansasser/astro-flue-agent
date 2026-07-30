@@ -1,6 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+} from '../../core/config/runtime-root.js';
 import type { CapabilityKind } from '../../engine/capabilities/types.js';
 
 export interface BuiltinRegistry {
@@ -90,21 +93,6 @@ function getNamesForKind(registry: BuiltinRegistry, kind: CapabilityKind): strin
 }
 
 function resolveBuiltinRegistryPath(): string {
-  const moduleDirectory = dirname(fileURLToPath(import.meta.url));
-  const candidates = [
-    resolve(moduleDirectory, '..', '..', builtinRegistryFilename),
-    resolve(moduleDirectory, '..', '..', 'dist', builtinRegistryFilename),
-    resolve(moduleDirectory, '..', '..', '.gorombo', 'sim-one-alpha', builtinRegistryFilename),
-    resolve(moduleDirectory, '..', 'sim-one-alpha', builtinRegistryFilename),
-    resolve(process.cwd(), '.gorombo', 'sim-one-alpha', builtinRegistryFilename),
-    resolve(process.cwd(), 'dist', builtinRegistryFilename),
-  ];
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return candidates[0];
+  const runtimePaths = createGoromboRuntimePaths(resolveGoromboRuntimeRoot());
+  return join(runtimePaths.packagedServer, builtinRegistryFilename);
 }

@@ -17,20 +17,81 @@ Wired worker-local capability groups:
 - Code intelligence tools: AST parsing (TypeScript, JavaScript, Python), symbol navigation, find declarations, find references, and import-graph analysis across the scoped source files.
   LSP-backed tools (`lsp_document_symbols`, `lsp_go_to_definition`, `lsp_find_references`, `lsp_hover`, `lsp_prepare_rename`, `lsp_rename`, `lsp_workspace_symbols`) are also available; they are powered by `typescript-language-server`, `@astrojs/language-server` (for `.astro`), and `pyright-langserver` from `node_modules/.bin/`, so the published product works out of the box without a system PATH install.
 - Event reporting: emit public progress and rationale events for the main orchestrator.
+- Runtime configuration tools: inspect or validate redacted canonical
+  configuration status and request approval-gated updates through
+  `coding_runtime_config_status`, `coding_runtime_config_validate`, and
+  `coding_runtime_config_update`.
+- Capability authoring tools:
+  `coding_capability_classify`, `coding_capability_scaffold`,
+  `coding_capability_validate`, `coding_capability_test`, and
+  `coding_capability_prepare_handoff`.
+
+## Capability Authoring
+
+Load and apply the applicable Protocol Tool bundle before classification,
+validation, security scanning, testing, packaging, or handoff. These operations
+fail closed without a valid bundle and retain applied protocol ids and rules in
+redacted evidence.
+
+Use `coding_capability_scaffold` only after its `file.edit` approval settles.
+Run `coding_capability_validate`, then `coding_capability_test`. A handoff is
+accepted only when the exact current content digest has a passing test
+attestation under the same protocol directives.
+
+The Coding Worker produces source and a typed handoff only. Do not read or
+write the runtime capability SQLite database or managed capability directories.
+Send installation, update, enable, disable, and remove work to
+`capability-manager`.
+
+## Runtime Configuration
+
+The dedicated runtime configuration tools are the only Coding Worker
+capability allowed to access the canonical owner `sim-one.config`. Do not use
+the general sandbox, shell, file, repository, or memory tools to find, read, or
+write that file.
+
+For a configuration request:
+
+1. Use `coding_runtime_config_status` or `coding_runtime_config_validate` when
+   inspection is needed. These tools return key names and redacted status,
+   never configured values.
+2. Use `coding_runtime_config_update` for one registered key and one `set` or
+   `remove` operation.
+3. For a secret `set`, pass only the exact value explicitly supplied by the
+   user for the current request. Never read an existing value, infer one, reuse
+   one from memory or another task, or transform the supplied credential.
+4. Wait for the `runtime.config.update` backend approval. The user's request
+   establishes intent but does not bypass the approval record.
+5. After execution, report only the key name, operation status, and restart
+   requirement. Never repeat the supplied value in progress, approval
+   metadata, logs, tool results, or the final response.
 
 ## GitHub Authentication
 
-GitHub authentication is runtime state, not a `TOOLS.md` flag. On the first GitHub operation in a task, check the attached GitHub authentication capability rather than inferring access from a prior conversation. If it reports that authorization is needed, request the approval-gated worker flow and let the authenticated connector privately deliver the browser challenge to the initiating user. Do not copy a browser URL, one-time code, token, or credential into shell output, repository files, commits, progress events, or a final response.
+The official GitHub MCP is attached only to the Coding Worker when
+`GITHUB_PERSONAL_ACCESS_TOKEN` is present in the trusted runtime environment.
+An existing configured PAT is never readable or model-visible workspace state.
+The only permitted model-visible PAT is the exact value the user supplies in a
+current configuration request, and it may be passed only to
+`coding_runtime_config_update`. Do not copy a PAT into shell output, general
+tool arguments, repository files, commits, progress events, logs, or final
+responses.
 
-If approval completes after the initiating turn, call `github_auth_start` again with the new trusted current `eventId` and the blocked response's `request.id` supplied as `approvalRequestId`. The runtime verifies that the approved request belongs to the same connector, actor, conversation, host, and profile before delivering the challenge to the current response. Never reuse an approval from another conversation.
+Use the attached GitHub MCP read tools or the Coding Worker GitHub context tools
+for issues, pull requests, checks, comments, and review context. All GitHub
+writes must use the `coding_github_*` approval wrappers. Raw MCP write tools are
+not attached to the model, even though the trusted wrappers use them after an
+approval decision.
 
-For asynchronous connectors such as Telegram, pass the trusted current `eventId` to `github_auth_status` and `github_auth_start`; when continuing an approved login, pass the blocked response's `request.id` as `approvalRequestId`. These are the only model-visible routing values; trusted ingress authority is stored server-side and bound to the Flue agent instance plus that event ID. Never invent or substitute either value from an unrelated request or conversation.
+Repository cloning tries anonymous HTTPS access first so public repositories do
+not require or receive credentials. A failed GitHub HTTPS clone may retry with a
+command-scoped askpass environment backed by the PAT. Do not run `gh auth`, use
+the `gh` CLI for authenticated operations, persist Git credentials, or expose
+the PAT to the execution sandbox.
 
-Telegram issues this admission only in a private bot chat. Do not attempt device authorization from a group or supergroup event; direct the user to the bot's private chat instead.
-
-After the user completes the browser authorization, check status again. Do not claim GitHub access until the worker has verified the managed account; do not claim a repository is usable until the requested Git operation also succeeds. Use HTTPS Git remotes only for product-managed GitHub access.
-
-The runtime workspace root is the coding worker's access root. Do not treat the agent source checkout or `process.cwd()` as the default user project. Only use the source checkout as a local development fallback when no runtime workspace root is configured.
+The canonical runtime workspace at `<runtime-root>/workspace` is the Coding
+Worker access root. Project and repository paths must resolve beneath it; the
+agent source checkout and `process.cwd()` are not runtime workspace fallbacks.
 
 Do not use GitHub write actions, repo workflow mutations, clones, syncs, pushes, PR creation, comments, or review-thread updates without backend approval.
 
