@@ -11,7 +11,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dansasser/sim-one-alpha)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![SIM-ONE Alpha by Gorombo](.github/assets/sim-one-alpha-social-preview.jpg)
+![SIM-ONE Alpha by Gorombo](assets/images/sim-one-alpha-social-preview.jpg)
 
 SIM-ONE Alpha is a protocol-governed AI employee from [Gorombo](https://gorombo.com), built with [Flue](https://flueframework.com/) and the [SIM-ONE Framework](https://simoneframework.org). It is the base architecture behind Gorombo's AI Employees: a self-hosted runtime that combines protocols, memory, RAG, workers, tools, schedules, connectors, approvals, and local computer control so AI employees can receive work, learn as they work, and act through governed execution paths.
 
