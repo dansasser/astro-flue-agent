@@ -90,9 +90,10 @@ temporary directory. The rest of the owner runtime, including
 mounted. When the host has the supported Rust toolchain, Bubblewrap mounts its
 executables and rustup toolchains read-only, uses a private writable
 `CARGO_HOME`, and exposes only read-only Cargo registry and Git caches. A
-private Git child may additionally receive the single read-only, secret-free
-askpass helper file and command-scoped credential environment described in
-[GitHub Authentication](github-auth-system.md). An approved commit receives
+private Git child may additionally receive a read-only, secret-free askpass
+helper and dedicated owner-only token file described in
+[GitHub Authentication](github-auth-system.md); repository hooks are disabled
+for those bounded remote operations. An approved commit receives
 the host's global Git author and committer identity as command-scoped
 environment variables; the sandbox does not mount the host home or persist
 that identity in the repository. Linux execution fails closed when Bubblewrap

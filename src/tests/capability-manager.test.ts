@@ -425,6 +425,90 @@ test('capability-manager applies partial MCP updates without resending the store
   }
 });
 
+test('capability update approval binds the complete mutation payload', async () => {
+  const fixture = createFixture();
+  try {
+    const profile = createCapabilityManagerSubagent({
+      approvalService: fixture.approvalService,
+      serviceFactory: fixture.serviceFactory,
+      protocolBundleLoader: fixture.protocolBundleLoader,
+    });
+    const add = getTool(profile.tools ?? [], 'capability_add');
+    const addArgs = {
+      taskId: 'payload-bound-add',
+      eventId: 'payload-bound-add',
+      kind: 'mcp',
+      id: 'payload-bound-mcp',
+      name: 'Original name',
+      description: 'Original description',
+      mcpUrl: 'https://mcp.example.test/api',
+      mcpTransport: 'streamable-http',
+    };
+    const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
+      request: { id: string };
+    };
+    await fixture.approvalService.recordDecision({
+      requestId: pendingAdd.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+    await add.execute(addArgs);
+
+    const update = getTool(profile.tools ?? [], 'capability_update');
+    const firstArgs = {
+      taskId: 'payload-bound-update',
+      eventId: 'payload-bound-update',
+      kind: 'mcp',
+      id: 'payload-bound-mcp',
+      name: 'Approved name',
+      description: 'Approved description',
+    };
+    const pendingFirst = JSON.parse(await update.execute(firstArgs)) as {
+      request: {
+        id: string;
+        metadata: Record<string, unknown>;
+      };
+    };
+    assert.match(
+      String(pendingFirst.request.metadata.mutationDigest),
+      /^[a-f0-9]{64}$/,
+    );
+    await fixture.approvalService.recordDecision({
+      requestId: pendingFirst.request.id,
+      approved: true,
+      decidedBy: 'operator-1',
+      principal: { id: 'operator-1', roles: ['operator'] },
+    });
+
+    const changed = JSON.parse(
+      await update.execute({
+        ...firstArgs,
+        name: 'Unapproved replacement name',
+      }),
+    ) as {
+      blocked?: boolean;
+      request?: {
+        id: string;
+        metadata: Record<string, unknown>;
+      };
+    };
+    assert.equal(changed.blocked, true);
+    assert.notEqual(changed.request?.id, pendingFirst.request.id);
+    assert.notEqual(
+      changed.request?.metadata.mutationDigest,
+      pendingFirst.request.metadata.mutationDigest,
+    );
+    assert.equal(
+      fixture.serviceFactory().service.inspect('mcp', 'payload-bound-mcp')
+        .record?.name,
+      'Original name',
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test('capability-manager rejects unsupported npm lifecycle sources', async () => {
   const fixture = createFixture();
   try {

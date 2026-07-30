@@ -33,7 +33,7 @@ test('public GitHub HTTPS clone succeeds anonymously without loading PAT credent
       return {
         GIT_ASKPASS: '/runtime/.gorombo/auth/github/git-askpass.mjs',
         GIT_TERMINAL_PROMPT: '0',
-        GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+        SIM_ONE_GITHUB_TOKEN_FILE: '/runtime/.gorombo/auth/github/git-token',
       };
     },
   });
@@ -55,11 +55,14 @@ test('public GitHub HTTPS clone succeeds anonymously without loading PAT credent
     assert.deepEqual(calls.at(-1)?.env, {
       GIT_CONFIG_NOSYSTEM: '1',
       GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
-      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_COUNT: '2',
       GIT_CONFIG_KEY_0: 'credential.helper',
       GIT_CONFIG_VALUE_0: '',
+      GIT_CONFIG_KEY_1: 'core.hooksPath',
+      GIT_CONFIG_VALUE_1: process.platform === 'win32' ? 'NUL' : '/dev/null',
       GIT_ASKPASS: '',
       GIT_TERMINAL_PROMPT: '0',
+      SIM_ONE_GITHUB_TOKEN_FILE: '',
     });
   } finally {
     rmSync(workspaceRoot, { recursive: true, force: true });
@@ -90,7 +93,7 @@ test('private GitHub HTTPS clone retries with command-scoped PAT credentials', a
     githubGitEnv: async () => ({
       GIT_ASKPASS: '/runtime/.gorombo/auth/github/git-askpass.mjs',
       GIT_TERMINAL_PROMPT: '0',
-      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+      SIM_ONE_GITHUB_TOKEN_FILE: '/runtime/.gorombo/auth/github/git-token',
     }),
   });
   const clone = getTool(tools, 'coding_repo_clone');
@@ -115,7 +118,12 @@ test('private GitHub HTTPS clone retries with command-scoped PAT credentials', a
 
     assert.equal(calls.length, 2);
     assert.equal(calls[0]?.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
-    assert.equal(calls[1]?.env?.GITHUB_PERSONAL_ACCESS_TOKEN, 'secret-pat');
+    assert.equal(calls[1]?.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
+    assert.equal(
+      calls[1]?.env?.SIM_ONE_GITHUB_TOKEN_FILE,
+      '/runtime/.gorombo/auth/github/git-token',
+    );
+    assert.equal(calls[1]?.env?.GIT_CONFIG_KEY_1, 'core.hooksPath');
   } finally {
     rmSync(workspaceRoot, { recursive: true, force: true });
   }

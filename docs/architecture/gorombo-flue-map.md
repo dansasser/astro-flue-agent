@@ -284,7 +284,7 @@ src/engine/workers/coding-worker/tools/
   Worker-local workspace/project, shell, git, GitHub, and approval-aware execution tools.
   Includes the LSP code-intelligence tools under `src/engine/workers/coding-worker/tools/code-intelligence/lsp/`.
   File APIs are backed by Flue's Node local sandbox factory.
-  Shell/git/test child processes run through a Bubblewrap mount and process namespace with only the workspace read-write, the active Node and system runtime read-only, and a private temporary directory; an authenticated private Git child may additionally receive one secret-free read-only askpass helper file and command-scoped credential environment. Execution fails closed when that Linux boundary is unavailable.
+  Shell/git/test child processes run through a Bubblewrap mount and process namespace with only the workspace read-write, the active Node and system runtime read-only, and a private temporary directory; an authenticated private Git child may additionally receive a secret-free read-only askpass helper plus a dedicated owner-only token file, with repository hooks disabled and no PAT value in the Git environment. Execution fails closed when that Linux boundary is unavailable.
   The sandbox is rooted at `<runtime-root>/workspace`, separate from the packaged main-agent persona and owner configuration. Non-git projects live under `projects/**`; repositories live under `repos/**`.
   The coding worker must create or resolve new project work under that runtime workspace root.
   The main orchestrator does not own these tools directly.

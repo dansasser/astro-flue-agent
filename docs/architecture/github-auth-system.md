@@ -69,11 +69,14 @@ The PAT is not copied into:
 - repository files, task memory, or approval records.
 
 For GitHub API calls, Flue receives the PAT only in the remote MCP
-`Authorization` header. A private Git HTTPS retry receives it only in that
-bounded child process so `GIT_ASKPASS` can answer Git's password prompt.
-Anonymous fetch and checkout commands receive an explicit no-credential Git
-environment, and the subprocess runner removes inherited GitHub tokens and Git
-credential configuration before applying command-scoped settings.
+`Authorization` header. For private Git HTTPS, the runtime writes the PAT to a
+dedicated owner-only file under `<runtime-root>/auth/github/`; the bounded Git
+child receives only that file's path and a secret-free `GIT_ASKPASS` helper
+path, never the token value itself. Repository hooks are disabled for bounded
+remote operations. Anonymous fetch and checkout commands receive an explicit
+no-credential Git environment, and the subprocess runner removes inherited
+GitHub tokens and Git credential configuration before applying the allowlisted
+command-scoped settings.
 Connection errors redact the exact token. Operators should grant only the
 repository and organization access required by enabled operations, rotate by
 replacing the setting and restarting the gateway, and revoke the token in
@@ -89,10 +92,12 @@ Public GitHub HTTPS operations do not require MCP or a PAT. The Coding Worker:
 4. injects that retry through a command-scoped `GIT_ASKPASS` environment.
 
 The askpass script lives under `<runtime-root>/auth/github/`, contains no PAT,
-and reads the trusted process environment only for that child command. The
-runtime does not install a global credential helper, write Git credentials into
-repository configuration, create SSH keys, or mutate the user's GitHub CLI
-profile.
+and reads the dedicated owner-only token file only for that child command. The
+token file and helper are mounted read-only into the private Bubblewrap
+namespace, while `core.hooksPath` points to the platform null path so repository
+hooks cannot inherit credential state. The runtime does not install a global
+credential helper, write Git credentials into repository configuration, create
+SSH keys, or mutate the user's GitHub CLI profile.
 
 Private repository access fails clearly when the PAT is absent or lacks access.
 Anonymous public clone remains usable when MCP is unconfigured.

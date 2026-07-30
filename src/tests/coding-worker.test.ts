@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -2043,6 +2051,62 @@ test('host Git identity is projected into command-scoped commit environment', ()
     });
   } finally {
     rmrf(root);
+  }
+});
+
+test('approval-gated push disables repository hooks', async () => {
+  const { project, remotePath } = createGitWorkspaceProjectWithRemote();
+  const hookMarker = join(project.workspaceRoot, 'pre-push-ran');
+  const hookPath = join(project.repoPath, '.git', 'hooks', 'pre-push');
+  const branch = execFileSync('git', ['branch', '--show-current'], {
+    cwd: project.repoPath,
+    encoding: 'utf8',
+  }).trim();
+
+  try {
+    writeFileSync(
+      hookPath,
+      `#!/bin/sh\nprintf ran > "${hookMarker}"\n`,
+    );
+    chmodSync(hookPath, 0o700);
+    const approvalService = createInMemoryCodingApprovalService();
+    const request = await approvalService.createRequest({
+      taskId: 'task-hook-safe-push',
+      actionType: 'git.push',
+      summary: `Push ${branch} to origin.`,
+      reason: 'Pushing publishes branch state to the remote.',
+      risk: 'This mutates remote repository state.',
+      target: `origin/${branch}`,
+      metadata: { remote: 'origin', branch },
+    });
+    await approvalService.recordDecision({
+      requestId: request.id,
+      approved: true,
+      decidedBy: 'test',
+      principal: { id: 'test', roles: ['operator'] },
+    });
+    const push = getTool(
+      createCodingGitTools({
+        workspaceRoot: project.workspaceRoot,
+        targetKind: 'project',
+        projectRelativePath: project.projectRelativePath,
+        approvalService,
+      }),
+      'coding_git_push',
+    );
+
+    const result = JSON.parse(
+      await push.execute({
+        taskId: 'task-hook-safe-push',
+        remote: 'origin',
+        branch,
+      }),
+    ) as { status?: string; push?: unknown };
+    assert.equal(result.status, 'pushed', JSON.stringify(result.push));
+    assert.equal(existsSync(hookMarker), false);
+  } finally {
+    rmrf(project.workspaceRoot);
+    rmrf(remotePath);
   }
 });
 

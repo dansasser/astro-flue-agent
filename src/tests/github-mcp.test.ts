@@ -102,8 +102,8 @@ test('MCP Git operations keep the PAT out of anonymous fetch and checkout', asyn
   }> = [];
   const client = new McpGitHubClient(new Map(), {
     gitEnv: async () => ({
-      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
       GIT_ASKPASS: '/runtime/auth/github/askpass.sh',
+      SIM_ONE_GITHUB_TOKEN_FILE: '/runtime/auth/github/token',
     }),
     gitRunner: async (args, options) => {
       calls.push({ args, options });
@@ -125,14 +125,17 @@ test('MCP Git operations keep the PAT out of anonymous fetch and checkout', asyn
   assert.equal(calls.length, 3);
   assert.equal(calls[0]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(calls[0]?.options.env?.GIT_ASKPASS, '');
-  assert.equal(
-    calls[1]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN,
-    'secret-pat',
-  );
+  assert.equal(calls[1]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(
     calls[1]?.options.env?.GIT_ASKPASS,
     '/runtime/auth/github/askpass.sh',
   );
+  assert.equal(
+    calls[1]?.options.env?.SIM_ONE_GITHUB_TOKEN_FILE,
+    '/runtime/auth/github/token',
+  );
+  assert.equal(calls[1]?.options.env?.GIT_CONFIG_KEY_1, 'core.hooksPath');
+  assert.equal(calls[1]?.options.env?.GIT_CONFIG_VALUE_1, '/dev/null');
   assert.equal(calls[2]?.options.env?.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(calls[2]?.options.env?.GIT_ASKPASS, '');
 });
@@ -165,19 +168,21 @@ test('default Git child environment strips inherited credentials', () => {
     {
       GITHUB_PERSONAL_ACCESS_TOKEN: 'command-pat',
       GIT_ASKPASS: '/runtime/auth/github/askpass.sh',
+      SIM_ONE_GITHUB_TOKEN_FILE: '/runtime/auth/github/token',
     },
     {
       PATH: '/usr/bin',
       GITHUB_PERSONAL_ACCESS_TOKEN: 'inherited-pat',
     },
   );
-  assert.equal(
-    authenticated.GITHUB_PERSONAL_ACCESS_TOKEN,
-    'command-pat',
-  );
+  assert.equal(authenticated.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
   assert.equal(
     authenticated.GIT_ASKPASS,
     '/runtime/auth/github/askpass.sh',
+  );
+  assert.equal(
+    authenticated.SIM_ONE_GITHUB_TOKEN_FILE,
+    '/runtime/auth/github/token',
   );
 });
 
@@ -290,9 +295,17 @@ test('Git credential helper stores no PAT and lives under the canonical runtime 
       GOROMBO_RUNTIME_ROOT: runtimeRoot,
       GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
     });
-    assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, 'secret-pat');
+    assert.equal(env.GITHUB_PERSONAL_ACCESS_TOKEN, undefined);
     assert.match(env.GIT_ASKPASS, new RegExp(`^${escapeRegExp(join(runtimeRoot, 'auth', 'github'))}`));
+    assert.match(
+      env.SIM_ONE_GITHUB_TOKEN_FILE,
+      new RegExp(`^${escapeRegExp(join(runtimeRoot, 'auth', 'github'))}`),
+    );
     assert.doesNotMatch(readFileSync(env.GIT_ASKPASS, 'utf8'), /secret-pat/);
+    assert.equal(
+      readFileSync(env.SIM_ONE_GITHUB_TOKEN_FILE, 'utf8').trim(),
+      'secret-pat',
+    );
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }

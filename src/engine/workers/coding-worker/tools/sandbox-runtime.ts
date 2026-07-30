@@ -26,6 +26,7 @@ import {
   type CodingWorkspaceTargetInput,
   type ResolvedCodingWorkspaceTarget,
 } from '../../../../engine/workers/coding-worker/repo/workspace-target.js';
+import { githubPatFileEnvironmentKey } from '../../../../engine/workers/coding-worker/github/github-pat.js';
 import type { CodingWorkspaceTargetKind } from '../../../../engine/workers/coding-worker/types.js';
 
 const execFileAsync = promisify(execFile);
@@ -482,21 +483,34 @@ function appendApprovedExternalHelpers(
   workspaceRoot: string,
 ): void {
   const askpassPath = environment.GIT_ASKPASS;
-  if (
-    !askpassPath ||
-    !isAbsolute(askpassPath) ||
-    isInsidePath(workspaceRoot, askpassPath) ||
-    !existsSync(askpassPath)
-  ) {
-    return;
+  if (askpassPath) {
+    appendApprovedExternalFile(args, askpassPath, workspaceRoot, true);
   }
+  const tokenPath = environment[githubPatFileEnvironmentKey];
+  if (tokenPath) {
+    appendApprovedExternalFile(args, tokenPath, workspaceRoot, false);
+  }
+}
 
-  const stats = lstatSync(askpassPath);
-  if (!stats.isFile() && !stats.isSymbolicLink()) {
-    throw new Error('GIT_ASKPASS must reference a regular file.');
+function appendApprovedExternalFile(
+  args: string[],
+  path: string,
+  workspaceRoot: string,
+  allowSymlink: boolean,
+): void {
+  if (
+    !isAbsolute(path)
+    || isInsidePath(workspaceRoot, path)
+    || !existsSync(path)
+  ) {
+    throw new Error('Approved external credential path is invalid.');
   }
-  appendMountParentDirectories(args, askpassPath);
-  args.push('--ro-bind', realpathSync(askpassPath), askpassPath);
+  const stats = lstatSync(path);
+  if (!stats.isFile() && !(allowSymlink && stats.isSymbolicLink())) {
+    throw new Error('Approved external credential path must reference a regular file.');
+  }
+  appendMountParentDirectories(args, path);
+  args.push('--ro-bind', realpathSync(path), path);
 }
 
 function appendMountParentDirectories(args: string[], targetPath: string): void {

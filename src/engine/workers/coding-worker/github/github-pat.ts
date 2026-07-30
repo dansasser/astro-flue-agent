@@ -6,6 +6,7 @@ import {
 } from '../../../../core/config/runtime-root.js';
 
 export const githubPatEnvironmentKey = 'GITHUB_PERSONAL_ACCESS_TOKEN';
+export const githubPatFileEnvironmentKey = 'SIM_ONE_GITHUB_TOKEN_FILE';
 
 export function readGithubPat(
   env: Record<string, unknown> = process.env,
@@ -32,10 +33,14 @@ export async function createGithubGitCredentialEnv(
   const helperDirectory = resolve(runtimePaths.auth, 'github');
   const helperModule = resolve(helperDirectory, 'git-askpass.mjs');
   const helperCommand = resolve(helperDirectory, 'git-askpass.cmd');
+  const tokenFile = resolve(helperDirectory, 'git-token');
 
   await mkdir(helperDirectory, { recursive: true, mode: 0o700 });
+  await chmod(helperDirectory, 0o700);
   await writeFile(helperModule, askpassModule, { mode: 0o700 });
   await chmod(helperModule, 0o700);
+  await writeFile(tokenFile, `${token}\n`, { mode: 0o600 });
+  await chmod(tokenFile, 0o600);
 
   if (process.platform === 'win32') {
     await writeFile(helperCommand, askpassCommand, { mode: 0o700 });
@@ -44,16 +49,19 @@ export async function createGithubGitCredentialEnv(
   return {
     GIT_ASKPASS: process.platform === 'win32' ? helperCommand : helperModule,
     GIT_TERMINAL_PROMPT: '0',
-    GITHUB_PERSONAL_ACCESS_TOKEN: token,
+    [githubPatFileEnvironmentKey]: tokenFile,
   };
 }
 
 const askpassModule = `#!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 const prompt = process.argv.slice(2).join(' ').toLowerCase();
 if (prompt.includes('username')) {
   process.stdout.write('x-access-token\\n');
 } else if (prompt.includes('password')) {
-  process.stdout.write((process.env.GITHUB_PERSONAL_ACCESS_TOKEN || '') + '\\n');
+  const tokenFile = process.env.SIM_ONE_GITHUB_TOKEN_FILE || '';
+  const token = tokenFile ? readFileSync(tokenFile, 'utf8').trim() : '';
+  process.stdout.write(token + '\\n');
 }
 `;
 

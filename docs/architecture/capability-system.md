@@ -211,7 +211,9 @@ protocol directives. Local approval metadata includes a SHA-256 source identity
 instead of the private path itself, so an approval cannot be reused for a
 different local source. Staging rejects symbolic links and verifies
 `sha256:<digest>` handoffs against the exact materialized package before
-promotion.
+promotion. Add and update approvals also include a canonical digest of the
+complete lifecycle mutation payload, so changed names, descriptions, sources,
+versions, activation requests, or MCP settings require a distinct approval.
 
 MCP connection handoffs carry the validated endpoint, transport, and optional
 canonical token configuration key. Supported token slots are

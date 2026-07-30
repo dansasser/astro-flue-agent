@@ -18,9 +18,13 @@ import type {
 } from './github-client.js';
 import {
   createGithubGitCredentialEnv,
+  githubPatFileEnvironmentKey,
   readGithubPat,
 } from './github-pat.js';
-import { githubAnonymousCredentialOptions } from '../tools/github-credential-utils.js';
+import {
+  githubAnonymousCredentialOptions,
+  githubAuthenticatedCredentialEnvironment,
+} from '../tools/github-credential-utils.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -512,10 +516,9 @@ export class McpGitHubClient implements GitHubClient {
       }
       await runner(args, {
         cwd,
-        env: {
-          ...anonymousEnv,
-          ...await this.options.gitEnv(),
-        },
+        env: githubAuthenticatedCredentialEnvironment(
+          await this.options.gitEnv(),
+        ),
       });
     }
   }
@@ -766,15 +769,20 @@ export function createGitProcessEnvironment(
       || key === 'GH_TOKEN'
       || key === 'GH_CONFIG_DIR'
       || key === 'GIT_ASKPASS'
+      || key === githubPatFileEnvironmentKey
       || key.startsWith('GIT_CONFIG_')
     ) {
       delete environment[key];
     }
   }
-  return {
+  const merged = {
     ...environment,
     ...explicitEnv,
   };
+  delete merged.GITHUB_PERSONAL_ACCESS_TOKEN;
+  delete merged.GITHUB_TOKEN;
+  delete merged.GH_TOKEN;
+  return merged;
 }
 
 function safeErrorMessage(error: unknown, token: string): string {
