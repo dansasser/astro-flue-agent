@@ -8,7 +8,7 @@ import {
   rmSync,
   statSync,
 } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { isBuiltinName } from '../../engine/capabilities/builtin-registry.js';
 import {
   assertSafeCapabilityId,
@@ -17,6 +17,7 @@ import {
 } from '../../engine/capabilities/capability-loader.js';
 import {
   materializeCapability,
+  assertGithubCapabilitySourceRef,
   type MaterializeOptions,
   type MaterializeResult,
 } from '../../engine/capabilities/skill-materializer.js';
@@ -35,6 +36,10 @@ import {
 import type { ProtocolBundle } from '../../core/types/index.js';
 import { scanCapabilityPackage } from './capability-package-security.js';
 import { hasExportedFlueFactory } from './capability-flue-contract.js';
+import {
+  isSupportedMcpTokenEnvironmentName,
+  supportedMcpTokenEnvironmentNames,
+} from './mcp-token-env.js';
 
 const sourceBackedKinds = new Set<CapabilityKind>(['skill', 'tool', 'worker']);
 const workerWorkspaceFiles = [
@@ -442,6 +447,19 @@ export class CapabilityLifecycleService {
     if (input.kind !== 'mcp' && !input.sourceRef.trim()) {
       throw new Error('Capability source reference is required.');
     }
+    if (
+      input.source === 'local'
+      && input.kind !== 'mcp'
+      && input.installedBy === 'agent'
+      && isAbsolute(input.sourceRef.trim())
+    ) {
+      throw new Error(
+        'Agent-installed local capability source must be relative to the coding workspace.',
+      );
+    }
+    if (input.source === 'github') {
+      assertGithubCapabilitySourceRef(input.sourceRef);
+    }
     sanitizeConfig(input.kind, input.config ?? {});
   }
 
@@ -776,6 +794,14 @@ function validateMcpConfig(config: CapabilityConfig): void {
   ) {
     throw new Error('MCP token configuration must be a canonical uppercase configuration key name.');
   }
+  if (
+    typeof config.mcpTokenEnv === 'string'
+    && !isSupportedMcpTokenEnvironmentName(config.mcpTokenEnv)
+  ) {
+    throw new Error(
+      `MCP token configuration must use a supported canonical MCP token configuration key: ${supportedMcpTokenEnvironmentNames.join(', ')}.`,
+    );
+  }
 }
 
 function validateSourceContract(
@@ -811,7 +837,9 @@ function validateSourceContract(
       }
       const content = readFileSync(modulePath, 'utf8');
       if (!hasExportedFlueFactory(content, 'defineTool')) {
-        throw new Error(`Tool capability ${id} must export a Flue defineTool(...) definition.`);
+        throw new Error(
+          `Tool capability ${id} must export a direct Flue defineTool(...) result.`,
+        );
       }
       return ['tool-index', 'flue-define-tool-export'];
     }
@@ -822,7 +850,9 @@ function validateSourceContract(
       }
       const content = readFileSync(modulePath, 'utf8');
       if (!hasExportedFlueFactory(content, 'defineAgentProfile')) {
-        throw new Error(`Worker capability ${id} must export a Flue defineAgentProfile(...) definition.`);
+        throw new Error(
+          `Worker capability ${id} must export a direct Flue defineAgentProfile(...) result.`,
+        );
       }
       const workspace = resolve(path, 'workspace');
       if (

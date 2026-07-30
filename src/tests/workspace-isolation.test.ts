@@ -94,3 +94,28 @@ test('coding workspace persists across sandbox recreation under a relocated runt
     rmSync(fixture, { recursive: true, force: true });
   }
 });
+
+test('coding shell exposes the approved Rust toolchain without exposing host HOME', async () => {
+  const workspaceRoot = mkdtempSync(join(tmpdir(), 'coding-rust-toolchain-'));
+
+  try {
+    const sandbox = await createFlueLocalCodingSandbox({ workspaceRoot });
+    for (const executable of ['cargo', 'rustup', 'wasm-pack']) {
+      const located = await sandbox.exec(`command -v ${executable}`);
+      assert.equal(
+        located.exitCode,
+        0,
+        `${executable} unavailable: ${located.stderr || located.stdout}`,
+      );
+      assert.match(located.stdout, /\.cargo\/bin\//);
+    }
+
+    const version = await sandbox.exec('cargo --version && rustc --version && wasm-pack --version');
+    assert.equal(version.exitCode, 0, version.stderr || version.stdout);
+
+    const homeProbe = await sandbox.exec('printf "%s" "$HOME"');
+    assert.equal(homeProbe.stdout, '/tmp/home');
+  } finally {
+    rmSync(workspaceRoot, { recursive: true, force: true });
+  }
+});

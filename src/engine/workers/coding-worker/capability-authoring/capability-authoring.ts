@@ -16,6 +16,10 @@ import {
   type CapabilityPackageScanFinding,
 } from '../../../../engine/capabilities/capability-package-security.js';
 import { hasExportedFlueFactory } from '../../../../engine/capabilities/capability-flue-contract.js';
+import {
+  isSupportedMcpTokenEnvironmentName,
+  supportedMcpTokenEnvironmentNames,
+} from '../../../../engine/capabilities/mcp-token-env.js';
 
 export type CodingCapabilityAuthoringKind =
   | 'skill'
@@ -351,6 +355,14 @@ function readMcpConnection(
   ) {
     throw new Error(
       `Invalid canonical configuration key name: ${tokenEnvironmentVariable}`,
+    );
+  }
+  if (
+    tokenEnvironmentVariable
+    && !isSupportedMcpTokenEnvironmentName(tokenEnvironmentVariable)
+  ) {
+    throw new Error(
+      `MCP token environment variable must use one of: ${supportedMcpTokenEnvironmentNames.join(', ')}.`,
     );
   }
   if (

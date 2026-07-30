@@ -87,11 +87,16 @@ inside a Bubblewrap mount and process namespace that exposes the workspace
 read-write, the active Node and system runtime read-only, and a private
 temporary directory. The rest of the owner runtime, including
 `sim-one.config`, databases, approvals, and authentication state, is not
-mounted. A private Git child may additionally receive the single read-only,
-secret-free askpass helper file and command-scoped credential environment
-described in [GitHub Authentication](github-auth-system.md). Linux execution
-fails closed when Bubblewrap is unavailable; there is no unrestricted fallback
-on another platform.
+mounted. When the host has the supported Rust toolchain, Bubblewrap mounts its
+executables and rustup toolchains read-only, uses a private writable
+`CARGO_HOME`, and exposes only read-only Cargo registry and Git caches. A
+private Git child may additionally receive the single read-only, secret-free
+askpass helper file and command-scoped credential environment described in
+[GitHub Authentication](github-auth-system.md). An approved commit receives
+the host's global Git author and committer identity as command-scoped
+environment variables; the sandbox does not mount the host home or persist
+that identity in the repository. Linux execution fails closed when Bubblewrap
+is unavailable; there is no unrestricted fallback on another platform.
 
 Repositories use `repos/<slug>`, non-repository projects use
 `projects/<slug>`, and handoff artifacts may use `repos/handoffs/todos/`. The

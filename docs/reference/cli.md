@@ -118,11 +118,12 @@ sim-one mcp --help
 
 `--url` is required and must use HTTP or HTTPS. The default transport is
 `streamable-http`; `sse` is also supported. `--token-env` stores the
-environment-variable name, not the token. MCP servers are disabled when added
-unless `--enable` is supplied. `mcp update` can change name, description, URL,
+environment-variable name, not the token, and accepts `GOROMBO_MCP_TOKEN`,
+`MCP_AUTH_TOKEN`, or `MCP_TOKEN`. MCP servers are disabled when added unless
+`--enable` is supplied. `mcp update` can change name, description, URL,
 transport, or the canonical token configuration-key name in place. Any MCP
-update returns an enabled connection to disabled until a separate
-`sim-one mcp enable <id>` succeeds.
+update returns an enabled connection to disabled until a separate `sim-one mcp
+enable <id>` succeeds.
 
 ## Capability Lifecycle
 

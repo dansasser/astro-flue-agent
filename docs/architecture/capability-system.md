@@ -51,7 +51,7 @@ Capability implementation request
 -> Service restart
 -> createAgent(...) init
 -> loadUserCapabilities(env) reads SQLite
--> materializeCapability() copies/clones skill dirs
+-> promoted managed packages are selected without refetching mutable sources
 -> connectUserMcpServers() opens MCP connections
 -> merge into tools/skills/subagents arrays
 -> built-in + user capabilities live together
@@ -87,9 +87,11 @@ SQLite is authoritative. A config-file mirror (`gorombo.config.json` `capabiliti
 
 The persisted source enum retains `builtin` and the legacy `npm` value for
 registry compatibility. New lifecycle requests accept only `github` and
-`local`; unsupported sources fail before materialization. Relative local
-sources are resolved beneath `<runtime-root>/workspace`, while authenticated
-CLI callers may provide an absolute local source path.
+`local`; unsupported sources fail before materialization. A `github` source
+must be a `github.com` HTTPS or SSH repository URL, so a local path or
+`file://` URL cannot cross that trust boundary. Agent-installed local sources
+must be workspace-relative and resolve beneath `<runtime-root>/workspace`.
+Authenticated CLI callers may also provide an absolute local source path.
 
 ## Product And Administration Surfaces
 
@@ -139,7 +141,7 @@ src/engine/capabilities/
                            fail-closed Protocol Tool bundle compiler
   capability-store.ts      SQLite CRUD
   capability-loader.ts     loadUserCapabilities(env) — reads SQLite, returns grouped by kind
-  skill-materializer.ts    copies/github-clones user skill dirs into Flue's discovery path
+  skill-materializer.ts    copies/github-clones sources into lifecycle staging directories
   mcp-broker.ts            connectUserMcpServers() — opens MCP connections, returns tools
   index.ts                 barrel exports
 
@@ -160,8 +162,10 @@ src/agents/
 ## Reload At Initialization
 
 Adding a capability writes to SQLite. When the gateway process restarts,
-`createAgent(...)` initialization re-reads SQLite and re-scans the capability
-directory. No product rebuild is required.
+`createAgent(...)` initialization re-reads SQLite and loads only the promoted
+managed package. It never recopies or reclones a mutable source during startup.
+An enabled record whose promoted package is missing fails closed and is not
+attached. No product rebuild is required.
 User-defined capabilities live in SQLite and
 `<runtime-root>/capabilities/`, outside the packaged application artifact.
 
@@ -210,16 +214,23 @@ different local source. Staging rejects symbolic links and verifies
 promotion.
 
 MCP connection handoffs carry the validated endpoint, transport, and optional
-canonical token configuration key. Partial MCP updates merge defined fields
-with the stored connection before validation, so changing transport or token
-configuration does not discard the endpoint.
+canonical token configuration key. Supported token slots are
+`GOROMBO_MCP_TOKEN`, `MCP_AUTH_TOKEN`, and `MCP_TOKEN`; lifecycle validation
+rejects any other key before the record can be enabled. Partial MCP updates
+merge defined fields with the stored connection before validation, so changing
+transport or token configuration does not discard the endpoint.
+
+Executable package validation accepts only direct exported
+`defineTool(...)` or `defineAgentProfile(...)` results, including arrays made
+entirely from direct results. A function that merely contains a factory call
+is not a loadable Flue capability and is rejected before promotion.
 
 The Coding Worker never imports the capability store, lifecycle service,
 materializer, or managed capability path resolver.
 
 ## Config-File Mirror
 
-`gorombo.config.json` has a `capabilities` array that reconciles into SQLite on boot (in `src/db.ts`, at server startup — before any agent request). Config is additive: entries in config but missing from SQLite get inserted with `installedBy: "seed"`; entries already in SQLite are skipped (idempotent). Removal is a CLI/db operation, not a config edit.
+`gorombo.config.json` has a `capabilities` array that reconciles into SQLite on boot (in `src/db.ts`, at server startup — before any agent request). Config is additive: entries in config but missing from SQLite get inserted with `installedBy: "seed"`; entries already in SQLite are skipped (idempotent). Reconciliation does not fetch or copy source bytes at startup; an enabled source-backed record is attached only when its promoted managed package already exists. Removal is a CLI/db operation, not a config edit.
 
 ```json
 {

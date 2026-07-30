@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { SqliteProtocolProvider } from '../core/protocols/sqlite-protocol-provider.js';
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
+import { loadPromotedUserCapabilities } from '../engine/capabilities/capability-loader.js';
 import { materializeCapability } from '../engine/capabilities/skill-materializer.js';
 import { GoromboStructuredMemoryDatabase } from '../engine/memory/structured-memory-database.js';
 import { ScheduleStore } from '../engine/schedules/schedule-store.js';
@@ -126,6 +134,70 @@ test('relative local capability sources resolve from the runtime coding workspac
     assert.equal(existsSync(join(launchDirectory, 'capabilities')), false);
   } finally {
     process.chdir(previousCwd);
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('startup loads promoted capability bytes without recopying a mutable source', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'sim-one-promoted-capability-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const sourceDirectory = join(runtimeRoot, 'workspace', 'incoming', 'stable-tool');
+  const promotedDirectory = join(runtimeRoot, 'capabilities', 'tools', 'stable-tool');
+  const store = createCapabilityStore({
+    dbPath: join(runtimeRoot, 'db', 'capabilities.sqlite'),
+  });
+
+  try {
+    mkdirSync(sourceDirectory, { recursive: true });
+    mkdirSync(promotedDirectory, { recursive: true });
+    writeFileSync(
+      join(sourceDirectory, 'index.mjs'),
+      'export const sourceVersion = "changed-after-approval";\n',
+    );
+    writeFileSync(
+      join(promotedDirectory, 'index.mjs'),
+      'export const promotedVersion = "approved";\n',
+    );
+    const now = new Date().toISOString();
+    store.insertStrict({
+      id: 'stable-tool',
+      kind: 'tool',
+      name: 'Stable tool',
+      description: 'Promoted-byte fixture.',
+      source: 'local',
+      sourceRef: 'incoming/stable-tool',
+      version: null,
+      enabled: true,
+      config: {},
+      installedAt: now,
+      updatedAt: now,
+      installedBy: 'agent',
+    });
+
+    const loaded = loadPromotedUserCapabilities({
+      store,
+      env: { GOROMBO_RUNTIME_ROOT: runtimeRoot },
+    });
+    assert.deepEqual(loaded.tools.map((record) => record.id), ['stable-tool']);
+    assert.deepEqual(loaded.failures, []);
+    assert.equal(
+      readFileSync(join(promotedDirectory, 'index.mjs'), 'utf8'),
+      'export const promotedVersion = "approved";\n',
+    );
+
+    rmSync(promotedDirectory, { recursive: true, force: true });
+    const missing = loadPromotedUserCapabilities({
+      store,
+      env: { GOROMBO_RUNTIME_ROOT: runtimeRoot },
+    });
+    assert.deepEqual(missing.tools, []);
+    assert.deepEqual(missing.failures, [{
+      id: 'stable-tool',
+      kind: 'tool',
+      error: 'Promoted capability package is missing.',
+    }]);
+  } finally {
+    store.close();
     rmSync(fixture, { recursive: true, force: true });
   }
 });

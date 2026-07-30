@@ -48,7 +48,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         description: `Fixture ${entry.kind} capability.`,
         packagePath,
         requiredConfigurationKeys:
-          entry.kind === 'mcp-connection' ? ['FIXTURE_MCP_TOKEN'] : [],
+          entry.kind === 'mcp-connection' ? ['GOROMBO_MCP_TOKEN'] : [],
       };
       const classification = JSON.parse(
         await fixture.classify.execute({
@@ -209,14 +209,14 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         assert.deepEqual(firstValidation.mcpConnection, {
           mcpUrl: 'https://replace-with-mcp-endpoint.invalid/mcp',
           mcpTransport: 'streamable-http',
-          mcpTokenEnv: 'FIXTURE_MCP_TOKEN',
+          mcpTokenEnv: 'GOROMBO_MCP_TOKEN',
         });
         assert.equal(
           handoff.mcpUrl,
           'https://replace-with-mcp-endpoint.invalid/mcp',
         );
         assert.equal(handoff.mcpTransport, 'streamable-http');
-        assert.equal(handoff.mcpTokenEnv, 'FIXTURE_MCP_TOKEN');
+        assert.equal(handoff.mcpTokenEnv, 'GOROMBO_MCP_TOKEN');
       }
       assert.deepEqual(
         handoff.protocolContext.directives.map((directive) => directive.id),

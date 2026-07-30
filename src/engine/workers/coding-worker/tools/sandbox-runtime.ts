@@ -11,10 +11,12 @@ import { unlink } from 'node:fs/promises';
 import {
   dirname,
   isAbsolute,
+  join,
   parse,
   relative,
   resolve,
 } from 'node:path';
+import { homedir } from 'node:os';
 import { promisify } from 'node:util';
 import {
   assertInsideCodingScope,
@@ -37,6 +39,13 @@ const sandboxEtcPaths = [
   '/etc/resolv.conf',
   '/etc/ssl',
 ] as const;
+const sandboxCargoHome = '/tmp/cargo-home';
+
+interface RustToolchainMount {
+  cargoBin: string;
+  cargoHome: string;
+  rustupHome: string;
+}
 
 export interface CodingSandboxRuntime {
   workspaceRoot: string;
@@ -277,6 +286,7 @@ function createBubblewrapCommand(input: {
   const workspaceTarget = resolve(input.workspaceRoot);
   const workspaceSource = realpathSync(workspaceTarget);
   const nodeRoot = dirname(dirname(realpathSync(process.execPath)));
+  const rustToolchain = resolveRustToolchainMount();
   const args = [
     '--die-with-parent',
     '--new-session',
@@ -299,6 +309,7 @@ function createBubblewrapCommand(input: {
   appendReadOnlyEtcPaths(args);
   appendMountParentDirectories(args, nodeRoot);
   args.push('--ro-bind', nodeRoot, nodeRoot);
+  appendRustToolchainMounts(args, rustToolchain);
   appendMountParentDirectories(args, workspaceTarget);
   args.push('--bind', workspaceSource, workspaceTarget);
 
@@ -308,6 +319,7 @@ function createBubblewrapCommand(input: {
     nodeRoot,
   );
   appendApprovedExternalHelpers(args, environment, workspaceTarget);
+  const path = createSandboxPath(nodeRoot, rustToolchain);
 
   args.push(
     '--chdir',
@@ -321,7 +333,7 @@ function createBubblewrapCommand(input: {
     '/tmp',
     '--setenv',
     'PATH',
-    `${nodeRoot}/bin:/usr/local/bin:/usr/bin:/bin`,
+    path,
     '--setenv',
     'LANG',
     'C.UTF-8',
@@ -331,9 +343,29 @@ function createBubblewrapCommand(input: {
     '--dir',
     '/tmp/home',
   );
+  if (rustToolchain) {
+    args.push(
+      '--setenv',
+      'CARGO_HOME',
+      sandboxCargoHome,
+      '--setenv',
+      'RUSTUP_HOME',
+      rustToolchain.rustupHome,
+    );
+  }
 
   for (const [key, value] of Object.entries(environment)) {
-    if (['HOME', 'TMPDIR', 'PATH', 'LANG', 'LC_ALL'].includes(key)) {
+    if (
+      [
+        'HOME',
+        'TMPDIR',
+        'PATH',
+        'LANG',
+        'LC_ALL',
+        'CARGO_HOME',
+        'RUSTUP_HOME',
+      ].includes(key)
+    ) {
       continue;
     }
     assertSafeEnvironmentEntry(key, value);
@@ -342,6 +374,58 @@ function createBubblewrapCommand(input: {
 
   args.push('--', ...input.command);
   return { args };
+}
+
+function resolveRustToolchainMount(): RustToolchainMount | undefined {
+  const cargoHome = resolve(
+    process.env.CARGO_HOME?.trim() || join(homedir(), '.cargo'),
+  );
+  const rustupHome = resolve(
+    process.env.RUSTUP_HOME?.trim() || join(homedir(), '.rustup'),
+  );
+  const cargoBin = join(cargoHome, 'bin');
+  if (
+    !existsSync(join(cargoBin, 'cargo'))
+    || !existsSync(join(cargoBin, 'rustup'))
+    || !existsSync(join(cargoBin, 'wasm-pack'))
+    || !existsSync(join(rustupHome, 'toolchains'))
+  ) {
+    return undefined;
+  }
+  return { cargoBin, cargoHome, rustupHome };
+}
+
+function appendRustToolchainMounts(
+  args: string[],
+  toolchain: RustToolchainMount | undefined,
+): void {
+  if (!toolchain) {
+    return;
+  }
+  appendMountParentDirectories(args, toolchain.cargoBin);
+  args.push('--ro-bind', toolchain.cargoBin, toolchain.cargoBin);
+  appendMountParentDirectories(args, toolchain.rustupHome);
+  args.push('--ro-bind', toolchain.rustupHome, toolchain.rustupHome);
+  args.push('--dir', sandboxCargoHome);
+  for (const cache of ['registry', 'git']) {
+    const source = join(toolchain.cargoHome, cache);
+    if (existsSync(source)) {
+      args.push('--ro-bind', source, join(sandboxCargoHome, cache));
+    }
+  }
+}
+
+function createSandboxPath(
+  nodeRoot: string,
+  rustToolchain: RustToolchainMount | undefined,
+): string {
+  return [
+    ...(rustToolchain ? [rustToolchain.cargoBin] : []),
+    `${nodeRoot}/bin`,
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin',
+  ].join(':');
 }
 
 function mergeSandboxEnvironment(

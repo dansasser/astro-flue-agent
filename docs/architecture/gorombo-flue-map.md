@@ -348,6 +348,12 @@ src/engine/workers/coding-worker/github/
   orchestrator or general sandbox. Optional MCP connection failure leaves the
   Coding Worker available and is surfaced only when GitHub work is requested.
 
+src/engine/workers/coding-worker/tools/sandbox-runtime.ts
+  Bubblewrap execution profile with a writable coding workspace, private HOME,
+  read-only Node/system/Rust toolchains, and private writable Cargo state.
+  Approved Git commits receive command-scoped host author identity without
+  mounting the host home or persisting that identity in the repository.
+
 src/workflows/retrieval.ts
   Shared retrieval machinery.
   Web-search provider access is restricted to the researcher/research workflow caller boundary.
@@ -365,13 +371,16 @@ src/engine/tools/protocol-tool.ts
 src/engine/capabilities/
   Runtime capability registry subsystem. SQLite-backed user/agent-added
   capability store (skills, tools, workers, MCP). `capability-store.ts`
-  owns CRUD; `capability-loader.ts` reads enabled rows at orchestrator init;
-  `skill-materializer.ts` copies/github-clones user skill dirs into Flue's
-  discovery path; `mcp-broker.ts` connects MCP servers and returns tools.
-  Loaded at `createAgent(...)` init in `src/agents/orchestrator.ts`. See
+  owns CRUD; `capability-loader.ts` selects promoted managed packages at
+  orchestrator init without refetching mutable sources; `skill-materializer.ts`
+  copies or clones sources into lifecycle staging; `mcp-broker.ts` connects
+  MCP servers through the shared canonical token-slot contract and returns
+  tools. Loaded at `createAgent(...)` init in `src/agents/orchestrator.ts`. See
   `docs/architecture/capability-system.md` and `scripts/capability-admin.mjs`.
   `tool-loader.ts` and `worker-loader.ts` dynamically `import()` user JS
-  modules that export `defineTool(...`/`defineAgentProfile(...)` results.
+  modules that export direct `defineTool(...)`/`defineAgentProfile(...)`
+  results. Agent local handoffs must be coding-workspace-relative, and GitHub
+  sources must use a `github.com` HTTPS or SSH repository URL.
 
 scripts/capability-admin.mjs
   Compatibility adapter to the product `sim-one` capability commands. It does

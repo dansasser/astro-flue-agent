@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import {
   createGoromboRuntimePaths,
@@ -17,6 +18,22 @@ export interface CapabilityLoaderOptions {
   store: CapabilityStore;
 }
 
+export interface PromotedCapabilityLoaderOptions
+  extends CapabilityLoaderOptions {
+  env?: Record<string, unknown>;
+}
+
+export interface CapabilityLoadFailure {
+  id: string;
+  kind: Exclude<CapabilityKind, 'mcp'>;
+  error: string;
+}
+
+export interface LoadedPromotedUserCapabilities
+  extends LoadedUserCapabilities {
+  failures: CapabilityLoadFailure[];
+}
+
 export function loadUserCapabilities(options: CapabilityLoaderOptions): LoadedUserCapabilities {
   const { store } = options;
   const all = store.list({ enabledOnly: true });
@@ -26,6 +43,35 @@ export function loadUserCapabilities(options: CapabilityLoaderOptions): LoadedUs
     tools: all.filter((r) => r.kind === 'tool'),
     workers: all.filter((r) => r.kind === 'worker'),
     mcp: all.filter((r) => r.kind === 'mcp'),
+  };
+}
+
+export function loadPromotedUserCapabilities(
+  options: PromotedCapabilityLoaderOptions,
+): LoadedPromotedUserCapabilities {
+  const capabilities = loadUserCapabilities(options);
+  const env = options.env ?? process.env;
+  const failures: CapabilityLoadFailure[] = [];
+  const retainPromoted =
+    (kind: Exclude<CapabilityKind, 'mcp'>) =>
+    (record: CapabilityRecord): boolean => {
+      if (existsSync(resolveCapabilityPath(env, kind, record.id))) {
+        return true;
+      }
+      failures.push({
+        id: record.id,
+        kind,
+        error: 'Promoted capability package is missing.',
+      });
+      return false;
+    };
+
+  return {
+    skills: capabilities.skills.filter(retainPromoted('skill')),
+    tools: capabilities.tools.filter(retainPromoted('tool')),
+    workers: capabilities.workers.filter(retainPromoted('worker')),
+    mcp: capabilities.mcp,
+    failures,
   };
 }
 

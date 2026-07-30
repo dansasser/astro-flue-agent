@@ -8,6 +8,7 @@ import { resolveCapabilityPath } from '../../engine/capabilities/capability-load
 export interface MaterializeOptions {
   record: CapabilityRecord;
   env?: Record<string, unknown>;
+  gitRunner?: GitRunner;
 }
 
 export interface MaterializeResult {
@@ -15,8 +16,20 @@ export interface MaterializeResult {
   action: 'cloned' | 'copied' | 'skipped' | 'removed';
 }
 
+export type GitRunner = (
+  args: string[],
+  options: {
+    stdio: 'pipe';
+    timeout: number;
+  },
+) => void;
+
 export function materializeCapability(options: MaterializeOptions): MaterializeResult {
-  const { record, env = process.env } = options;
+  const {
+    record,
+    env = process.env,
+    gitRunner = defaultGitRunner,
+  } = options;
   const targetPath = resolveCapabilityPath(env, record.kind, record.id);
 
   if (!record.enabled) {
@@ -31,7 +44,7 @@ export function materializeCapability(options: MaterializeOptions): MaterializeR
 
   switch (record.source) {
     case 'github':
-      return materializeFromGithub(record, targetPath);
+      return materializeFromGithub(record, targetPath, gitRunner);
     case 'local':
       return materializeFromLocal(record, targetPath, env);
     default:
@@ -39,22 +52,27 @@ export function materializeCapability(options: MaterializeOptions): MaterializeR
   }
 }
 
-function materializeFromGithub(record: CapabilityRecord, targetPath: string): MaterializeResult {
+function materializeFromGithub(
+  record: CapabilityRecord,
+  targetPath: string,
+  gitRunner: GitRunner,
+): MaterializeResult {
+  assertGithubCapabilitySourceRef(record.sourceRef);
   if (existsSync(targetPath)) {
     rmSync(targetPath, { recursive: true, force: true });
   }
 
   try {
     if (record.version && isCommitReference(record.version)) {
-      execFileSync('git', ['clone', '--no-checkout', record.sourceRef, targetPath], {
+      gitRunner(['clone', '--no-checkout', record.sourceRef, targetPath], {
         stdio: 'pipe',
         timeout: 30_000,
       });
-      execFileSync('git', ['-C', targetPath, 'fetch', '--depth', '1', 'origin', record.version], {
+      gitRunner(['-C', targetPath, 'fetch', '--depth', '1', 'origin', record.version], {
         stdio: 'pipe',
         timeout: 30_000,
       });
-      execFileSync('git', ['-C', targetPath, 'checkout', '--detach', 'FETCH_HEAD'], {
+      gitRunner(['-C', targetPath, 'checkout', '--detach', 'FETCH_HEAD'], {
         stdio: 'pipe',
         timeout: 10_000,
       });
@@ -64,7 +82,7 @@ function materializeFromGithub(record: CapabilityRecord, targetPath: string): Ma
         args.push('--branch', record.version);
       }
       args.push(record.sourceRef, targetPath);
-      execFileSync('git', args, {
+      gitRunner(args, {
         stdio: 'pipe',
         timeout: 30_000,
       });
@@ -79,6 +97,46 @@ function materializeFromGithub(record: CapabilityRecord, targetPath: string): Ma
 
   rmSync(resolve(targetPath, '.git'), { recursive: true, force: true });
   return { path: targetPath, action: 'cloned' };
+}
+
+export function assertGithubCapabilitySourceRef(sourceRef: string): void {
+  const value = sourceRef.trim();
+  const scpStyle =
+    /^git@github\.com:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?$/;
+  if (scpStyle.test(value)) {
+    return;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const protocolAllowed =
+      parsed.protocol === 'https:' || parsed.protocol === 'ssh:';
+    const usernameAllowed =
+      parsed.protocol === 'https:'
+        ? parsed.username === ''
+        : parsed.username === '' || parsed.username === 'git';
+    const segments = parsed.pathname.split('/').filter(Boolean);
+    if (
+      protocolAllowed
+      && parsed.hostname.toLowerCase() === 'github.com'
+      && usernameAllowed
+      && parsed.password === ''
+      && parsed.port === ''
+      && parsed.search === ''
+      && parsed.hash === ''
+      && segments.length === 2
+      && /^[A-Za-z0-9_.-]+$/.test(segments[0] ?? '')
+      && /^[A-Za-z0-9_.-]+(?:\.git)?$/.test(segments[1] ?? '')
+    ) {
+      return;
+    }
+  } catch {
+    // Fall through to the bounded validation error.
+  }
+
+  throw new Error(
+    'GitHub capability source must be a github.com HTTPS or SSH repository URL.',
+  );
 }
 
 function materializeFromLocal(
@@ -100,6 +158,16 @@ function materializeFromLocal(
 
   cpSync(sourcePath, targetPath, { recursive: true, force: true });
   return { path: targetPath, action: 'copied' };
+}
+
+function defaultGitRunner(
+  args: string[],
+  options: {
+    stdio: 'pipe';
+    timeout: number;
+  },
+): void {
+  execFileSync('git', args, options);
 }
 
 function isCommitReference(value: string): boolean {

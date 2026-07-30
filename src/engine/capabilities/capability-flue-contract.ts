@@ -53,7 +53,7 @@ export function hasExportedFlueFactory(
         if (
           ts.isIdentifier(declaration.name) &&
           declaration.initializer &&
-          containsFactoryCall(declaration.initializer, factoryBindings)
+          isFactoryExportValue(declaration.initializer, factoryBindings)
         ) {
           factoryValues.add(declaration.name.text);
           if (hasModifier(statement.modifiers, ts.SyntaxKind.ExportKeyword)) {
@@ -77,7 +77,7 @@ export function hasExportedFlueFactory(
   for (const statement of source.statements) {
     if (ts.isExportAssignment(statement)) {
       if (
-        containsFactoryCall(statement.expression, factoryBindings) ||
+        isFactoryExportValue(statement.expression, factoryBindings) ||
         (ts.isIdentifier(statement.expression) &&
           factoryValues.has(statement.expression.text))
       ) {
@@ -89,7 +89,7 @@ export function hasExportedFlueFactory(
   return [...factoryValues].some((name) => namedExports.has(name));
 }
 
-function containsFactoryCall(
+function isFactoryExportValue(
   node: Node,
   factoryBindings: Set<string>,
 ): boolean {
@@ -100,9 +100,18 @@ function containsFactoryCall(
   ) {
     return true;
   }
-  return node.getChildren().some((child) =>
-    containsFactoryCall(child, factoryBindings),
-  );
+  if (ts.isParenthesizedExpression(node)) {
+    return isFactoryExportValue(node.expression, factoryBindings);
+  }
+  if (ts.isArrayLiteralExpression(node)) {
+    return (
+      node.elements.length > 0
+      && node.elements.every((element) =>
+        isFactoryExportValue(element, factoryBindings),
+      )
+    );
+  }
+  return false;
 }
 
 function hasModifier(

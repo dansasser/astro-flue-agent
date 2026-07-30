@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { defineTool, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 import {
@@ -28,6 +29,7 @@ export interface CodingGitToolsOptions extends CodingWorkspaceTargetInput {
   reporter?: CodingProgressReporter;
   githubGitEnv?: () => Promise<Record<string, string>>;
   githubClient?: GitHubClient;
+  gitIdentityEnv?: () => Record<string, string>;
 }
 
 export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefinition[] {
@@ -112,6 +114,10 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
 
         const commit = await sandbox.execFile('git', ['commit', '-m', requireString(args.message, 'message')], {
           timeoutSeconds: 60,
+          env: (
+            options.gitIdentityEnv
+            ?? (() => readHostGitIdentityEnvironment())
+          )(),
         });
         return toToolJson({ status: commit.exitCode === 0 ? 'committed' : 'failed', add, commit });
       },
@@ -242,6 +248,39 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
       },
     }),
   ];
+}
+
+export function readHostGitIdentityEnvironment(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const name = readGlobalGitConfig('user.name', env);
+  const email = readGlobalGitConfig('user.email', env);
+  if (!name || !email) {
+    return {};
+  }
+  return {
+    GIT_AUTHOR_NAME: name,
+    GIT_AUTHOR_EMAIL: email,
+    GIT_COMMITTER_NAME: name,
+    GIT_COMMITTER_EMAIL: email,
+  };
+}
+
+function readGlobalGitConfig(
+  key: 'user.name' | 'user.email',
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  try {
+    const value = execFileSync('git', ['config', '--global', '--get', key], {
+      encoding: 'utf8',
+      env,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5_000,
+    }).trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function hashApprovalPayload(payload: Record<string, unknown>): string {

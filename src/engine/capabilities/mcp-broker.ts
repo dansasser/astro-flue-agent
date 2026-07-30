@@ -1,4 +1,5 @@
 import { connectMcpServer, type McpServerConnection, type ToolDefinition } from '@flue/runtime';
+import { isSupportedMcpTokenEnvironmentName } from './mcp-token-env.js';
 import type { CapabilityRecord } from '../../engine/capabilities/types.js';
 
 export interface McpBrokerResult {
@@ -6,12 +7,6 @@ export interface McpBrokerResult {
   connections: McpServerConnection[];
   failures: Array<{ id: string; error: string }>;
 }
-
-const ALLOWED_MCP_TOKEN_ENV = new Set([
-  'GOROMBO_MCP_TOKEN',
-  'MCP_AUTH_TOKEN',
-  'MCP_TOKEN',
-]);
 
 export async function connectUserMcpServers(
   mcpRecords: CapabilityRecord[],
@@ -32,7 +27,7 @@ export async function connectUserMcpServers(
     const headers: Record<string, string> = {};
     const tokenEnv = record.config.mcpTokenEnv;
     if (tokenEnv) {
-      if (!ALLOWED_MCP_TOKEN_ENV.has(tokenEnv)) {
+      if (!isSupportedMcpTokenEnvironmentName(tokenEnv)) {
         const message = `MCP token env var "${tokenEnv}" is not in the allowlist`;
         failures.push({ id: record.id, error: message });
         continue;

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -35,7 +35,10 @@ import {
   packageManagerTestCommand,
 } from '../engine/workers/coding-worker/repo/package-manager.js';
 import { createCodingVerificationPlan } from '../engine/workers/coding-worker/repo/verification.js';
-import { createCodingGitTools } from '../engine/workers/coding-worker/tools/coding-git-tools.js';
+import {
+  createCodingGitTools,
+  readHostGitIdentityEnvironment,
+} from '../engine/workers/coding-worker/tools/coding-git-tools.js';
 import { createCodingImplementerTools } from '../engine/workers/coding-worker/tools/coding-implementer-tools.js';
 import {
   applyCodingEditTransaction,
@@ -1969,6 +1972,12 @@ test('coding worker git commit tool requires approval and commits when approved'
       decidedBy: 'test',
       principal: { id: 'test', roles: ['operator'] },
     });
+    execFileSync('git', ['config', '--unset', 'user.name'], {
+      cwd: project.repoPath,
+    });
+    execFileSync('git', ['config', '--unset', 'user.email'], {
+      cwd: project.repoPath,
+    });
 
     const approvedCommit = getTool(
       createCodingGitTools({
@@ -1976,6 +1985,12 @@ test('coding worker git commit tool requires approval and commits when approved'
         targetKind: 'project',
         projectRelativePath: project.projectRelativePath,
         approvalService,
+        gitIdentityEnv: () => ({
+          GIT_AUTHOR_NAME: 'SIM-ONE Operator',
+          GIT_AUTHOR_EMAIL: 'operator@example.test',
+          GIT_COMMITTER_NAME: 'SIM-ONE Operator',
+          GIT_COMMITTER_EMAIL: 'operator@example.test',
+        }),
       }),
       'coding_git_commit',
     );
@@ -1991,8 +2006,43 @@ test('coding worker git commit tool requires approval and commits when approved'
 
     const log = execFileSync('git', ['log', '--oneline', '-1'], { cwd: project.repoPath, encoding: 'utf8' });
     assert.match(log, /Update answer/);
+    const persistedIdentity = spawnSync(
+      'git',
+      ['config', '--local', '--get', 'user.name'],
+      {
+        cwd: project.repoPath,
+        encoding: 'utf8',
+      },
+    );
+    assert.equal(persistedIdentity.status, 1);
+    assert.equal(persistedIdentity.stdout.trim(), '');
   } finally {
     rmrf(project.workspaceRoot);
+  }
+});
+
+test('host Git identity is projected into command-scoped commit environment', () => {
+  const root = mkdtempSync(join(tmpdir(), 'coding-git-identity-'));
+  const gitConfig = join(root, 'gitconfig');
+  try {
+    writeFileSync(
+      gitConfig,
+      '[user]\n\tname = SIM-ONE Operator\n\temail = operator@example.test\n',
+    );
+    const identity = readHostGitIdentityEnvironment({
+      PATH: process.env.PATH,
+      GIT_CONFIG_GLOBAL: gitConfig,
+      GIT_CONFIG_NOSYSTEM: '1',
+    });
+
+    assert.deepEqual(identity, {
+      GIT_AUTHOR_NAME: 'SIM-ONE Operator',
+      GIT_AUTHOR_EMAIL: 'operator@example.test',
+      GIT_COMMITTER_NAME: 'SIM-ONE Operator',
+      GIT_COMMITTER_EMAIL: 'operator@example.test',
+    });
+  } finally {
+    rmrf(root);
   }
 });
 

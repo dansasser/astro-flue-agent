@@ -18,6 +18,7 @@ import {
   CapabilityLifecycleService,
 } from '../engine/capabilities/capability-lifecycle-service.js';
 import { compileCapabilityProtocolContext } from '../engine/capabilities/capability-protocol-context.js';
+import { materializeCapability } from '../engine/capabilities/skill-materializer.js';
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
 import type { CapabilityKind } from '../engine/capabilities/types.js';
 
@@ -121,8 +122,8 @@ test('authenticated CLI adds preserve requested activation while agent executabl
       true,
     );
 
-    const agentSource = createSourceFixture(
-      fixture.root,
+    createSourceFixture(
+      join(fixture.runtimeRoot, 'workspace'),
       'tool',
       'agent-disabled-tool',
     );
@@ -132,7 +133,7 @@ test('authenticated CLI adds preserve requested activation while agent executabl
       name: 'Agent disabled tool',
       description: '',
       source: 'local',
-      sourceRef: agentSource,
+      sourceRef: 'sources/agent-disabled-tool',
       version: 'fixture-v1',
       requestedEnabled: true,
       installedBy: 'agent',
@@ -170,6 +171,28 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
     );
     assert.equal(fixture.service.inspect('tool', 'invalid-tool').record, undefined);
 
+    const wrappedTool = join(fixture.root, 'wrapped-tool');
+    mkdirSync(wrappedTool, { recursive: true });
+    writeFileSync(
+      join(wrappedTool, 'index.mjs'),
+      "import { defineTool } from '@flue/runtime';\nexport const makeTool = () => defineTool({ name: 'wrapped', parameters: {}, execute: async () => 'ok' });\n",
+    );
+    assert.throws(
+      () =>
+        fixture.service.validate({
+          kind: 'tool',
+          id: 'wrapped-tool',
+          name: 'Wrapped tool',
+          description: '',
+          source: 'local',
+          sourceRef: wrappedTool,
+          version: 'fixture-v1',
+          requestedEnabled: false,
+          installedBy: 'cli',
+        }),
+      /direct Flue defineTool/,
+    );
+
     assert.throws(
       () =>
         fixture.service.add({
@@ -189,6 +212,26 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
           },
         }),
       /configuration key names/,
+    );
+    assert.throws(
+      () =>
+        fixture.service.add({
+          kind: 'mcp',
+          id: 'unsupported-mcp-token-slot',
+          name: 'Unsupported MCP token slot',
+          description: '',
+          source: 'local',
+          sourceRef: 'mcp://unsupported-mcp-token-slot',
+          version: null,
+          requestedEnabled: false,
+          installedBy: 'cli',
+          config: {
+            mcpUrl: 'https://mcp.example.test/api',
+            mcpTransport: 'streamable-http',
+            mcpTokenEnv: 'UNREGISTERED_MCP_TOKEN',
+          },
+        }),
+      /supported canonical MCP token configuration key/,
     );
     assert.throws(
       () =>
@@ -275,6 +318,22 @@ test('relative local capability sources resolve beneath the coding workspace and
     );
     const relativeSourceRef = 'sources/workspace-relative-tool';
 
+    assert.throws(
+      () =>
+        fixture.service.validate({
+          kind: 'tool',
+          id: 'absolute-agent-tool',
+          name: 'Absolute agent tool',
+          description: '',
+          source: 'local',
+          sourceRef,
+          version: 'fixture-v1',
+          requestedEnabled: false,
+          installedBy: 'agent',
+        }),
+      /agent-installed local capability source must be relative/i,
+    );
+
     const validated = fixture.service.validate({
       kind: 'tool',
       id: 'workspace-relative-tool',
@@ -319,11 +378,43 @@ test('relative local capability sources resolve beneath the coding workspace and
   }
 });
 
+test('GitHub capability sources reject local paths and file URLs', () => {
+  const fixture = createFixture();
+  try {
+    const localRepository = join(fixture.root, 'local-repository');
+    mkdirSync(localRepository, { recursive: true });
+    execFileSync('git', ['init'], { cwd: localRepository });
+
+    for (const sourceRef of [
+      localRepository,
+      pathToFileURL(localRepository).href,
+    ]) {
+      assert.throws(
+        () =>
+          fixture.service.validate({
+            kind: 'skill',
+            id: 'invalid-github-source',
+            name: 'Invalid GitHub source',
+            description: '',
+            source: 'github',
+            sourceRef,
+            version: 'main',
+            requestedEnabled: false,
+            installedBy: 'agent',
+          }),
+        /github\.com HTTPS or SSH repository URL/i,
+      );
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test('local capability staging rejects symlinks and mismatched handoff digests', () => {
   const fixture = createFixture();
   try {
     const symlinkedTool = createSourceFixture(
-      fixture.root,
+      join(fixture.runtimeRoot, 'workspace'),
       'tool',
       'symlinked-tool',
     );
@@ -340,7 +431,7 @@ test('local capability staging rejects symlinks and mismatched handoff digests',
           name: 'Symlinked tool',
           description: '',
           source: 'local',
-          sourceRef: symlinkedTool,
+          sourceRef: 'sources/symlinked-tool',
           version: 'fixture-v1',
           requestedEnabled: false,
           installedBy: 'agent',
@@ -349,7 +440,7 @@ test('local capability staging rejects symlinks and mismatched handoff digests',
     );
 
     const digestTool = createSourceFixture(
-      fixture.root,
+      join(fixture.runtimeRoot, 'workspace'),
       'tool',
       'digest-bound-tool',
     );
@@ -360,7 +451,7 @@ test('local capability staging rejects symlinks and mismatched handoff digests',
       name: 'Digest-bound tool',
       description: '',
       source: 'local',
-      sourceRef: digestTool,
+      sourceRef: 'sources/digest-bound-tool',
       version: `sha256:${expectedDigest}`,
       requestedEnabled: false,
       installedBy: 'agent',
@@ -368,7 +459,7 @@ test('local capability staging rejects symlinks and mismatched handoff digests',
     assert.equal(added.contentDigest, expectedDigest);
 
     const changedTool = createSourceFixture(
-      fixture.root,
+      join(fixture.runtimeRoot, 'workspace'),
       'tool',
       'changed-after-handoff',
     );
@@ -385,7 +476,7 @@ test('local capability staging rejects symlinks and mismatched handoff digests',
           name: 'Changed after handoff',
           description: '',
           source: 'local',
-          sourceRef: changedTool,
+          sourceRef: 'sources/changed-after-handoff',
           version: `sha256:${testedDigest}`,
           requestedEnabled: false,
           installedBy: 'agent',
@@ -413,7 +504,7 @@ test('partial MCP updates preserve stored connection fields before validation', 
       config: {
         mcpUrl: 'https://mcp.example.test/original',
         mcpTransport: 'streamable-http',
-        mcpTokenEnv: 'ORIGINAL_MCP_TOKEN',
+        mcpTokenEnv: 'MCP_AUTH_TOKEN',
       },
     });
 
@@ -428,7 +519,7 @@ test('partial MCP updates preserve stored connection fields before validation', 
     assert.deepEqual(updated.record?.config, {
       mcpUrl: 'https://mcp.example.test/original',
       mcpTransport: 'sse',
-      mcpTokenEnv: 'ORIGINAL_MCP_TOKEN',
+      mcpTokenEnv: 'MCP_AUTH_TOKEN',
     });
   } finally {
     fixture.cleanup();
@@ -465,7 +556,11 @@ test('capability lifecycle rolls back the registry when final materialization fa
     },
   });
   try {
-    const sourceRef = createSourceFixture(fixture.root, 'skill', 'rollback-skill');
+    createSourceFixture(
+      join(fixture.runtimeRoot, 'workspace'),
+      'skill',
+      'rollback-skill',
+    );
     assert.throws(
       () =>
         fixture.service.add({
@@ -474,7 +569,7 @@ test('capability lifecycle rolls back the registry when final materialization fa
           name: 'Rollback skill',
           description: '',
           source: 'local',
-          sourceRef,
+          sourceRef: 'sources/rollback-skill',
           version: 'fixture-v1',
           requestedEnabled: true,
           installedBy: 'agent',
@@ -523,9 +618,27 @@ test('capability lifecycle rejects cross-kind collisions through the shared serv
 });
 
 test('capability lifecycle materializes the exact requested Git tag', () => {
-  const fixture = createFixture();
+  const githubSource = 'https://github.com/dansasser/versioned-skill.git';
+  let repository = '';
+  const gitCalls: string[][] = [];
+  const fixture = createFixture({
+    materialize: (options) =>
+      materializeCapability({
+        ...options,
+        gitRunner: (args, runnerOptions) => {
+          gitCalls.push([...args]);
+          execFileSync(
+            'git',
+            args.map((arg) =>
+              arg === githubSource ? pathToFileURL(repository).href : arg
+            ),
+            runnerOptions,
+          );
+        },
+      }),
+  });
   try {
-    const repository = join(fixture.root, 'versioned-skill');
+    repository = join(fixture.root, 'versioned-skill');
     const gitOptions = {
       cwd: repository,
       env: {
@@ -557,7 +670,7 @@ test('capability lifecycle materializes the exact requested Git tag', () => {
       name: 'Versioned skill',
       description: '',
       source: 'github',
-      sourceRef: pathToFileURL(repository).href,
+      sourceRef: githubSource,
       version: 'v1',
       requestedEnabled: true,
       installedBy: 'cli',
@@ -569,6 +682,13 @@ test('capability lifecycle materializes the exact requested Git tag', () => {
     );
     assert.match(installed, /version one/);
     assert.doesNotMatch(installed, /version two/);
+    assert.deepEqual(gitCalls[0]?.slice(0, 5), [
+      'clone',
+      '--depth',
+      '1',
+      '--branch',
+      'v1',
+    ]);
   } finally {
     fixture.cleanup();
   }
@@ -700,6 +820,7 @@ test('capability lifecycle validation and mutations fail closed without protocol
 
 function createFixture(overrides: {
   promote?: ConstructorParameters<typeof CapabilityLifecycleService>[0]['promote'];
+  materialize?: ConstructorParameters<typeof CapabilityLifecycleService>[0]['materialize'];
 } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'sim-one-capability-lifecycle-'));
   const runtimeRoot = join(root, '.gorombo');

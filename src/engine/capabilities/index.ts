@@ -9,12 +9,19 @@ export type {
 export { createCapabilityStore } from '../../engine/capabilities/capability-store.js';
 export type { CreateCapabilityStoreOptions } from '../../engine/capabilities/capability-store.js';
 export {
+  loadPromotedUserCapabilities,
   loadUserCapabilities,
   resolveCapabilitiesDir,
   resolveCapabilityPath,
   assertSafeCapabilityId,
 } from '../../engine/capabilities/capability-loader.js';
-export type { LoadedUserCapabilities, CapabilityLoaderOptions } from '../../engine/capabilities/capability-loader.js';
+export type {
+  CapabilityLoadFailure,
+  CapabilityLoaderOptions,
+  LoadedPromotedUserCapabilities,
+  LoadedUserCapabilities,
+  PromotedCapabilityLoaderOptions,
+} from '../../engine/capabilities/capability-loader.js';
 export { materializeCapability } from '../../engine/capabilities/skill-materializer.js';
 export type { MaterializeOptions, MaterializeResult } from '../../engine/capabilities/skill-materializer.js';
 export { connectUserMcpServers } from '../../engine/capabilities/mcp-broker.js';

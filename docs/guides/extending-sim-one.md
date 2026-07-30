@@ -52,9 +52,9 @@ artifact, so product upgrades preserve runtime additions.
 
 Skills, tools, and workers accept:
 
-- an HTTPS Git repository URL;
-- another supported Git remote;
-- a local directory path.
+- a `github.com` HTTPS or SSH repository URL;
+- a local directory path from the authenticated CLI;
+- a coding-workspace-relative local directory from an agent handoff.
 
 The CLI resolves an exact requested branch, tag, or commit from `--version`
 before validation and materialization. Local directory sources are
@@ -101,6 +101,8 @@ sim-one mcp add <id> "<name>" --url <url> \
 
 The URL must use HTTP or HTTPS. `streamable-http` is the default transport.
 `--token-env` records the name of the secret-bearing environment variable.
+Supported canonical slots are `GOROMBO_MCP_TOKEN`, `MCP_AUTH_TOKEN`, and
+`MCP_TOKEN`.
 
 ## Manage Capabilities
 
@@ -123,7 +125,8 @@ active materialization until a separate `enable` command succeeds. Removal
 deletes the registry record and managed files.
 
 Apply lifecycle changes by restarting the gateway through the process or
-service manager that launched it.
+service manager that launched it. Startup loads the package promoted by the
+lifecycle transaction and never recopies or reclones its mutable source.
 
 ## Agent-Added Capabilities
 
@@ -139,6 +142,10 @@ The agent can propose runtime capability lifecycle work through the dedicated
   retain applied protocol ids and rules in redacted evidence.
 - source packages must pass non-executing Flue export checks, credential-value
   scanning, and machine-specific absolute-path scanning.
+- agent local source paths must stay relative to the coding workspace, and
+  GitHub-labeled sources must use a `github.com` HTTPS or SSH repository URL.
+- executable modules must export direct `defineTool(...)` or
+  `defineAgentProfile(...)` results rather than wrapper functions.
 
 Capability source implementation is delegated to the Coding Worker. Its
 capability authoring skills and tools classify, scaffold, validate, scan, test,

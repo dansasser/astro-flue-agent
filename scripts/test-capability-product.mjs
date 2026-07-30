@@ -107,7 +107,7 @@ try {
     '--transport',
     'streamable-http',
     '--token-env',
-    'OLLAMA_API_KEY',
+    'GOROMBO_MCP_TOKEN',
   ], env);
   assertOperation(mcpValidation, 'validate');
   assertProtocolValidation(mcpValidation);
@@ -170,7 +170,7 @@ try {
     '--transport',
     'streamable-http',
     '--token-env',
-    'OLLAMA_API_KEY',
+    'GOROMBO_MCP_TOKEN',
   ], env);
   assertOperation(addedMcp, 'add');
   assertProtocolValidation(addedMcp);

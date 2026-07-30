@@ -55,8 +55,7 @@ import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/codi
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
-import { loadUserCapabilities } from '../engine/capabilities/capability-loader.js';
-import { materializeCapability } from '../engine/capabilities/skill-materializer.js';
+import { loadPromotedUserCapabilities } from '../engine/capabilities/capability-loader.js';
 import { connectUserMcpServers } from '../engine/capabilities/mcp-broker.js';
 import { connectBuiltinMcpServers } from '../engine/capabilities/builtin-mcp.js';
 import { loadUserTools } from '../engine/capabilities/tool-loader.js';
@@ -193,14 +192,11 @@ function loadUserCapabilitiesFromStore(env: Record<string, unknown>) {
   let store;
   try {
     store = createCapabilityStore({});
-    const caps = loadUserCapabilities({ store });
-    for (const capability of [...caps.skills, ...caps.tools, ...caps.workers]) {
-      try {
-        materializeCapability({ record: capability, env });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`[capabilities] Failed to materialize ${capability.kind} ${capability.id}: ${message}`);
-      }
+    const caps = loadPromotedUserCapabilities({ store, env });
+    for (const failure of caps.failures) {
+      console.error(
+        `[capabilities] Failed to load ${failure.kind} ${failure.id}: ${failure.error}`,
+      );
     }
     return caps;
   } catch (error) {

@@ -98,10 +98,11 @@ test('default capability protocol loader reloads trusted persisted event state',
 test('capability-manager mutations fail closed and executable activation requires a second approval', async () => {
   const fixture = createFixture();
   try {
-    const sourceRef = join(fixture.root, 'tool-source');
-    mkdirSync(sourceRef, { recursive: true });
+    const sourceRef = 'tool-source';
+    const sourcePath = join(fixture.runtimeRoot, 'workspace', sourceRef);
+    mkdirSync(sourcePath, { recursive: true });
     writeFileSync(
-      join(sourceRef, 'index.mjs'),
+      join(sourcePath, 'index.mjs'),
       "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
     );
     const profile = createCapabilityManagerSubagent({
@@ -201,8 +202,11 @@ test('capability-manager mutations fail closed and executable activation require
 test('capability-manager approvals distinguish different private local sources', async () => {
   const fixture = createFixture();
   try {
-    const firstSource = createToolSource(fixture.root, 'first-source');
-    const secondSource = createToolSource(fixture.root, 'second-source');
+    const workspaceRoot = join(fixture.runtimeRoot, 'workspace');
+    createToolSource(workspaceRoot, 'first-source');
+    createToolSource(workspaceRoot, 'second-source');
+    const firstSource = 'first-source';
+    const secondSource = 'second-source';
     const profile = createCapabilityManagerSubagent({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
@@ -348,7 +352,7 @@ test('capability-manager applies partial MCP updates without resending the store
       name: 'Partial manager MCP',
       mcpUrl: 'https://mcp.example.test/original',
       mcpTransport: 'streamable-http',
-      mcpTokenEnv: 'PARTIAL_MCP_TOKEN',
+      mcpTokenEnv: 'MCP_AUTH_TOKEN',
     };
     const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
       request: { id: string };
@@ -385,7 +389,7 @@ test('capability-manager applies partial MCP updates without resending the store
     assert.deepEqual(updated.record.config, {
       mcpUrl: 'https://mcp.example.test/original',
       mcpTransport: 'sse',
-      mcpTokenEnv: 'PARTIAL_MCP_TOKEN',
+      mcpTokenEnv: 'MCP_AUTH_TOKEN',
     });
 
     const tokenUpdateArgs = {
@@ -393,7 +397,7 @@ test('capability-manager applies partial MCP updates without resending the store
       eventId: 'partial-mcp-manager-token-update',
       kind: 'mcp',
       id: 'partial-manager-mcp',
-      mcpTokenEnv: 'REPLACEMENT_MCP_TOKEN',
+      mcpTokenEnv: 'MCP_TOKEN',
     };
     const pendingTokenUpdate = JSON.parse(
       await update.execute(tokenUpdateArgs),
@@ -414,7 +418,7 @@ test('capability-manager applies partial MCP updates without resending the store
     assert.deepEqual(tokenUpdated.record.config, {
       mcpUrl: 'https://mcp.example.test/original',
       mcpTransport: 'sse',
-      mcpTokenEnv: 'REPLACEMENT_MCP_TOKEN',
+      mcpTokenEnv: 'MCP_TOKEN',
     });
   } finally {
     fixture.cleanup();
@@ -478,6 +482,7 @@ function createFixture() {
   };
   return {
     root,
+    runtimeRoot,
     approvalService,
     serviceFactory,
     protocolBundleLoader,
