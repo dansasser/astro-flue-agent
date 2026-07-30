@@ -82,6 +82,11 @@ const ollamaKey =
 if (!ollamaKey) {
   throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required in sim-one.config for the Ratatui product prompt test.');
 }
+const productSmokeTestMode = process.env.GOROMBO_TEST_MODE === '1';
+const productSmokeOllamaKey =
+  productSmokeTestMode
+    ? ollamaKey
+    : 'shell-value-must-not-win';
 const releaseArtifactLock = await acquireProductArtifactLock();
 const productFixtureRoot = mkdtempSync(join(tmpdir(), 'ratatui-relocated-product-'));
 const runtimeRoot = join(productFixtureRoot, '.gorombo');
@@ -158,12 +163,18 @@ try {
     USERPROFILE: syntheticHome,
     GOROMBO_RUNTIME_ROOT: runtimeRoot,
     SIM_ONE_PRODUCT_PATH: simOnePath,
-    OLLAMA_API_KEY: 'shell-value-must-not-win',
+    SIM_ONE_TUI_LOG_PATH: tuiDiagnosticsPath,
+    OLLAMA_API_KEY: productSmokeOllamaKey,
     GOROMBO_WORKSPACE_ROOT: join(
       launchDirectory,
       'shell-workspace-must-not-win',
     ),
   };
+  if (productSmokeTestMode) {
+    childEnv.CODEX_BRAIN_LOCAL_API_KEY = 'ratatui-product-placeholder';
+    childEnv.CODEX_BRAIN_LOCAL_API_URL = 'https://dt1.example.test/v1';
+    childEnv.GOROMBO_WORKSPACE_ROOT = codingWorkspaceRoot;
+  }
   if (!childEnv.NVM_DIR && process.env.HOME) {
     childEnv.NVM_DIR = join(process.env.HOME, '.nvm');
   }
@@ -1005,9 +1016,21 @@ async function runProductCommand(args, env, timeoutMs) {
   });
   const exitCode = await waitForClose(command, timeoutMs);
   if (exitCode !== 0) {
-    throw new Error(`sim-one ${args.join(' ')} failed with exit ${exitCode}\nstdout:\n${commandStdout}\nstderr:\n${commandStderr}`);
+    throw new Error(
+      `sim-one ${args.join(' ')} failed with exit ${exitCode}\nstdout:\n${commandStdout}\nstderr:\n${commandStderr}\ndiagnostics:\n${readDiagnosticsTail()}`,
+    );
   }
   return { exitCode, stdout: commandStdout, stderr: commandStderr };
+}
+
+function readDiagnosticsTail() {
+  if (!existsSync(tuiDiagnosticsPath)) {
+    return '(diagnostics file not created)';
+  }
+  const lines = readFileSync(tuiDiagnosticsPath, 'utf8')
+    .trim()
+    .split(/\r?\n/);
+  return lines.slice(-80).join('\n') || '(diagnostics file empty)';
 }
 
 function assertOutputIncludes(output, expected, label) {

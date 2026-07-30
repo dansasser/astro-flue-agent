@@ -166,8 +166,12 @@ test('source scripts replace registered shell settings from sim-one.config', () 
   }
 });
 
-test('CI builds the Ratatui product smoke with canonical owner configuration', () => {
+test('CI preserves the Ratatui credential contract with canonical owner configuration', () => {
   const workflow = readFileSync(resolve('.github/workflows/ci.yml'), 'utf8');
+  const productSmoke = readFileSync(
+    resolve('scripts/test-ratatui-product.mjs'),
+    'utf8',
+  );
   const ratatuiStep = workflow.match(
     /      - name: Ratatui TUI product smoke\n[\s\S]*?(?=\n      - name: )/,
   )?.[0];
@@ -176,7 +180,27 @@ test('CI builds the Ratatui product smoke with canonical owner configuration', (
   assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
   assert.match(workflow, /chmod 600 sim-one\.config/);
   assert.ok(ratatuiStep, 'Ratatui product smoke step is missing');
-  assert.doesNotMatch(ratatuiStep, /GOROMBO_TEST_MODE/);
+  assert.match(ratatuiStep, /GOROMBO_TEST_MODE: '1'/);
+  assert.match(
+    ratatuiStep,
+    /OLLAMA_API_KEY: \$\{\{ secrets\.OLLAMA_API_KEY \}\}/,
+  );
+  assert.match(
+    productSmoke,
+    /productSmokeTestMode\s*\?\s*ollamaKey\s*:\s*'shell-value-must-not-win'/,
+  );
+  assert.match(
+    productSmoke,
+    /CODEX_BRAIN_LOCAL_API_KEY = 'ratatui-product-placeholder'/,
+  );
+  assert.match(
+    productSmoke,
+    /CODEX_BRAIN_LOCAL_API_URL = 'https:\/\/dt1\.example\.test\/v1'/,
+  );
+  assert.match(
+    productSmoke,
+    /childEnv\.GOROMBO_WORKSPACE_ROOT = codingWorkspaceRoot/,
+  );
 });
 
 test('script sanitization covers every documented compatibility alias', () => {

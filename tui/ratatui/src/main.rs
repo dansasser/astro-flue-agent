@@ -272,6 +272,9 @@ fn wait_for_scripted_startup(app: &mut App) -> io::Result<()> {
     }
 
     if !app.startup_succeeded() {
+        for line in app.transcript_lines() {
+            eprintln!("{line}");
+        }
         return Err(io::Error::other(
             "Scripted TUI startup preflight failed. See the transcript error above.",
         ));

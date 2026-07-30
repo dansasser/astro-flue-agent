@@ -91,7 +91,11 @@ pub fn ensure_server_running(options: &GatewayOptions) -> Result<GatewayHandle, 
         server.log_drain.join();
         return Err(error);
     }
-    server.log_drain.disable_forwarding();
+    if env::var_os("SIM_ONE_TUI_TEST_STARTUP").is_none()
+        && env::var_os("SIM_ONE_TUI_TEST_PROMPTS").is_none()
+    {
+        server.log_drain.disable_forwarding();
+    }
 
     Ok(GatewayHandle {
         started: true,
