@@ -181,6 +181,7 @@ Prerequisites:
 - npm (included with Node.js) or pnpm 10
 - Rust stable with the `wasm32-unknown-unknown` target
 - `wasm-pack` 0.13.1
+- Bubblewrap on Linux for Coding Worker shell, Git, and verification commands
 
 Clone the repository:
 
@@ -219,6 +220,10 @@ Start SIM-ONE with:
 ```
 
 The source build fetches the bundled embedding model, compiles the Rust/WASM structured-memory engine, builds the Flue Node runtime with isolated production dependencies, builds the terminal interface, and creates the `sim-one` product wrapper. Source builds currently use file-based configuration; the packaged onboarding command is a release gate.
+
+Coding Worker child processes fail closed when the Linux Bubblewrap isolation
+boundary is unavailable. The gateway and terminal interface do not fall back to
+unrestricted coding execution.
 
 ## Configuration
 

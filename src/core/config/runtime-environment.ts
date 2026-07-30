@@ -1,6 +1,7 @@
 import {
   chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readFileSync,
   renameSync,
@@ -459,6 +460,7 @@ export function applyRuntimeEnvironmentFile(
   configPath: string,
   targetEnv: Record<string, string | undefined> = process.env,
 ): RuntimeEnvironmentLoadResult {
+  assertOwnerOnlyRuntimeConfig(configPath);
   const parsed = parseEnv(readFileSync(configPath, 'utf8'));
   const normalized = new Map<string, string>();
   const deprecatedAliases: string[] = [];
@@ -535,6 +537,7 @@ export function validateRuntimeEnvironmentValue(
 export function updateRuntimeEnvironmentFile(
   options: UpdateRuntimeEnvironmentFileOptions,
 ): RuntimeEnvironmentLoadResult {
+  assertOwnerOnlyRuntimeConfig(options.configPath);
   const parsed = parseEnv(readFileSync(options.configPath, 'utf8'));
   const normalized = new Map<string, string>();
   const deprecatedAliases: string[] = [];
@@ -580,6 +583,32 @@ export function updateRuntimeEnvironmentFile(
     configuredKeys,
     deprecatedAliases,
   };
+}
+
+function assertOwnerOnlyRuntimeConfig(configPath: string): void {
+  const stats = lstatSync(configPath);
+  if (!stats.isFile() || stats.isSymbolicLink()) {
+    throw new Error(
+      `SIM-ONE runtime configuration must be a regular owner-only file: ${configPath}`,
+    );
+  }
+  if (process.platform === 'win32') {
+    return;
+  }
+  const mode = stats.mode & 0o777;
+  if (mode !== 0o600) {
+    throw new Error(
+      `SIM-ONE runtime configuration must use owner-only permissions (mode 0600): ${configPath}`,
+    );
+  }
+  if (
+    typeof process.getuid === 'function' &&
+    stats.uid !== process.getuid()
+  ) {
+    throw new Error(
+      `SIM-ONE runtime configuration must be owned by the current user: ${configPath}`,
+    );
+  }
 }
 
 function validateValue(

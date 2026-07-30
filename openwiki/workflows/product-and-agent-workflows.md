@@ -103,8 +103,10 @@ When changing coding behavior, check the worker workspace and approval paths bef
 Durable files, repositories, projects, and handoff notes are Coding Worker
 operations. The worker resolves them under `<runtime-root>/workspace`, returns
 workspace-relative paths, and verifies writes through its host-backed Flue Node
-local sandbox. The main orchestrator intentionally has no generic virtual
-filesystem or shell tools; `/home/user` is not a durable product location.
+local session. Shell, Git, and verification processes additionally run in a
+Bubblewrap namespace that mounts the workspace but not sibling owner runtime
+state. The main orchestrator intentionally has no generic virtual filesystem or
+shell tools; `/home/user` is not a durable product location.
 
 ## Capability management workflow
 

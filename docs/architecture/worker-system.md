@@ -81,14 +81,24 @@ The Coding Worker also persists task checkpoints and uses structured task
 memory, including notes, todos, and checklists, to maintain execution state
 outside the prompt.
 
-The Coding Worker's Flue Node local sandbox is rooted at
-`<runtime-root>/workspace`. Repositories use `repos/<slug>`, non-repository
-projects use `projects/<slug>`, and handoff artifacts may use
-`repos/handoffs/todos/`. The worker verifies durable writes through that
-host-backed boundary and reports workspace-relative paths. The main
-orchestrator does not expose Flue's generic virtual filesystem or shell tools,
-so an ephemeral `/home/user` readback cannot be reported as a durable product
-artifact.
+The Coding Worker's file APIs use a Flue Node local session rooted at
+`<runtime-root>/workspace`. Shell, Git, and verification child processes run
+inside a Bubblewrap mount and process namespace that exposes the workspace
+read-write, the active Node and system runtime read-only, and a private
+temporary directory. The rest of the owner runtime, including
+`sim-one.config`, databases, approvals, and authentication state, is not
+mounted. A private Git child may additionally receive the single read-only,
+secret-free askpass helper file and command-scoped credential environment
+described in [GitHub Authentication](github-auth-system.md). Linux execution
+fails closed when Bubblewrap is unavailable; there is no unrestricted fallback
+on another platform.
+
+Repositories use `repos/<slug>`, non-repository projects use
+`projects/<slug>`, and handoff artifacts may use `repos/handoffs/todos/`. The
+worker verifies durable writes through that host-backed boundary and reports
+workspace-relative paths. The main orchestrator does not expose Flue's generic
+virtual filesystem or shell tools, so an ephemeral `/home/user` readback cannot
+be reported as a durable product artifact.
 
 For capability implementation, the Coding Worker owns imported Flue skills and
 typed tools for classification, workspace-scoped scaffolding, contract

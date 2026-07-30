@@ -283,8 +283,9 @@ src/engine/workers/coding-worker/subagents/
 src/engine/workers/coding-worker/tools/
   Worker-local workspace/project, shell, git, GitHub, and approval-aware execution tools.
   Includes the LSP code-intelligence tools under `src/engine/workers/coding-worker/tools/code-intelligence/lsp/`.
-  File/shell/git/test execution is backed by Flue's Node local sandbox factory.
-  The sandbox is rooted at `<runtime-root>/workspace`, separate from the packaged main-agent persona. Non-git projects live under `projects/**`; repositories live under `repos/**`.
+  File APIs are backed by Flue's Node local sandbox factory.
+  Shell/git/test child processes run through a Bubblewrap mount and process namespace with only the workspace read-write, the active Node and system runtime read-only, and a private temporary directory; an authenticated private Git child may additionally receive one secret-free read-only askpass helper file and command-scoped credential environment. Execution fails closed when that Linux boundary is unavailable.
+  The sandbox is rooted at `<runtime-root>/workspace`, separate from the packaged main-agent persona and owner configuration. Non-git projects live under `projects/**`; repositories live under `repos/**`.
   The coding worker must create or resolve new project work under that runtime workspace root.
   The main orchestrator does not own these tools directly.
 
@@ -311,7 +312,8 @@ src/core/config/runtime-environment.ts
   and atomic owner-file update implementation for every supported
   environment-style setting. The Coding Worker may write a user-supplied
   secret only through its dedicated approval-gated tool; existing values are
-  never readable through that tool or the general worker sandbox.
+  never readable through that tool or the general worker sandbox. POSIX loads
+  and updates require a regular current-user-owned file with exact mode `0600`.
 
 src/core/config/runtime-environment-bootstrap.ts
   Side-effect bootstrap imported first by `src/app.ts`. Loads the owning

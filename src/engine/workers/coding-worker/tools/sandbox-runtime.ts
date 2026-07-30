@@ -1,8 +1,20 @@
 import type { SessionEnv, ShellResult } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
 import { execFile } from 'node:child_process';
+import {
+  existsSync,
+  lstatSync,
+  readlinkSync,
+  realpathSync,
+} from 'node:fs';
 import { unlink } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import {
+  dirname,
+  isAbsolute,
+  parse,
+  relative,
+  resolve,
+} from 'node:path';
 import { promisify } from 'node:util';
 import {
   assertInsideCodingScope,
@@ -16,6 +28,15 @@ import type { CodingWorkspaceTargetKind } from '../../../../engine/workers/codin
 
 const execFileAsync = promisify(execFile);
 const baselineExecEnvKeys = ['PATH', 'HOME', 'SystemRoot', 'ComSpec'] as const;
+const bubblewrapCandidates = ['/usr/bin/bwrap', '/bin/bwrap'] as const;
+const sandboxSystemLinks = ['/bin', '/sbin', '/lib', '/lib64'] as const;
+const sandboxEtcPaths = [
+  '/etc/hosts',
+  '/etc/localtime',
+  '/etc/nsswitch.conf',
+  '/etc/resolv.conf',
+  '/etc/ssl',
+] as const;
 
 export interface CodingSandboxRuntime {
   workspaceRoot: string;
@@ -139,27 +160,45 @@ class FlueLocalCodingSandboxRuntime implements CodingSandboxRuntime {
   }
 
   async exec(command: string, options: CodingShellOptions = {}): Promise<ShellResult> {
-    const offending = findAbsolutePathOutsideWorkspace(command, this.workspaceRoot);
-    if (offending) {
-      return {
-        stdout: '',
-        stderr: `File access gate: command references path "${offending}" which is outside the workspace root "${this.workspaceRoot}". Use a path inside the configured coding workspace.`,
-        exitCode: 1,
-      };
-    }
-    return this.sessionEnv.exec(command, {
-      cwd: options.cwd ? this.resolveScopePath(options.cwd) : this.scopePath,
-      env: options.env,
-      timeoutMs: options.timeoutSeconds ? options.timeoutSeconds * 1000 : undefined,
-      signal: options.signal,
-    });
+    return this.runSandboxedProcess(
+      ['/bin/sh', '-lc', command],
+      options,
+    );
   }
 
   async execFile(file: string, args: string[], options: CodingShellOptions = {}): Promise<ShellResult> {
+    return this.runSandboxedProcess([file, ...args], options);
+  }
+
+  private async runSandboxedProcess(
+    command: string[],
+    options: CodingShellOptions,
+  ): Promise<ShellResult> {
+    const bubblewrapPath = resolveBubblewrapPath();
+    if (!bubblewrapPath) {
+      return {
+        stdout: '',
+        stderr:
+          'Coding Worker shell isolation is unavailable. SIM-ONE requires Bubblewrap on Linux and fails closed without it.',
+        exitCode: 1,
+      };
+    }
+
+    const cwd = options.cwd
+      ? this.resolveScopePath(options.cwd)
+      : this.scopePath;
+    const sandbox = createBubblewrapCommand({
+      workspaceRoot: this.workspaceRoot,
+      cwd,
+      baseEnv: this.env,
+      overrideEnv: options.env,
+      command,
+    });
+
     try {
-      const result = await execFileAsync(file, args, {
-        cwd: options.cwd ? this.resolveScopePath(options.cwd) : this.scopePath,
-        env: mergeEnv(this.env, options.env),
+      const result = await execFileAsync(bubblewrapPath, sandbox.args, {
+        cwd: this.workspaceRoot,
+        env: createBaselineExecEnv(),
         windowsHide: true,
         timeout: options.timeoutSeconds ? options.timeoutSeconds * 1_000 : undefined,
         signal: options.signal,
@@ -228,11 +267,95 @@ class FlueLocalCodingSandboxRuntime implements CodingSandboxRuntime {
   }
 }
 
-function mergeEnv(
+function createBubblewrapCommand(input: {
+  workspaceRoot: string;
+  cwd: string;
+  baseEnv?: Record<string, string | undefined>;
+  overrideEnv?: Record<string, string>;
+  command: string[];
+}): { args: string[] } {
+  const workspaceTarget = resolve(input.workspaceRoot);
+  const workspaceSource = realpathSync(workspaceTarget);
+  const nodeRoot = dirname(dirname(realpathSync(process.execPath)));
+  const args = [
+    '--die-with-parent',
+    '--new-session',
+    '--unshare-all',
+    '--share-net',
+    '--cap-drop',
+    'ALL',
+    '--proc',
+    '/proc',
+    '--dev',
+    '/dev',
+    '--tmpfs',
+    '/tmp',
+    '--ro-bind',
+    '/usr',
+    '/usr',
+  ];
+
+  appendSystemLinks(args);
+  appendReadOnlyEtcPaths(args);
+  appendMountParentDirectories(args, nodeRoot);
+  args.push('--ro-bind', nodeRoot, nodeRoot);
+  appendMountParentDirectories(args, workspaceTarget);
+  args.push('--bind', workspaceSource, workspaceTarget);
+
+  const environment = mergeSandboxEnvironment(
+    input.baseEnv,
+    input.overrideEnv,
+    nodeRoot,
+  );
+  appendApprovedExternalHelpers(args, environment, workspaceTarget);
+
+  args.push(
+    '--chdir',
+    input.cwd,
+    '--clearenv',
+    '--setenv',
+    'HOME',
+    '/tmp/home',
+    '--setenv',
+    'TMPDIR',
+    '/tmp',
+    '--setenv',
+    'PATH',
+    `${nodeRoot}/bin:/usr/local/bin:/usr/bin:/bin`,
+    '--setenv',
+    'LANG',
+    'C.UTF-8',
+    '--setenv',
+    'LC_ALL',
+    'C.UTF-8',
+    '--dir',
+    '/tmp/home',
+  );
+
+  for (const [key, value] of Object.entries(environment)) {
+    if (['HOME', 'TMPDIR', 'PATH', 'LANG', 'LC_ALL'].includes(key)) {
+      continue;
+    }
+    assertSafeEnvironmentEntry(key, value);
+    args.push('--setenv', key, value);
+  }
+
+  args.push('--', ...input.command);
+  return { args };
+}
+
+function mergeSandboxEnvironment(
   base: Record<string, string | undefined> | undefined,
   override: Record<string, string> | undefined,
-): NodeJS.ProcessEnv {
-  const merged = createBaselineExecEnv();
+  nodeRoot: string,
+): Record<string, string> {
+  const merged: Record<string, string> = {
+    HOME: '/tmp/home',
+    TMPDIR: '/tmp',
+    PATH: `${nodeRoot}/bin:/usr/local/bin:/usr/bin:/bin`,
+    LANG: 'C.UTF-8',
+    LC_ALL: 'C.UTF-8',
+  };
   for (const [key, value] of Object.entries(base ?? {})) {
     if (value === undefined) {
       delete merged[key];
@@ -244,6 +367,86 @@ function mergeEnv(
     merged[key] = value;
   }
   return merged;
+}
+
+function appendSystemLinks(args: string[]): void {
+  for (const path of sandboxSystemLinks) {
+    if (!existsSync(path)) {
+      continue;
+    }
+    const stats = lstatSync(path);
+    if (stats.isSymbolicLink()) {
+      args.push('--symlink', readlinkSync(path), path);
+    } else {
+      args.push('--ro-bind', path, path);
+    }
+  }
+}
+
+function appendReadOnlyEtcPaths(args: string[]): void {
+  args.push('--dir', '/etc');
+  for (const path of sandboxEtcPaths) {
+    if (existsSync(path)) {
+      args.push('--ro-bind', path, path);
+    }
+  }
+}
+
+function appendApprovedExternalHelpers(
+  args: string[],
+  environment: Record<string, string>,
+  workspaceRoot: string,
+): void {
+  const askpassPath = environment.GIT_ASKPASS;
+  if (
+    !askpassPath ||
+    !isAbsolute(askpassPath) ||
+    isInsidePath(workspaceRoot, askpassPath) ||
+    !existsSync(askpassPath)
+  ) {
+    return;
+  }
+
+  const stats = lstatSync(askpassPath);
+  if (!stats.isFile() && !stats.isSymbolicLink()) {
+    throw new Error('GIT_ASKPASS must reference a regular file.');
+  }
+  appendMountParentDirectories(args, askpassPath);
+  args.push('--ro-bind', realpathSync(askpassPath), askpassPath);
+}
+
+function appendMountParentDirectories(args: string[], targetPath: string): void {
+  const root = parse(targetPath).root;
+  const parents: string[] = [];
+  let current = dirname(targetPath);
+  while (current !== root) {
+    parents.push(current);
+    current = dirname(current);
+  }
+  for (const path of parents.reverse()) {
+    args.push('--dir', path);
+  }
+}
+
+function isInsidePath(rootPath: string, candidatePath: string): boolean {
+  const rel = relative(resolve(rootPath), resolve(candidatePath));
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
+}
+
+function assertSafeEnvironmentEntry(key: string, value: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || key.includes('\0')) {
+    throw new Error(`Invalid sandbox environment key: ${key}`);
+  }
+  if (value.includes('\0')) {
+    throw new Error(`Sandbox environment value for ${key} contains a null byte.`);
+  }
+}
+
+function resolveBubblewrapPath(): string | undefined {
+  if (process.platform !== 'linux') {
+    return undefined;
+  }
+  return bubblewrapCandidates.find((candidate) => existsSync(candidate));
 }
 
 function createBaselineExecEnv(): NodeJS.ProcessEnv {
@@ -273,19 +476,4 @@ export function normalizeRepoRelativePath(repoPath: string, path: string): strin
   const resolvedPath = assertInsideRepo(repoPath, path);
   const relativePath = relative(resolve(repoPath), resolvedPath);
   return normalizeAgentRelativePath(relativePath || '.');
-}
-
-const ABSOLUTE_PATH_RE = /(?<=^|[\s;|&])((?:\/[\w@.\-]+)+)/g;
-
-export function findAbsolutePathOutsideWorkspace(command: string, workspaceRoot: string): string | null {
-  const root = resolve(workspaceRoot);
-  for (const match of command.matchAll(ABSOLUTE_PATH_RE)) {
-    const candidate = match[1];
-    const resolved = resolve(candidate);
-    const rel = relative(root, resolved);
-    if (rel.startsWith('..')) {
-      return candidate;
-    }
-  }
-  return null;
 }

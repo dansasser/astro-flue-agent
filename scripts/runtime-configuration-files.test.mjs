@@ -183,6 +183,11 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
   )?.[0];
 
   assert.match(workflow, /- name: Create CI runtime configuration/);
+  assert.match(workflow, /- name: Install Coding Worker shell sandbox/);
+  assert.match(
+    workflow,
+    /sudo apt-get update && sudo apt-get install --yes bubblewrap/,
+  );
   assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
   assert.match(workflow, /chmod 600 sim-one\.config/);
   assert.ok(runtimeConfigStep, 'CI runtime configuration step is missing');

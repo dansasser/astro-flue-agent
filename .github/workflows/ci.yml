@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Coding Worker shell sandbox
+        run: sudo apt-get update && sudo apt-get install --yes bubblewrap
+
       - name: Create CI runtime configuration
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         env:

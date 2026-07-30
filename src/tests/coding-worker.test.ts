@@ -1575,8 +1575,21 @@ test('repo workflow tools gate branch creation through approval service', async 
 });
 
 test('repo workflow tools clone, register, and discover workspace repositories through approval service', async () => {
-  const source = createGitWorkspaceProject();
   const workspaceRoot = createTempWorkspace();
+  const sourceRepoPath = join(workspaceRoot, 'fixtures', 'source-repo');
+  mkdirSync(sourceRepoPath, { recursive: true });
+  writeExecutableProjectFiles(sourceRepoPath);
+  execFileSync('git', ['init'], { cwd: sourceRepoPath });
+  execFileSync('git', ['config', 'user.email', 'coding-worker@example.test'], {
+    cwd: sourceRepoPath,
+  });
+  execFileSync('git', ['config', 'user.name', 'Coding Worker Test'], {
+    cwd: sourceRepoPath,
+  });
+  execFileSync('git', ['add', '.'], { cwd: sourceRepoPath });
+  execFileSync('git', ['commit', '-m', 'Initial commit'], {
+    cwd: sourceRepoPath,
+  });
   const approvalService = createInMemoryCodingApprovalService();
   const repoRegistry = new InMemoryCodingRepoRegistry();
 
@@ -1591,7 +1604,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
     const blockedClone = JSON.parse(
       await clone.execute({
         taskId: 'task-clone',
-        remoteUrl: source.repoPath,
+        remoteUrl: sourceRepoPath,
         slug: 'cloned-repo',
       }),
     ) as { blocked?: boolean; request?: { id: string } };
@@ -1607,7 +1620,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
     const cloned = JSON.parse(
       await clone.execute({
         taskId: 'task-clone',
-        remoteUrl: source.repoPath,
+        remoteUrl: sourceRepoPath,
         slug: 'cloned-repo',
       }),
     ) as { status?: string; repo?: { repoRelativePath?: string } };
@@ -1621,7 +1634,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
         taskId: 'task-register',
         slug: 'cloned-alias',
         repoRelativePath: 'repos/cloned-repo',
-        remoteUrl: source.repoPath,
+        remoteUrl: sourceRepoPath,
       }),
     ) as { blocked?: boolean; request?: { id: string } };
     assert.equal(blockedRegister.blocked, true);
@@ -1638,7 +1651,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
         taskId: 'task-register',
         slug: 'cloned-alias',
         repoRelativePath: 'repos/cloned-repo',
-        remoteUrl: source.repoPath,
+        remoteUrl: sourceRepoPath,
       }),
     ) as { status?: string; repo?: { slug?: string } };
     assert.equal(registered.status, 'registered');
@@ -1655,7 +1668,6 @@ test('repo workflow tools clone, register, and discover workspace repositories t
       true,
     );
   } finally {
-    rmrf(source.workspaceRoot);
     rmrf(workspaceRoot);
   }
 });
@@ -2846,7 +2858,8 @@ test('coding worker end-to-end fixes bug, commits, pushes branch, and prepares a
 
 function createGitWorkspaceProjectWithRemote(): { project: TempWorkspaceProject; remotePath: string } {
   const project = createGitWorkspaceProject();
-  const remotePath = mkdtempSync(join(tmpdir(), 'coding-worker-remote-'));
+  const remotePath = join(project.workspaceRoot, 'fixtures', 'origin.git');
+  mkdirSync(remotePath, { recursive: true });
   execFileSync('git', ['init', '--bare'], { cwd: remotePath });
   execFileSync('git', ['remote', 'add', 'origin', remotePath], { cwd: project.repoPath });
   return { project, remotePath };

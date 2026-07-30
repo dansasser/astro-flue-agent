@@ -88,6 +88,61 @@ test('capability lifecycle validates and manages all four capability kinds', () 
   }
 });
 
+test('authenticated CLI adds preserve requested activation while agent executable adds stay disabled', () => {
+  const fixture = createFixture();
+  try {
+    const cliSource = createSourceFixture(
+      fixture.root,
+      'tool',
+      'cli-enabled-tool',
+    );
+    const cliAdded = fixture.service.add({
+      kind: 'tool',
+      id: 'cli-enabled-tool',
+      name: 'CLI enabled tool',
+      description: '',
+      source: 'local',
+      sourceRef: cliSource,
+      version: 'fixture-v1',
+      requestedEnabled: true,
+      installedBy: 'cli',
+    });
+    assert.equal(cliAdded.record?.enabled, true);
+    assert.equal(
+      existsSync(
+        join(
+          fixture.runtimeRoot,
+          'capabilities',
+          'tools',
+          'cli-enabled-tool',
+          'index.mjs',
+        ),
+      ),
+      true,
+    );
+
+    const agentSource = createSourceFixture(
+      fixture.root,
+      'tool',
+      'agent-disabled-tool',
+    );
+    const agentAdded = fixture.service.add({
+      kind: 'tool',
+      id: 'agent-disabled-tool',
+      name: 'Agent disabled tool',
+      description: '',
+      source: 'local',
+      sourceRef: agentSource,
+      version: 'fixture-v1',
+      requestedEnabled: true,
+      installedBy: 'agent',
+    });
+    assert.equal(agentAdded.record?.enabled, false);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test('capability lifecycle rejects invalid contracts and secret values', () => {
   const fixture = createFixture();
   try {

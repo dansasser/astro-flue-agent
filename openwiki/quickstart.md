@@ -62,6 +62,8 @@ implemented runtime contracts.
 ## Common developer commands
 
 Use `pnpm` with Node `>=22.18.0` as declared in `package.json`.
+Install Bubblewrap on Linux before running Coding Worker shell, Git, or
+verification tests.
 
 ```sh
 pnpm install

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -96,6 +97,28 @@ test('canonical runtime configuration rejects unknown and invalid keys without e
         /OLLAMA_WEB_SEARCH_TIMEOUT_MS must be a positive integer/.test(error.message) &&
         !error.message.includes('not-a-number'),
     );
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('canonical runtime configuration rejects files readable by other users', () => {
+  if (process.platform === 'win32') {
+    return;
+  }
+  const fixture = mkdtempSync(join(tmpdir(), 'sim-one-runtime-permissions-'));
+  const configPath = join(fixture, 'sim-one.config');
+
+  try {
+    writeFileSync(configPath, 'OLLAMA_API_KEY=must-not-load\n', { mode: 0o600 });
+    chmodSync(configPath, 0o644);
+    const targetEnv: Record<string, string | undefined> = {};
+
+    assert.throws(
+      () => applyRuntimeEnvironmentFile(configPath, targetEnv),
+      /must use owner-only permissions \(mode 0600\)/,
+    );
+    assert.equal(targetEnv.OLLAMA_API_KEY, undefined);
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }

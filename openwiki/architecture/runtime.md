@@ -63,12 +63,22 @@ workspace-relative paths remain valid when the complete `.gorombo` tree is
 relocated. Neither Flue's virtual filesystem nor the source or packaged persona
 workspace is a mutable product workspace.
 
+Flue's local session owns the Coding Worker file API. Shell, Git, and
+verification processes additionally run through Bubblewrap on Linux. The
+process namespace mounts only the Coding Worker workspace read-write, the
+active Node and system runtime read-only, and a private temporary directory.
+Owner runtime state outside the workspace is absent from that namespace. An
+authenticated private Git child may additionally receive one secret-free
+read-only askpass helper file and its command-scoped credential environment.
+Execution fails closed if Bubblewrap is unavailable.
+
 `src/core/config/runtime-environment.ts` is the typed registry for every
 supported environment-style setting. `src/app.ts` imports its bootstrap first,
 which loads `<runtime-root>/sim-one.config` before Flue or any provider,
 connector, worker, store, schedule, or tool consumes a registered key. The
 tracked `sim-one.config.example` is the complete secret-free contract; public
-packages never contain the owner file.
+packages never contain the owner file. POSIX startup accepts only a regular
+current-user-owned `sim-one.config` with exact mode `0600`.
 
 When a module executes from inside that runtime root, package-owned persona,
 embedding, image-catalog, WASM, language-server, and Node dependency assets win

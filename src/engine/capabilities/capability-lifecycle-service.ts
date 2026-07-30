@@ -222,7 +222,9 @@ export class CapabilityLifecycleService {
     const record = this.#createRecord({
       ...input,
       requestedEnabled:
-        input.kind === 'skill' ? input.requestedEnabled : false,
+        input.kind === 'skill' || input.installedBy !== 'agent'
+          ? input.requestedEnabled
+          : false,
     });
     const staged = sourceBackedKinds.has(record.kind) ? this.#stage(record) : undefined;
     let inserted = false;

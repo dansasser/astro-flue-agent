@@ -7,6 +7,7 @@ This repository is a pnpm workspace with a Node runtime and a Rust/WASM memory c
 Typical developer setup:
 
 ```sh
+sudo apt-get install bubblewrap
 pnpm install
 pnpm run fetch-embedding-model
 pnpm run wasm:build
@@ -40,7 +41,8 @@ pnpm run build:all        # build runtime, TUI, CLI, and validate product comman
 
 Use `sim-one.config.example` for the supported-key shape. The ignored
 `sim-one.config` is owner-only runtime state; never print, document, or commit
-its values.
+its values. POSIX startup rejects the file unless it is a regular file owned by
+the current user with exact mode `0600`.
 
 ## Test commands
 

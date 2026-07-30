@@ -25,7 +25,10 @@ sh sim-one.sh
 
 Do not run those commands until the corresponding GitHub release assets are
 published. Node.js, npm, pnpm, Rust, and `wasm-pack` are not required for the
-packaged installation.
+packaged installation. Coding Worker shell, Git, and verification commands
+require Bubblewrap on Linux; those commands fail closed when Bubblewrap is
+unavailable. The release installer must verify or install that host dependency
+before enabling coding execution.
 
 ## Installed Files
 
@@ -60,7 +63,8 @@ Source builds require:
 - Node.js 22.18 or newer;
 - pnpm 10;
 - Rust stable with the `wasm32-unknown-unknown` target;
-- `wasm-pack` 0.13.1.
+- `wasm-pack` 0.13.1;
+- Bubblewrap for Coding Worker shell, Git, and verification commands.
 
 Clone the repository:
 

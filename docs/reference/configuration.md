@@ -31,8 +31,10 @@ loads both files at startup.
 The bootstrap clears inherited values for those keys before loading the file,
 so a caller shell cannot silently override the owning runtime. Unknown,
 duplicate, or invalid entries fail startup with key-level diagnostics that do
-not include values. Missing configuration reports both the required owner path
-and its adjacent example path.
+not include values. On POSIX hosts, a non-regular file, a file not owned by the
+current user, or permissions other than `0600` fail startup before any value is
+loaded. Missing configuration reports both the required owner path and its
+adjacent example path.
 
 To migrate an existing environment file without printing values:
 

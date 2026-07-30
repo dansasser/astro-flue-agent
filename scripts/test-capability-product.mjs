@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -65,6 +66,7 @@ try {
     join(runtimeRoot, 'sim-one.config.example'),
   );
   cpSync(sourceEnvironmentExamplePath, join(runtimeRoot, 'sim-one.config'));
+  chmodSync(join(runtimeRoot, 'sim-one.config'), 0o600);
 
   const sources = {
     skill: createSource('skill', 'product-skill'),
@@ -144,6 +146,20 @@ try {
     assertProtocolValidation(added);
     assertRecord(added, kind, `product-${kind}`, false);
   }
+  const cliEnabledTool = runCli([
+    'tool',
+    'add',
+    sources.tool,
+    'product-cli-enabled-tool',
+    'Product CLI enabled tool',
+    '--enable',
+    '--version',
+    'fixture-v1',
+  ], env);
+  assertOperation(cliEnabledTool, 'add');
+  assertProtocolValidation(cliEnabledTool);
+  assertRecord(cliEnabledTool, 'tool', 'product-cli-enabled-tool', true);
+  assertMaterialized('tool', 'product-cli-enabled-tool');
   const addedMcp = runCli([
     'mcp',
     'add',
@@ -245,6 +261,13 @@ try {
       }
     }
   }
+  const removedCliEnabledTool = runCli(
+    ['tool', 'remove', 'product-cli-enabled-tool'],
+    env,
+  );
+  assertOperation(removedCliEnabledTool, 'remove');
+  assertProtocolValidation(removedCliEnabledTool);
+  assertNotMaterialized('tool', 'product-cli-enabled-tool');
 
   console.log(
     '[capability-product] PASS validation and lifecycle operations used the relocated packaged CLI with protocol evidence.',
