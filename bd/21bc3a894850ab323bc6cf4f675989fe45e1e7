@@ -1,0 +1,32 @@
+src/engine/workers/coding-worker/github/github-mcp.ts
+  s_a81fff26d52223::t_08c712901b21df 253,256,793-806
+  s_a81fff26d52223::t_1638c9c4232d2e 807
+src/tests/capability-lifecycle-service.test.ts
+  s_a81fff26d52223::t_bb309f9361e274 305-335
+src/tests/github-mcp.test.ts
+  s_a81fff26d52223::t_bb309f9361e274 126-131,149-165
+  s_a81fff26d52223::t_fdcd79f03f4252 166-167
+src/engine/capabilities/capability-package-security.ts
+  s_a81fff26d52223::t_9b53d189feed0b 2,7,27-46,54,56-64,67-82,105-108
+  s_a81fff26d52223::t_6d866f05dc2a27 109
+docs/architecture/capability-system.md
+  s_a81fff26d52223::t_388544b5194c82 217-218
+docs/architecture/github-auth-system.md
+  s_a81fff26d52223::t_388544b5194c82 85-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "bd21bc3a894850ab323bc6cf4f675989fe45e1e7",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
