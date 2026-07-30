@@ -1,0 +1,56 @@
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_157cee6dabc056 3-11,2057-2060,2065-2075,2077-2078,2081-2101,2103,2106-2109
+  s_a81fff26d52223::t_13f08772162c43 2104-2105
+  s_a81fff26d52223::t_643e2e83596d12 2061-2064,2076,2079-2080,2102
+  s_a81fff26d52223::t_9b189d743be8df 2110-2112
+src/tests/capability-manager.test.ts
+  s_a81fff26d52223::t_157cee6dabc056 428-511
+src/engine/workers/capability-manager/capability-manager-tools.ts
+  s_a81fff26d52223::t_690a12ad03ca2c 176,222,337,382-384,412-429,431
+  s_a81fff26d52223::t_63db23c307a7a6 430
+  s_a81fff26d52223::t_4e71475ad6f8c7 432
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_20b65bc606251f 287
+src/tests/github-mcp.test.ts
+  s_a81fff26d52223::t_157cee6dabc056 106,128,133-138,171,178,183-186,298,300-303,305-308
+src/engine/workers/coding-worker/tools/github-credential-utils.ts
+  s_a81fff26d52223::t_20b65bc606251f 28-32,46-50,57-69
+  s_a81fff26d52223::t_690a12ad03ca2c 2,95,98-99,102-103,106
+  s_a81fff26d52223::t_5174c72da8e075 70-71
+docs/architecture/worker-system.md
+  s_a81fff26d52223::t_20b65bc606251f 93-96
+scripts/runtime-configuration-inventory.test.mjs
+  s_a81fff26d52223::t_82c40d6bf9521f 46
+docs/architecture/capability-system.md
+  s_a81fff26d52223::t_20b65bc606251f 214-216
+src/engine/workers/coding-worker/github/github-pat.ts
+  s_a81fff26d52223::t_690a12ad03ca2c 9,36,42-43,52,57,62-64
+  s_a81fff26d52223::t_20b65bc606251f 39
+docs/architecture/github-auth-system.md
+  s_a81fff26d52223::t_20b65bc606251f 72-79,95-100
+src/engine/workers/coding-worker/github/github-mcp.ts
+  s_a81fff26d52223::t_690a12ad03ca2c 21,772,778,782-785
+  s_a81fff26d52223::t_20b65bc606251f 24-27,519-521
+src/engine/workers/coding-worker/tools/sandbox-runtime.ts
+  s_a81fff26d52223::t_690a12ad03ca2c 29,486-500,502-504,506,508-510,512-513
+src/tests/github-private-clone.test.ts
+  s_a81fff26d52223::t_1fbad63b9ff9f9 36,58,61-62,65,96,121-126
+src/engine/workers/coding-worker/runtime-capabilities.ts
+  s_a81fff26d52223::t_20b65bc606251f 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "85c8560177cc71676986209455a61137be94c69d",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
