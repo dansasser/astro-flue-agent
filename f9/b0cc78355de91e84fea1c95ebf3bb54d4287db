@@ -1,0 +1,45 @@
+docs/architecture/README.md
+  s_2142aae3f28ccc::t_8cde9fb7036694 22
+docs/architecture/decisions/d1-separate-project-and-task-graphs.md
+  s_2142aae3f28ccc::t_ac135255c1ebbf 1-57
+docs/architecture/decisions/d2-memory-helper-task-runs.md
+  s_2142aae3f28ccc::t_ad87892687d8cc 1-63
+docs/architecture/decisions/d3-flue-native-task-graph-runtime.md
+  s_2142aae3f28ccc::t_d542fc88be8ee6 1-64
+docs/architecture/decisions/d4-sealed-node-context.md
+  s_2142aae3f28ccc::t_12faf1f47435e7 1-64
+docs/architecture/decisions/d5-shared-task-graph-engine.md
+  s_2142aae3f28ccc::t_03c0e7aeb62373 1-60
+docs/architecture/decisions/graph-backup/development-graph.agent.json
+  s_2142aae3f28ccc::t_19e954cdcb2d20 1-8794
+docs/architecture/decisions/graph-backup/development-graph.agent.md
+  s_2142aae3f28ccc::t_636d8692f225d9 1-1607
+docs/architecture/gorombo-flue-map.md
+  s_2142aae3f28ccc::t_2b2ce16a9b9a24 59-75,265-270,297-302
+docs/architecture/memory-system.md
+  s_2142aae3f28ccc::t_c4aaaca2b502d2 7-18
+docs/architecture/orchestrator-flow.md
+  s_2142aae3f28ccc::t_94057b02ad7e96 114-120
+docs/architecture/overview.md
+  s_2142aae3f28ccc::t_ab2f7a776eef56 148-162
+docs/architecture/task-lifecycle-graphs.md
+  s_2142aae3f28ccc::t_7b33f9010fdc6c 1-361
+docs/architecture/worker-system.md
+  s_2142aae3f28ccc::t_db4ac6e9ab3777 130-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.19",
+  "base_commit_sha": "f9b0cc78355de91e84fea1c95ebf3bb54d4287db",
+  "prompts": {},
+  "sessions": {
+    "s_2142aae3f28ccc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9feb65b7-65f4-42fd-831b-2b359ccef950",
+        "model": "glm-5.2"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
