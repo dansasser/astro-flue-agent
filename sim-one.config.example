@@ -1,0 +1,137 @@
+# SIM-ONE Alpha runtime environment configuration
+# Copy this file to sim-one.config and keep that owner file private.
+# Secret fields are intentionally blank. Relative paths resolve from the runtime root.
+
+# Gateway
+# secret; required for non-loopback clients; default: unset
+API_SECRET=
+
+# Ollama Cloud
+# secrets; required when an Ollama Cloud model or web search is selected
+OLLAMA_API_KEY=
+OLLAMA_CLOUD_API_KEY=
+# URL; default: https://ollama.com/v1
+OLLAMA_CLOUD_BASE_URL=https://ollama.com/v1
+
+# Ollama Local
+# optional secret; default: unset
+OLLAMA_LOCAL_API_KEY=
+# URL; default: http://localhost:11434/v1
+OLLAMA_LOCAL_BASE_URL=http://localhost:11434/v1
+
+# Codex Brain
+# secret and URL; required when the codex-brain model card is selected
+CODEX_BRAIN_LOCAL_API_KEY=
+CODEX_BRAIN_LOCAL_API_URL=
+
+# Web search and retrieval
+# enum: ollama; default: ollama
+GOROMBO_WEB_SEARCH_PROVIDER=ollama
+# URL; default: https://ollama.com
+OLLAMA_WEB_SEARCH_BASE_URL=https://ollama.com
+# positive integer milliseconds; default: 8000
+OLLAMA_WEB_SEARCH_TIMEOUT_MS=8000
+# positive integer tokens; default: 4000
+GOROMBO_RAG_MAX_CONTEXT_TOKENS=4000
+# non-negative integer; default: 1
+GOROMBO_RAG_WEB_FETCH_TOP_K=1
+
+# Research policy
+# enum: quick, standard, deep; default: standard
+GOROMBO_RESEARCH_DEPTH=standard
+# enum: fresh, recent, any; default: derived from request and depth
+GOROMBO_RESEARCH_FRESHNESS=
+# integers; defaults are derived from research depth
+GOROMBO_RESEARCH_MAX_QUERIES=
+GOROMBO_RESEARCH_MAX_FETCHES=
+GOROMBO_RESEARCH_MAX_CONTEXT_TOKENS=
+GOROMBO_RESEARCH_LIMIT=
+# enum: auto, always, never; default: derived from research depth
+GOROMBO_RESEARCH_WEB_FETCH=
+GOROMBO_RESEARCH_MIN_SOURCES=
+GOROMBO_RESEARCH_MAX_ITERATIONS=
+# non-negative integer milliseconds; defaults are derived from freshness
+GOROMBO_RESEARCH_SEARCH_TTL_MS=
+GOROMBO_RESEARCH_PAGE_TTL_MS=
+# enum: sqlite, memory; default: sqlite
+GOROMBO_RESEARCH_CACHE=sqlite
+# runtime-relative path; default: db/research-cache.sqlite
+GOROMBO_RESEARCH_CACHE_DB=db/research-cache.sqlite
+
+# Embeddings
+# runtime-relative path; default: packaged all-MiniLM-L6-v2 model
+GOROMBO_EMBEDDING_MODEL_PATH=
+# positive integer milliseconds; default: 30000
+GOROMBO_EMBEDDING_TIMEOUT_MS=30000
+
+# Structured memory
+# enum: sqlite, lancedb, memory; default: sqlite
+GOROMBO_MEMORY_BACKEND=sqlite
+# runtime-relative paths; defaults come from the runtime package and gorombo.config.json
+GOROMBO_MEMORY_SQLITE_PATH=
+GOROMBO_MEMORY_WASM_MODULE_PATH=
+# positive/non-negative integers; defaults: 10, 1500, 30, 365, 5
+GOROMBO_MEMORY_DEFAULT_LIMIT=
+GOROMBO_MEMORY_MAX_CONTEXT_TOKENS=
+GOROMBO_MEMORY_RETENTION_DAYS=
+GOROMBO_MEMORY_ARCHIVE_DELETE_DAYS=
+GOROMBO_MEMORY_MAX_CHECKLIST_DEPTH=
+
+# Schedules
+# boolean; default: false
+GOROMBO_SKIP_SCHEDULES=
+# runtime-relative path; default: db/schedules.sqlite
+GOROMBO_SCHEDULES_DATABASE_PATH=
+# integers; defaults: 8, 200, 3, 60
+GOROMBO_SCHEDULES_MAX_CONCURRENT_RUNS=
+GOROMBO_SCHEDULES_KEEP_RUNS=
+GOROMBO_SCHEDULES_MAX_ATTEMPTS=
+GOROMBO_SCHEDULES_SHUTDOWN_GRACE_SECONDS=
+# boolean; default: true
+GOROMBO_SCHEDULES_PROVIDER_PREFLIGHT=
+# duration; default: 24h
+GOROMBO_SCHEDULES_SESSION_RETENTION=
+
+# Telegram
+# secrets; required when the corresponding Telegram endpoint is enabled
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET_TOKEN=
+# comma-separated IDs
+TELEGRAM_APPROVED_USER_IDS=
+TELEGRAM_ADMIN_USER_IDS=
+# optional connector matching
+TELEGRAM_BOT_USERNAME=
+TELEGRAM_MENTION_PATTERNS=
+
+# GitHub
+# secret; fine-grained PAT required for Coding Worker GitHub operations
+GITHUB_PERSONAL_ACCESS_TOKEN=
+
+# Runpod image generation
+# secret; required when Runpod image generation is requested
+RUNPOD_API_KEY=
+# optional URL; default: Runpod SDK default
+RUNPOD_API_BASE_URL=
+# runtime-relative paths; defaults: packaged catalog and workspace/images
+RUNPOD_IMAGE_MODELS_PATH=
+GOROMBO_IMAGE_OUTPUT_DIR=
+
+# Runtime storage and workspace
+# runtime-relative paths; blank values use packaged defaults
+GOROMBO_APPROVAL_ROOT=
+GOROMBO_CAPABILITY_DB_PATH=
+GOROMBO_CAPABILITIES_DIR=
+GOROMBO_PROTOCOL_DB_PATH=
+GOROMBO_WORKSPACE_ROOT=
+# string; default: api
+GOROMBO_KNOWLEDGE_DEFAULT_ACTOR_ID=
+
+# Runtime MCP token slots
+# secrets; configure only the slot selected by an MCP capability record
+GOROMBO_MCP_TOKEN=
+MCP_AUTH_TOKEN=
+MCP_TOKEN=
+
+# TUI diagnostics
+# runtime-relative path; default: logs/sim-one-ratatui.jsonl
+SIM_ONE_TUI_LOG_PATH=

@@ -14,6 +14,7 @@ export interface KnowledgeDocIndexerOptions {
 
 const defaultInclude = [
   'docs/architecture/**/*.md',
+  'workspace/**/*.md',
   'src/workspace/**/*.md',
   'README.md',
 ];

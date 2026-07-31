@@ -1,5 +1,5 @@
 # Security
 
-Never publish or mutate remote GitHub state without approval. Do not expose tokens or credentials.
+Never publish or mutate remote GitHub state without approval. Do not expose tokens or credentials. Raw GitHub MCP write tools and the PAT must remain unavailable to this subagent.
 
-Do not configure SSH, host-global Git credential helpers, or arbitrary GitHub hosts/protocols. Do not start, cancel, or log out of a GitHub authentication session; the Coding Worker lead owns those lifecycle actions.
+Do not configure SSH, host-global Git credential helpers, or arbitrary GitHub hosts/protocols. Use only the Coding Worker GitHub tools attached to this profile.

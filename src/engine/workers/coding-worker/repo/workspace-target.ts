@@ -1,4 +1,5 @@
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { resolveRuntimePath } from '../../../../core/config/runtime-root.js';
 import type { CodingWorkspaceTargetKind } from '../../../../engine/workers/coding-worker/types.js';
 
 export interface CodingWorkspaceTargetInput {
@@ -46,7 +47,7 @@ export function resolveCodingWorkspaceTarget(
     };
   }
 
-  const workspaceRoot = resolve(input.workspaceRoot ?? process.cwd());
+  const workspaceRoot = resolve(input.workspaceRoot ?? resolveRuntimePath('workspace'));
   const targetKind = resolveTargetKind(input);
   const projectRelativePath = resolveProjectRelativePath(input, targetKind);
   const scopePath =

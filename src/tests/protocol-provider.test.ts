@@ -109,6 +109,73 @@ test('SqliteProtocolProvider matches protocols by selector', async () => {
   }
 });
 
+test('runtime configuration protocol governs chat requests and routes them through the Coding Worker', async () => {
+  const dbPath = createTempDbPath();
+  const provider = new SqliteProtocolProvider(dbPath);
+
+  try {
+    const chatEvent = makeEvent({
+      text: 'Add the GitHub PAT I supplied to SIM-ONE configuration.',
+    });
+    const bundle = await provider.loadApplicable(chatEvent);
+    const protocol = bundle.protocols.find(
+      (entry) => entry.id === 'chat.runtime-configuration-routing',
+    );
+
+    assert.ok(protocol);
+    assert.equal(protocol.scope, 'base');
+    assert.equal(protocol.source, 'seed');
+    assert.deepEqual(protocol.appliesTo, { messageKind: 'chat.message' });
+    assert.ok(
+      protocol.rules.some((rule) =>
+        rule.includes('coding_runtime_config_update'),
+      ),
+    );
+    assert.ok(
+      protocol.rules.some((rule) =>
+        rule.includes('must not read existing configured values'),
+      ),
+    );
+  } finally {
+    provider.close();
+    cleanup(dbPath);
+  }
+});
+
+test('capability lifecycle protocol routes validation and lifecycle ownership', async () => {
+  const dbPath = createTempDbPath();
+  const provider = new SqliteProtocolProvider(dbPath);
+  try {
+    const bundle = await provider.loadApplicable(
+      makeEvent({
+        context: {
+          workflow: 'capability-management',
+          task: 'capability-validation',
+        },
+      }),
+    );
+    const protocol = bundle.protocols.find(
+      (entry) => entry.id === 'capabilities.lifecycle-routing',
+    );
+
+    assert.ok(protocol);
+    assert.ok(
+      protocol.rules.some((rule) => rule.includes('capability-manager worker')),
+    );
+    assert.ok(
+      protocol.rules.some((rule) =>
+        rule.includes('validation, security checks, tests, packaging, and handoff'),
+      ),
+    );
+    assert.ok(
+      protocol.rules.some((rule) => rule.includes('Record applied protocol ids and rules')),
+    );
+  } finally {
+    provider.close();
+    cleanup(dbPath);
+  }
+});
+
 test('SqliteProtocolProvider filters non-matching selectors', async () => {
   const dbPath = createTempDbPath();
   const provider = new SqliteProtocolProvider(dbPath);
@@ -118,7 +185,20 @@ test('SqliteProtocolProvider filters non-matching selectors', async () => {
     const bundle = await provider.loadApplicable(chatEvent);
 
     assert.ok(bundle.protocols.some((p) => p.id === 'chat.basic-safe-response'));
+    assert.ok(
+      bundle.protocols.some(
+        (p) => p.id === 'chat.runtime-configuration-routing',
+      ),
+    );
     assert.ok(!bundle.protocols.some((p) => p.id.startsWith('coding.')));
+
+    const workflowEvent = makeEvent({ kind: 'workflow.event' });
+    const workflowBundle = await provider.loadApplicable(workflowEvent);
+    assert.ok(
+      !workflowBundle.protocols.some(
+        (p) => p.id === 'chat.runtime-configuration-routing',
+      ),
+    );
   } finally {
     provider.close();
     cleanup(dbPath);

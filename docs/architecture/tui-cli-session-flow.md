@@ -71,7 +71,8 @@ The TUI is a connector surface, not an agent runtime. It must not own orchestrat
 ```text
 pnpm run build
   -> .gorombo/sim-one-alpha/server.mjs
-  -> .gorombo/sim-one-alpha/gorombo.config.json
+  -> .gorombo/sim-one-alpha/node_modules/
+  -> .gorombo/gorombo.config.json
   -> .gorombo/sim-one-alpha/memory/gorombo_memory.*
 
 pnpm run build:tui:ratatui
@@ -125,12 +126,20 @@ Ratatui binary starts
 -> probe /health
 -> if healthy, connect without spawning a server
 -> if unhealthy, resolve packaged server.mjs
--> start Node with PORT and optional --env-file
+-> start Node with PORT and GOROMBO_RUNTIME_ROOT
 -> wait for /health
 -> enter terminal UI
 ```
 
-When it starts the packaged server, the launcher sets the child process cwd to the owner of the `.gorombo` runtime tree. This keeps runtime data and packaged artifacts resolving from the product root even if the user launches the binary from another directory.
+When it starts the packaged server, the launcher derives the owner of the
+`.gorombo` runtime tree from the executable and passes the absolute
+`GOROMBO_RUNTIME_ROOT`. The Node bootstrap loads the root
+`sim-one.config` before Flue, providers, connectors, workers, or other
+configuration consumers initialize. Runtime state and packaged artifacts
+therefore stay with the product when the tree is moved or the command is
+launched from another directory. The server resolves its external Node
+packages from the moved `sim-one-alpha/node_modules/` tree rather than a source
+checkout.
 
 The launcher only stops a server child that it started. It does not stop a gateway that was already running.
 

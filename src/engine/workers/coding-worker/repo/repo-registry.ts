@@ -1,5 +1,5 @@
 ﻿import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 export interface CodingRegisteredRepo {
   slug: string;
@@ -41,9 +41,13 @@ const fileMutexRegistry = new Map<string, AsyncMutex>();
 export class JsonFileCodingRepoRegistry implements CodingRepoRegistry {
   constructor(private readonly filePath: string) {}
 
+  static atStateRoot(stateRoot: string): JsonFileCodingRepoRegistry {
+    return new JsonFileCodingRepoRegistry(join(stateRoot, 'repos.json'));
+  }
+
   static atWorkspaceRoot(workspaceRoot: string): JsonFileCodingRepoRegistry {
-    return new JsonFileCodingRepoRegistry(
-      join(workspaceRoot, '.gorombo', 'coding-worker', 'repos.json'),
+    return JsonFileCodingRepoRegistry.atStateRoot(
+      compatibilityStateRootForWorkspace(workspaceRoot),
     );
   }
 
@@ -170,4 +174,12 @@ function isMissingFileError(error: unknown): boolean {
       'code' in error &&
       (error as { code?: unknown }).code === 'ENOENT',
   );
+}
+
+function compatibilityStateRootForWorkspace(workspaceRoot: string): string {
+  const workspaceOwner = dirname(resolve(workspaceRoot));
+  const runtimeRoot = basename(workspaceOwner) === '.gorombo'
+    ? workspaceOwner
+    : join(workspaceOwner, '.gorombo');
+  return join(runtimeRoot, 'coding-worker');
 }

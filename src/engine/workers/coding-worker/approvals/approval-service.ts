@@ -45,8 +45,8 @@ export function createInMemoryCodingApprovalService(
   return new DefaultCodingApprovalService(store);
 }
 
-export function createFileCodingApprovalService(workspaceRoot: string): CodingApprovalService {
-  return new DefaultCodingApprovalService(JsonFileCodingApprovalStore.atWorkspaceRoot(workspaceRoot));
+export function createFileCodingApprovalService(stateRoot: string): CodingApprovalService {
+  return new DefaultCodingApprovalService(JsonFileCodingApprovalStore.atStateRoot(stateRoot));
 }
 
 class DefaultCodingApprovalService implements CodingApprovalService {

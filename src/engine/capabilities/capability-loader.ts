@@ -1,5 +1,10 @@
-import { homedir } from 'node:os';
+import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../core/config/runtime-root.js';
 import type { CapabilityKind, CapabilityRecord, CapabilityStore } from '../../engine/capabilities/types.js';
 
 export interface LoadedUserCapabilities {
@@ -11,6 +16,22 @@ export interface LoadedUserCapabilities {
 
 export interface CapabilityLoaderOptions {
   store: CapabilityStore;
+}
+
+export interface PromotedCapabilityLoaderOptions
+  extends CapabilityLoaderOptions {
+  env?: Record<string, unknown>;
+}
+
+export interface CapabilityLoadFailure {
+  id: string;
+  kind: Exclude<CapabilityKind, 'mcp'>;
+  error: string;
+}
+
+export interface LoadedPromotedUserCapabilities
+  extends LoadedUserCapabilities {
+  failures: CapabilityLoadFailure[];
 }
 
 export function loadUserCapabilities(options: CapabilityLoaderOptions): LoadedUserCapabilities {
@@ -25,16 +46,45 @@ export function loadUserCapabilities(options: CapabilityLoaderOptions): LoadedUs
   };
 }
 
+export function loadPromotedUserCapabilities(
+  options: PromotedCapabilityLoaderOptions,
+): LoadedPromotedUserCapabilities {
+  const capabilities = loadUserCapabilities(options);
+  const env = options.env ?? process.env;
+  const failures: CapabilityLoadFailure[] = [];
+  const retainPromoted =
+    (kind: Exclude<CapabilityKind, 'mcp'>) =>
+    (record: CapabilityRecord): boolean => {
+      if (existsSync(resolveCapabilityPath(env, kind, record.id))) {
+        return true;
+      }
+      failures.push({
+        id: record.id,
+        kind,
+        error: 'Promoted capability package is missing.',
+      });
+      return false;
+    };
+
+  return {
+    skills: capabilities.skills.filter(retainPromoted('skill')),
+    tools: capabilities.tools.filter(retainPromoted('tool')),
+    workers: capabilities.workers.filter(retainPromoted('worker')),
+    mcp: capabilities.mcp,
+    failures,
+  };
+}
+
 export function resolveCapabilitiesDir(env: Record<string, unknown> = process.env): string {
   const configured =
     readEnv(env, 'GOROMBO_CAPABILITIES_DIR') ??
     readEnv(env, 'GOROMBO_CAPABILITY_DIR');
 
   if (configured) {
-    return isAbsolute(configured) ? configured : resolve(process.cwd(), configured);
+    return resolveRuntimePath(configured, { env });
   }
 
-  return resolve(homedir(), '.gorombo', 'capabilities');
+  return createGoromboRuntimePaths(resolveGoromboRuntimeRoot({ env })).capabilities;
 }
 
 export function resolveCapabilityPath(

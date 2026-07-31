@@ -1,7 +1,9 @@
 import { spawn } from 'node:child_process';
 import {
   chmodSync,
+  cpSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -9,16 +11,27 @@ import {
 } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
+import { parseEnv } from 'node:util';
+import { findExternalDependencyLinks } from './portable-node-modules.mjs';
 import { acquireProductArtifactLock } from './product-artifact-lock.mjs';
+import { createSanitizedRuntimeEnvironment } from './runtime-configuration-files.mjs';
 
-const serverDir = '.gorombo/sim-one-alpha';
-const serverPath = join(serverDir, 'server.mjs');
+const sourceProjectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const sourceRuntimeRoot = join(sourceProjectRoot, '.gorombo');
+const sourceServerPath = join(sourceRuntimeRoot, 'sim-one-alpha', 'server.mjs');
 const tuiBinaryName = process.platform === 'win32' ? 'sim-one-ratatui-tui.exe' : 'sim-one-ratatui-tui';
-const tuiPath = join('.gorombo', 'sim-one-ratatui', tuiBinaryName);
+const sourceTuiPath = join(sourceRuntimeRoot, 'sim-one-ratatui', tuiBinaryName);
 const simOneBinaryName = process.platform === 'win32' ? 'sim-one.cmd' : 'sim-one';
-const simOnePath = join('.gorombo', 'sim-one-cli', simOneBinaryName);
+const sourceSimOnePath = join(sourceRuntimeRoot, 'sim-one-cli', simOneBinaryName);
+const sourceConfigPath = join(sourceRuntimeRoot, 'gorombo.config.json');
+const sourceEnvironmentConfigPath = join(sourceRuntimeRoot, 'sim-one.config');
+const sourceEnvironmentExamplePath = join(
+  sourceRuntimeRoot,
+  'sim-one.config.example',
+);
 const transcriptFixture = {
   greeting: 'PACKAGED_SAVED_GREETING',
   promptLineOne: 'PACKAGED_VISIBLE_PROMPT_LINE_ONE',
@@ -33,71 +46,145 @@ const transcriptFixture = {
   hiddenSessionCommand: '/rename PACKAGED_PRE_LLM_COMMAND',
 };
 
-if (!existsSync(serverPath)) {
-  throw new Error(`${serverPath} does not exist. Run pnpm run build before the Ratatui product smoke test.`);
+if (!existsSync(sourceServerPath)) {
+  throw new Error(`${sourceServerPath} does not exist. Run pnpm run build before the Ratatui product smoke test.`);
 }
 
-if (!existsSync(tuiPath)) {
-  throw new Error(`${tuiPath} does not exist. Run pnpm run build:tui:ratatui before the Ratatui product smoke test.`);
+if (!existsSync(sourceTuiPath)) {
+  throw new Error(`${sourceTuiPath} does not exist. Run pnpm run build:tui:ratatui before the Ratatui product smoke test.`);
 }
 
-if (!existsSync(simOnePath)) {
-  throw new Error(`${simOnePath} does not exist. Run pnpm run build:cli before the Ratatui product smoke test.`);
+if (!existsSync(sourceSimOnePath)) {
+  throw new Error(`${sourceSimOnePath} does not exist. Run pnpm run build:cli before the Ratatui product smoke test.`);
+}
+
+if (!existsSync(sourceConfigPath)) {
+  throw new Error(`${sourceConfigPath} does not exist. Run pnpm run build before the Ratatui product smoke test.`);
+}
+if (!existsSync(sourceEnvironmentConfigPath)) {
+  throw new Error(
+    `${sourceEnvironmentConfigPath} does not exist. Build after creating sim-one.config.`,
+  );
+}
+if (!existsSync(sourceEnvironmentExamplePath)) {
+  throw new Error(
+    `${sourceEnvironmentExamplePath} does not exist. Run pnpm run build before the Ratatui product smoke test.`,
+  );
 }
 
 const port = await getFreePort();
-const envFileValues = parseEnvFile('.env');
+const runtimeEnvironmentValues = parseEnv(
+  readFileSync(sourceEnvironmentConfigPath, 'utf8'),
+);
 const ollamaKey =
-  process.env.OLLAMA_API_KEY ||
-  process.env.OLLAMA_CLOUD_API_KEY ||
-  envFileValues.OLLAMA_API_KEY ||
-  envFileValues.OLLAMA_CLOUD_API_KEY;
+  runtimeEnvironmentValues.OLLAMA_API_KEY ||
+  runtimeEnvironmentValues.OLLAMA_CLOUD_API_KEY;
 if (!ollamaKey) {
-  throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required for the Ratatui product prompt test. Set it in env or .env.');
+  throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required in sim-one.config for the Ratatui product prompt test.');
 }
-const codingWorkspaceRoot = mkdtempSync(join(tmpdir(), 'ratatui-product-workspace-'));
-const tuiDiagnosticsPath = join(codingWorkspaceRoot, 'logs', 'sim-one-ratatui.jsonl');
-const configPath = join(serverDir, 'gorombo.config.json');
+const productSmokeTestMode = process.env.GOROMBO_TEST_MODE === '1';
+const productSmokeOllamaKey =
+  productSmokeTestMode
+    ? ollamaKey
+    : 'shell-value-must-not-win';
 const releaseArtifactLock = await acquireProductArtifactLock();
-let originalConfig;
+const productFixtureRoot = mkdtempSync(join(tmpdir(), 'ratatui-relocated-product-'));
+const runtimeRoot = join(productFixtureRoot, '.gorombo');
+const launchDirectory = mkdtempSync(join(tmpdir(), 'ratatui-arbitrary-cwd-'));
+const syntheticHome = join(productFixtureRoot, 'unrelated-home');
+const serverDir = join(runtimeRoot, 'sim-one-alpha');
+const serverPath = join(serverDir, 'server.mjs');
+const tuiPath = join(runtimeRoot, 'sim-one-ratatui', tuiBinaryName);
+const simOnePath = join(runtimeRoot, 'sim-one-cli', simOneBinaryName);
+const cliModulePath = join(runtimeRoot, 'sim-one-cli', 'cli.js');
+const codingWorkspaceRoot = join(runtimeRoot, 'workspace');
+const sessionDatabasePath = join(runtimeRoot, 'db', 'sessions.sqlite');
+const flueDatabasePath = join(runtimeRoot, 'db', 'flue.sqlite');
+const tuiDiagnosticsPath = join(runtimeRoot, 'logs', 'sim-one-ratatui.jsonl');
+const configPath = join(runtimeRoot, 'gorombo.config.json');
+const environmentConfigPath = join(runtimeRoot, 'sim-one.config');
+const environmentExamplePath = join(runtimeRoot, 'sim-one.config.example');
 
 let stdout = '';
 let stderr = '';
 let child;
 
 try {
-  originalConfig = readFileSync(configPath, 'utf8');
-  const config = JSON.parse(originalConfig);
+  mkdirSync(runtimeRoot, { recursive: true });
+  mkdirSync(syntheticHome, { recursive: true });
+  for (const directory of ['sim-one-alpha', 'sim-one-cli', 'sim-one-ratatui']) {
+    cpSync(
+      join(sourceRuntimeRoot, directory),
+      join(runtimeRoot, directory),
+      { recursive: true, force: true, verbatimSymlinks: true },
+    );
+  }
+  cpSync(
+    sourceConfigPath,
+    configPath,
+    { force: true },
+  );
+  cpSync(sourceEnvironmentConfigPath, environmentConfigPath, { force: true });
+  chmodSync(environmentConfigPath, 0o600);
+  cpSync(sourceEnvironmentExamplePath, environmentExamplePath, { force: true });
+  for (const packagedPath of [serverPath, tuiPath, simOnePath, cliModulePath]) {
+    if (!existsSync(packagedPath)) {
+      throw new Error(`relocated package is missing expected artifact: ${packagedPath}`);
+    }
+  }
+  const externalDependencyLinks = findExternalDependencyLinks(
+    join(serverDir, 'node_modules'),
+  );
+  if (externalDependencyLinks.length > 0) {
+    throw new Error(
+      `relocated package contains dependency links outside its node_modules tree: ${externalDependencyLinks
+        .map((link) => `${link.path} -> ${link.target}`)
+        .join(', ')}`,
+    );
+  }
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
   config.gateway = { ...(config.gateway ?? {}), port };
   config.storage = {
     ...(config.storage ?? {}),
-    flueDatabasePath: join(codingWorkspaceRoot, 'flue.sqlite'),
-    sessionDatabasePath: join(codingWorkspaceRoot, 'sessions.sqlite'),
-    vectorStorePath: join(codingWorkspaceRoot, 'vectors'),
+    flueDatabasePath: 'db/flue.sqlite',
+    sessionDatabasePath: 'db/sessions.sqlite',
+    vectorStorePath: 'vector',
   };
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
 
   const childEnv = {
-    ...process.env,
+    ...createSanitizedRuntimeEnvironment({
+      sourceRoot: sourceProjectRoot,
+      env: process.env,
+    }),
     PATH: productLikePath(),
     SIM_ONE_NODE: process.env.SIM_ONE_NODE || process.execPath,
-    OLLAMA_API_KEY: process.env.OLLAMA_API_KEY || envFileValues.OLLAMA_API_KEY || ollamaKey,
-    OLLAMA_CLOUD_API_KEY: process.env.OLLAMA_CLOUD_API_KEY || envFileValues.OLLAMA_CLOUD_API_KEY || ollamaKey,
-    CODEX_BRAIN_LOCAL_API_KEY: process.env.CODEX_BRAIN_LOCAL_API_KEY || envFileValues.CODEX_BRAIN_LOCAL_API_KEY || 'ratatui-product-placeholder',
-    CODEX_BRAIN_LOCAL_API_URL: process.env.CODEX_BRAIN_LOCAL_API_URL || envFileValues.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
-    GOROMBO_WORKSPACE_ROOT: codingWorkspaceRoot,
-    GOROMBO_CAPABILITY_DB_PATH: join(codingWorkspaceRoot, 'capabilities.sqlite'),
-    GOROMBO_CAPABILITIES_DIR: join(codingWorkspaceRoot, 'capabilities'),
-    GOROMBO_TEST_MODE: '1',
+    HOME: syntheticHome,
+    USERPROFILE: syntheticHome,
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
+    SIM_ONE_PRODUCT_PATH: simOnePath,
     SIM_ONE_TUI_LOG_PATH: tuiDiagnosticsPath,
+    OLLAMA_API_KEY: productSmokeOllamaKey,
+    GOROMBO_WORKSPACE_ROOT: join(
+      launchDirectory,
+      'shell-workspace-must-not-win',
+    ),
   };
+  if (productSmokeTestMode) {
+    childEnv.CODEX_BRAIN_LOCAL_API_KEY = 'ratatui-product-placeholder';
+    childEnv.CODEX_BRAIN_LOCAL_API_URL = 'https://dt1.example.test/v1';
+    childEnv.GOROMBO_WORKSPACE_ROOT = codingWorkspaceRoot;
+  }
   if (!childEnv.NVM_DIR && process.env.HOME) {
     childEnv.NVM_DIR = join(process.env.HOME, '.nvm');
   }
 
   await assertProductCommandRouting(childEnv);
   await assertDefaultProductCommandStartsCleanStartup(childEnv);
-  await assertInteractivePromptInput(childEnv);
+  await assertInteractivePromptInput({
+    ...childEnv,
+    SIM_ONE_TUI_LOG_PATH: tuiDiagnosticsPath,
+  });
   await assertVisibleFinalBeforeHttpSettlement(childEnv);
 
   const firstStartup = await runFreshStartup(childEnv, 'default launch 1');
@@ -108,7 +195,7 @@ try {
     throw new Error(`default TUI launch reused session ${firstSessionId}`);
   }
   assertFreshStartupDatabase(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     [firstSessionId, secondSessionId],
   );
   console.log(`[ratatui-product] default launch 1 created a fresh session ${firstSessionId}.`);
@@ -185,17 +272,17 @@ try {
   assertOutputIncludes(stdout, 'session: Smoke Session Renamed', 'rename command did not replace the status-bar session id with the explicit title');
   assertOutputIncludes(stdout, `Exited SIM-ONE Alpha TUI. Session: ${firstSessionId}`, 'exit command did not print the resumed session id');
   assertSessionCommandStorage(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     [firstSessionId, sessionId, clearedSessionId],
   );
 
   seedTranscriptFixture(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
-    join(codingWorkspaceRoot, 'flue.sqlite'),
+    sessionDatabasePath,
+    flueDatabasePath,
     firstSessionId,
   );
   const eventsBeforeExplicitResume = countNormalizedEventsForSession(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     firstSessionId,
   );
   const explicitResumeSmoke = await runProductCommand(
@@ -215,7 +302,7 @@ try {
     throw new Error(`explicit --session created a fresh session.\nstdout:\n${stdout}\nstderr:\n${stderr}`);
   }
   const eventsAfterExplicitResume = countNormalizedEventsForSession(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     firstSessionId,
   );
   if (eventsAfterExplicitResume !== eventsBeforeExplicitResume) {
@@ -237,7 +324,7 @@ try {
   assertOutputIncludes(stdout, `Exited SIM-ONE Alpha TUI. Session: ${firstSessionId}`, 'explicit --session name did not exit with the canonical session id');
   assertPackagedTranscriptResume(stdout);
   const eventsAfterNameResume = countNormalizedEventsForSession(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     firstSessionId,
   );
   if (eventsAfterNameResume !== eventsBeforeExplicitResume) {
@@ -247,7 +334,7 @@ try {
   const missingSelector = `missing-${Date.now()}`;
   const fallbackStartup = await runMissingSessionFallback(childEnv, missingSelector);
   assertFreshStartupDatabase(
-    join(codingWorkspaceRoot, 'sessions.sqlite'),
+    sessionDatabasePath,
     [fallbackStartup.sessionId],
   );
   assertTuiDiagnostics(
@@ -260,6 +347,24 @@ try {
   console.log(`[ratatui-product] explicit --session resumed the requested session ${firstSessionId} without a greeting.`);
   console.log(`[ratatui-product] explicit --session name resolved to ${firstSessionId} without a greeting.`);
   console.log(`[ratatui-product] missing --session selector created fresh session ${fallbackStartup.sessionId}.`);
+  if (existsSync(join(launchDirectory, '.gorombo'))) {
+    throw new Error(`packaged launch wrote runtime state beside the caller: ${launchDirectory}`);
+  }
+  if (existsSync(join(syntheticHome, '.gorombo'))) {
+    throw new Error(`packaged launch wrote runtime state under HOME: ${syntheticHome}`);
+  }
+  for (const requiredPath of [
+    sessionDatabasePath,
+    flueDatabasePath,
+    join(runtimeRoot, 'db', 'capabilities.sqlite'),
+    tuiDiagnosticsPath,
+    codingWorkspaceRoot,
+  ]) {
+    if (!existsSync(requiredPath)) {
+      throw new Error(`relocated product did not create expected runtime path: ${requiredPath}`);
+    }
+  }
+  console.log(`[ratatui-product] relocated package ran from ${launchDirectory} with all state under ${runtimeRoot}.`);
   console.log('[ratatui-product] session commands and existing interactive controls passed.');
 } finally {
   try {
@@ -267,25 +372,10 @@ try {
       child.kill('SIGKILL');
     }
   } finally {
-    if (originalConfig !== undefined) {
-      writeFileSync(configPath, originalConfig);
-    }
-    rmSync(codingWorkspaceRoot, { recursive: true, force: true });
+    rmSync(productFixtureRoot, { recursive: true, force: true });
+    rmSync(launchDirectory, { recursive: true, force: true });
     await releaseArtifactLock();
   }
-}
-
-function parseEnvFile(path) {
-  const values = {};
-  if (!existsSync(path)) return values;
-  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const separator = trimmed.indexOf('=');
-    if (separator === -1) continue;
-    values[trimmed.slice(0, separator)] = trimmed.slice(separator + 1).replace(/^['"]|['"]$/g, '');
-  }
-  return values;
 }
 
 function productLikePath() {
@@ -770,6 +860,7 @@ function assertTuiDiagnostics(path, resumedSessionId, fallbackSessionId, missing
 
 async function assertDefaultProductCommandStartsCleanStartup(env) {
   const fakeTuiPath = join(codingWorkspaceRoot, process.platform === 'win32' ? 'fake-tui.cmd' : 'fake-tui');
+  mkdirSync(codingWorkspaceRoot, { recursive: true });
   if (process.platform === 'win32') {
     writeFileSync(fakeTuiPath, `@echo off\r\n"${process.execPath}" -e "console.log(JSON.stringify(process.argv.slice(1)))" %*\r\n`);
   } else {
@@ -804,8 +895,8 @@ async function assertInteractivePromptInput(env) {
     return;
   }
 
-  const command = spawn('python3', ['scripts/test-ratatui-interactive.py'], {
-    cwd: process.cwd(),
+  const command = spawn('python3', [join(sourceProjectRoot, 'scripts', 'test-ratatui-interactive.py')], {
+    cwd: launchDirectory,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -830,8 +921,8 @@ async function assertVisibleFinalBeforeHttpSettlement(env) {
     return;
   }
 
-  const command = spawn('python3', ['scripts/test-ratatui-visible-final.py'], {
-    cwd: process.cwd(),
+  const command = spawn('python3', [join(sourceProjectRoot, 'scripts', 'test-ratatui-visible-final.py')], {
+    cwd: launchDirectory,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -890,8 +981,12 @@ async function assertProductCommandRouting(env) {
     } catch (error) {
       throw new Error(`sim-one ${kind} list did not return JSON: ${error.message}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
     }
-    if (!Array.isArray(parsed)) {
-      throw new Error(`sim-one ${kind} list returned non-array JSON.\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+    if (
+      parsed?.operation !== 'list' ||
+      !Array.isArray(parsed.records) ||
+      !Array.isArray(parsed.progress)
+    ) {
+      throw new Error(`sim-one ${kind} list returned an invalid lifecycle envelope.\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
     }
   }
 }
@@ -899,10 +994,10 @@ async function assertProductCommandRouting(env) {
 function spawnProductCommand(args, env) {
   const command = process.platform === 'win32' ? process.execPath : simOnePath;
   const commandArgs = process.platform === 'win32'
-    ? [join('.gorombo', 'sim-one-cli', 'cli.js'), ...args]
+    ? [cliModulePath, ...args]
     : args;
   return spawn(command, commandArgs, {
-    cwd: process.cwd(),
+    cwd: launchDirectory,
     env,
     shell: false,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -921,9 +1016,21 @@ async function runProductCommand(args, env, timeoutMs) {
   });
   const exitCode = await waitForClose(command, timeoutMs);
   if (exitCode !== 0) {
-    throw new Error(`sim-one ${args.join(' ')} failed with exit ${exitCode}\nstdout:\n${commandStdout}\nstderr:\n${commandStderr}`);
+    throw new Error(
+      `sim-one ${args.join(' ')} failed with exit ${exitCode}\nstdout:\n${commandStdout}\nstderr:\n${commandStderr}\ndiagnostics:\n${readDiagnosticsTail()}`,
+    );
   }
   return { exitCode, stdout: commandStdout, stderr: commandStderr };
+}
+
+function readDiagnosticsTail() {
+  if (!existsSync(tuiDiagnosticsPath)) {
+    return '(diagnostics file not created)';
+  }
+  const lines = readFileSync(tuiDiagnosticsPath, 'utf8')
+    .trim()
+    .split(/\r?\n/);
+  return lines.slice(-80).join('\n') || '(diagnostics file empty)';
 }
 
 function assertOutputIncludes(output, expected, label) {

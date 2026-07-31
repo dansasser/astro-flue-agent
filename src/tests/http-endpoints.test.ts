@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { FlueEvent, FlueSession } from '@flue/runtime';
+import type { SessionData } from '@flue/runtime/adapter';
 import { Hono } from 'hono';
 import { DatabaseSync } from 'node:sqlite';
 import { resolve } from 'node:path';
@@ -238,9 +239,44 @@ test('chat transcript route validates canonical session ownership and pagination
 test('chat event ingress enters the durable orchestrator agent route', async () => {
   const testApp = new Hono();
   let promptedAgent = false;
+  const loadedSessionIds: string[] = [];
 
   testApp.use('/agents/*', requireApiSecret);
-  registerChatEventRoutes(testApp);
+  registerChatEventRoutes(testApp, {
+    loadSessionData: async (sessionId) => {
+      loadedSessionIds.push(sessionId);
+      return {
+        version: 6,
+        affinityKey: 'test-affinity',
+        entries: [
+          {
+            type: 'message',
+            id: 'assistant-1',
+            parentId: null,
+            timestamp: '2026-07-29T00:00:00.000Z',
+            message: {
+              role: 'assistant',
+              content: [{ type: 'text', text: 'direct-agent-ok' }],
+              stopReason: 'stop',
+              usage: {
+                input: 1_000,
+                output: 200,
+                cacheRead: 0,
+                cacheWrite: 0,
+                totalTokens: 1_200,
+              },
+            },
+            source: 'prompt',
+          },
+        ],
+        leafId: 'assistant-1',
+        metadata: {},
+        taskSessions: [],
+        createdAt: '2026-07-29T00:00:00.000Z',
+        updatedAt: '2026-07-29T00:00:01.000Z',
+      } as unknown as SessionData;
+    },
+  });
   testApp.post('/agents/orchestrator/:id', requireApiSecret, async (c) => {
     promptedAgent = true;
     assert.equal(c.req.query('wait'), 'result');
@@ -261,6 +297,84 @@ test('chat event ingress enters the durable orchestrator agent route', async () 
   });
 
   await withApiSecret('test-secret', async () => {
+    await withModelEnv(async () => {
+      const response = await testApp.request('/api/chat/events', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-secret': 'test-secret',
+        },
+        body: JSON.stringify({
+          text: 'Reply through the durable boundary.',
+          actorId: 'durable-actor',
+          conversationId: 'durable-conversation',
+        }),
+      });
+
+      assert.equal(response.status, 200);
+      const body = await response.json() as {
+        result?: { text?: string };
+        event?: { id?: string };
+        session?: { id?: string; surface?: string; created?: boolean; title?: string };
+        contextUsage?: {
+          available?: boolean;
+          modelSpecifier?: string;
+          usedTokens?: number;
+          capacityTokens?: number;
+        };
+      };
+      assert.equal(promptedAgent, true);
+      assert.equal(body.result?.text, 'direct-agent-ok');
+      assert.equal(body.session?.surface, 'web');
+      assert.equal(body.session?.created, true);
+      assert.equal(body.session?.title, undefined);
+      assert.equal(typeof body.session?.id, 'string');
+      assert.equal(typeof body.event?.id, 'string');
+      assert.deepEqual(loadedSessionIds, [body.session?.id]);
+      assert.equal(body.contextUsage?.available, true);
+      assert.equal(body.contextUsage?.modelSpecifier, 'ollama-cloud/minimax-m3');
+      assert.equal(body.contextUsage?.usedTokens, 1_200);
+      assert.equal(typeof body.contextUsage?.capacityTokens, 'number');
+      assert.ok((body.contextUsage?.capacityTokens ?? 0) > 1_200);
+
+      const storedEvent = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(body.event?.id ?? '');
+      assert.equal(storedEvent?.text, 'Reply through the durable boundary.');
+      assert.equal(storedEvent?.actor.id, 'durable-actor');
+      assert.equal(storedEvent?.deliveryId, 'test-delivery-id');
+      const storedSessionEvents = goromboPersistenceRuntime.sessionDatabase
+        .listNormalizedMessageEventsForSession({ sessionId: body.session?.id ?? '' });
+      assert.deepEqual(storedSessionEvents[0]?.delivery, {
+        submissionId: 'test-delivery-id',
+        streamUrl: 'http://localhost/agents/orchestrator/'
+          + `${body.session?.id}?wait=result`,
+        offset: '0000000000000000_0000000000000042',
+      });
+
+      if (body.event?.id) {
+        goromboPersistenceRuntime.sessionDatabase.deleteNormalizedMessageEvent(body.event.id);
+      }
+      if (body.session?.id) {
+        goromboPersistenceRuntime.sessionDatabase.deleteChatSession(body.session.id);
+      }
+    });
+  });
+});
+
+test('chat event context projection is unavailable when session budget loading fails', async () => {
+  const testApp = new Hono();
+  const actorId = `context-unavailable-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  testApp.use('/agents/*', requireApiSecret);
+  registerChatEventRoutes(testApp, {
+    loadSessionData: async () => {
+      throw new Error('fixture budget lookup failure');
+    },
+  });
+  testApp.post('/agents/orchestrator/:id', requireApiSecret, (c) => c.json({
+    result: { text: 'reply remains available' },
+  }));
+
+  await withApiSecret('test-secret', async () => {
     const response = await testApp.request('/api/chat/events', {
       method: 'POST',
       headers: {
@@ -268,38 +382,20 @@ test('chat event ingress enters the durable orchestrator agent route', async () 
         'x-api-secret': 'test-secret',
       },
       body: JSON.stringify({
-        text: 'Reply through the durable boundary.',
-        actorId: 'durable-actor',
-        conversationId: 'durable-conversation',
+        text: 'context fallback',
+        actorId,
+        conversationId: actorId,
       }),
     });
-
     assert.equal(response.status, 200);
     const body = await response.json() as {
       result?: { text?: string };
       event?: { id?: string };
-      session?: { id?: string; surface?: string; created?: boolean; title?: string };
+      session?: { id?: string };
+      contextUsage?: { available?: boolean };
     };
-    assert.equal(promptedAgent, true);
-    assert.equal(body.result?.text, 'direct-agent-ok');
-    assert.equal(body.session?.surface, 'web');
-    assert.equal(body.session?.created, true);
-    assert.equal(body.session?.title, undefined);
-    assert.equal(typeof body.session?.id, 'string');
-    assert.equal(typeof body.event?.id, 'string');
-
-    const storedEvent = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(body.event?.id ?? '');
-    assert.equal(storedEvent?.text, 'Reply through the durable boundary.');
-    assert.equal(storedEvent?.actor.id, 'durable-actor');
-    assert.equal(storedEvent?.deliveryId, 'test-delivery-id');
-    const storedSessionEvents = goromboPersistenceRuntime.sessionDatabase
-      .listNormalizedMessageEventsForSession({ sessionId: body.session?.id ?? '' });
-    assert.deepEqual(storedSessionEvents[0]?.delivery, {
-      submissionId: 'test-delivery-id',
-      streamUrl: 'http://localhost/agents/orchestrator/'
-        + `${body.session?.id}?wait=result`,
-      offset: '0000000000000000_0000000000000042',
-    });
+    assert.equal(body.result?.text, 'reply remains available');
+    assert.equal(body.contextUsage?.available, false);
 
     if (body.event?.id) {
       goromboPersistenceRuntime.sessionDatabase.deleteNormalizedMessageEvent(body.event.id);
@@ -373,6 +469,12 @@ test('chat event compact command compacts the durable orchestrator session witho
           };
           event?: { id?: string };
           session?: { id?: string; surface?: string; created?: boolean; title?: string };
+          contextUsage?: {
+            available?: boolean;
+            modelSpecifier?: string;
+            usedTokens?: number;
+            capacityTokens?: number;
+          };
         };
         eventId = body.event?.id;
 
@@ -384,6 +486,10 @@ test('chat event compact command compacts the durable orchestrator session witho
         assert.equal(body.result?.command?.handled, true);
         assert.equal(body.result?.contextBudget?.compactedBeforePrompt, true);
         assert.equal(body.result?.contextBudget?.modelSpecifier, 'ollama-cloud/minimax-m3');
+        assert.equal(body.contextUsage?.available, true);
+        assert.equal(body.contextUsage?.modelSpecifier, 'ollama-cloud/minimax-m3');
+        assert.equal(typeof body.contextUsage?.usedTokens, 'number');
+        assert.equal(typeof body.contextUsage?.capacityTokens, 'number');
         assert.equal(body.session?.id, requestedSessionId);
         assert.equal(body.session?.surface, 'tui');
         assert.equal(body.session?.created, false);

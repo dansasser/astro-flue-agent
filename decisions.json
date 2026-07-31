@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "id": "d1-github-auth-strategy",
+      "title": "D1 GitHub Auth Strategy",
+      "question": "Should the SIM-ONE Alpha coding worker use the managed GitHub device-flow auth system or switch to the official GitHub MCP server with a PAT (Personal Access Token)?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d1-github-auth-strategy.md",
+      "affected_nodes": [
+        "implement-coding-worker-github-flow"
+      ]
+    },
+    {
+      "id": "d2-workspace-root-isolation",
+      "title": "D2 Workspace Root Isolation",
+      "question": "What single install-relative .gorombo runtime-root contract keeps packaged binaries, mutable state, persona files, and the coding-worker workspace correctly separated from source and process.cwd()?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d2-workspace-root-isolation.md",
+      "affected_nodes": [
+        "implement-runtime-root-layout",
+        "implement-file-access-approval-gate",
+        "implement-coding-worker-github-flow",
+        "implement-coding-worker-scaffold-tooling",
+        "implement-coding-worker-capability-authoring",
+        "implement-orchestrator-worker-verification"
+      ]
+    },
+    {
+      "id": "d3-file-access-gate",
+      "title": "D3 File Access Gate",
+      "question": "Should the coding worker enforce a fail-closed file access gate that rejects any path outside the authorized workspace root and escalates to an approval gate for out-of-workspace access?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d3-file-access-gate.md",
+      "affected_nodes": [
+        "implement-file-access-approval-gate",
+        "implement-connector-approval-controls"
+      ]
+    },
+    {
+      "id": "d4-orchestrator-history-visibility",
+      "title": "D4 Orchestrator History Visibility",
+      "question": "Should the orchestrator have a tool to query coding worker tool-call history and filesystem state so it can verify what the worker actually did instead of trusting the worker's text response?",
+      "status": "open",
+      "source_path": "doc/decisions/d4-orchestrator-history-visibility.md",
+      "affected_nodes": [
+        "implement-orchestrator-worker-verification"
+      ]
+    },
+    {
+      "id": "d5-canonical-runtime-configuration",
+      "title": "D5 Canonical Runtime Configuration",
+      "question": "What single environment-file contract should source builds, packaged launchers, providers, connectors, workers, tools, onboarding, and Coding Worker configuration assistance use?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d5-canonical-runtime-configuration.md",
+      "affected_nodes": [
+        "implement-runtime-configuration-consolidation",
+        "verify-runtime-configuration-consolidation",
+        "implement-runtime-root-layout",
+        "implement-agent-runtime",
+        "implement-capabilities-security",
+        "implement-capability-management-worker",
+        "implement-ingress-operations",
+        "implement-coding-worker-github-flow",
+        "implement-coding-worker-capability-authoring",
+        "implement-connector-approval-controls",
+        "implement-sim-one-onboarding-distribution",
+        "build-release-package",
+        "verify-onboarding-distribution",
+        "implement-product-delivery"
+      ]
+    },
+    {
+      "id": "d6-tui-approval-surface-placement",
+      "title": "D6 TUI Approval Surface Placement",
+      "question": "When an approval gate becomes pending, should the SIM-ONE TUI present the actionable selector as an overlay above the prompt or as a temporary dedicated approval row or panel while keeping the normal status surface at two rows?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d6-tui-approval-surface-placement.md",
+      "affected_nodes": [
+        "implement-tui-status-context-meter",
+        "implement-connector-approval-controls"
+      ]
+    }
+  ]
+}

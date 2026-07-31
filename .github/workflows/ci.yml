@@ -29,6 +29,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Coding Worker shell sandbox
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes apparmor-profiles bubblewrap
+          sudo install -m 0644 \
+            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+            /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser --replace /etc/apparmor.d/bwrap-userns-restrict
+          /usr/bin/bwrap --ro-bind / / --unshare-all --share-net -- /bin/true
+
+      - name: Create CI runtime configuration
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+        run: |
+          test -n "$OLLAMA_API_KEY"
+          printf 'OLLAMA_API_KEY=%s\n' "$OLLAMA_API_KEY" > sim-one.config
+          chmod 600 sim-one.config
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
@@ -64,6 +83,7 @@ jobs:
         run: pnpm run build:cli
 
       - name: Ratatui TUI product smoke
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm run test:tui:ratatui
         env:
           GOROMBO_TEST_MODE: '1'
@@ -78,6 +98,7 @@ jobs:
           GOROMBO_TEST_MODE: '1'
 
       - name: TUI end-to-end test
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm run test:tui
         env:
           GOROMBO_TEST_MODE: '1'

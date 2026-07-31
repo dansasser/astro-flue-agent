@@ -3,6 +3,12 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import {
+  createGoromboRuntimePaths,
+  findSourceProjectRoot,
+  isPathInsideRuntimeRoot,
+  resolveGoromboRuntimeRoot,
+} from '../../../../../../core/config/runtime-root.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -21,7 +27,7 @@ async function resolveCommand(command: string): Promise<string | undefined> {
 }
 
 function resolveRuntimeBin(command: string): string | undefined {
-  const roots = [resolveRuntimeRoot(), process.cwd()];
+  const roots = resolveLspPackageRoots();
   for (const root of roots) {
     if (process.platform === 'win32') {
       const windowsCandidate = resolve(root, 'node_modules/.bin', `${command}.cmd`);
@@ -37,12 +43,34 @@ function resolveRuntimeBin(command: string): string | undefined {
   return undefined;
 }
 
-function resolveRuntimeRoot(): string {
-  if (typeof import.meta.url === 'string') {
-    const thisFile = fileURLToPath(import.meta.url);
-    return resolve(dirname(thisFile), '../../../../../..');
+export function resolveLspPackageRoots(
+  options: {
+    env?: Record<string, unknown>;
+    modulePath?: string | URL;
+  } = {},
+): string[] {
+  const env = options.env ?? process.env;
+  const modulePath = options.modulePath ?? import.meta.url;
+  try {
+    const runtimeRoot = resolveGoromboRuntimeRoot({ env, modulePath });
+    const paths = createGoromboRuntimePaths(runtimeRoot);
+    if (isPathInsideRuntimeRoot(modulePath, runtimeRoot)) {
+      return [paths.packagedServer];
+    }
+
+    const sourceRoot = findSourceProjectRoot(modulePath);
+    return [
+      ...(sourceRoot ? [sourceRoot] : []),
+      paths.packagedServer,
+    ].filter((root, index, roots) => roots.indexOf(root) === index);
+  } catch {
+    const thisFile = modulePath instanceof URL
+      ? fileURLToPath(modulePath)
+      : modulePath.startsWith('file:')
+        ? fileURLToPath(modulePath)
+        : resolve(modulePath);
+    return [resolve(dirname(thisFile), '../../../../../..')];
   }
-  return process.cwd();
 }
 
 async function which(command: string): Promise<string | undefined> {

@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
-import { homedir } from 'node:os';
+import { dirname } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type {
   CapabilityConfig,
   CapabilityInstalledBy,
@@ -40,8 +40,8 @@ export interface CreateCapabilityStoreOptions {
 }
 
 export function createCapabilityStore(options: CreateCapabilityStoreOptions = {}): CapabilityStore {
-  const rawPath = options.dbPath ?? process.env.GOROMBO_CAPABILITY_DB_PATH ?? resolve(homedir(), '.gorombo', 'db', 'capabilities.sqlite');
-  const dbPath = isAbsolute(rawPath) ? rawPath : resolve(process.cwd(), rawPath);
+  const rawPath = options.dbPath ?? process.env.GOROMBO_CAPABILITY_DB_PATH ?? 'db/capabilities.sqlite';
+  const dbPath = resolveRuntimePath(rawPath);
 
   mkdirSync(dirname(dbPath), { recursive: true });
   const database = new DatabaseSync(dbPath, { timeout: 5_000 });

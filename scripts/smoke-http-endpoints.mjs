@@ -1,22 +1,31 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { parseEnv } from 'node:util';
 
 const port = Number(process.env.GOROMBO_HTTP_SMOKE_PORT || 3991);
 const liveChat = process.argv.includes('--live-chat');
+const runtimeRoot = resolve('.gorombo');
+const serverPath = resolve(runtimeRoot, 'sim-one-alpha/server.mjs');
+const configPath = resolve(runtimeRoot, 'sim-one.config');
+if (!existsSync(configPath)) {
+  throw new Error(`${configPath} does not exist. Build after creating sim-one.config.`);
+}
+const configValues = parseEnv(readFileSync(configPath, 'utf8'));
+const requestSecret = configValues.API_SECRET || 'unconfigured-api-secret';
+if (liveChat && !configValues.API_SECRET) {
+  throw new Error('API_SECRET is required in sim-one.config for --live-chat.');
+}
 
-const envFileValues = parseEnvFile('.env');
-const requestSecret = process.env.GOROMBO_HTTP_SMOKE_API_SECRET || envFileValues.API_SECRET || 'http-smoke-secret';
-const nodeArgs = existsSync('.env') ? ['--env-file=.env', '.gorombo/sim-one-alpha/server.mjs'] : ['.gorombo/sim-one-alpha/server.mjs'];
-
-const child = spawn(process.execPath, nodeArgs, {
-  cwd: process.cwd(),
+const child = spawn(process.execPath, [serverPath], {
+  cwd: runtimeRoot,
   env: {
     PATH: process.env.PATH,
     SystemRoot: process.env.SystemRoot,
     TEMP: process.env.TEMP,
     TMP: process.env.TMP,
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
     PORT: String(port),
-    API_SECRET: requestSecret,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -83,29 +92,6 @@ try {
   console.log(`HTTP endpoint smoke passed${liveChat ? ' with live chat' : ''}.`);
 } finally {
   await stopChild(child);
-}
-
-function parseEnvFile(path) {
-  const values = {};
-  if (!existsSync(path)) {
-    return values;
-  }
-
-  for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue;
-    }
-
-    const separator = trimmed.indexOf('=');
-    if (separator === -1) {
-      continue;
-    }
-
-    values[trimmed.slice(0, separator)] = trimmed.slice(separator + 1).replace(/^['"]|['"]$/g, '');
-  }
-
-  return values;
 }
 
 async function waitForHealth(baseUrl) {

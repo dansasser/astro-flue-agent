@@ -1,11 +1,12 @@
 import { mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type { NormalizedMessageEvent, ProtocolBundle, ProtocolDefinition, ProtocolSelector } from '../../core/types/index.js';
 import { baseProtocolSeeds, type ProtocolProvider } from '../../core/protocols/protocol-provider.js';
 import { protocolSchemaSql } from '../../core/protocols/schema.js';
 
-export const defaultProtocolDatabasePath = '.gorombo/db/protocols.sqlite';
+export const defaultProtocolDatabasePath = 'db/protocols.sqlite';
 
 export interface AddProtocolInput {
   id: string;
@@ -309,8 +310,4 @@ function parseJsonStringArray(value: string): string[] {
 function isDuplicateColumnError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /\bduplicate column\b/i.test(message);
-}
-
-function resolveRuntimePath(filePath: string): string {
-  return isAbsolute(filePath) ? filePath : resolve(process.cwd(), filePath);
 }

@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "mutation_id": "resolve-d1-github-auth-strategy",
+  "rationale": "Record the owner-approved GitHub strategy already implemented on this branch: the Coding Worker alone connects to the official GitHub MCP with a runtime-configured fine-grained PAT, public Git clones remain anonymous first, private HTTPS clone retries use command-scoped PAT credentials, and every mutation remains independently approval-gated.",
+  "evidence": [
+    "doc/decisions/d1-github-auth-strategy.md",
+    "decisions.json",
+    "doc/architecture-spec.md",
+    "doc/acceptance-spec.md",
+    "src/engine/workers/coding-worker/github/github-mcp.ts",
+    "src/engine/workers/coding-worker/github/github-pat.ts",
+    "src/tests/github-mcp.test.ts",
+    "src/tests/github-private-clone.test.ts"
+  ],
+  "expected_graph_version": 45,
+  "expected_graph_checksum": "be75766f49fdc27bc9c4684b67a2d6313dae8d9ee0097ab0f4846fb71c31912a",
+  "new_context_version": "decision:d1-github-auth-strategy:resolved:2026-07-29",
+  "operations": [
+    {
+      "op": "replace-node",
+      "id": "resolve-d1-github-auth-strategy",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "doc/decisions/d1-github-auth-strategy.md, decisions.json, specification-manifest.json, and runtime evidence all record Resolved without an implicit alternate selection.",
+            "evidence": "runtime:evidence/resolve-d1-github-auth-strategy/decision-status.json",
+            "id": "decision-status-consistent",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "The recorded owner decision and all status surfaces agree.",
+          "max_attempts": 1,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Record and verify the owner-established official GitHub MCP, fine-grained PAT, anonymous-first public clone, command-scoped private clone, and separate mutation-approval decision in doc/decisions/d1-github-auth-strategy.md.",
+          "kind": "agent",
+          "name": "SIM-ONE architecture adapter"
+        },
+        "goal": "Record the supported GitHub credential and public/private repository access strategy without conflating authentication with mutation approval.",
+        "id": "resolve-d1-github-auth-strategy",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "GitHub access product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:constraints-and-risks",
+            "name": "constraints and risks",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "GitHub access architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "GitHub access acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "GitHub access open questions",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "decision:d1-github-auth-strategy",
+            "format": "decision-record",
+            "name": "Resolve D1 GitHub Auth Strategy decision"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "artifact:product-spec",
+            "artifact:constraints-and-risks",
+            "artifact:architecture-spec",
+            "artifact:acceptance-spec",
+            "artifact:open-questions",
+            "doc/decisions/d1-github-auth-strategy.md",
+            "decisions.json",
+            "specification-manifest.json"
+          ],
+          "write": [
+            "doc/decisions/d1-github-auth-strategy.md"
+          ]
+        },
+        "resources": [
+          "project:resolve-d1-github-auth-strategy"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces or updates one owner-visible decision record.",
+          "level": "reversible",
+          "rollback": "Restore the prior decision record and invalidate only its declared affected nodes."
+        },
+        "state": "planned",
+        "tags": [
+          "decision",
+          "d1"
+        ],
+        "title": "Resolve D1 GitHub Auth Strategy",
+        "type": "decision"
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "resolve-d1-github-auth-strategy",
+      "implement-coding-worker-github-flow"
+    ],
+    "artifacts": [
+      "decision:d1-github-auth-strategy",
+      "artifact:coding-worker-github-flow-change"
+    ]
+  },
+  "approval": null
+}

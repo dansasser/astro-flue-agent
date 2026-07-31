@@ -1,6 +1,7 @@
 import { connect, makeArrowTable, Index } from '@lancedb/lancedb';
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
+import { resolveRuntimePath } from '../../../core/config/runtime-root.js';
 
 export interface VectorRecord {
   id: string;
@@ -47,7 +48,7 @@ export interface LanceDbVectorStoreOptions {
   path?: string;
 }
 
-export const defaultVectorStorePath = '.gorombo/vector';
+export const defaultVectorStorePath = 'vector';
 
 export class LanceDbVectorStore implements VectorStore {
   private readonly resolvedPath: string;
@@ -226,10 +227,6 @@ export class LanceDbVectorStore implements VectorStore {
 
     return undefined;
   }
-}
-
-function resolveRuntimePath(value: string): string {
-  return resolve(value);
 }
 
 function createIdFilter(ids: string[]): string {

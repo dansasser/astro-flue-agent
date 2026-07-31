@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import { mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { resolveScriptRuntimePath } from './runtime-root.mjs';
+import { loadScriptRuntimeEnvironment } from './runtime-configuration-files.mjs';
 
-const defaultDbPath = '.gorombo/db/protocols.sqlite';
+loadScriptRuntimeEnvironment({ sourceRoot: resolve('.') });
+const defaultDbPath = 'db/protocols.sqlite';
 const dbPath = process.env.GOROMBO_PROTOCOL_DB_PATH ?? defaultDbPath;
-const resolvedDbPath = isAbsolute(dbPath) ? dbPath : resolve(process.cwd(), dbPath);
+const resolvedDbPath = resolveScriptRuntimePath(dbPath);
 
 const command = process.argv[2];
 const args = process.argv.slice(3);
@@ -101,6 +104,31 @@ function seed(database) {
       rules_json: JSON.stringify(['Return a structured response even when all external tools are placeholders.']),
       source: 'seed',
       tags: JSON.stringify(['chat']),
+    },
+    {
+      id: 'chat.runtime-configuration-routing',
+      name: 'Runtime Configuration Request Routing',
+      description:
+        'User requests to add, update, validate, or remove SIM-ONE runtime configuration are handled by the dedicated Coding Worker capability.',
+      scope: 'base',
+      enabled: 1,
+      priority: 85,
+      selector_json: JSON.stringify({ messageKind: 'chat.message' }),
+      rules_json: JSON.stringify([
+        'When the user asks to inspect, validate, add, update, or remove SIM-ONE runtime configuration, delegate the request and this protocol bundle to the coding-worker lead.',
+        'Use coding_runtime_config_status, coding_runtime_config_validate, and coding_runtime_config_update; never use the general Coding Worker sandbox to read or write sim-one.config.',
+        'For a secret set, pass only the exact value explicitly supplied by the user for this requested change; the Coding Worker must not read existing configured values, infer a replacement, or reuse a credential from another request.',
+        'Require the runtime.config.update backend approval before every set or removal, including a secret explicitly supplied by the user.',
+        'Never repeat a supplied secret in approval metadata, progress events, logs, tool results, or the final response; report only the key name, operation status, and restart requirement.',
+      ]),
+      source: 'seed',
+      tags: JSON.stringify([
+        'chat',
+        'configuration',
+        'coding-worker',
+        'approval',
+        'secrets',
+      ]),
     },
     {
       id: 'coding.use-coding-worker',

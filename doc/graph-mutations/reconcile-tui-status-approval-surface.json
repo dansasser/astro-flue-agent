@@ -1,0 +1,705 @@
+{
+  "schema_version": 1,
+  "mutation_id": "reconcile-tui-status-approval-surface",
+  "rationale": "Couple the stable two-row TUI status geometry with the approval-gate selector placement so approval controls cannot be designed independently, while preserving separate status and connector ownership and requiring an explicit owner placement decision.",
+  "evidence": [
+    "structured-memory:01KYN630AJPW6CYGNDNDE87SHC",
+    "structured-memory:01KYN5NZRB7JA87WE1K3VXX3F9",
+    "session:tui-2026-07-28T14-18-26-854Z-38c55035",
+    "doc/decisions/d3-file-access-gate.md",
+    "tui/ratatui/src/ui.rs",
+    "src/api/ingress/approval-connector-tui-stub.ts"
+  ],
+  "expected_graph_version": 50,
+  "expected_graph_checksum": "fc890a25ee762aa1d2c207ce6f4a1e69ed3ca95db3d481b04e5ddc99032add72",
+  "new_context_version": "tui-status-approval-surface:2026-07-29",
+  "operations": [
+    {
+      "op": "add-node",
+      "value": {
+        "acceptance": [
+          {
+            "id": "decision-status-consistent",
+            "kind": "policy",
+            "criterion": "doc/decisions/d6-tui-approval-surface-placement.md, decisions.json, specification-manifest.json, and runtime evidence all record Open until the owner selects one placement without an implicit default.",
+            "evidence": "runtime:evidence/resolve-d6-tui-approval-surface-placement/decision-status.json"
+          },
+          {
+            "id": "placement-options-evaluated",
+            "kind": "review",
+            "criterion": "The decision compares an overlay above the prompt with a temporary approval row or panel against supported terminal sizes, two-row status stability, prompt growth, transcript scrolling and selection, slash-menu behavior, keyboard and mouse focus, and future work-pane geometry.",
+            "evidence": "runtime:evidence/resolve-d6-tui-approval-surface-placement/options-evaluated.json"
+          }
+        ],
+        "execution": {
+          "completion_condition": "The owner explicitly selects the approval-surface placement and all decision status surfaces agree.",
+          "max_attempts": 1,
+          "timeout_minutes": 60
+        },
+        "executor": {
+          "instructions": "Present the bounded placement options and evidence to the SIM-ONE owner, record the owner selection in doc/decisions/d6-tui-approval-surface-placement.md, and do not infer approval from a recommendation.",
+          "kind": "human",
+          "name": "SIM-ONE owner decision"
+        },
+        "goal": "Select where actionable TUI approval controls appear relative to the stable two-row status surface and prompt without breaking terminal interaction.",
+        "id": "resolve-d6-tui-approval-surface-placement",
+        "inputs": [
+          {
+            "artifact": "artifact:baseline-context",
+            "name": "grounded project context",
+            "required": true
+          },
+          {
+            "artifact": "artifact:product-spec",
+            "name": "product specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:architecture-spec",
+            "name": "architecture specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:acceptance-spec",
+            "name": "acceptance specification",
+            "required": true
+          },
+          {
+            "artifact": "artifact:open-questions",
+            "name": "open questions",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "format": "decision-record",
+            "name": "Resolve D6 TUI Approval Surface Placement decision"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:baseline-context",
+            "artifact:product-spec",
+            "artifact:architecture-spec",
+            "artifact:acceptance-spec",
+            "artifact:open-questions",
+            "doc/product-spec.md",
+            "doc/architecture-spec.md",
+            "doc/acceptance-spec.md",
+            "doc/open-questions.md",
+            "doc/decisions/d6-tui-approval-surface-placement.md",
+            "decisions.json",
+            "specification-manifest.json",
+            "tui/ratatui/src/ui.rs",
+            "tui/ratatui/src/app.rs"
+          ],
+          "write": [
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ]
+        },
+        "resources": [
+          "project:resolve-d6-tui-approval-surface-placement"
+        ],
+        "side_effects": {
+          "approval_required": false,
+          "description": "Produces or updates one owner-visible TUI layout decision record.",
+          "level": "reversible",
+          "rollback": "Restore the prior decision record and invalidate only the two declared TUI consumers."
+        },
+        "state": "needs_human",
+        "tags": [
+          "decision",
+          "d6",
+          "tui",
+          "approval",
+          "layout"
+        ],
+        "title": "Resolve D6 TUI Approval Surface Placement",
+        "type": "decision"
+      },
+      "id": "resolve-d6-tui-approval-surface-placement"
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-tui-status-context-meter",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared files are serialized and no parallel member edits the same file.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every repository write has a current fail-closed approval-service decision bound to the exact path, mutation or command digest, run, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/repository-mutations-approved.json",
+            "id": "repository-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Durable typed progress covers work admission, handoffs, tool execution, approval, verification, blockers, and completion.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused automated tests and output-level product evidence pass for every changed behavior.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-TUI-002: two status rows fit supported widths without overlapping prompt, transcript, slash palette, or work pane.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/rel-tui-002-two-row-status.json",
+            "id": "rel-tui-002-two-row-status",
+            "kind": "test"
+          },
+          {
+            "criterion": "Context-left percentage derives from the selected model/session budget and reports unavailable instead of estimating when authoritative data is missing.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/context-left-authoritative.json",
+            "id": "context-left-authoritative",
+            "kind": "test"
+          },
+          {
+            "id": "approval-surface-layout-contract",
+            "kind": "test",
+            "criterion": "The stable two-row status surface and the owner-selected approval selector placement share one measured layout contract; pending approvals remain visible without overlapping the transcript, prompt editor, slash palette, or future work pane.",
+            "evidence": "runtime:evidence/implement-tui-status-context-meter/approval-surface-layout-contract.json"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 240
+        },
+        "executor": {
+          "instructions": "Use typed gateway/Flue usage data, preserve the prompt and transcript geometry, and render unavailable values honestly. Follow artifact:implementation-plan exactly, use only worker-local internal specialists, emit durable typed progress, and stop before any unassigned file or unapproved mutation.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Render a stable two-row status surface with authoritative model/session/gateway/stream/approval/task state and context-left percentage.",
+        "id": "implement-tui-status-context-meter",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-message-queue-change",
+            "name": "TUI message-queue change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval-surface placement decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:tui-status-context-meter-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "TUI status and context-meter change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:tui-message-queue-change",
+            "tui/ratatui/",
+            "src/engine/session/",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md"
+          ],
+          "write": [
+            "tui/ratatui/ files assigned to this member",
+            "typed context/usage status files assigned to this member",
+            "focused framebuffer and product tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:tui-status-context-meter"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for Implement TUI Status And Context Meter.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit while preserving unrelated members."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "tui",
+          "status",
+          "context",
+          "meter"
+        ],
+        "title": "Implement TUI Status And Context Meter",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-connector-approval-controls",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared files are serialized and no parallel member edits the same file.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every repository write has a current fail-closed approval-service decision bound to the exact path, mutation or command digest, run, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/repository-mutations-approved.json",
+            "id": "repository-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Durable typed progress covers work admission, handoffs, tool execution, approval, verification, blockers, and completion.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused automated tests and output-level product evidence pass for every changed behavior.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "criterion": "REL-APP-001: TUI and Telegram create, display, approve, deny, expire, and settle the same typed request under their own connector identity.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/rel-app-001-actionable-controls.json",
+            "id": "rel-app-001-actionable-controls",
+            "kind": "test"
+          },
+          {
+            "criterion": "The response and control surface use the current trusted connector and never describe Telegram behavior to a TUI request or vice versa.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/connector-awareness.json",
+            "id": "connector-awareness",
+            "kind": "test"
+          },
+          {
+            "criterion": "A connector that cannot render or settle an approval leaves the mutation blocked and reports an actionable non-secret status.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/missing-surface-fails-closed.json",
+            "id": "missing-surface-fails-closed",
+            "kind": "test"
+          },
+          {
+            "criterion": "Telegram connector credentials and approval behavior resolve through canonical typed configuration without connector-local .env discovery or secret-bearing status output.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/canonical-telegram-config.json",
+            "id": "canonical-telegram-config",
+            "kind": "test"
+          },
+          {
+            "id": "tui-approval-selector-placement",
+            "kind": "test",
+            "criterion": "The TUI renders the owner-selected approval selector placement with Deny, Allow once, and Allow for session choices while preserving prompt input, transcript scrolling and selection, slash-command navigation, resize behavior, and visible pending state.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/tui-approval-selector-placement.json"
+          },
+          {
+            "id": "approval-scope-semantics",
+            "kind": "test",
+            "criterion": "Deny blocks the exact request, allow_once settles only the exact approved operation and cannot replay, and allow_for_session expires when the bound session changes; unavailable or ambiguous selector state remains fail-closed.",
+            "evidence": "runtime:evidence/implement-connector-approval-controls/approval-scope-semantics.json"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 240
+        },
+        "executor": {
+          "instructions": "Bridge the shared approval service through typed gateway/connector contracts; do not put orchestration or approval authority in the TUI. Follow artifact:implementation-plan exactly, use only worker-local internal specialists, emit durable typed progress, and stop before any unassigned file or unapproved mutation.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Render and settle action approvals in TUI and Telegram with connector-aware identity, allow scopes, and fail-closed unavailable states.",
+        "id": "implement-connector-approval-controls",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:file-access-approval-gate-change",
+            "name": "file access approval-gate change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:ingress-operations-change",
+            "name": "ingress operations change",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-thinking-transcript-change",
+            "name": "TUI thinking-transcript change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d3-file-access-gate",
+            "name": "resolved file-access decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:runtime-configuration-consolidation-change",
+            "name": "canonical runtime configuration change",
+            "required": true
+          },
+          {
+            "artifact": "decision:d6-tui-approval-surface-placement",
+            "name": "resolved TUI approval-surface placement decision",
+            "required": true
+          },
+          {
+            "artifact": "artifact:tui-status-context-meter-change",
+            "name": "stable two-row TUI status geometry",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:connector-approval-controls-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "connector approval-controls change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:file-access-approval-gate-change",
+            "artifact:ingress-operations-change",
+            "artifact:tui-thinking-transcript-change",
+            "decision:d3-file-access-gate",
+            "src/api/",
+            "src/channels/",
+            "tui/ratatui/",
+            "decision:d5-canonical-runtime-configuration",
+            "doc/decisions/d5-canonical-runtime-configuration.md",
+            "artifact:runtime-configuration-consolidation-change",
+            "decision:d6-tui-approval-surface-placement",
+            "doc/decisions/d6-tui-approval-surface-placement.md",
+            "artifact:tui-status-context-meter-change"
+          ],
+          "write": [
+            "approval ingress/route files assigned to this member",
+            "Telegram approval delivery files assigned to this member",
+            "tui/ratatui/ approval UI files assigned to this member",
+            "focused connector and packaged approval tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:connector-approval-controls"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for Implement Connector Approval Controls.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit while preserving unrelated members."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "connector",
+          "approval",
+          "controls"
+        ],
+        "title": "Implement Connector Approval Controls",
+        "type": "work"
+      }
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "baseline-to-resolve-d6-tui-approval-surface-placement-consumes",
+        "from": "baseline-context",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:baseline-context"
+        ],
+        "condition": "resolve-d6-tui-approval-surface-placement requires the current artifact:baseline-context artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "baseline-to-resolve-d6-tui-approval-surface-placement-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "baseline-to-resolve-d6-tui-approval-surface-placement-invalidates",
+        "from": "baseline-context",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "invalidates",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "A material change to artifact:baseline-context invalidates decision:d6-tui-approval-surface-placement.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "baseline-to-resolve-d6-tui-approval-surface-placement-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-0-consumes",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:product-spec"
+        ],
+        "condition": "resolve-d6-tui-approval-surface-placement requires the current artifact:product-spec artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-0-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-0-invalidates",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "invalidates",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "A material change to artifact:product-spec invalidates decision:d6-tui-approval-surface-placement.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-0-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-1-consumes",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:architecture-spec"
+        ],
+        "condition": "resolve-d6-tui-approval-surface-placement requires the current artifact:architecture-spec artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-1-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-1-invalidates",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "invalidates",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "A material change to artifact:architecture-spec invalidates decision:d6-tui-approval-surface-placement.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-1-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-2-consumes",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:acceptance-spec"
+        ],
+        "condition": "resolve-d6-tui-approval-surface-placement requires the current artifact:acceptance-spec artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-2-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-2-invalidates",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "invalidates",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "A material change to artifact:acceptance-spec invalidates decision:d6-tui-approval-surface-placement.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-2-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-3-consumes",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:open-questions"
+        ],
+        "condition": "resolve-d6-tui-approval-surface-placement requires the current artifact:open-questions artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-3-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-3-invalidates",
+        "from": "specify-release-reconciliation",
+        "to": "resolve-d6-tui-approval-surface-placement",
+        "type": "invalidates",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "A material change to artifact:open-questions invalidates decision:d6-tui-approval-surface-placement.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "release-spec-to-resolve-d6-tui-approval-surface-placement-3-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-implement-tui-status-context-meter-consumes",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "implement-tui-status-context-meter",
+        "type": "consumes",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "implement-tui-status-context-meter requires the current decision:d6-tui-approval-surface-placement artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "resolve-d6-tui-approval-surface-placement-to-implement-tui-status-context-meter-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-implement-tui-status-context-meter-invalidates",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "implement-tui-status-context-meter",
+        "type": "invalidates",
+        "artifacts": [
+          "artifact:tui-status-context-meter-change"
+        ],
+        "condition": "A material change to decision:d6-tui-approval-surface-placement invalidates artifact:tui-status-context-meter-change.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "resolve-d6-tui-approval-surface-placement-to-implement-tui-status-context-meter-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-implement-connector-approval-controls-consumes",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "implement-connector-approval-controls",
+        "type": "consumes",
+        "artifacts": [
+          "decision:d6-tui-approval-surface-placement"
+        ],
+        "condition": "implement-connector-approval-controls requires the current decision:d6-tui-approval-surface-placement artifact.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "resolve-d6-tui-approval-surface-placement-to-implement-connector-approval-controls-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "resolve-d6-tui-approval-surface-placement-to-implement-connector-approval-controls-invalidates",
+        "from": "resolve-d6-tui-approval-surface-placement",
+        "to": "implement-connector-approval-controls",
+        "type": "invalidates",
+        "artifacts": [
+          "artifact:connector-approval-controls-change"
+        ],
+        "condition": "A material change to decision:d6-tui-approval-surface-placement invalidates artifact:connector-approval-controls-change.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "resolve-d6-tui-approval-surface-placement-to-implement-connector-approval-controls-invalidates"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "tui-status-context-meter-to-connector-approval-controls-consumes",
+        "from": "implement-tui-status-context-meter",
+        "to": "implement-connector-approval-controls",
+        "type": "consumes",
+        "artifacts": [
+          "artifact:tui-status-context-meter-change"
+        ],
+        "condition": "implement-connector-approval-controls requires the current stable two-row TUI status geometry.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "tui-status-context-meter-to-connector-approval-controls-consumes"
+    },
+    {
+      "op": "add-edge",
+      "value": {
+        "id": "tui-status-context-meter-to-connector-approval-controls-invalidates",
+        "from": "implement-tui-status-context-meter",
+        "to": "implement-connector-approval-controls",
+        "type": "invalidates",
+        "artifacts": [
+          "artifact:connector-approval-controls-change"
+        ],
+        "condition": "A material change to artifact:tui-status-context-meter-change invalidates artifact:connector-approval-controls-change.",
+        "exit_condition": null,
+        "max_traversals": null
+      },
+      "id": "tui-status-context-meter-to-connector-approval-controls-invalidates"
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "implement-tui-status-context-meter",
+      "implement-connector-approval-controls"
+    ],
+    "artifacts": [
+      "artifact:tui-status-context-meter-change",
+      "artifact:connector-approval-controls-change"
+    ]
+  },
+  "approval": null
+}

@@ -1,5 +1,8 @@
-import { homedir } from 'node:os';
-import { resolve as resolvePath } from 'node:path';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../core/config/runtime-root.js';
 import { createFileCodingApprovalService, type CodingApprovalService } from '../../engine/workers/coding-worker/approvals/approval-service.js';
 
 export interface SharedCodingApprovalServiceEnv {
@@ -12,7 +15,7 @@ export interface SharedCodingApprovalServiceEnv {
  *
  * Order of resolution:
  * 1. `env.GOROMBO_APPROVAL_ROOT` (if set to a non-empty string)
- * 2. `~/.gorombo/approvals` (unified runtime data root, via homedir())
+ * 2. `<runtime-root>/approvals`
  */
 export function resolveCodingApprovalRoot(
   env: SharedCodingApprovalServiceEnv,
@@ -20,9 +23,9 @@ export function resolveCodingApprovalRoot(
 ): string {
   const configuredRoot = env.GOROMBO_APPROVAL_ROOT;
   if (typeof configuredRoot === 'string' && configuredRoot.length > 0) {
-    return resolvePath(configuredRoot);
+    return resolveRuntimePath(configuredRoot, { env });
   }
-  return resolvePath(homedir(), '.gorombo', 'approvals');
+  return createGoromboRuntimePaths(resolveGoromboRuntimeRoot({ env })).approvals;
 }
 
 /**

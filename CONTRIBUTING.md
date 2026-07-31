@@ -35,7 +35,9 @@ instead. Use [Support](SUPPORT.md) for installation help and usage questions.
 Start with the toolchain and checkout instructions in
 [Build From Source](README.md#build-from-source). Repository development uses
 Node.js 22.18 or newer and supports either npm, included with Node.js, or pnpm
-10.10.0. Choose one package manager and use its command path consistently.
+10.10.0. Coding Worker process tests also require the Linux host setup in
+[Linux Coding Worker Sandbox](docs/getting-started/installation.md#linux-coding-worker-sandbox).
+Choose one package manager and use its command path consistently.
 
 Prepare the dependency tree and generated local assets:
 
@@ -60,9 +62,10 @@ The embedding model and Rust/WebAssembly memory artifact are gitignored and must
 be prepared in each checkout before the complete test suite can run.
 
 Most deterministic checks do not require provider credentials. To run the live
-development runtime, copy `.env.example` to `.env` and add only the credentials
-needed for the behavior being tested. Never commit `.env` or place secrets in
-source, fixtures, issues, logs, or pull requests.
+development runtime, copy `sim-one.config.example` to the ignored
+`sim-one.config`, set mode `0600`, and add only the values needed for the
+behavior being tested. Never commit `sim-one.config` or place secrets in source,
+fixtures, issues, logs, or pull requests.
 
 ## Run The Development Runtime
 
@@ -122,7 +125,7 @@ approved migration.
 
 Do not commit:
 
-- `.env` files, API keys, tokens, credentials, or private data;
+- `sim-one.config`, legacy `.env` files, API keys, tokens, credentials, or private data;
 - runtime databases, authentication state, approval records, or logs;
 - downloaded embedding models or generated Rust/WebAssembly build artifacts;
 - editor, machine-specific, or unrelated generated files.

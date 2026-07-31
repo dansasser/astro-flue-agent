@@ -67,6 +67,14 @@ An agent file is a Flue `createAgent(...)` entrypoint. Every agent has a main fi
 
 The main agent entrypoint lives at `src/agents/orchestrator.ts`. Subagent implementations live under `src/engine/workers/<name>/` so they do not sit at the same directory level as the main agent. The main agent workspace lives at `src/workspace/`; subagent workspaces live at `src/engine/workers/<name>/workspace/`.
 
+The main orchestrator replaces Flue's default virtual-sandbox tool set with an
+empty sandbox tool list. This prevents ephemeral virtual paths such as
+`/home/user` from being mistaken for durable product storage while preserving
+Flue task delegation. Durable file, repository, project, and handoff work is
+delegated to the Coding Worker, whose local sandbox is rooted at
+`<runtime-root>/workspace`. Runtime capability lifecycle mutations are
+delegated separately to `capability-manager`.
+
 Agents own:
 
 ```text
@@ -107,7 +115,10 @@ Workflow files expose HTTP by exporting `route`. Flue workflow HTTP invocation i
 
 Tools are executable capabilities created with `defineTool(...)`.
 
-Managed GitHub authentication is a Coding Worker-owned tool/runtime capability. The orchestrator delegates GitHub work to the Coding Worker and does not receive GitHub-auth tools.
+The official GitHub MCP connection is a Coding Worker-owned runtime capability.
+The Coding Worker exposes its selected read-only MCP tools and keeps mutation
+tools behind SIM-ONE approval wrappers. The orchestrator delegates GitHub work
+to the Coding Worker and receives neither the MCP tools nor the PAT.
 
 Tools must be attached only to agents that should own those capabilities. Do not attach web-search-capable tools to the orchestrator.
 
@@ -166,6 +177,6 @@ The orchestrator must not directly call web search or a web-capable retrieval pa
 - [Protocol System](protocol-system.md)
 - [Skill System](skill-system.md)
 - [Worker System](worker-system.md)
-- [Managed GitHub Authentication](github-auth-system.md)
+- [GitHub MCP And Repository Authentication](github-auth-system.md)
 - [Retrieval And Research](retrieval-and-research.md)
 - [Execution Workflows](execution-workflows.md)

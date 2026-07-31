@@ -1,0 +1,363 @@
+{
+  "schema_version": 1,
+  "mutation_id": "route-capability-validation-through-protocols",
+  "rationale": "Make SQLite-backed protocols the policy authority for capability-manager lifecycle validation and Coding Worker capability authoring validation while retaining deterministic contract checks in typed services.",
+  "evidence": [
+    "user-direction:2026-07-29-route-all-validation-through-protocols",
+    "docs/architecture/protocol-system.md",
+    "src/engine/tools/protocol-tool.ts",
+    "src/core/types/core.ts",
+    "doc/architecture-spec.md"
+  ],
+  "expected_graph_version": 53,
+  "expected_graph_checksum": "9fa9fea348d127c717ff430e6d615fb38c596138d68dd125e124da85ba2d5a97",
+  "new_context_version": "capability-protocol-validation:2026-07-29",
+  "operations": [
+    {
+      "op": "replace-node",
+      "id": "implement-capability-management-worker",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership; shared orchestrator, capability-service, CLI, documentation, and test files are serialized after their existing owners.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every agent-requested registry mutation has a current fail-closed approval-service decision bound to actor, session, capability kind/id, operation, source/version or MCP endpoint metadata, scope, approver, and time.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/registry-mutations-approved.json",
+            "id": "registry-mutations-approved",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-CAP-002: capability lifecycle requests from the orchestrator are delegated to one built-in capability-manager worker; the orchestrator no longer owns direct add/update/remove/enable/disable capability tools, while authenticated users retain the sim-one CLI.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/rel-cap-002-dedicated-worker.json",
+            "id": "rel-cap-002-dedicated-worker",
+            "kind": "test"
+          },
+          {
+            "criterion": "The capability-manager worker and sim-one CLI use one typed lifecycle service for list, inspect, validate, add, update, enable, disable, and remove across skill, tool, worker, and MCP records; neither surface reimplements SQLite or materialization rules.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/shared-lifecycle-service.json",
+            "id": "shared-lifecycle-service",
+            "kind": "test"
+          },
+          {
+            "criterion": "Agent-added executable tools, workers, and MCP servers remain disabled until an explicit enable approval; skills may activate only inside the approved installation transaction and remain subordinate to protocols and attached capabilities.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/enablement-policy.json",
+            "id": "enablement-policy",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Capability validation enforces safe ids, cross-kind and built-in collision checks, exact source version resolution, expected Flue export/skill contracts, managed runtime-root paths, and rollback of partial registry/materialization failures.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/capability-validation.json",
+            "id": "capability-validation",
+            "kind": "test"
+          },
+          {
+            "criterion": "MCP records store endpoint, transport, and canonical configuration key references without storing credential values; results, progress, approval evidence, and diagnostics remain redacted.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/mcp-secret-boundary.json",
+            "id": "mcp-secret-boundary",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every lifecycle operation emits durable typed progress and returns the resulting record, materialization/connection validation, activation state, and whether a gateway restart is required.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/progress-and-result.json",
+            "id": "progress-and-result",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused service, worker-routing, CLI-parity, approval, restart, rollback, and packaged-product tests pass for all four capability kinds.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "id": "protocol-routed-validation",
+            "criterion": "Every capability-manager validate or mutation request consumes the applicable Protocol Tool bundle, fails closed when that bundle is absent or malformed, applies the bundle directives before deterministic lifecycle validation, and records protocol ids plus applied rules in redacted lifecycle evidence.",
+            "evidence": "runtime:evidence/implement-capability-management-worker/protocol-routed-validation.json",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 300
+        },
+        "executor": {
+          "instructions": "Implement the built-in capability-manager as a Flue lead worker owned by the orchestrator. Reuse one typed lifecycle service from both worker tools and the sim-one CLI. Preserve the runtime capability registry as authority, keep secrets in canonical runtime configuration, require trusted approvals for agent-driven mutations, emit public typed progress, and stop before any unassigned file or approval boundary. Require the applicable Protocol Tool bundle for validation and mutation requests, apply its directives before deterministic lifecycle checks, and preserve protocol ids and applied rules in redacted lifecycle evidence.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Create the dedicated capability-manager worker and shared lifecycle service that safely administer user- and agent-added skills, tools, workers, and MCP servers through the existing runtime registry.",
+        "id": "implement-capability-management-worker",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capabilities-security-change",
+            "name": "capability registry and security foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:agent-runtime-change",
+            "name": "agent runtime and worker registration foundation",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:capability-management-worker-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "capability management worker change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:capabilities-security-change",
+            "artifact:agent-runtime-change",
+            "decision:d5-canonical-runtime-configuration",
+            "src/engine/capabilities/",
+            "src/engine/approvals/",
+            "src/agents/orchestrator.ts",
+            "sim-one-cli/",
+            "scripts/capability-admin.mjs",
+            "docs/architecture/capability-system.md",
+            "docs/architecture/registry-system.md",
+            "docs/architecture/worker-system.md",
+            "src/core/types/core.ts",
+            "src/core/protocols/",
+            "src/engine/tools/protocol-tool.ts"
+          ],
+          "write": [
+            "src/engine/workers/capability-manager/",
+            "shared capability lifecycle service files assigned to this member",
+            "serialized orchestrator and sim-one CLI capability-routing files assigned to this member",
+            "focused capability-manager tests and documentation assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:capability-management-worker"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized files for the dedicated capability-management worker and shared lifecycle service.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned files from the pre-change Git commit and restore the prior orchestrator/CLI routing after disabling the new worker."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "capabilities",
+          "registry",
+          "worker",
+          "cli",
+          "approvals"
+        ],
+        "title": "Implement Capability Management Worker",
+        "type": "work"
+      }
+    },
+    {
+      "op": "replace-node",
+      "id": "implement-coding-worker-capability-authoring",
+      "value": {
+        "acceptance": [
+          {
+            "criterion": "The change stays inside this member's implementation-plan file ownership and is serialized after Coding Worker scaffold tooling and file-approval enforcement for every shared worker file.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/scope-and-file-ownership.json",
+            "id": "scope-and-file-ownership",
+            "kind": "policy"
+          },
+          {
+            "criterion": "Every generated or edited capability source file is scoped to the selected workspace repository/project and has a current file-edit approval; the authoring member cannot write the runtime capability database or managed capability directory.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/authoring-boundary.json",
+            "id": "authoring-boundary",
+            "kind": "policy"
+          },
+          {
+            "criterion": "REL-CW-007: the Coding Worker owns registered process skills for capability classification/design plus skill, tool, worker, and MCP authoring, validation, testing, and handoff.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/rel-cw-007-authoring-skills.json",
+            "id": "rel-cw-007-authoring-skills",
+            "kind": "test"
+          },
+          {
+            "criterion": "Worker-local typed tools scaffold and validate SKILL.md packages, defineTool modules, defineAgentProfile worker packages, and MCP server/connection packages without requiring direct registry access.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/scaffold-and-validate-tools.json",
+            "id": "scaffold-and-validate-tools",
+            "kind": "test"
+          },
+          {
+            "criterion": "Authoring validation uses current Flue and SIM-ONE contracts, verifies imports/exports and tests in the selected repository, scans for secrets and unsafe host paths, and produces a reproducible source/version/content-digest handoff.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/reproducible-handoff.json",
+            "id": "reproducible-handoff",
+            "kind": "test"
+          },
+          {
+            "criterion": "MCP authoring distinguishes building an MCP server from registering an MCP connection; credentials are represented only by canonical configuration key names and never written into source or handoff artifacts.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/mcp-authoring-boundary.json",
+            "id": "mcp-authoring-boundary",
+            "kind": "policy"
+          },
+          {
+            "criterion": "The final handoff names kind, id, display metadata, source reference, exact version, content digest, validation evidence, required configuration keys, requested activation state, and the capability-manager operation to perform.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/handoff-contract.json",
+            "id": "handoff-contract",
+            "kind": "schema"
+          },
+          {
+            "criterion": "Durable typed progress covers classification, scaffold, edits, tests, security validation, packaging, and handoff without exposing hidden reasoning or secrets.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/progress-visible.json",
+            "id": "progress-visible",
+            "kind": "artifact"
+          },
+          {
+            "criterion": "Focused tests generate, validate, package, and hand off fixtures for each capability kind and prove the capability-manager, not the Coding Worker, owns runtime installation and activation.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/focused-verification.json",
+            "id": "focused-verification",
+            "kind": "test"
+          },
+          {
+            "id": "protocol-routed-authoring-validation",
+            "criterion": "Coding Worker capability classification, source validation, security checks, tests, packaging, and handoff consume the applicable Protocol Tool bundle; the handoff records protocol ids and applied rules and cannot substitute worker-local policy for protocol directives.",
+            "evidence": "runtime:evidence/implement-coding-worker-capability-authoring/protocol-routed-authoring-validation.json",
+            "kind": "policy"
+          }
+        ],
+        "execution": {
+          "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
+          "max_attempts": 3,
+          "timeout_minutes": 300
+        },
+        "executor": {
+          "instructions": "Extend only the Coding Worker authoring surface. Add worker-local skills and typed scaffold/validation/handoff tools for skills, tools, workers, and MCP packages. Keep all source changes inside the selected repository/project, use current Flue contracts, emit public progress, and hand validated artifacts to the capability-manager instead of mutating the runtime registry. Route classification, validation, security checks, tests, packaging, and handoff through the applicable Protocol Tool bundle and include protocol ids plus applied rules in the typed handoff.",
+          "kind": "agent",
+          "name": "SIM-ONE Coding Worker lead"
+        },
+        "goal": "Give the Coding Worker the skills and tools to design, build, validate, test, and package every supported capability kind while leaving runtime installation and activation to the capability-manager worker.",
+        "id": "implement-coding-worker-capability-authoring",
+        "inputs": [
+          {
+            "artifact": "artifact:implementation-plan",
+            "name": "implementation plan",
+            "required": true
+          },
+          {
+            "artifact": "artifact:beta-release-contract",
+            "name": "0.1.0 Beta release contract approval",
+            "required": true
+          },
+          {
+            "artifact": "artifact:capabilities-security-change",
+            "name": "capability contracts and validation foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:coding-worker-scaffold-tooling-change",
+            "name": "Coding Worker scaffold tooling foundation",
+            "required": true
+          },
+          {
+            "artifact": "artifact:file-access-approval-gate-change",
+            "name": "Coding Worker file authorization foundation",
+            "required": true
+          },
+          {
+            "artifact": "decision:d2-workspace-root-isolation",
+            "name": "resolved workspace-root isolation decision",
+            "required": true
+          },
+          {
+            "artifact": "decision:d5-canonical-runtime-configuration",
+            "name": "resolved canonical runtime configuration decision",
+            "required": true
+          }
+        ],
+        "outputs": [
+          {
+            "artifact": "artifact:coding-worker-capability-authoring-change",
+            "format": "git-diff-or-no-change-record",
+            "name": "Coding Worker capability authoring change"
+          }
+        ],
+        "permissions": {
+          "destructive": false,
+          "external": [],
+          "read": [
+            "artifact:implementation-plan",
+            "artifact:beta-release-contract",
+            "artifact:capabilities-security-change",
+            "artifact:coding-worker-scaffold-tooling-change",
+            "artifact:file-access-approval-gate-change",
+            "decision:d2-workspace-root-isolation",
+            "decision:d5-canonical-runtime-configuration",
+            "src/engine/workers/coding-worker/",
+            "docs/architecture/capability-system.md",
+            "docs/architecture/skill-system.md",
+            "docs/architecture/tool-system.md",
+            "docs/architecture/worker-system.md",
+            "Flue documentation through the worker-owned documentation capability",
+            "src/core/types/core.ts",
+            "src/core/protocols/",
+            "src/engine/tools/protocol-tool.ts"
+          ],
+          "write": [
+            "Coding Worker capability-authoring skills and tools assigned to this member",
+            "Coding Worker workspace guidance assigned to this member",
+            "selected workspace repo/project capability source files after file-edit approval",
+            "focused capability-authoring fixtures and tests assigned to this member"
+          ]
+        },
+        "resources": [
+          "project:coding-worker-capability-authoring"
+        ],
+        "side_effects": {
+          "approval_required": true,
+          "description": "Changes approval-service-authorized Coding Worker authoring files and selected workspace capability source files.",
+          "level": "reversible",
+          "rollback": "Restore this member's exclusively owned Coding Worker files and generated workspace source changes from their pre-change revisions without altering the runtime capability registry."
+        },
+        "state": "planned",
+        "tags": [
+          "implementation",
+          "coding",
+          "worker",
+          "capabilities",
+          "skills",
+          "tools",
+          "mcp"
+        ],
+        "title": "Implement Coding Worker Capability Authoring",
+        "type": "work"
+      }
+    }
+  ],
+  "invalidate": {
+    "nodes": [
+      "implement-capability-management-worker",
+      "implement-coding-worker-capability-authoring"
+    ],
+    "artifacts": [
+      "artifact:capability-management-worker-change",
+      "artifact:coding-worker-capability-authoring-change"
+    ]
+  },
+  "approval": null
+}

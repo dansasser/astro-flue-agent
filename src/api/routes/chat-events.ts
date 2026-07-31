@@ -1,4 +1,5 @@
 import type { Hono } from 'hono';
+import type { SessionData } from '@flue/runtime/adapter';
 import {
   isSessionCreationSlashCommand,
   isSupportedSlashCommand,
@@ -30,15 +31,21 @@ import {
 } from '../../engine/session/session-routing.js';
 import type { AgentDeliveryReference } from '../../engine/session/session-database.js';
 import { createChatPrompt } from '../../api/routes/chat-prompt.js';
-import { getGithubAuthChallengeRelay, githubAuthAudienceFromEvent } from '../../api/ingress/github-auth-challenge-relay.js';
 import { runWithTrustedMessageEvent } from '../../api/ingress/trusted-event-context.js';
 
 export interface ChatEventRouteOptions {
   openDurableSession?: DurableOrchestratorSessionOpener;
+  loadSessionData?: (sessionId: string) => Promise<SessionData | null>;
 }
 
 export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOptions = {}): void {
   const openDurableSession = options.openDurableSession ?? openDurableOrchestratorSession;
+  const loadSessionData = options.loadSessionData
+    ?? ((sessionId: string) => goromboPersistenceRuntime.getLatestSessionDataForInstance(
+      sessionId,
+      directAgentHarnessName,
+      directAgentSessionName,
+    ));
 
   app.post('/api/chat/events', requireApiSecret, async (c) => {
     const headers = new Headers(c.req.raw.headers);
@@ -200,6 +207,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
       }));
     }
 
+    const runtimeEnv = runtimeEnvForRequest(c.env as Record<string, unknown> | undefined);
     const agentResponse = await runWithTrustedMessageEvent(event, () => app.request(
       `/agents/orchestrator/${encodeURIComponent(sessionResolution.sessionId)}?wait=result`,
       {
@@ -207,12 +215,18 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         headers,
         body: JSON.stringify({ message: createChatPrompt(event) }),
       },
-      runtimeEnvForRequest(c.env as Record<string, unknown> | undefined),
+      runtimeEnv,
     ));
 
     const body = await readJsonResponse(agentResponse.clone());
     if (isRecord(body)) {
-      const githubAuthChallenge = getGithubAuthChallengeRelay().consume(githubAuthAudienceFromEvent(event));
+      const contextUsage = agentResponse.ok
+        ? await createContextUsageProjection({
+            sessionId: sessionResolution.sessionId,
+            env: runtimeEnv,
+            loadSessionData,
+          })
+        : unavailableContextUsage();
       const delivery = readDeliveryReference(body);
       const deliveryId = legacyDeliveryId(delivery);
       if (deliveryId || Object.keys(delivery).length > 0) {
@@ -238,7 +252,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
           surface: sessionResolution.surface,
           created: sessionResolution.created,
         },
-        ...(githubAuthChallenge ? { githubAuthChallenge } : {}),
+        contextUsage,
       }, agentResponse.status as never);
     }
 
@@ -274,6 +288,7 @@ function createCommandResponse(input: {
     created: boolean;
     title?: string;
   };
+  contextUsage?: ContextUsageProjection;
 } {
   const sessionTitle = input.sessionTitle ?? input.sessionResolution?.session.displayName;
   return {
@@ -288,6 +303,9 @@ function createCommandResponse(input: {
     event: {
       id: input.eventId,
     },
+    ...(input.contextBudget
+      ? { contextUsage: projectContextUsage(input.contextBudget) }
+      : {}),
     ...(input.sessionResolution
       ? {
           session: {
@@ -306,6 +324,61 @@ interface DurableChatContextBudget extends SessionBudgetReport {
   prePromptStatus: SessionBudgetReport['status'];
   prePromptEstimatedUsedTokens: number;
   lastPromptEstimateTokens: number;
+}
+
+type ContextUsageProjection =
+  | {
+      available: false;
+    }
+  | {
+      available: true;
+      source: 'session-budget';
+      modelSpecifier: string;
+      usedTokens: number;
+      capacityTokens: number;
+    };
+
+async function createContextUsageProjection(input: {
+  sessionId: string;
+  env: Record<string, unknown>;
+  loadSessionData: (sessionId: string) => Promise<SessionData | null>;
+}): Promise<ContextUsageProjection> {
+  try {
+    const sessionData = await input.loadSessionData(input.sessionId);
+    if (!sessionData) {
+      return unavailableContextUsage();
+    }
+
+    const modelCard = configureRuntimeModels(input.env).selectedModelCard;
+    return projectContextUsage(createSessionBudgetReport({
+      sessionId: input.sessionId,
+      modelCard,
+      sessionData,
+    }));
+  } catch {
+    return unavailableContextUsage();
+  }
+}
+
+function projectContextUsage(report: SessionBudgetReport): ContextUsageProjection {
+  if (!Number.isFinite(report.usableInputTokens) || report.usableInputTokens <= 0) {
+    return unavailableContextUsage();
+  }
+
+  return {
+    available: true,
+    source: 'session-budget',
+    modelSpecifier: report.modelSpecifier,
+    usedTokens: Math.min(
+      Math.max(0, Math.floor(report.estimatedUsedTokens)),
+      report.usableInputTokens,
+    ),
+    capacityTokens: report.usableInputTokens,
+  };
+}
+
+function unavailableContextUsage(): ContextUsageProjection {
+  return { available: false };
 }
 
 async function compactDurableChatSession(input: {

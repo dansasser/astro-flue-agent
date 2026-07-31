@@ -272,6 +272,9 @@ fn wait_for_scripted_startup(app: &mut App) -> io::Result<()> {
     }
 
     if !app.startup_succeeded() {
+        for line in app.transcript_lines() {
+            eprintln!("{line}");
+        }
         return Err(io::Error::other(
             "Scripted TUI startup preflight failed. See the transcript error above.",
         ));
@@ -334,10 +337,6 @@ impl CliOptions {
                     let value = args.next().ok_or("--server-path requires a value")?;
                     options.gateway.server_path = Some(PathBuf::from(value));
                 }
-                "--env-path" => {
-                    let value = args.next().ok_or("--env-path requires a value")?;
-                    options.gateway.env_path = Some(PathBuf::from(value));
-                }
                 "--help" | "-h" => {
                     print_help();
                     std::process::exit(0);
@@ -352,7 +351,7 @@ impl CliOptions {
 
 fn print_help() {
     println!(
-        "SIM-ONE Alpha Ratatui TUI\n\nOptions:\n  --port <number>       Gateway port\n  --base-url <url>      Existing gateway base URL; skips server launch\n  --session <selector>  Existing session id or exact name to resume\n  --server-path <path>  Built SIM-ONE Alpha server.mjs path\n  --env-path <path>     Env file path\n  --smoke-startup       Start/connect gateway then exit\n  -h, --help            Show this help"
+        "SIM-ONE Alpha Ratatui TUI\n\nOptions:\n  --port <number>       Gateway port\n  --base-url <url>      Existing gateway base URL; skips server launch\n  --session <selector>  Existing session id or exact name to resume\n  --server-path <path>  Built SIM-ONE Alpha server.mjs path\n  --smoke-startup       Start/connect gateway then exit\n  -h, --help            Show this help"
     );
 }
 

@@ -1,4 +1,8 @@
 import { resolve } from 'node:path';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+} from '../../../core/config/runtime-root.js';
 import type { EmbeddingClient } from '../../../engine/rag/embeddings.js';
 import { getOnnxEmbeddingDimensions } from '../../../engine/embeddings/index.js';
 import type { VectorStore } from '../../../engine/rag/vector/index.js';
@@ -13,8 +17,9 @@ export interface BackgroundIndexerOptions {
 }
 
 export async function runBackgroundIndexing(options: BackgroundIndexerOptions): Promise<void> {
-  const projectRoot = resolve(options.projectRoot ?? process.cwd());
-  const workspaceRoot = options.workspaceRoot ? resolve(options.workspaceRoot) : projectRoot;
+  const runtimePaths = createGoromboRuntimePaths(resolveGoromboRuntimeRoot());
+  const projectRoot = resolve(options.projectRoot ?? runtimePaths.packagedServer);
+  const workspaceRoot = resolve(options.workspaceRoot ?? runtimePaths.codingWorkspace);
 
   await indexCollection('knowledge_docs', async () => {
     const records = await indexKnowledgeDocs({ projectRoot });

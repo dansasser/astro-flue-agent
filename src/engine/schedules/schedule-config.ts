@@ -50,7 +50,7 @@ export interface SchedulesConfig {
 
 const DEFAULTS: SchedulesConfig = {
   enabled: true,
-  databasePath: '.gorombo/db/schedules.sqlite',
+  databasePath: 'db/schedules.sqlite',
   maxConcurrentRuns: 8,
   retry: {
     maxAttempts: 3,

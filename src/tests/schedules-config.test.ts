@@ -22,7 +22,7 @@ test('resolveScheduleConfig applies defaults when the block is absent', () => {
   assert.equal(c.sessionRetentionMs, 86_400_000, '24h default');
   assert.equal(c.shutdownGraceSeconds, 60);
   assert.equal(c.providerPreflight, true);
-  assert.equal(c.databasePath, '.gorombo/db/schedules.sqlite');
+  assert.equal(c.databasePath, 'db/schedules.sqlite');
 });
 
 test('resolveScheduleConfig reads numeric/boolean fields from the JSON block', () => {

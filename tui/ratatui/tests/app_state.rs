@@ -6,9 +6,11 @@ use std::time::{Duration, Instant};
 use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::Rect;
 use sim_one_ratatui_tui::agent::{
-    AgentPromptOrigin, AgentReply, SessionLifecycleReply, SessionSummary,
+    AgentContextUsage, AgentPromptOrigin, AgentReply, SessionLifecycleReply, SessionSummary,
 };
-use sim_one_ratatui_tui::app::{App, AppEvent, Clock, MouseRegions, SCROLL_PAGE_LINES};
+use sim_one_ratatui_tui::app::{
+    App, AppEvent, Clock, ContextUsageState, MouseRegions, SCROLL_PAGE_LINES,
+};
 use sim_one_ratatui_tui::flue::events::{FlueEvent, StreamControl};
 use sim_one_ratatui_tui::flue::stream::AgentStreamUpdate;
 use sim_one_ratatui_tui::history::{
@@ -170,6 +172,64 @@ fn pending_turn_starts_with_spinner_elapsed_and_status() {
 
     release.send(()).expect("pending sender should release");
     wait_for_agent(&mut app);
+}
+
+#[test]
+fn structured_status_fields_preserve_legacy_order_and_authoritative_context() {
+    let mut app = App::new_for_test();
+
+    let unavailable = app.status_fields();
+    assert_eq!(
+        unavailable.runtime.first().map(String::as_str),
+        Some("SIM-ONE Alpha")
+    );
+    assert_eq!(unavailable.messages, "messages: 2");
+    assert_eq!(unavailable.context, "context: unavailable");
+    assert_eq!(unavailable.tail, "tail: live");
+
+    let mut legacy_parts = unavailable.runtime;
+    legacy_parts.push(unavailable.messages);
+    legacy_parts.push(unavailable.tail);
+    assert_eq!(app.status_text(), legacy_parts.join(" | "));
+
+    app.set_authoritative_context_usage(250, 1_000);
+    assert_eq!(app.status_fields().context, "context: 75% remaining");
+
+    app.set_authoritative_context_usage(1_200, 1_000);
+    assert_eq!(app.status_fields().context, "context: 0% remaining");
+
+    app.set_authoritative_context_usage(500, 0);
+    assert_eq!(app.status_fields().context, "context: unavailable");
+}
+
+#[test]
+fn agent_reply_context_projection_updates_the_status_meter() {
+    let mut app = App::with_agent_sender(
+        "tui-context-1",
+        "test gateway",
+        "http://127.0.0.1:3940",
+        Arc::new(|_, _, _| {
+            Ok(AgentReply {
+                text: "context reply".to_string(),
+                submission_id: None,
+                stream_offset: None,
+                session_id: Some("tui-context-1".to_string()),
+                session_title: None,
+                command_name: None,
+                session_created: None,
+                context_usage: Some(AgentContextUsage::Authoritative {
+                    used_tokens: 250,
+                    total_capacity: 1_000,
+                }),
+            })
+        }),
+    );
+
+    app.handle_event(AppEvent::Text("show context".to_string()));
+    app.handle_event(AppEvent::Submit);
+    wait_for_agent(&mut app);
+
+    assert_eq!(app.status_fields().context, "context: 75% remaining");
 }
 
 #[test]
@@ -590,6 +650,7 @@ fn startup_preflight_creates_fresh_session_before_sending_one_greeting_prompt() 
                 session_title: None,
                 command_name: None,
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
         Arc::new(move |_| {
@@ -1516,6 +1577,7 @@ fn explicit_startup_missing_session_uses_fresh_session_and_greeting() {
                 session_title: None,
                 command_name: None,
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
         Arc::new(|_| panic!("fallback is returned by the resume lifecycle request")),
@@ -2000,6 +2062,7 @@ fn rename_reply_updates_status_title_without_changing_session_id() {
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("rename".to_string()),
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
     );
@@ -2059,6 +2122,7 @@ fn resume_reply_replaces_the_old_transcript_with_durable_history() {
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("resume".to_string()),
                 session_created: Some(false),
+                context_usage: None,
             })
         }),
         Arc::new(|_| panic!("command resume must not create through lifecycle API")),
@@ -2390,6 +2454,7 @@ fn new_command_replaces_the_old_transcript_and_shows_the_command_result() {
                 session_title: None,
                 command_name: Some("new".to_string()),
                 session_created: Some(true),
+                context_usage: None,
             })
         }),
     );
@@ -2400,12 +2465,22 @@ fn new_command_replaces_the_old_transcript_and_shows_the_command_result() {
             "text":"OLD_SESSION_ONLY"
         }),
     )]));
+    app.set_authoritative_context_usage(250, 1_000);
+    assert_eq!(
+        app.context_usage(),
+        ContextUsageState::Authoritative {
+            used_tokens: 250,
+            total_capacity: 1_000,
+        }
+    );
 
     app.handle_event(AppEvent::Text("/new Demo".to_string()));
     app.handle_event(AppEvent::Submit);
     wait_for_agent(&mut app);
 
     assert_eq!(app.session_id(), "tui-new-1");
+    assert_eq!(app.context_usage(), ContextUsageState::Unavailable);
+    assert_eq!(app.status_fields().context, "context: unavailable");
     assert_eq!(
         app.transcript_lines(),
         ["system: Started new session tui-new-1."]
@@ -2538,6 +2613,7 @@ fn agent_reply(text: impl Into<String>) -> AgentReply {
         session_title: None,
         command_name: None,
         session_created: None,
+        context_usage: None,
     }
 }
 

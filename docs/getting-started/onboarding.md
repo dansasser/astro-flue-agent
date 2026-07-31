@@ -26,16 +26,20 @@ The release onboarding interface:
 1. Validates the runtime location and installed assets.
 2. Selects a primary model and optionally configures a backup model card.
 3. Collects model-provider API keys.
-4. Collects agent and service tokens for enabled integrations.
+4. Collects agent and service tokens for enabled integrations, including an
+   optional GitHub PAT for Coding Worker private repository and MCP access.
 5. Completes Gmail application authorization when Gmail is enabled.
 6. Collects optional research, image-generation, and external-service credentials.
 7. Starts the local gateway and performs functional health checks.
 8. Opens the first secure terminal session with SIM-ONE Alpha.
 
-Secrets are written to `~/.gorombo/.env` or the configured deployment secret
-store. Model selection and non-secret runtime behavior are written to
-`~/.gorombo/sim-one-alpha/gorombo.config.json`. Secrets are not written into
-the agent workspace or stored as conversation text.
+Secrets and environment-style settings are written to owner-only
+`~/.gorombo/sim-one.config` or the configured deployment secret store.
+Model selection and structured non-secret runtime behavior are written to
+`~/.gorombo/gorombo.config.json`. The tracked
+`~/.gorombo/sim-one.config.example` remains the supported-key template.
+Secrets are not written into the agent workspace or stored as conversation
+text.
 
 The current model registry validates credentials for both selected cards.
 Selecting a backup card does not currently enable automatic provider or model

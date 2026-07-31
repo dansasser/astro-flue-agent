@@ -55,6 +55,15 @@ export interface GitHubClient {
   listPullRequestChecks(owner: string, repo: string, pullRequestNumber: number): Promise<GithubCheckSummary[]>;
   listPullRequestComments?(owner: string, repo: string, pullRequestNumber: number): Promise<GithubCommentSummary[]>;
   listPullRequestReviewThreads?(owner: string, repo: string, pullRequestNumber: number): Promise<GithubReviewThreadSummary[]>;
+  createPullRequest?(input: {
+    owner: string;
+    repo: string;
+    title: string;
+    body: string;
+    base: string;
+    head: string;
+    draft: boolean;
+  }): Promise<GithubWriteSummary>;
   createBranchFromPullRequest?(input: {
     owner: string;
     repo: string;
@@ -84,10 +93,7 @@ export interface GitHubClient {
   forkRepository?(input: {
     owner: string;
     repo: string;
-    defaultBranchOnly?: boolean;
-    clone?: boolean;
-    forkName?: string;
-    cwd?: string;
+    organization?: string;
   }): Promise<GithubWriteSummary>;
   updatePullRequest?(input: {
     owner: string;
@@ -117,7 +123,11 @@ export interface GitHubClient {
     body?: string;
   }): Promise<GithubWriteSummary>;
   updateReviewThread?(input: {
+    owner: string;
+    repo: string;
+    pullRequestNumber: number;
     threadId: string;
+    commentId?: number;
     replyBody?: string;
     resolve?: boolean;
   }): Promise<GithubWriteSummary>;

@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use sim_one_ratatui_tui::agent::{
     create_chat_session, list_chat_sessions, resume_chat_session, send_agent_prompt,
-    send_agent_prompt_reply, AgentPromptOrigin,
+    send_agent_prompt_reply, AgentContextUsage, AgentPromptOrigin,
 };
 
 #[test]
@@ -125,7 +125,7 @@ fn extracts_submission_correlation_metadata_from_agent_response() {
     thread::spawn(move || {
         let (mut stream, _) = listener.accept().expect("client should connect");
         let _ = read_http_request(&mut stream);
-        let body = r#"{"result":{"text":"correlated response"},"submission":{"id":"submission-42"},"offset":"0000000000000000_0000000000000042"}"#;
+        let body = r#"{"result":{"text":"correlated response"},"submission":{"id":"submission-42"},"offset":"0000000000000000_0000000000000042","contextUsage":{"available":true,"usedTokens":250,"capacityTokens":1000}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -149,6 +149,13 @@ fn extracts_submission_correlation_metadata_from_agent_response() {
         response.stream_offset.as_deref(),
         Some("0000000000000000_0000000000000042")
     );
+    assert_eq!(
+        response.context_usage,
+        Some(AgentContextUsage::Authoritative {
+            used_tokens: 250,
+            total_capacity: 1_000,
+        })
+    );
 }
 
 #[test]
@@ -165,7 +172,7 @@ fn tags_only_startup_preflight_prompts_with_the_internal_workflow() {
         let request = read_http_request(&mut stream);
         tx.send(request).expect("request should be reported");
 
-        let body = r#"{"result":{"text":"startup greeting"}}"#;
+        let body = r#"{"result":{"text":"startup greeting"},"contextUsage":{"available":false}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -185,6 +192,7 @@ fn tags_only_startup_preflight_prompts_with_the_internal_workflow() {
     .expect("startup prompt should return response metadata");
 
     assert_eq!(response.text, "startup greeting");
+    assert_eq!(response.context_usage, Some(AgentContextUsage::Unavailable));
     let body = request_body_json(&rx.recv().expect("request should be captured"));
     assert_eq!(
         body.get("text").and_then(|value| value.as_str()),

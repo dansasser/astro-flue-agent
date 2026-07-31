@@ -23,6 +23,25 @@ export const baseProtocolSeeds: ProtocolDefinition[] = [
     tags: ['global', 'orchestration'],
   },
   {
+    id: 'capabilities.lifecycle-routing',
+    name: 'Capability Lifecycle Validation Routing',
+    description:
+      'Capability lifecycle and authoring validation consume applicable protocol directives before deterministic checks.',
+    scope: 'base',
+    enabled: true,
+    priority: 88,
+    appliesTo: {},
+    rules: [
+      'Delegate runtime capability lifecycle requests to the capability-manager worker and pass this complete protocol bundle.',
+      'Route capability classification, validation, security checks, tests, packaging, and handoff through applicable protocol directives before deterministic checks.',
+      'Validate source-backed Flue export contracts without executing capability code, then scan packages for credential values and machine-specific absolute paths.',
+      'Require approval for capability add, update, enable, disable, and remove; executable tools, workers, and MCP connections are added disabled and return to disabled after update.',
+      'Record applied protocol ids and rules in redacted lifecycle or handoff evidence without storing secret values.',
+    ],
+    source: 'seed',
+    tags: ['capabilities', 'validation', 'delegation', 'approval'],
+  },
+  {
     id: 'orchestrator.delegate-only',
     name: 'Orchestrator Delegation',
     description: 'The main orchestrator coordinates; substantive work is delegated to specialized workers.',
@@ -51,6 +70,27 @@ export const baseProtocolSeeds: ProtocolDefinition[] = [
     rules: ['Return a structured response even when all external tools are placeholders.'],
     source: 'seed',
     tags: ['chat'],
+  },
+  {
+    id: 'chat.runtime-configuration-routing',
+    name: 'Runtime Configuration Request Routing',
+    description:
+      'User requests to add, update, validate, or remove SIM-ONE runtime configuration are handled by the dedicated Coding Worker capability.',
+    scope: 'base',
+    enabled: true,
+    priority: 85,
+    appliesTo: {
+      messageKind: 'chat.message',
+    },
+    rules: [
+      'When the user asks to inspect, validate, add, update, or remove SIM-ONE runtime configuration, delegate the request and this protocol bundle to the coding-worker lead.',
+      'Use coding_runtime_config_status, coding_runtime_config_validate, and coding_runtime_config_update; never use the general Coding Worker sandbox to read or write sim-one.config.',
+      'For a secret set, pass only the exact value explicitly supplied by the user for this requested change; the Coding Worker must not read existing configured values, infer a replacement, or reuse a credential from another request.',
+      'Require the runtime.config.update backend approval before every set or removal, including a secret explicitly supplied by the user.',
+      'Never repeat a supplied secret in approval metadata, progress events, logs, tool results, or the final response; report only the key name, operation status, and restart requirement.',
+    ],
+    source: 'seed',
+    tags: ['chat', 'configuration', 'coding-worker', 'approval', 'secrets'],
   },
   {
     id: 'coding.use-coding-worker',
@@ -161,4 +201,3 @@ export const baseProtocolSeeds: ProtocolDefinition[] = [
     tags: ['coding', 'output'],
   },
 ];
-

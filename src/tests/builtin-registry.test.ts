@@ -72,15 +72,21 @@ test('builtin-registry: getBuiltinNames filters by kind', () => {
 
 test('builtin-registry: throws when registry file is missing', () => {
   resetBuiltinRegistryCache();
-  const emptyDir = mkdtempSync(join(tmpdir(), 'builtin-empty-'));
-  const prevCwd = process.cwd();
+  const fixture = mkdtempSync(join(tmpdir(), 'builtin-empty-'));
+  const runtimeRoot = join(fixture, '.gorombo');
+  const previousRuntimeRoot = process.env.GOROMBO_RUNTIME_ROOT;
   try {
-    process.chdir(emptyDir);
+    mkdirSync(runtimeRoot, { recursive: true });
+    process.env.GOROMBO_RUNTIME_ROOT = runtimeRoot;
     assert.throws(() => loadBuiltinRegistry(), /not found|corrupted|unreadable/i);
   } finally {
-    process.chdir(prevCwd);
+    if (previousRuntimeRoot === undefined) {
+      delete process.env.GOROMBO_RUNTIME_ROOT;
+    } else {
+      process.env.GOROMBO_RUNTIME_ROOT = previousRuntimeRoot;
+    }
     resetBuiltinRegistryCache();
-    rmSync(emptyDir, { recursive: true, force: true });
+    rmSync(fixture, { recursive: true, force: true });
   }
 });
 

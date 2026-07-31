@@ -3,7 +3,9 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import process from 'node:process';
+import { loadScriptRuntimeEnvironment } from './runtime-configuration-files.mjs';
 
+loadScriptRuntimeEnvironment({ sourceRoot: resolve('.') });
 const approvalRoot = readRequiredEnv('GOROMBO_APPROVAL_ROOT');
 const apiSecret = process.env.API_SECRET;
 

@@ -14,6 +14,23 @@ Start with:
 
 Keep `src/app.ts` limited to Hono setup, middleware, imported routes, telemetry observer boot, and `flue()` routing. Runtime composition belongs in the orchestrator agent and domain modules, not in the app entrypoint.
 
+## Runtime configuration
+
+Start with:
+
+- `sim-one.config.example`
+- `src/core/config/runtime-environment.ts`
+- `src/core/config/runtime-environment-bootstrap.ts`
+- `src/core/config/runtime-root.ts`
+- `src/core/config/gorombo-config.ts`
+- `scripts/runtime-configuration-files.mjs`
+- `docs/reference/configuration.md`
+
+The canonical owner file is `sim-one.config`; it is ignored, owner-only, and
+never model-visible. `gorombo.config.json` remains the typed non-environment
+settings file. Add a supported key only through the registry, example,
+inventory, onboarding metadata, consumer, and tests together.
+
 ## Chat, sessions, and ingress
 
 Start with:
@@ -56,7 +73,8 @@ Start with:
 
 - `docs/architecture/capability-system.md`
 - `src/engine/capabilities/`
-- `src/engine/tools/capability-tools.ts`
+- `src/engine/workers/capability-manager/`
+- `src/engine/workers/coding-worker/capability-authoring/`
 - `scripts/capability-admin.mjs`
 - `sim-one-cli/src/cli.tsx`
 
@@ -115,15 +133,37 @@ Start with:
 
 Model cards declare environment variable names, not secret values. Prefer shared input parsing utilities from `src/core/utils/input.ts` over ad hoc parsing.
 
+For runtime path ownership, begin with
+`src/core/config/runtime-root.ts`, `scripts/runtime-root.mjs`,
+`scripts/package-runtime-dependencies.mjs`,
+`sim-one-cli/src/launcher/server-manager.ts`, and
+`tui/ratatui/src/gateway.rs`. Relative operational paths must remain under one
+owning `.gorombo` tree.
+
+## GitHub and repository access
+
+Start with:
+
+- `docs/architecture/github-auth-system.md`
+- `src/engine/workers/coding-worker/github/`
+- `src/engine/workers/coding-worker/tools/coding-git-tools.ts`
+- `src/engine/workers/coding-worker/repo/`
+- `src/tests/github-mcp.test.ts`
+- `src/tests/github-private-clone.test.ts`
+
+GitHub MCP is Coding Worker-owned. Preserve read-only model exposure,
+action-specific mutation approval, PAT redaction, and anonymous public Git
+before credentialed fallback.
+
 ## CLI and TUI
 
 Start with:
 
 - `sim-one-cli/src/cli.tsx`
-- `sim-one-cli/src/App.tsx`
 - `sim-one-cli/src/launcher/`
 - `sim-one-cli/src/commands/`
-- `scripts/test-tui-e2e.mjs`
+- `tui/ratatui/src/`
+- `scripts/test-ratatui-product.mjs`
 
 Verify default and explicit session behavior against the current terminal
 implementation. Use `docs/getting-started/pre-release-status.md` before

@@ -1,26 +1,26 @@
 export {
   createStore,
-  withStore,
-  getCapabilitiesDir,
-  getCapabilityPath,
-  assertSafeCapabilityId,
+  withLifecycleService,
+  printLifecycleResult,
   resolveCapabilityDbPath,
 } from './store.js';
 
 export {
   addSkill,
   listSkills,
+  inspectSkill,
+  validateSkill,
   enableSkill,
   disableSkill,
   removeSkill,
   updateSkill,
-  fetchSource,
-  refetchCapability,
 } from './skill.js';
 
 export {
   addTool,
   listTools,
+  inspectTool,
+  validateTool,
   enableTool,
   disableTool,
   removeTool,
@@ -30,6 +30,8 @@ export {
 export {
   addWorker,
   listWorkers,
+  inspectWorker,
+  validateWorker,
   enableWorker,
   disableWorker,
   removeWorker,
@@ -39,6 +41,8 @@ export {
 export {
   addMcp,
   listMcp,
+  inspectMcp,
+  validateMcp,
   enableMcp,
   disableMcp,
   removeMcp,

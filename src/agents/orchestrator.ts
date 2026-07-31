@@ -1,8 +1,14 @@
-import { resolve } from 'node:path';
 import {
   createAgent,
   type AgentRouteHandler,
+  type SandboxFactory,
 } from '@flue/runtime';
+import { local } from '@flue/runtime/node';
+import {
+  createGoromboRuntimePaths,
+  resolveCodingWorkspaceRoot,
+  resolveGoromboRuntimeRoot,
+} from '../core/config/runtime-root.js';
 import { configureRuntimeModels } from '../core/models/index.js';
 import {
   composeWorkspaceInstructions,
@@ -42,15 +48,14 @@ import {
   scheduleGetTool,
   scheduleRunNowTool,
   scheduleRunsTool,
-  capabilityTools,
 } from '../engine/tools/index.js';
 import type { AgentModelCard } from '../core/models/types.js';
 import { telegramReplyTool } from '../channels/telegram.js';
 import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
+import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
-import { loadUserCapabilities } from '../engine/capabilities/capability-loader.js';
-import { materializeCapability } from '../engine/capabilities/skill-materializer.js';
+import { loadPromotedUserCapabilities } from '../engine/capabilities/capability-loader.js';
 import { connectUserMcpServers } from '../engine/capabilities/mcp-broker.js';
 import { connectBuiltinMcpServers } from '../engine/capabilities/builtin-mcp.js';
 import { loadUserTools } from '../engine/capabilities/tool-loader.js';
@@ -67,15 +72,19 @@ export const orchestratorInstructions = [
   createOrchestratorRuntimeCapabilityBlock(),
 ].join('\n\n');
 
-export default createAgent(async ({ id, env }) => {
+export default createAgent(async ({ env }) => {
   const models = configureRuntimeModels(env);
   const selectedModelCard = models.selectedModelCard;
+  const runtimeRoot = resolveGoromboRuntimeRoot({ env });
+  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
   const codingWorker = await createCodingWorkerSubagent({
     workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
-    env: createCodingWorkerToolEnv(env),
-    trustedAgentInstanceId: id,
+    stateRoot: runtimePaths.codingWorkerState,
+    env: createCodingWorkerToolEnv(env, runtimeRoot),
   });
+  const capabilityManager = createCapabilityManagerSubagent({ env });
   const researcher = createResearcherSubagent();
+  const sandbox = createOrchestratorSandbox(runtimePaths.packagedServer);
 
   const builtInTools = [
     loadProtocolsTool,
@@ -111,9 +120,8 @@ export default createAgent(async ({ id, env }) => {
     scheduleRunNowTool,
     scheduleRunsTool,
     telegramReplyTool,
-    ...capabilityTools,
   ];
-  const builtInSubagents = [codingWorker, researcher];
+  const builtInSubagents = [capabilityManager, codingWorker, researcher];
 
   const userCapabilities = loadUserCapabilitiesFromStore(env);
   const [builtinMcpResult, mcpResult, toolResult, workerResult] = await Promise.all([
@@ -132,8 +140,17 @@ export default createAgent(async ({ id, env }) => {
     skills: [greetingPreflight],
     tools: [...builtInTools, ...userTools],
     subagents: [...builtInSubagents, ...userSubagents],
+    cwd: runtimePaths.packagedServer,
+    sandbox,
   };
 });
+
+export function createOrchestratorSandbox(packagedServerRoot: string): SandboxFactory {
+  return {
+    ...local({ cwd: packagedServerRoot }),
+    tools: () => [],
+  };
+}
 
 /**
  * Creates the orchestrator compaction policy from the selected model card budget.
@@ -153,23 +170,16 @@ export function createFlueCompactionConfig(modelCard: AgentModelCard): {
 }
 
 export function resolveCodingWorkerWorkspaceRoot(env: Record<string, unknown>): string {
-  const configuredRoot =
-    readOptionalEnv(env, 'GOROMBO_WORKSPACE_ROOT') ??
-    readOptionalEnv(env, 'GOROMBO_CODING_WORKSPACE_ROOT') ??
-    readOptionalEnv(env, 'GOROMBO_CODING_REPO_PATH');
-
-  if (configuredRoot) {
-    return configuredRoot;
-  }
-
-  return resolve('src/workspace');
+  return resolveCodingWorkspaceRoot({ env });
 }
 
-function createCodingWorkerToolEnv(env: Record<string, unknown>): Record<string, string | undefined> {
+function createCodingWorkerToolEnv(
+  env: Record<string, unknown>,
+  runtimeRoot: string,
+): Record<string, string | undefined> {
   return {
-    GH_TOKEN: readOptionalEnv(env, 'GH_TOKEN'),
-    GITHUB_TOKEN: readOptionalEnv(env, 'GITHUB_TOKEN'),
-    GOROMBO_GITHUB_AUTH_ROOT: readOptionalEnv(env, 'GOROMBO_GITHUB_AUTH_ROOT'),
+    GOROMBO_RUNTIME_ROOT: runtimeRoot,
+    GITHUB_PERSONAL_ACCESS_TOKEN: readOptionalEnv(env, 'GITHUB_PERSONAL_ACCESS_TOKEN'),
   };
 }
 
@@ -182,14 +192,11 @@ function loadUserCapabilitiesFromStore(env: Record<string, unknown>) {
   let store;
   try {
     store = createCapabilityStore({});
-    const caps = loadUserCapabilities({ store });
-    for (const capability of [...caps.skills, ...caps.tools, ...caps.workers]) {
-      try {
-        materializeCapability({ record: capability, env });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`[capabilities] Failed to materialize ${capability.kind} ${capability.id}: ${message}`);
-      }
+    const caps = loadPromotedUserCapabilities({ store, env });
+    for (const failure of caps.failures) {
+      console.error(
+        `[capabilities] Failed to load ${failure.kind} ${failure.id}: ${failure.error}`,
+      );
     }
     return caps;
   } catch (error) {
@@ -219,22 +226,20 @@ The following capabilities are actually attached to this main agent at runtime:
 - Tool: \`list_image_artifacts\`
 - Tool: \`schedule_create\` / \`schedule_pause\` / \`schedule_resume\` / \`schedule_update\` / \`schedule_delete\` / \`schedule_list\` / \`schedule_get\` / \`schedule_run_now\` / \`schedule_runs\` (scheduled/recurring/one-shot agent turns; ownerScope is derived from the trusted eventId and enforced on every non-create op)
 - Tool: \`telegram_reply\` (when TELEGRAM_BOT_TOKEN is configured)
-- Tool: \`add_skill\` / \`add_tool\` / \`add_worker\` / \`add_mcp_server\` / \`list_capabilities\` (user-defined capability management; skills auto-enable, tools/workers/MCP require user approval via CLI or TUI)
 - MCP: \`astro-docs\` (built-in — search Astro framework documentation via \`mcp__astro-docs__search_astro_docs\`)
 - Subagent: \`researcher\`
 - Subagent: \`coding-worker\` (repository inspection/editing, shell/test/debug, code review, repository lifecycle, approval-gated git operations, and GitHub work)
+- Subagent: \`capability-manager\` (validated, approval-gated runtime skill, tool, worker, and MCP lifecycle administration)
 
 Use the configured model card from the project model registry. Worker-backed capabilities count as capabilities of this main agent. An attached capability does not establish that a specific provider account is authenticated, a repository is authorized, or an operation completed; require responsible worker/tool evidence.
 
 For any current, external, web, source-backed, or research task, delegate with the Flue task tool using agent: "researcher". Do not perform web search directly and do not call web-capable retrieval tools from the main agent. The researcher owns \`web_research\`, including basic, standard, and deep research modes.
 
-For coding-related work, including repository work and GitHub work through the Coding Worker, delegate with the Flue task tool using agent: "coding-worker". Include the trusted current eventId in the delegated request when GitHub authentication might be needed, so the worker can resolve the initiating connector/actor/conversation from persisted ingress state. Do not call coding-worker internal subagents directly. The coding-worker lead decides whether triage, implementer, test-debug, code-review, GitHub/PR, or future worker-local subagents are needed. Surface coding-worker public progress events and structured results to the user when available.
+For coding-related work, including repository work and GitHub work through the Coding Worker, delegate with the Flue task tool using agent: "coding-worker". Do not call coding-worker internal subagents directly. The coding-worker lead decides whether triage, implementer, test-debug, code-review, GitHub/PR, or future worker-local subagents are needed. Surface coding-worker public progress events and structured results to the user when available. GitHub authentication is trusted Coding Worker runtime configuration through the official GitHub MCP; never put a PAT in delegation text or model-visible context.
 
-Do not use an eventId from a prior or unrelated message for GitHub authentication. Pass only the trusted current eventId supplied by the active ingress turn.
+For runtime capability lifecycle requests, delegate with the Flue task tool using agent: "capability-manager" and include the persisted normalized message \`eventId\`. The main agent does not own direct capability mutation tools. The capability-manager owns list, inspect, validate, add, update, enable, disable, and remove through the shared lifecycle service and trusted approval service. Its tools reload the applicable protocol bundle from trusted SQLite state and fail closed when the event or protocol context is unavailable.
 
-When continuing a GitHub login approved after an earlier turn, delegate the prior approvalRequestId together with the new trusted current eventId. The Coding Worker validates that continuation against the original connector, actor, and conversation.
-
-Use \`load_protocols\` before final reasoning. The result is a JSON string containing a \`ProtocolBundle\`. Parse it and include the parsed object as \`protocolBundle\` in the task input when delegating to \`coding-worker\`. The coding-worker lead will apply directives from \`protocolBundle.protocols[].rules\` to its loop.
+Use \`load_protocols\` before final reasoning. The result is a JSON string containing a \`ProtocolBundle\`. Parse it and include the parsed object as \`protocolBundle\` when delegating to \`coding-worker\`. When delegating to \`capability-manager\`, include the persisted event id instead; trusted application code reloads and applies that event's protocol directives.
 
 Use \`retrieve_memory\` when stored conversation, project, or user context would materially help. Pass delegated findings into the final answer, and mention \`providerFailures\` when they affect confidence.`;
 }

@@ -1,33 +1,45 @@
+import '../../src/core/config/runtime-environment-bootstrap.js';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { Command, Option } from 'commander';
 import { render } from 'ink';
 import React from 'react';
+import {
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../src/core/config/runtime-root.js';
 import { App } from './App.js';
 import { ensureServerRunning, cleanupServer } from './launcher/server-manager.js';
 import {
   addSkill,
   listSkills,
+  inspectSkill,
+  validateSkill,
   enableSkill,
   disableSkill,
   removeSkill,
   updateSkill,
   addTool,
   listTools,
+  inspectTool,
+  validateTool,
   enableTool,
   disableTool,
   removeTool,
   updateTool,
   addWorker,
   listWorkers,
+  inspectWorker,
+  validateWorker,
   enableWorker,
   disableWorker,
   removeWorker,
   updateWorker,
   addMcp,
   listMcp,
+  inspectMcp,
+  validateMcp,
   enableMcp,
   disableMcp,
   removeMcp,
@@ -41,7 +53,6 @@ interface ProductTuiOptions {
   baseUrl?: string;
   session?: string;
   serverPath?: string;
-  envPath?: string;
   smokeStartup?: boolean;
   ink?: boolean;
 }
@@ -53,7 +64,6 @@ program
   .option('--base-url <url>', 'full base url (overrides --port, when launching TUI)')
   .option('--session <id>', 'agent instance id (when launching TUI)')
   .addOption(new Option('--server-path <path>', 'built SIM-ONE Alpha server.mjs path').hideHelp())
-  .addOption(new Option('--env-path <path>', 'env file path').hideHelp())
   .addOption(new Option('--smoke-startup', 'start/connect gateway then exit').hideHelp())
   .addOption(new Option('--ink', 'launch the legacy Ink TUI fallback').hideHelp())
   .action(async (opts: ProductTuiOptions) => {
@@ -77,7 +87,8 @@ function validateTuiOptions(opts: ProductTuiOptions): void {
 }
 
 async function launchRatatuiTui(opts: ProductTuiOptions): Promise<void> {
-  const tuiPath = resolveRatatuiBinary();
+  const runtimeRoot = resolveGoromboRuntimeRoot({ modulePath: import.meta.url });
+  const tuiPath = resolveRatatuiBinary(runtimeRoot);
   if (!existsSync(tuiPath)) {
     console.error(`Ratatui TUI not found at ${tuiPath}. Run 'pnpm run build:tui:ratatui' first.`);
     process.exit(1);
@@ -86,8 +97,11 @@ async function launchRatatuiTui(opts: ProductTuiOptions): Promise<void> {
   const args = ratatuiArgs(opts);
   const command = windowsCommandFileInvocation(tuiPath, args);
   const child = spawn(command.file, command.args, {
-    cwd: process.cwd(),
-    env: process.env,
+    cwd: runtimeRoot,
+    env: {
+      ...process.env,
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+    },
     stdio: 'inherit',
   });
 
@@ -119,24 +133,17 @@ function ratatuiArgs(opts: ProductTuiOptions): string[] {
   if (opts.baseUrl) args.push('--base-url', opts.baseUrl);
   if (opts.session) args.push('--session', opts.session);
   if (opts.serverPath) args.push('--server-path', opts.serverPath);
-  if (opts.envPath) args.push('--env-path', opts.envPath);
   if (opts.smokeStartup) args.push('--smoke-startup');
   return args;
 }
 
-function resolveRatatuiBinary(): string {
+function resolveRatatuiBinary(runtimeRoot: string): string {
   if (process.env.SIM_ONE_TUI_PATH) {
-    return resolve(process.env.SIM_ONE_TUI_PATH);
+    return resolveRuntimePath(process.env.SIM_ONE_TUI_PATH, { runtimeRoot });
   }
 
   const binaryName = process.platform === 'win32' ? 'sim-one-ratatui-tui.exe' : 'sim-one-ratatui-tui';
-  const moduleDir = dirname(fileURLToPath(import.meta.url));
-  const candidates = [
-    resolve(moduleDir, '..', 'sim-one-ratatui', binaryName),
-    resolve(process.cwd(), '.gorombo', 'sim-one-ratatui', binaryName),
-  ];
-
-  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
+  return `${createGoromboRuntimePaths(runtimeRoot).packagedTui}/${binaryName}`;
 }
 
 function waitForChild(child: ChildProcess): Promise<number> {
@@ -180,9 +187,9 @@ async function launchInkTui(opts: ProductTuiOptions): Promise<void> {
 
 function addKindCommands(program: Command, kind: 'skill' | 'tool' | 'worker'): void {
   const fns = {
-    skill: { add: addSkill, list: listSkills, enable: enableSkill, disable: disableSkill, remove: removeSkill, update: updateSkill },
-    tool: { add: addTool, list: listTools, enable: enableTool, disable: disableTool, remove: removeTool, update: updateTool },
-    worker: { add: addWorker, list: listWorkers, enable: enableWorker, disable: disableWorker, remove: removeWorker, update: updateWorker },
+    skill: { add: addSkill, validate: validateSkill, list: listSkills, inspect: inspectSkill, enable: enableSkill, disable: disableSkill, remove: removeSkill, update: updateSkill },
+    tool: { add: addTool, validate: validateTool, list: listTools, inspect: inspectTool, enable: enableTool, disable: disableTool, remove: removeTool, update: updateTool },
+    worker: { add: addWorker, validate: validateWorker, list: listWorkers, inspect: inspectWorker, enable: enableWorker, disable: disableWorker, remove: removeWorker, update: updateWorker },
   }[kind];
 
   const cmd = program.command(kind).description(`Manage ${kind}s${kind === 'worker' ? ' (subagents)' : ''}`);
@@ -192,12 +199,36 @@ function addKindCommands(program: Command, kind: 'skill' | 'tool' | 'worker'): v
     .description(`Add a ${kind} from a GitHub URL or local directory path`)
     .option('--description <text>', `${kind} description`)
     .option('--enable', `enable the ${kind} immediately`)
+    .option('--disable', `add the ${kind} disabled`)
     .option('--version <ver>', 'pin to a specific version or git ref')
-    .action((source: string, id: string, name: string, opts: { description?: string; enable?: boolean; version?: string }) => {
-      fns.add(source, id, name, opts.description ?? '', kind === 'skill' ? (opts.enable ?? true) : (opts.enable ?? false), opts.version);
+    .action((source: string, id: string, name: string, opts: { description?: string; enable?: boolean; disable?: boolean; version?: string }) => {
+      if (opts.enable && opts.disable) {
+        throw new Error('--enable and --disable cannot be used together.');
+      }
+      const requestedEnabled =
+        kind === 'skill' ? (opts.disable ? false : opts.enable ?? true) : (opts.enable ?? false);
+      return fns.add(source, id, name, opts.description ?? '', requestedEnabled, opts.version);
     });
 
   cmd.command('list').description(`List all ${kind} capabilities`).action(() => fns.list());
+
+  cmd.command('inspect <id>').description(`Inspect a ${kind} capability`).action((id: string) => fns.inspect(id));
+
+  cmd
+    .command('validate <source> <id> <name>')
+    .description(`Validate a ${kind} source without changing the registry`)
+    .option('--description <text>', `${kind} description`)
+    .option('--enable', `validate requested ${kind} activation`)
+    .option('--disable', `validate the ${kind} as disabled`)
+    .option('--version <ver>', 'pin to a specific version or git ref')
+    .action((source: string, id: string, name: string, opts: { description?: string; enable?: boolean; disable?: boolean; version?: string }) => {
+      if (opts.enable && opts.disable) {
+        throw new Error('--enable and --disable cannot be used together.');
+      }
+      const requestedEnabled =
+        kind === 'skill' ? (opts.disable ? false : opts.enable ?? true) : (opts.enable ?? false);
+      return fns.validate(source, id, name, opts.description ?? '', requestedEnabled, opts.version);
+    });
 
   cmd.command('enable <id>').description(`Enable a ${kind} capability`).action((id: string) => fns.enable(id));
 
@@ -227,14 +258,34 @@ mcpCmd
       console.error('Error: --url is required for mcp add');
       process.exit(1);
     }
-    addMcp(id, name, opts.url, opts.description ?? '', opts.transport ?? 'streamable-http', opts.tokenEnv, opts.enable ?? false);
+    return addMcp(id, name, opts.url, opts.description ?? '', opts.transport ?? 'streamable-http', opts.tokenEnv, opts.enable ?? false);
   });
 
 mcpCmd.command('list').description('List all MCP server capabilities').action(() => listMcp());
+mcpCmd.command('inspect <id>').description('Inspect an MCP server capability').action((id: string) => inspectMcp(id));
+mcpCmd
+  .command('validate <id> <name>')
+  .description('Validate an MCP server connection without changing the registry')
+  .requiredOption('--url <url>', 'MCP server endpoint URL')
+  .option('--transport <type>', 'transport type (streamable-http or sse)', 'streamable-http')
+  .option('--token-env <env>', 'canonical configuration key containing the auth token')
+  .option('--description <text>', 'MCP server description')
+  .option('--enable', 'validate requested MCP activation')
+  .action((id: string, name: string, opts: { url: string; transport?: 'streamable-http' | 'sse'; tokenEnv?: string; description?: string; enable?: boolean }) => {
+    return validateMcp(id, name, opts.url, opts.description ?? '', opts.transport ?? 'streamable-http', opts.tokenEnv, opts.enable ?? false);
+  });
 mcpCmd.command('enable <id>').description('Enable an MCP server capability').action((id: string) => enableMcp(id));
 mcpCmd.command('disable <id>').description('Disable an MCP server capability').action((id: string) => disableMcp(id));
 mcpCmd.command('remove <id>').description('Remove an MCP server capability').action((id: string) => removeMcp(id));
-mcpCmd.command('update <id>').description('Update an MCP server configuration').action((id: string) => updateMcp(id));
+mcpCmd
+  .command('update <id>')
+  .description('Update an MCP server configuration')
+  .option('--name <name>', 'MCP server display name')
+  .option('--description <text>', 'MCP server description')
+  .option('--url <url>', 'MCP server endpoint URL')
+  .option('--transport <type>', 'transport type (streamable-http or sse)')
+  .option('--token-env <env>', 'canonical configuration key containing the auth token')
+  .action((id: string, opts: { name?: string; description?: string; url?: string; transport?: 'streamable-http' | 'sse'; tokenEnv?: string }) => updateMcp(id, opts));
 
 program.parseAsync().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : String(error));

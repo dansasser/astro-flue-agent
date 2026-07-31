@@ -7,6 +7,7 @@ This repository is a pnpm workspace with a Node runtime and a Rust/WASM memory c
 Typical developer setup:
 
 ```sh
+sudo apt-get install bubblewrap
 pnpm install
 pnpm run fetch-embedding-model
 pnpm run wasm:build
@@ -16,13 +17,19 @@ pnpm run build
 pnpm run test:http
 ```
 
+Ubuntu 24.04 developers must also load the packaged
+`bwrap-userns-restrict` AppArmor profile. Follow
+`docs/getting-started/installation.md#linux-coding-worker-sandbox` and run its
+Bubblewrap canary before the test suite.
+
 The full default test command is:
 
 ```sh
 pnpm run test
 ```
 
-It runs unit tests, builds the Flue runtime, then runs built HTTP tests.
+It runs unit tests, builds the Flue runtime and product CLI, exercises the
+relocated packaged capability lifecycle, then runs built HTTP tests.
 
 ## Build and run commands
 
@@ -30,14 +37,17 @@ Important scripts from `package.json`:
 
 ```sh
 pnpm run dev              # flue dev --target node
-pnpm run build            # flue build + builtin registry + runtime config + WASM artifact copy
-pnpm run start            # node --env-file=.env .gorombo/sim-one-alpha/server.mjs
+pnpm run build            # Flue build + registry/config/WASM/assets + contained production dependencies
+pnpm run start            # built server; bootstrap loads .gorombo/sim-one.config
 pnpm run connect          # flue connect orchestrator local --target node --session local
 pnpm run build:cli        # build sim-one-cli package
 pnpm run build:all        # build runtime, TUI, CLI, and validate product command
 ```
 
-Do not read `.env`. Use `.env.example` and architecture docs for non-secret setup shape.
+Use `sim-one.config.example` for the supported-key shape. The ignored
+`sim-one.config` is owner-only runtime state; never print, document, or commit
+its values. POSIX startup rejects the file unless it is a regular file owned by
+the current user with exact mode `0600`.
 
 ## Test commands
 
@@ -47,6 +57,8 @@ Core checks:
 pnpm run typecheck
 pnpm run test:unit
 pnpm run build
+pnpm run build:cli
+pnpm run test:capability-product
 pnpm run test:http
 pnpm run smoke:http
 ```
@@ -78,6 +90,13 @@ pnpm run research:local
 pnpm run protocols:seed
 pnpm run protocols:list
 pnpm run capabilities:list
+```
+
+Set `GOROMBO_LSP_REAL_SERVER_TESTS=1` when `test:lsp` must execute the four
+focused integration cases against the bundled language servers:
+
+```sh
+GOROMBO_LSP_REAL_SERVER_TESTS=1 pnpm run test:lsp
 ```
 
 ## Test organization
@@ -118,7 +137,12 @@ When changing web research, run `web-research-tool.test.ts`, `web-research-workf
 
 When changing memory, run unit memory tests plus `pnpm run cargo:test`. If touching WASM load/copy paths or SQLite durability, also run `pnpm run wasm:build` and `pnpm run smoke:memory`.
 
-When changing capabilities, run `capability-store.test.ts`, `worker-loader.test.ts`, `builtin-registry.test.ts`, and CLI build/tests if the `sim-one` command surface changes.
+When changing capabilities, run `capability-store.test.ts`,
+`capability-lifecycle-service.test.ts`, `capability-manager.test.ts`,
+`coding-capability-authoring.test.ts`, `worker-loader.test.ts`, and
+`builtin-registry.test.ts`. Build the product CLI and run
+`pnpm run test:capability-product` to verify protocol-backed validation and the
+full lifecycle from an arbitrary launch directory against a relocated package.
 
 When changing schedules, run schedule store/manager/routes/config tests and any coding schedule tool tests.
 
@@ -129,6 +153,10 @@ implementation rather than preserving a historical hardcoded session ID.
 
 ## Operational cautions
 
-- Do not document or expose secret values from `.env` or local runtime databases.
-- User runtime data lives under `~/.gorombo/` by product convention; repository `.gorombo/` contains build/runtime artifacts and config seeds.
+- Do not document or expose secret values from `sim-one.config`, legacy `.env`
+  files, or local runtime databases.
+- The complete `.gorombo` tree is one relocatable runtime root. In source builds
+  it lives in the checkout; packaged installation conventionally uses
+  `~/.gorombo`. Do not let HOME or the caller working directory split mutable
+  state away from the owning product tree.
 - Capability, memory, protocol, and schedule data are runtime state. Be careful with migration behavior and backward compatibility.

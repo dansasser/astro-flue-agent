@@ -20,7 +20,7 @@ For a source build, compare prerequisites and commands with
 Confirm:
 
 - `src/core/config/gorombo.config.json` is valid JSON before a source build,
-  or `~/.gorombo/sim-one-alpha/gorombo.config.json` is valid JSON in a
+  or `<runtime-root>/gorombo.config.json` is valid JSON in a
   packaged installation;
 - `gateway.port` is an integer from 1 to 65535;
 - the port is not occupied by another service;
@@ -52,13 +52,15 @@ Use an SSH tunnel that exposes the remote gateway on a local loopback port.
 ## Model Or Credential Failure
 
 Read `models.primary` and optional `models.backup` from
-the active configuration file, then verify the matching credentials in the
-active secret environment.
+`<runtime-root>/gorombo.config.json`, then verify the matching credentials are
+configured in `<runtime-root>/sim-one.config`.
 
 For a source checkout, edit `src/core/config/gorombo.config.json`, rebuild to
-refresh `.gorombo/sim-one-alpha/gorombo.config.json`, and keep credentials in
-the checkout `.env`. A packaged installation will use
-`~/.gorombo/sim-one-alpha/gorombo.config.json` and `~/.gorombo/.env`.
+refresh `.gorombo/gorombo.config.json`, and keep environment-style settings in
+the ignored checkout `sim-one.config`. The build copies it to
+`.gorombo/sim-one.config` with mode `0600`. The product wrapper uses only the
+canonical files in its owning runtime root and does not search legacy `.env`
+locations.
 
 | Model family | Credentials |
 | --- | --- |
@@ -149,12 +151,12 @@ assets. Source-build defaults are:
 ```text
 .gorombo/db/
 .gorombo/vector/
-~/.gorombo/db/capabilities.sqlite
+.gorombo/db/capabilities.sqlite
 ```
 
-The first two paths resolve from the checkout working directory; the capability
-store defaults to the user's home directory. Packaged installs will keep their
-runtime data under `~/.gorombo/`. Do not edit the databases directly. Restore
+Every relative path resolves from the owning `.gorombo` runtime root.
+Packaged installs conventionally use `~/.gorombo`, but a moved tree keeps all
+of these locations together. Do not edit the databases directly. Restore
 related state from a consistent backup when recovery is required.
 
 ## Logs And Diagnostics
@@ -162,7 +164,7 @@ related state from a consistent backup when recovery is required.
 The SIM-ONE terminal UI writes privacy-safe, rotating JSONL diagnostics to:
 
 ```text
-~/.gorombo/logs/sim-one-ratatui.jsonl
+<runtime-root>/logs/sim-one-ratatui.jsonl
 ```
 
 This TUI log is bounded and omits prompt text, responses, selected text,
@@ -182,7 +184,8 @@ Use this order:
 4. Request `/health`.
 5. Reproduce from the local terminal with a real prompt.
 6. Check connector, session, run, or telemetry identifiers.
-7. Repair the installation only after preserving `~/.gorombo/` runtime data.
+7. Repair the installation only after preserving the complete active
+   `.gorombo` runtime root.
 
 ## Related Documentation
 

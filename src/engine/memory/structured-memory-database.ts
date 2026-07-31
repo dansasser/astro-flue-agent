@@ -1,8 +1,9 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 
 import { parse as vParse } from 'valibot';
+import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type {
   Checklist,
   MemoryRecord,
@@ -12,7 +13,7 @@ import type {
 } from '../../core/types/memory.js';
 import { MemoryRecordSchema } from '../../core/types/memory.js';
 
-export const defaultStructuredMemoryDatabasePath = '.gorombo/db/structured-memory.sqlite';
+export const defaultStructuredMemoryDatabasePath = 'db/structured-memory.sqlite';
 
 export interface StructuredMemoryAudit {
   updatedBy: string;
@@ -229,13 +230,6 @@ function parseRecord(json: string): MemoryRecord | null {
   } catch {
     return null;
   }
-}
-
-function resolveRuntimePath(filePath: string): string {
-  if (filePath.startsWith('/')) {
-    return filePath;
-  }
-  return resolve(process.cwd(), filePath);
 }
 
 // Type guards used by callers that need kind-specific access.

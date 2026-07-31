@@ -1,5 +1,11 @@
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { resolve, isAbsolute, sep } from 'node:path';
+import {
+  assertPathInsideRuntimeRoot,
+  createGoromboRuntimePaths,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../../core/config/runtime-root.js';
 
 function readStringEnv(key: string): string | undefined {
   const value = process.env[key];
@@ -8,11 +14,26 @@ function readStringEnv(key: string): string | undefined {
 
 export function resolveImageOutputDir(): string {
   const configuredDir = readStringEnv('GOROMBO_IMAGE_OUTPUT_DIR');
-  const workspaceRoot =
+  const runtimeRoot = resolveGoromboRuntimeRoot();
+  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
+  const configuredWorkspace =
     readStringEnv('GOROMBO_WORKSPACE_ROOT') ??
-    readStringEnv('GOROMBO_CODING_WORKSPACE_ROOT') ??
-    process.cwd();
-  const dir = configuredDir ? resolve(configuredDir) : resolve(workspaceRoot, 'workspace', 'images');
+    readStringEnv('GOROMBO_CODING_WORKSPACE_ROOT');
+  const workspaceRoot = configuredWorkspace
+    ? assertPathInsideRuntimeRoot(
+        resolveRuntimePath(configuredWorkspace, { runtimeRoot }),
+        runtimeRoot,
+        'Image workspace root',
+      )
+    : runtimePaths.codingWorkspace;
+  const candidate = configuredDir
+    ? resolveRuntimePath(configuredDir, { runtimeRoot })
+    : resolve(workspaceRoot, 'images');
+  const dir = assertPathInsideRuntimeRoot(
+    candidate,
+    runtimeRoot,
+    'Image output root',
+  );
   if (existsSync(dir)) {
     if (!statSync(dir).isDirectory()) {
       throw new Error(`Image output path ${dir} exists but is not a directory.`);

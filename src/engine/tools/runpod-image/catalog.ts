@@ -1,8 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, isAbsolute, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { load } from 'js-yaml';
 import * as v from 'valibot';
+import {
+  createGoromboRuntimePaths,
+  findSourceProjectRoot,
+  isPathInsideRuntimeRoot,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../../core/config/runtime-root.js';
 import {
   RunpodImageCatalogSchema,
   type RunpodImageCatalog,
@@ -11,12 +17,14 @@ import {
 
 export interface CatalogLoaderOptions {
   modelsPath?: string;
+  env?: Record<string, unknown>;
+  modulePath?: string | URL;
 }
 
 const catalogCache = new Map<string, RunpodImageCatalog>();
 
 export function loadRunpodImageCatalog(options: CatalogLoaderOptions = {}): RunpodImageCatalog {
-  const path = resolveCatalogPath(options.modelsPath);
+  const path = resolveRunpodImageCatalogPath(options);
   const cached = catalogCache.get(path);
   if (cached) {
     return cached;
@@ -49,40 +57,42 @@ export function getDefaultRunpodImageModel(catalog: RunpodImageCatalog): RunpodI
   return model;
 }
 
-function resolveCatalogPath(override?: string): string {
-  if (override) {
-    return isAbsolute(override) ? override : resolve(process.cwd(), override);
+export function resolveRunpodImageCatalogPath(
+  options: CatalogLoaderOptions = {},
+): string {
+  const env = options.env ?? process.env;
+  const modulePath = options.modulePath ?? import.meta.url;
+  if (options.modelsPath) {
+    return resolveRuntimePath(options.modelsPath, { env, modulePath });
   }
 
-  const envPath = process.env.RUNPOD_IMAGE_MODELS_PATH;
+  const envPath = env.RUNPOD_IMAGE_MODELS_PATH;
   if (envPath) {
-    return isAbsolute(envPath) ? envPath : resolve(process.cwd(), envPath);
+    if (typeof envPath !== 'string') {
+      throw new Error('RUNPOD_IMAGE_MODELS_PATH must be a string.');
+    }
+    return resolveRuntimePath(envPath, { env, modulePath });
   }
 
-  const thisFile = fileURLToPath(import.meta.url);
-  const thisDir = dirname(thisFile);
+  const runtimeRoot = resolveGoromboRuntimeRoot({ env, modulePath });
+  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
+  const sourceRoot = findSourceProjectRoot(modulePath);
+  const sourceCandidate = sourceRoot
+    ? resolve(sourceRoot, 'src/engine/tools/runpod-image/models.yaml')
+    : undefined;
+  const bundleCandidate = resolve(runtimePaths.packagedServer, 'tools/runpod-image/models.yaml');
 
-  const sourceCandidate = resolve(thisDir, 'models.yaml');
-  if (existsSync(sourceCandidate)) {
-    return sourceCandidate;
+  if (isPathInsideRuntimeRoot(modulePath, runtimeRoot)) {
+    if (existsSync(bundleCandidate)) return bundleCandidate;
+    throw new Error(`Packaged runpod-image models.yaml not found: ${bundleCandidate}`);
   }
-
-  const bundleCandidate = resolve(process.cwd(), '.gorombo/sim-one-alpha/tools/runpod-image/models.yaml');
-  if (existsSync(bundleCandidate)) {
-    return bundleCandidate;
-  }
-
-  const distCandidate = resolve(process.cwd(), 'dist/tools/runpod-image/models.yaml');
-  if (existsSync(distCandidate)) {
-    return distCandidate;
-  }
-
-  const tscCandidate = resolve(process.cwd(), '.tmp/tsc/tools/runpod-image/models.yaml');
-  if (existsSync(tscCandidate)) {
-    return tscCandidate;
-  }
+  if (sourceCandidate && existsSync(sourceCandidate)) return sourceCandidate;
+  if (existsSync(bundleCandidate)) return bundleCandidate;
 
   throw new Error(
-    'Could not find runpod-image models.yaml. Set RUNPOD_IMAGE_MODELS_PATH or ensure the file is copied next to the source/bundle.',
+    `Could not find runpod-image models.yaml. Checked: ${[
+      ...(sourceCandidate ? [sourceCandidate] : []),
+      bundleCandidate,
+    ].join(', ')}`,
   );
 }

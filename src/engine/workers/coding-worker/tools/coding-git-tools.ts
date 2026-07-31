@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { defineTool, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 import {
@@ -17,6 +18,7 @@ import {
 import type { CodingProgressReporter } from '../../../../engine/workers/coding-worker/events/progress-reporter.js';
 import type { CodingWorkspaceTargetInput } from '../../../../engine/workers/coding-worker/repo/workspace-target.js';
 import type { CodingGithubAction } from '../../../../core/schemas/coding-worker.js';
+import type { GitHubClient } from '../../../../engine/workers/coding-worker/github/github-client.js';
 import { githubCredentialOptions } from './github-credential-utils.js';
 
 export interface CodingGitToolsOptions extends CodingWorkspaceTargetInput {
@@ -26,6 +28,8 @@ export interface CodingGitToolsOptions extends CodingWorkspaceTargetInput {
   approvalService?: CodingApprovalService;
   reporter?: CodingProgressReporter;
   githubGitEnv?: () => Promise<Record<string, string>>;
+  githubClient?: GitHubClient;
+  gitIdentityEnv?: () => Record<string, string>;
 }
 
 export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefinition[] {
@@ -110,6 +114,10 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
 
         const commit = await sandbox.execFile('git', ['commit', '-m', requireString(args.message, 'message')], {
           timeoutSeconds: 60,
+          env: (
+            options.gitIdentityEnv
+            ?? (() => readHostGitIdentityEnvironment())
+          )(),
         });
         return toToolJson({ status: commit.exitCode === 0 ? 'committed' : 'failed', add, commit });
       },
@@ -159,20 +167,33 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
     defineTool({
       name: 'coding_github_create_pr',
       description:
-        'Approval-gated GitHub PR creation through gh CLI. Requires approval for `${taskId}:github.pr.create`.',
+        'Approval-gated GitHub PR creation through the official GitHub MCP. Requires approval for `${taskId}:github.pr.create`.',
       parameters: v.object({
         taskId: v.string(),
+        owner: v.string(),
+        repo: v.string(),
         title: v.string(),
         body: v.string(),
-        base: v.optional(v.string()),
-        head: v.optional(v.string()),
+        base: v.string(),
+        head: v.string(),
         draft: v.optional(v.boolean()),
       }),
       execute: async (args) => {
+        if (!options.githubClient?.createPullRequest) {
+          return toGithubResult({
+            action: 'create_pr',
+            payload: {
+              available: false,
+              summary: 'Official GitHub MCP is not configured for this Coding Worker.',
+            },
+          });
+        }
         const taskId = requireString(args.taskId, 'taskId');
-        const base = readString(args.base);
-        const head = readString(args.head);
+        const base = requireString(args.base, 'base');
+        const head = requireString(args.head, 'head');
         const prPayload = {
+          owner: requireString(args.owner, 'owner'),
+          repo: requireString(args.repo, 'repo'),
           title: requireString(args.title, 'title'),
           body: requireString(args.body, 'body'),
           base,
@@ -205,28 +226,21 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
           });
         }
 
-        const flags = [
-          'pr',
-          'create',
-          args.draft === false ? undefined : '--draft',
-          '--title',
-          requireString(args.title, 'title'),
-          '--body',
-          requireString(args.body, 'body'),
-          base ? ['--base', base] : undefined,
-          head ? ['--head', head] : undefined,
-        ].filter(Boolean);
-        const sandbox = await getSandbox();
-        const pr = await sandbox.execFile('gh', flags.flat() as string[], {
-          timeoutSeconds: 120,
-          ...(options.githubGitEnv ? { env: await options.githubGitEnv() } : {}),
+        const pr = await options.githubClient.createPullRequest({
+          owner: prPayload.owner,
+          repo: prPayload.repo,
+          title: prPayload.title,
+          body: prPayload.body,
+          base,
+          head,
+          draft: prPayload.draft,
         });
         return toGithubResult({
           action: 'create_pr',
           payload: {
-            status: pr.exitCode === 0 ? 'created' : 'failed',
-            ...(base ? { base } : {}),
-            ...(head ? { head } : {}),
+            status: pr.status,
+            base,
+            head,
             draft: prPayload.draft,
             pr,
           },
@@ -234,6 +248,39 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
       },
     }),
   ];
+}
+
+export function readHostGitIdentityEnvironment(
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const name = readGlobalGitConfig('user.name', env);
+  const email = readGlobalGitConfig('user.email', env);
+  if (!name || !email) {
+    return {};
+  }
+  return {
+    GIT_AUTHOR_NAME: name,
+    GIT_AUTHOR_EMAIL: email,
+    GIT_COMMITTER_NAME: name,
+    GIT_COMMITTER_EMAIL: email,
+  };
+}
+
+function readGlobalGitConfig(
+  key: 'user.name' | 'user.email',
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  try {
+    const value = execFileSync('git', ['config', '--global', '--get', key], {
+      encoding: 'utf8',
+      env,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5_000,
+    }).trim();
+    return value || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function hashApprovalPayload(payload: Record<string, unknown>): string {

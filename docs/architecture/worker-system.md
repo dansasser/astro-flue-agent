@@ -81,6 +81,52 @@ The Coding Worker also persists task checkpoints and uses structured task
 memory, including notes, todos, and checklists, to maintain execution state
 outside the prompt.
 
+The Coding Worker's file APIs use a Flue Node local session rooted at
+`<runtime-root>/workspace`. Shell, Git, and verification child processes run
+inside a Bubblewrap mount and process namespace that exposes the workspace
+read-write, the active Node and system runtime read-only, and a private
+temporary directory. The rest of the owner runtime, including
+`sim-one.config`, databases, approvals, and authentication state, is not
+mounted. When the host has the supported Rust toolchain, Bubblewrap mounts its
+executables and rustup toolchains read-only, uses a private writable
+`CARGO_HOME`, and exposes only read-only Cargo registry and Git caches. A
+private Git child may additionally receive a read-only, secret-free askpass
+helper and dedicated owner-only token file described in
+[GitHub Authentication](github-auth-system.md); repository hooks are disabled
+for those bounded remote operations. An approved commit receives
+the host's global Git author and committer identity as command-scoped
+environment variables; the sandbox does not mount the host home or persist
+that identity in the repository. Linux execution fails closed when Bubblewrap
+is unavailable; there is no unrestricted fallback on another platform.
+
+Repositories use `repos/<slug>`, non-repository projects use
+`projects/<slug>`, and handoff artifacts may use `repos/handoffs/todos/`. The
+worker verifies durable writes through that host-backed boundary and reports
+workspace-relative paths. The main orchestrator does not expose Flue's generic
+virtual filesystem or shell tools, so an ephemeral `/home/user` readback cannot
+be reported as a durable product artifact.
+
+For capability implementation, the Coding Worker owns imported Flue skills and
+typed tools for classification, workspace-scoped scaffolding, contract
+validation, secret and host-path scanning, bounded tests, and reproducible
+handoff. These operations require the applicable Protocol Tool bundle.
+Scaffolding requires file-edit approval. The worker cannot write the runtime
+capability database or managed capability directories.
+
+### Capability Manager
+
+The `capability-manager` is the only built-in worker that owns
+agent-requested runtime capability lifecycle operations. Its typed tools cover
+list, inspect, validate, add, update, enable, disable, and remove. Validation
+and mutations require a persisted normalized message `eventId`; trusted
+application code reloads the applicable protocol bundle from SQLite instead of
+accepting model-authored protocol rules. Mutations also require a current
+matching approval decision.
+
+The manager and authenticated `sim-one` CLI call the same typed lifecycle
+service. The orchestrator routes requests and validates results but has no
+direct capability mutation tools.
+
 ## Internal Coding Subagents
 
 The Coding Worker coordinates five worker-local profiles:
@@ -121,7 +167,8 @@ under:
 <configured-capability-directory>/workers/<id>/
 ```
 
-The configured capability directory defaults to `~/.gorombo/capabilities/`.
+The configured capability directory defaults to
+`<runtime-root>/capabilities/`.
 `GOROMBO_CAPABILITIES_DIR` overrides it; `GOROMBO_CAPABILITY_DIR` is the
 fallback override.
 
@@ -188,6 +235,8 @@ gate.
 | Approval service | `src/engine/workers/coding-worker/approvals/` |
 | Progress events | `src/engine/workers/coding-worker/events/` |
 | Runtime worker loading | `src/engine/capabilities/worker-loader.ts` |
+| Capability manager | `src/engine/workers/capability-manager/` |
+| Capability authoring | `src/engine/workers/coding-worker/capability-authoring/` |
 
 ## Related Documentation
 

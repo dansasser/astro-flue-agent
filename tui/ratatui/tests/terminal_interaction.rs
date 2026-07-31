@@ -27,6 +27,7 @@ fn backslash_enter_remains_multiline_when_terminal_reports_enter_repeat() {
                 session_title: None,
                 command_name: None,
                 session_created: None,
+                context_usage: None,
             })
         }),
     );

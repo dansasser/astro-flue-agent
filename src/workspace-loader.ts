@@ -1,6 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  createGoromboRuntimePaths,
+  findSourceProjectRoot,
+  resolveGoromboRuntimeRoot,
+  type ResolveGoromboRuntimeRootOptions,
+} from './core/config/runtime-root.js';
 
 export const workspaceFileOrder = [
   'SECURITY.md',
@@ -19,6 +25,11 @@ export interface ComposeWorkspaceInstructionsOptions {
   workspaceDir: string | URL;
   title: string;
   files?: readonly WorkspaceFileName[];
+}
+
+export interface ResolveWorkspaceDirectoryOptions extends ResolveGoromboRuntimeRootOptions {
+  runtimeRoot?: string;
+  sourceProjectRoot?: string;
 }
 
 /**
@@ -56,23 +67,52 @@ export function resolveWorkspaceFilePath(workspacePath: string, fileName: string
 }
 
 /**
- * Finds a workspace directory across source, test output, and built runtime output roots.
+ * Resolves an application-owned persona workspace from either the source
+ * checkout or the packaged server directory.
  */
-export function resolveWorkspaceDirectory(relativeWorkspacePath: string, cwd = process.cwd()): string {
+export function resolveWorkspaceDirectory(
+  relativeWorkspacePath: string,
+  options: ResolveWorkspaceDirectoryOptions = {},
+): string {
   if (isAbsolute(relativeWorkspacePath)) {
     throw new Error(`Workspace directory must be relative: ${relativeWorkspacePath}`);
   }
 
   const normalizedWorkspacePath = relativeWorkspacePath.replaceAll('\\', '/');
-  const candidates = [
-    resolveWorkspaceCandidate(cwd, 'src', normalizedWorkspacePath),
-    resolveWorkspaceCandidate(cwd, '.gorombo/sim-one-alpha', normalizedWorkspacePath),
-    resolveWorkspaceCandidate(cwd, 'dist', normalizedWorkspacePath),
-    resolveWorkspaceCandidate(cwd, '.tmp/tsc', normalizedWorkspacePath),
-    resolveWorkspaceCandidate(cwd, '', normalizedWorkspacePath),
-  ];
+  const runtimeRoot = options.runtimeRoot ?? resolveGoromboRuntimeRoot(options);
+  const packagedCandidate = resolveWorkspaceCandidate(
+    createGoromboRuntimePaths(runtimeRoot).packagedServer,
+    normalizedWorkspacePath,
+  );
+  const modulePath = resolveModulePath(options.modulePath ?? import.meta.url);
+  const packagedModule = isWithin(runtimeRoot, modulePath);
+  if (packagedModule) {
+    if (existsSync(packagedCandidate)) {
+      return packagedCandidate;
+    }
+    throw new Error(`Packaged workspace directory not found: ${packagedCandidate}`);
+  }
 
-  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
+  const sourceRoot =
+    options.sourceProjectRoot ??
+    findSourceProjectRoot(modulePath);
+  const sourceCandidate = sourceRoot
+    ? resolveSourceWorkspaceCandidate(sourceRoot, normalizedWorkspacePath)
+    : undefined;
+
+  if (sourceCandidate && existsSync(sourceCandidate)) {
+    return sourceCandidate;
+  }
+  if (existsSync(packagedCandidate)) {
+    return packagedCandidate;
+  }
+
+  throw new Error(
+    `Workspace directory not found. Checked: ${[
+      ...(sourceCandidate ? [sourceCandidate] : []),
+      packagedCandidate,
+    ].join(', ')}`,
+  );
 }
 
 /**
@@ -82,19 +122,54 @@ function resolveWorkspaceDir(workspaceDir: string | URL): string {
   return workspaceDir instanceof URL ? fileURLToPath(workspaceDir) : workspaceDir;
 }
 
+function resolveModulePath(modulePath: string | URL): string {
+  if (modulePath instanceof URL) {
+    return fileURLToPath(modulePath);
+  }
+  return modulePath.startsWith('file:') ? fileURLToPath(modulePath) : resolve(modulePath);
+}
+
+function isWithin(rootPath: string, candidatePath: string): boolean {
+  const relativePath = relative(resolve(rootPath), resolve(candidatePath));
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith('..') && !isAbsolute(relativePath))
+  );
+}
+
 /**
  * Resolves a workspace directory candidate under one runtime root and rejects escapes.
  */
-function resolveWorkspaceCandidate(cwd: string, rootDirName: string, relativeWorkspacePath: string): string {
-  const rootPath = resolve(cwd, rootDirName);
+function resolveWorkspaceCandidate(rootPath: string, relativeWorkspacePath: string): string {
   const workspacePath = resolve(rootPath, relativeWorkspacePath);
   const relativePath = relative(rootPath, workspacePath);
 
   if (!relativePath || relativePath.startsWith('..') || isAbsolute(relativePath)) {
-    throw new Error(`Workspace directory resolves outside ${rootDirName}: ${relativeWorkspacePath}`);
+    throw new Error(`Workspace directory resolves outside ${rootPath}: ${relativeWorkspacePath}`);
   }
 
   return workspacePath;
+}
+
+function resolveSourceWorkspaceCandidate(
+  sourceProjectRoot: string,
+  relativeWorkspacePath: string,
+): string {
+  if (relativeWorkspacePath === 'workspace') {
+    return resolveWorkspaceCandidate(
+      resolve(sourceProjectRoot, 'src'),
+      relativeWorkspacePath,
+    );
+  }
+
+  if (relativeWorkspacePath.startsWith('workers/')) {
+    return resolveWorkspaceCandidate(
+      resolve(sourceProjectRoot, 'src/engine'),
+      relativeWorkspacePath,
+    );
+  }
+
+  throw new Error(`Unsupported source workspace path: ${relativeWorkspacePath}`);
 }
 
 /**

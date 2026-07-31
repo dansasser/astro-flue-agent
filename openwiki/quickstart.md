@@ -55,11 +55,17 @@ implemented runtime contracts.
 - `crates/gorombo-memory/` - Rust structured-memory engine compiled to WASM.
 - `scripts/` - developer admin, build, smoke, and test scripts.
 - `docs/architecture/` - source-of-truth architecture docs for Flue boundaries, product flow, memory, capabilities, schedules, models, schema strategy, tools, and context budgets.
-- `.gorombo/` - runtime artifact/config seed area used by build and package scripts.
+- `.gorombo/` - one movable runtime root containing product binaries, root
+  config/environment, packaged persona assets, mutable state, and the separate
+  Coding Worker workspace.
 
 ## Common developer commands
 
 Use `pnpm` with Node `>=22.18.0` as declared in `package.json`.
+Install Bubblewrap on Linux before running Coding Worker shell, Git, or
+verification tests. Ubuntu 24.04 also requires the targeted AppArmor profile
+and canary documented in
+`docs/getting-started/installation.md#linux-coding-worker-sandbox`.
 
 ```sh
 pnpm install
@@ -92,7 +98,10 @@ The built server runs with:
 pnpm run start
 ```
 
-`start` executes `node --env-file=.env .gorombo/sim-one-alpha/server.mjs`. Do not read `.env`; use `.env.example` only as a non-secret configuration template.
+`start` executes the built server. Its bootstrap loads
+`.gorombo/sim-one.config` before runtime consumers initialize. Use
+`sim-one.config.example` for the supported-key shape and never read, print, or
+commit the owner file's values.
 
 ## Change guidance for agents
 

@@ -1,3 +1,4 @@
+import './core/config/runtime-environment-bootstrap.js';
 import { flue } from '@flue/runtime/routing';
 import { Hono } from 'hono';
 import './core/models/runtime.js';

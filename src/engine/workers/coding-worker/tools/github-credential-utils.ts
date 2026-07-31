@@ -1,4 +1,5 @@
 import type { CodingSandboxRuntime } from './sandbox-runtime.js';
+import { githubPatFileEnvironmentKey } from '../github/github-pat.js';
 
 export type GithubRemoteOperation = 'fetch' | 'push';
 
@@ -24,7 +25,11 @@ export async function githubCredentialOptions(
     return { env: createNoCredentialGitEnv() };
   }
   const managedEnv = await loadManagedGithubEnv(githubGitEnv);
-  return { env: managedEnv ? { ...createNoCredentialGitEnv(), ...managedEnv } : createNoCredentialGitEnv() };
+  return {
+    env: managedEnv
+      ? githubAuthenticatedCredentialEnvironment(managedEnv)
+      : createNoCredentialGitEnv(),
+  };
 }
 
 export async function githubUrlCredentialOptions(
@@ -38,7 +43,30 @@ export async function githubUrlCredentialOptions(
     return { env: createNoCredentialGitEnv() };
   }
   const managedEnv = await loadManagedGithubEnv(githubGitEnv);
-  return { env: managedEnv ? { ...createNoCredentialGitEnv(), ...managedEnv } : createNoCredentialGitEnv() };
+  return {
+    env: managedEnv
+      ? githubAuthenticatedCredentialEnvironment(managedEnv)
+      : createNoCredentialGitEnv(),
+  };
+}
+
+export function githubAnonymousCredentialOptions(): { env: Record<string, string> } {
+  return { env: createNoCredentialGitEnv() };
+}
+
+export function githubAuthenticatedCredentialEnvironment(
+  managedEnv: Record<string, string>,
+): Record<string, string> {
+  const environment = createNoCredentialGitEnv();
+  const askpass = managedEnv.GIT_ASKPASS;
+  const tokenFile = managedEnv[githubPatFileEnvironmentKey];
+  if (askpass) {
+    environment.GIT_ASKPASS = askpass;
+  }
+  if (tokenFile) {
+    environment[githubPatFileEnvironmentKey] = tokenFile;
+  }
+  return environment;
 }
 
 export function isManagedGithubHttpsRemote(remoteUrl: string): boolean {
@@ -64,14 +92,18 @@ function hasEmbeddedUrlCredentials(remoteUrl: string): boolean {
 }
 
 function createNoCredentialGitEnv(): Record<string, string> {
+  const nullPath = process.platform === 'win32' ? 'NUL' : '/dev/null';
   return {
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
-    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_GLOBAL: nullPath,
+    GIT_CONFIG_COUNT: '2',
     GIT_CONFIG_KEY_0: 'credential.helper',
     GIT_CONFIG_VALUE_0: '',
+    GIT_CONFIG_KEY_1: 'core.hooksPath',
+    GIT_CONFIG_VALUE_1: nullPath,
     GIT_ASKPASS: '',
     GIT_TERMINAL_PROMPT: '0',
+    [githubPatFileEnvironmentKey]: '',
   };
 }
 

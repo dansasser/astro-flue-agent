@@ -3,6 +3,13 @@ import { resolve } from 'node:path';
 
 import { goromboPersistenceRuntime } from '../../db.js';
 import type { GoromboConfig } from '../../core/config/gorombo-config.js';
+import {
+  createGoromboRuntimePaths,
+  findSourceProjectRoot,
+  isPathInsideRuntimeRoot,
+  resolveGoromboRuntimeRoot,
+  resolveRuntimePath,
+} from '../../core/config/runtime-root.js';
 import type {
   AddChecklistItemInput,
   Checklist,
@@ -59,15 +66,6 @@ const DEFAULTS: Required<Omit<GoromboMemoryConfig, 'sqlitePath' | 'wasmModulePat
 
 const WASM_VERSION = '0.1.0';
 
-const DEV_WASM_MODULE_PATH = resolve(
-  process.cwd(),
-  'crates',
-  'gorombo-memory',
-  'pkg',
-  'gorombo_memory.js',
-);
-const DIST_WASM_MODULE_PATH = resolve(process.cwd(), '.gorombo', 'sim-one-alpha', 'memory', 'gorombo_memory.js');
-
 export interface StructuredMemoryRuntime {
   engine: MemoryEngine;
   database: GoromboStructuredMemoryDatabase;
@@ -114,6 +112,9 @@ export function readMemoryEnvOverrides(env: Record<string, string | undefined>):
   }
   if (typeof env.GOROMBO_MEMORY_SQLITE_PATH === 'string' && env.GOROMBO_MEMORY_SQLITE_PATH) {
     out.sqlitePath = env.GOROMBO_MEMORY_SQLITE_PATH;
+  }
+  if (typeof env.GOROMBO_MEMORY_WASM_MODULE_PATH === 'string' && env.GOROMBO_MEMORY_WASM_MODULE_PATH) {
+    out.wasmModulePath = env.GOROMBO_MEMORY_WASM_MODULE_PATH;
   }
   const num = (key: string): number | undefined => {
     const v = env[key];
@@ -212,11 +213,7 @@ async function loadEngine(memConfig: GoromboMemoryConfig): Promise<MemoryEngine>
   if (process.env.GOROMBO_TEST_MODE === '1' && !memConfig.wasmModulePath) {
     return new InMemoryMemoryEngine();
   }
-  const candidatePaths = [
-    memConfig.wasmModulePath,
-    DEV_WASM_MODULE_PATH,
-    DIST_WASM_MODULE_PATH,
-  ].filter((p): p is string => typeof p === 'string');
+  const candidatePaths = resolveMemoryWasmModulePaths(memConfig);
   for (const wasmModulePath of candidatePaths) {
     if (!existsSync(wasmModulePath)) {
       continue;
@@ -237,6 +234,41 @@ async function loadEngine(memConfig: GoromboMemoryConfig): Promise<MemoryEngine>
   }
   console.error('[WARN] gorombo-memory WASM artifact not found; structured-memory using in-memory engine.');
   return new InMemoryMemoryEngine();
+}
+
+export function resolveMemoryWasmModulePaths(
+  memConfig: Pick<GoromboMemoryConfig, 'wasmModulePath'>,
+  options: {
+    env?: Record<string, unknown>;
+    modulePath?: string | URL;
+  } = {},
+): string[] {
+  const env = options.env ?? process.env;
+  const modulePath = options.modulePath ?? import.meta.url;
+  const runtimeRoot = resolveGoromboRuntimeRoot({ env, modulePath });
+  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
+  const sourceRoot = findSourceProjectRoot(modulePath);
+  const sourceWasmPath = sourceRoot
+    ? resolve(sourceRoot, 'crates/gorombo-memory/pkg/gorombo_memory.js')
+    : undefined;
+  const packagedWasmPath = resolve(
+    runtimePaths.packagedServer,
+    'memory/gorombo_memory.js',
+  );
+  const configuredPath = memConfig.wasmModulePath
+    ? resolveRuntimePath(memConfig.wasmModulePath, {
+        env,
+        modulePath,
+        runtimeRoot,
+      })
+    : undefined;
+  const candidatePaths = isPathInsideRuntimeRoot(modulePath, runtimeRoot)
+    ? [configuredPath, packagedWasmPath]
+    : [configuredPath, sourceWasmPath, packagedWasmPath];
+
+  return candidatePaths
+    .filter((path): path is string => typeof path === 'string')
+    .filter((path, index, paths) => paths.indexOf(path) === index);
 }
 
 /**

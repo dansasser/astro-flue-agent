@@ -76,23 +76,38 @@ send independent final responses.
 - applies API-secret middleware to protected Flue and schedule routes;
 - mounts Flue with `app.route('/', flue())`.
 
-The built runtime is emitted under `.gorombo/sim-one-alpha/`. Mutable state is
-kept outside the compiled server:
+The complete movable product runtime is one `.gorombo` tree. Compiled
+application files and mutable state occupy separate children:
 
 ```text
-~/.gorombo/
+<runtime-root>/
+  sim-one.config
+  sim-one.config.example
+  gorombo.config.json
   db/
   capabilities/
+  approvals/
   auth/
   logs/
+  coding-worker/
+  workspace/
+    repos/
+    projects/
   sim-one-alpha/
+    server.mjs
+    node_modules/
+    workspace/
   sim-one-cli/
   sim-one-ratatui/
 ```
 
-The exact root can differ in a source checkout, but the ownership boundary is
-the same: packaged application files are replaceable; databases, user
-capabilities, credentials, and operational state persist independently.
+The conventional installed root is `~/.gorombo`, but the whole tree is
+relocatable. Packaged executables derive the root from their own path, and
+relative runtime configuration resolves from that root instead of the caller's
+working directory. The main persona is read-only packaged content under
+`sim-one-alpha/workspace/`; Coding Worker projects are model-writable only
+under `workspace/`. The Flue Node server uses isolated production dependencies
+under `sim-one-alpha/node_modules/` and does not rely on checkout dependencies.
 
 ## Product Command
 

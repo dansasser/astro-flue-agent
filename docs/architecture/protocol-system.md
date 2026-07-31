@@ -59,11 +59,11 @@ around this implemented lookup path.
 The default protocol database is:
 
 ```text
-~/.gorombo/db/protocols.sqlite
+<runtime-root>/db/protocols.sqlite
 ```
 
-The source-relative default is `.gorombo/db/protocols.sqlite`. Deployments can
-set `GOROMBO_PROTOCOL_DB_PATH` to another runtime-managed location.
+Deployments can set `GOROMBO_PROTOCOL_DB_PATH` to another runtime-managed
+location. Relative overrides remain under the same canonical `.gorombo` root.
 
 Each protocol record contains:
 
@@ -98,6 +98,20 @@ as:
 - require planning, verification, review, and approval for coding mutations;
 - emit public progress throughout long-running work;
 - return required completion evidence.
+
+The `chat.runtime-configuration-routing` base protocol governs configuration
+requests from chat connectors. It requires the orchestrator to delegate
+inspection and writes to the Coding Worker lead's dedicated configuration
+tools. A secret may be forwarded only when the user explicitly supplied it for
+the current key and operation. Stored values remain unreadable, every mutation
+requires `runtime.config.update` approval, and no supplied value may be echoed
+through approval metadata, progress, logs, tool results, or the final response.
+
+The `capabilities.lifecycle-routing` base protocol governs runtime extension
+work. It routes lifecycle requests to `capability-manager`, routes Coding
+Worker classification, validation, security checks, tests, packaging, and
+handoff through protocol directives, requires approval for agent mutations,
+keeps executable additions disabled, and requires redacted protocol evidence.
 
 Base protocols are seeded into SQLite during provider initialization. Product
 updates reconcile seed-owned fields while preserving a user protocol that uses
@@ -174,6 +188,14 @@ authority for an unrelated turn.
 When the orchestrator delegates to the Coding Worker, it includes the parsed
 bundle in the delegated task. The worker lead applies
 `protocolBundle.protocols[].rules` to its bounded execution loop.
+
+Capability validation is fail-closed. Coding Worker authoring tools require a
+complete parsed bundle. Capability-manager tools instead accept the persisted
+normalized message `eventId`, reload its applicable bundle from the SQLite
+provider in trusted application code, compile ordered directives before
+deterministic checks, and retain protocol ids and rules in result evidence.
+Missing events and malformed or mismatched bundles cannot fall through to
+local policy.
 
 ## Release Enforcement Contract
 

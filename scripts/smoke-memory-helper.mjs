@@ -16,10 +16,11 @@
  * script compiles TS to .tmp/tsc and imports from there.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
+import { parseEnv } from 'node:util';
 
 const TSC_ROOT = join(process.cwd(), '.tmp', 'tsc');
 
@@ -61,24 +62,27 @@ function assert(cond, msg) {
 
 
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 
 async function realModelSmoke() {
-  if (!existsSync('.env')) {
-    throw new Error('real-model smoke requires a .env with model + API creds');
+  const runtimeRoot = join(process.cwd(), '.gorombo');
+  const runtimeConfigPath = join(runtimeRoot, 'sim-one.config');
+  const serverPath = join(runtimeRoot, 'sim-one-alpha', 'server.mjs');
+  if (!existsSync(runtimeConfigPath)) {
+    throw new Error('real-model smoke requires .gorombo/sim-one.config');
   }
-  if (!existsSync(join(process.cwd(), '.gorombo', 'sim-one-alpha', 'server.mjs'))) {
+  if (!existsSync(serverPath)) {
     throw new Error('real-model smoke requires `pnpm run build` first (.gorombo/sim-one-alpha/server.mjs)');
   }
+  const runtimeConfig = parseEnv(readFileSync(runtimeConfigPath, 'utf8'));
   const port = Number(process.env.GOROMBO_SMOKE_PORT || 3997);
-  const apiSecret = process.env.GOROMBO_SMOKE_API_SECRET || 'smoke-secret';
+  const apiSecret = process.env.GOROMBO_SMOKE_API_SECRET || runtimeConfig.API_SECRET || 'smoke-secret';
   const sqlitePath = process.env.GOROMBO_MEMORY_SQLITE_PATH || join(tmpdir(), `real-model-smoke-${Date.now()}.sqlite`);
   const actorId = 'rm-actor';
   const conversationId = 'rm-conv';
 
   const env = {
-    ...parseEnvFile('.env'),
+    ...runtimeConfig,
     PORT: String(port),
     API_SECRET: apiSecret,
     // Test mode lets the server boot without real Telegram creds; the
@@ -91,8 +95,8 @@ async function realModelSmoke() {
     PATH: process.env.PATH,
   };
 
-  const child = spawn(process.execPath, ['--env-file=.env', '.gorombo/sim-one-alpha/server.mjs'], {
-    cwd: process.cwd(),
+  const child = spawn(process.execPath, [serverPath], {
+    cwd: runtimeRoot,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,
@@ -138,19 +142,6 @@ async function realModelSmoke() {
   } finally {
     try { process.kill(-child.pid); } catch { try { child.kill(); } catch {} }
   }
-}
-
-function parseEnvFile(path) {
-  const values = {};
-  if (!existsSync(path)) return values;
-  for (const line of readFileSync(path, 'utf-8').split(/\r?\n/)) {
-    const t = line.trim();
-    if (!t || t.startsWith('#')) continue;
-    const sep = t.indexOf('=');
-    if (sep === -1) continue;
-    values[t.slice(0, sep)] = t.slice(sep + 1).replace(/^[\'"]|[\'"]$/g, '');
-  }
-  return values;
 }
 
 async function waitForHealth(baseUrl) {
