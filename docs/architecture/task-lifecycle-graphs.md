@@ -298,7 +298,12 @@ validate repository DLG and current checksum
 A proposed DLG topology change remains a governed graph mutation with preview,
 checksum and run-version bindings, acting authority, validation, evidence,
 rollback, and targeted invalidation. It is separately approved from the TLG
-run. A TLG may recommend that mutation but never applies it silently.
+run. Every adapter transition and topology mutation uses atomic compare-and-swap,
+rejects stale versions, and carries a unique idempotent operation ID. If a
+timeout or restart leaves the outcome unknown, recovery reads the append-only
+ledger by operation ID and reconciles the committed version before any retry;
+it never reapplies a transition whose commit already exists. A TLG may recommend
+that mutation but never applies it silently.
 
 ## State And Reducer Rules
 

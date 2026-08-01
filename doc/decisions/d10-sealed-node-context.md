@@ -55,6 +55,7 @@ surface for each invocation.
 - `implement-memory-retrieval`
 - `implement-capabilities-security`
 - `implement-ingress-operations`
+- `integrate-and-repair`
 - `review-architecture-security`
 - `specify-task-lifecycle-architecture`
 - `verify-release-reconciliation-specifications`

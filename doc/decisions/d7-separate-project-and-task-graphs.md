@@ -48,6 +48,7 @@ project intent or make repository history depend on connector session state.
 - `implement-core-contracts`
 - `implement-agent-runtime`
 - `implement-ingress-operations`
+- `integrate-and-repair`
 - `review-architecture-security`
 - `specify-task-lifecycle-architecture`
 - `verify-release-reconciliation-specifications`

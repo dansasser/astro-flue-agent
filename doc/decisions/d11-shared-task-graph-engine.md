@@ -24,9 +24,13 @@ task is bound to a DLG node, the graph engine uses a dedicated governed adapter
 to claim, complete, fail, or interrupt that node. The adapter binds the exact
 Development Lifecycle Graph definition and checksum, branch-local run state and
 run version, append-only event history, acting authority, and evidence records.
-Any DLG definition mutation is a separate operation that is previewed, approved,
-validated, recorded, and reversible. The main orchestrator does not directly
-mutate the DLG definition, run state, or event history.
+Every claim, complete, fail, or interrupt operation has a unique idempotent
+operation ID and commits through atomic compare-and-swap; a stale run version is
+rejected. After an unknown timeout or restart outcome, the adapter reads the
+ledger by operation ID before retrying and never reapplies an already committed
+transition. Any DLG definition mutation is a separate operation that is
+previewed, approved, validated, recorded, and reversible. The main orchestrator
+does not directly mutate the DLG definition, run state, or event history.
 
 ## Rationale
 

@@ -53,6 +53,7 @@ Building around it preserves one durable task model for agents and the TUI.
 - `implement-memory-retrieval`
 - `implement-agent-runtime`
 - `implement-sim-one-tui-work-pane`
+- `integrate-and-repair`
 - `verify-memory-smoke`
 - `review-architecture-security`
 - `specify-task-lifecycle-architecture`

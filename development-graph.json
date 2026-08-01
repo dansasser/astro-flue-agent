@@ -8914,13 +8914,133 @@
       "max_traversals": null,
       "to": "verify-release-reconciliation-specifications",
       "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "The task-lifecycle decision or specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The task-lifecycle decision or specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The task-lifecycle decision or specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The task-lifecycle decision or specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "Grounded project context is current and bound before the task-lifecycle specification is maintained.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-context-to-specify-task-lifecycle-architecture",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A changed grounded baseline invalidates the task-lifecycle architecture specification.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-context-invalidates-task-lifecycle-architecture",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 58,
+  "graph_version": 59,
   "nodes": [
     {
       "acceptance": [
@@ -11314,6 +11434,26 @@
           "artifact": "decision:d9-flue-native-task-graph-runtime",
           "name": "resolved Flue-native task graph runtime decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:task-lifecycle-architecture-spec",
+          "name": "task lifecycle graph architecture specification",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
+          "required": true
         }
       ],
       "outputs": [
@@ -11333,7 +11473,17 @@
           "verification evidence",
           "artifact:runtime-configuration-consolidation-change",
           "decision:d11-shared-task-graph-engine",
-          "decision:d9-flue-native-task-graph-runtime"
+          "decision:d9-flue-native-task-graph-runtime",
+          "artifact:task-lifecycle-architecture-spec",
+          "docs/architecture/task-lifecycle-graphs.md",
+          "decision:d7-separate-project-and-task-graphs",
+          "doc/decisions/d7-separate-project-and-task-graphs.md",
+          "decision:d8-memory-helper-task-runs",
+          "doc/decisions/d8-memory-helper-task-runs.md",
+          "doc/decisions/d9-flue-native-task-graph-runtime.md",
+          "decision:d10-sealed-node-context",
+          "doc/decisions/d10-sealed-node-context.md",
+          "doc/decisions/d11-shared-task-graph-engine.md"
         ],
         "write": [
           "authorized project files across affected domains, excluding src/AGENTS.md"
@@ -17904,7 +18054,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve doc/decisions/d7-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d7-separate-project-and-task-graphs.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17976,7 +18126,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve doc/decisions/d8-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d8-memory-helper-task-runs.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -18048,7 +18198,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve doc/decisions/d9-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d9-flue-native-task-graph-runtime.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -18120,7 +18270,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve doc/decisions/d10-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d10-sealed-node-context.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -18192,7 +18342,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve doc/decisions/d11-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d11-shared-task-graph-engine.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -18270,7 +18420,7 @@
           "kind": "policy"
         },
         {
-          "criterion": "The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority.",
+          "criterion": "The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority through retry-safe compare-and-swap, stale-version rejection, idempotent operation identity, and unknown-outcome recovery.",
           "evidence": "docs/architecture/task-lifecycle-graphs.md",
           "id": "shared-engine-boundary-complete",
           "kind": "policy"
@@ -18289,6 +18439,11 @@
       "goal": "Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract.",
       "id": "specify-task-lifecycle-architecture",
       "inputs": [
+        {
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
+          "required": true
+        },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
           "name": "resolved project and task lifecycle graph separation decision",
@@ -18326,6 +18481,10 @@
         "destructive": false,
         "external": [],
         "read": [
+          "artifact:baseline-context",
+          "docs/architecture/task-lifecycle-graphs.md",
+          "docs/architecture/README.md",
+          "docs/architecture/overview.md",
           "decision:d7-separate-project-and-task-graphs",
           "doc/decisions/d7-separate-project-and-task-graphs.md",
           "decision:d8-memory-helper-task-runs",
@@ -18362,7 +18521,7 @@
     }
   ],
   "project": {
-    "context_version": "task-lifecycle-spec-verifier-lineage:2026-08-01",
+    "context_version": "task-lifecycle-integration-retry-safety:2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

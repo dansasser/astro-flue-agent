@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 53cd0bc703504a571590f1fdf03ef225a1966f35728a6f5dd54f02af1d14b978 -->
+<!-- development-graph-sha256: 7e50288a64aa95ae8cd3f5ee32a8ef9c8ee42dde2d8bb8f4e86cc16810c9627d -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `58` |
+| Graph version | `59` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `task-lifecycle-spec-verifier-lineage:2026-08-01` |
+| Context version | `task-lifecycle-integration-retry-safety:2026-08-01` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `53cd0bc703504a571590f1fdf03ef225a1966f35728a6f5dd54f02af1d14b978` |
+| Canonical checksum | `7e50288a64aa95ae8cd3f5ee32a8ef9c8ee42dde2d8bb8f4e86cc16810c9627d` |
 
 ## Flow
 
@@ -848,6 +848,16 @@ flowchart TD
     n_resolve_d10_sealed_node_context -. "invalidates" .-> n_verify_release_reconciliation_specifications
     n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_verify_release_reconciliation_specifications
     n_resolve_d11_shared_task_graph_engine -. "invalidates" .-> n_verify_release_reconciliation_specifications
+    n_specify_task_lifecycle_architecture -- "consumes" --> n_integrate_and_repair
+    n_specify_task_lifecycle_architecture -. "invalidates" .-> n_integrate_and_repair
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_integrate_and_repair
+    n_resolve_d7_separate_project_and_task_graphs -. "invalidates" .-> n_integrate_and_repair
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_integrate_and_repair
+    n_resolve_d8_memory_helper_task_runs -. "invalidates" .-> n_integrate_and_repair
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_integrate_and_repair
+    n_resolve_d10_sealed_node_context -. "invalidates" .-> n_integrate_and_repair
+    n_baseline_context -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_baseline_context -. "invalidates" .-> n_specify_task_lifecycle_architecture
 ```
 
 ## Nodes
@@ -1683,6 +1693,16 @@ flowchart TD
 | `resolve-d10-sealed-node-context-to-verify-release-reconciliation-specifications-invalidates` | `resolve-d10-sealed-node-context` | `invalidates` | `verify-release-reconciliation-specifications` | A material decision change invalidates specification verification and requires fresh evidence. | artifact:release-reconciliation-specification-verification | — |
 | `resolve-d11-shared-task-graph-engine-to-verify-release-reconciliation-specifications-consumes` | `resolve-d11-shared-task-graph-engine` | `consumes` | `verify-release-reconciliation-specifications` | The resolved task-lifecycle decision is current and bound to specification verification. | decision:d11-shared-task-graph-engine | — |
 | `resolve-d11-shared-task-graph-engine-to-verify-release-reconciliation-specifications-invalidates` | `resolve-d11-shared-task-graph-engine` | `invalidates` | `verify-release-reconciliation-specifications` | A material decision change invalidates specification verification and requires fresh evidence. | artifact:release-reconciliation-specification-verification | — |
+| `task-graph-spec-to-integrate-and-repair` | `specify-task-lifecycle-architecture` | `consumes` | `integrate-and-repair` | The task-lifecycle decision or specification is current, accepted, and bound to this run. | artifact:task-lifecycle-architecture-spec | — |
+| `task-graph-spec-to-integrate-and-repair-invalidates` | `specify-task-lifecycle-architecture` | `invalidates` | `integrate-and-repair` | A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution. | artifact:integrated-change | — |
+| `decide-project-task-graph-separation-to-integrate-and-repair` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `integrate-and-repair` | The task-lifecycle decision or specification is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-project-task-graph-separation-to-integrate-and-repair-invalidates` | `resolve-d7-separate-project-and-task-graphs` | `invalidates` | `integrate-and-repair` | A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution. | artifact:integrated-change | — |
+| `decide-memory-helper-task-runs-to-integrate-and-repair` | `resolve-d8-memory-helper-task-runs` | `consumes` | `integrate-and-repair` | The task-lifecycle decision or specification is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-integrate-and-repair-invalidates` | `resolve-d8-memory-helper-task-runs` | `invalidates` | `integrate-and-repair` | A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution. | artifact:integrated-change | — |
+| `decide-sealed-node-context-to-integrate-and-repair` | `resolve-d10-sealed-node-context` | `consumes` | `integrate-and-repair` | The task-lifecycle decision or specification is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-integrate-and-repair-invalidates` | `resolve-d10-sealed-node-context` | `invalidates` | `integrate-and-repair` | A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution. | artifact:integrated-change | — |
+| `baseline-context-to-specify-task-lifecycle-architecture` | `baseline-context` | `consumes` | `specify-task-lifecycle-architecture` | Grounded project context is current and bound before the task-lifecycle specification is maintained. | artifact:baseline-context | — |
+| `baseline-context-invalidates-task-lifecycle-architecture` | `baseline-context` | `invalidates` | `specify-task-lifecycle-architecture` | A changed grounded baseline invalidates the task-lifecycle architecture specification. | artifact:task-lifecycle-architecture-spec | — |
 
 ## Node contracts
 
@@ -1988,9 +2008,9 @@ flowchart TD
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Before every integration or repair mutation, call the already active Coding Worker approval service with the exact run, failed evidence, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime
+- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d10-sealed-node-context
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
-- Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence, artifact:runtime-configuration-consolidation-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence, artifact:runtime-configuration-consolidation-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, doc/decisions/d11-shared-task-graph-engine.md]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Integrates and repairs only approval-service-authorized project files in the isolated worktree.
 - Rollback: Restore the affected files from the pre-integration Git commit while preserving unrelated branches and evidence.
@@ -2978,7 +2998,7 @@ flowchart TD
 ### `resolve-d7-separate-project-and-task-graphs` — Separate Project And Task Lifecycle Graphs
 
 - Goal: Keep repository development governance separate from per-request task execution while defining a governed cross-graph adapter.
-- Executor instructions: Verify and preserve doc/decisions/d7-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Executor instructions: Verify and preserve doc/decisions/d7-separate-project-and-task-graphs.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
 - Inputs: artifact:baseline-context
 - Resources: doc/decisions/d7-separate-project-and-task-graphs.md
 - Permissions: read [artifact:baseline-context, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation, doc/decisions/d7-separate-project-and-task-graphs.md, decisions.json, specification-manifest.json]; write [doc/decisions/d7-separate-project-and-task-graphs.md]; external [—]; destructive `false`
@@ -2992,7 +3012,7 @@ flowchart TD
 ### `resolve-d8-memory-helper-task-runs` — Extend Memory Helper For Durable Task Runs
 
 - Goal: Make the Rust/WASM Memory Helper the shared durable task-state authority and eliminate competing task-run state.
-- Executor instructions: Verify and preserve doc/decisions/d8-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Executor instructions: Verify and preserve doc/decisions/d8-memory-helper-task-runs.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
 - Inputs: artifact:baseline-context
 - Resources: doc/decisions/d8-memory-helper-task-runs.md
 - Permissions: read [artifact:baseline-context, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation, doc/decisions/d8-memory-helper-task-runs.md, decisions.json, specification-manifest.json]; write [doc/decisions/d8-memory-helper-task-runs.md]; external [—]; destructive `false`
@@ -3006,7 +3026,7 @@ flowchart TD
 ### `resolve-d9-flue-native-task-graph-runtime` — Use Flue-Native Task Graph Runtime
 
 - Goal: Add application-owned task graph coordination while preserving Flue as the only agent runtime.
-- Executor instructions: Verify and preserve doc/decisions/d9-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Executor instructions: Verify and preserve doc/decisions/d9-flue-native-task-graph-runtime.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
 - Inputs: artifact:baseline-context
 - Resources: doc/decisions/d9-flue-native-task-graph-runtime.md
 - Permissions: read [artifact:baseline-context, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation, doc/decisions/d9-flue-native-task-graph-runtime.md, decisions.json, specification-manifest.json]; write [doc/decisions/d9-flue-native-task-graph-runtime.md]; external [—]; destructive `false`
@@ -3020,7 +3040,7 @@ flowchart TD
 ### `resolve-d10-sealed-node-context` — Seal Per-Node Context Envelopes
 
 - Goal: Make exact bounded context envelopes and capability absence enforceable for every model-executed task graph node.
-- Executor instructions: Verify and preserve doc/decisions/d10-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Executor instructions: Verify and preserve doc/decisions/d10-sealed-node-context.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
 - Inputs: artifact:baseline-context
 - Resources: doc/decisions/d10-sealed-node-context.md
 - Permissions: read [artifact:baseline-context, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation, doc/decisions/d10-sealed-node-context.md, decisions.json, specification-manifest.json]; write [doc/decisions/d10-sealed-node-context.md]; external [—]; destructive `false`
@@ -3034,7 +3054,7 @@ flowchart TD
 ### `resolve-d11-shared-task-graph-engine` — Share Task Graph Engine Across Agents
 
 - Goal: Use one graph engine for orchestrator and Coding Worker definitions while preserving private worker subgraphs and DLG authority.
-- Executor instructions: Verify and preserve doc/decisions/d11-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Executor instructions: Verify and preserve doc/decisions/d11-shared-task-graph-engine.md. Compare the current source and version-matched Flue documentation against the grounded baseline context. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
 - Inputs: artifact:baseline-context
 - Resources: doc/decisions/d11-shared-task-graph-engine.md
 - Permissions: read [artifact:baseline-context, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation, doc/decisions/d11-shared-task-graph-engine.md, decisions.json, specification-manifest.json]; write [doc/decisions/d11-shared-task-graph-engine.md]; external [—]; destructive `false`
@@ -3049,9 +3069,9 @@ flowchart TD
 
 - Goal: Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract.
 - Executor instructions: Maintain docs/architecture/task-lifecycle-graphs.md as the normative architecture specification. Keep current behavior, accepted target behavior, implementation boundaries, acceptance evidence, and graph ownership explicit.
-- Inputs: decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine
+- Inputs: artifact:baseline-context, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine
 - Resources: docs/architecture/task-lifecycle-graphs.md
-- Permissions: read [decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, decision:d9-flue-native-task-graph-runtime, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, decision:d11-shared-task-graph-engine, doc/decisions/d11-shared-task-graph-engine.md]; write [docs/architecture/task-lifecycle-graphs.md]; external [—]; destructive `false`
+- Permissions: read [artifact:baseline-context, docs/architecture/task-lifecycle-graphs.md, docs/architecture/README.md, docs/architecture/overview.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, decision:d9-flue-native-task-graph-runtime, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, decision:d11-shared-task-graph-engine, doc/decisions/d11-shared-task-graph-engine.md]; write [docs/architecture/task-lifecycle-graphs.md]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every architecture acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Creates or updates the task lifecycle graph architecture specification.
 - Rollback: Restore docs/architecture/task-lifecycle-graphs.md from version control and invalidate downstream planning and implementation.
@@ -3060,7 +3080,7 @@ flowchart TD
   - `dual-graph-boundary-complete` (policy): The specification keeps DLG and TLG definitions, run state, authority, mutation, and evidence separate while defining a governed adapter. Evidence: `docs/architecture/task-lifecycle-graphs.md`
   - `memory-helper-boundary-complete` (review): The specification uses the Rust/WASM Memory Helper as shared durable task state and distinguishes user-visible checklist projection from execution state. Evidence: `docs/architecture/task-lifecycle-graphs.md`
   - `flue-context-boundary-complete` (policy): The specification preserves Flue ownership and requires sealed per-node context envelopes, typed broker requests, interrupts, checkpoints, and bounded recovery. Evidence: `docs/architecture/task-lifecycle-graphs.md`
-  - `shared-engine-boundary-complete` (policy): The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority. Evidence: `docs/architecture/task-lifecycle-graphs.md`
+  - `shared-engine-boundary-complete` (policy): The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority through retry-safe compare-and-swap, stale-version rejection, idempotent operation identity, and unknown-outcome recovery. Evidence: `docs/architecture/task-lifecycle-graphs.md`
 
 ## Assumptions
 

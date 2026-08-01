@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 58,
-  "context_version": "task-lifecycle-spec-verifier-lineage:2026-08-01",
+  "graph_version": 59,
+  "context_version": "task-lifecycle-integration-retry-safety:2026-08-01",
   "specification_root": "doc",
   "documents": [
     {
@@ -230,7 +230,8 @@
       "consumer_nodes": [
         "verify-release-reconciliation-specifications",
         "plan-implementation",
-        "review-architecture-security"
+        "review-architecture-security",
+        "integrate-and-repair"
       ],
       "required": true
     }
@@ -326,6 +327,7 @@
         "implement-agent-runtime",
         "implement-core-contracts",
         "implement-ingress-operations",
+        "integrate-and-repair",
         "plan-implementation",
         "review-architecture-security",
         "specify-task-lifecycle-architecture",
@@ -343,6 +345,7 @@
         "implement-core-contracts",
         "implement-memory-retrieval",
         "implement-sim-one-tui-work-pane",
+        "integrate-and-repair",
         "plan-implementation",
         "review-architecture-security",
         "specify-task-lifecycle-architecture",
@@ -379,6 +382,7 @@
         "implement-core-contracts",
         "implement-ingress-operations",
         "implement-memory-retrieval",
+        "integrate-and-repair",
         "plan-implementation",
         "review-architecture-security",
         "specify-task-lifecycle-architecture",
