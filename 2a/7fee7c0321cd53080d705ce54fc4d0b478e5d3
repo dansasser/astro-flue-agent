@@ -1,0 +1,35 @@
+doc/decisions/d8-memory-helper-task-runs.md
+  s_a81fff26d52223::t_db2d3800d9adac 56
+decisions.json
+  s_a81fff26d52223::t_db2d3800d9adac 94,112,149
+doc/decisions/d10-sealed-node-context.md
+  s_a81fff26d52223::t_db2d3800d9adac 58
+doc/decisions/d11-shared-task-graph-engine.md
+  s_a81fff26d52223::t_db2d3800d9adac 27-33
+docs/architecture/task-lifecycle-graphs.md
+  s_a81fff26d52223::t_db2d3800d9adac 301-306
+specification-manifest.json
+  s_a81fff26d52223::t_db2d3800d9adac 4-5,233-234,330,348,385
+doc/decisions/d7-separate-project-and-task-graphs.md
+  s_a81fff26d52223::t_db2d3800d9adac 51
+development-graph.json
+  s_a81fff26d52223::t_e8b94bce016072 8917-9036,9043,11437-11456,11476-11486,18057,18129,18201,18273,18345,18423,18442-18446,18484-18487,18524
+development-graph.md
+  s_a81fff26d52223::t_038de5508b2512 1,12,17,21,851-860,1696-1705,2011,2013,3001,3015,3029,3043,3057,3072,3074,3083
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2a7fee7c0321cd53080d705ce54fc4d0b478e5d3",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
