@@ -150,6 +150,23 @@ test('tracked example contains exactly the typed owner configuration registry', 
   }
 });
 
+test('RunPod chat configuration uses a dedicated base URL key', () => {
+  const apiKey = runtimeEnvironmentDefinitions.find(
+    (definition) => definition.key === 'RUNPOD_API_KEY',
+  );
+  const chatBaseUrl = runtimeEnvironmentDefinitions.find(
+    (definition) => definition.key === 'RUNPOD_CHAT_BASE_URL',
+  );
+
+  assert.equal(apiKey?.secret, true);
+  assert.match(apiKey?.requiredWhen ?? '', /model|image/i);
+  assert.equal(chatBaseUrl?.kind, 'url');
+  assert.equal(
+    chatBaseUrl?.defaultDescription,
+    'https://api.runpod.ai/v2/moonshot-kimi/openai/v1',
+  );
+});
+
 test('source and packaged modules resolve only their owning canonical configuration', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'sim-one-runtime-resolution-'));
   const sourceRoot = join(fixture, 'source');

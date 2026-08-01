@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 59,
-  "context_version": "task-lifecycle-integration-retry-safety:2026-08-01",
+  "graph_version": 60,
+  "context_version": "runpod-live-model-ci:2026-08-01",
   "specification_root": "doc",
   "documents": [
     {

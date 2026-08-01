@@ -9040,7 +9040,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 59,
+  "graph_version": 60,
   "nodes": [
     {
       "acceptance": [
@@ -10212,6 +10212,12 @@
           "evidence": "runtime:evidence/implement-agent-runtime/workspace-guidance.json",
           "id": "workspace-guidance-correct",
           "kind": "review"
+        },
+        {
+          "criterion": "A RunPod Kimi K2.6 model card and Flue custom provider use the canonical RUNPOD_API_KEY with a dedicated chat base URL, preserve MiniMax M3 as the shipped primary, and expose a test-scoped selector for live CI without introducing automatic production failover.",
+          "evidence": "runtime:evidence/implement-agent-runtime/runpod-chat-provider.json",
+          "id": "runpod-chat-provider-contract",
+          "kind": "test"
         }
       ],
       "execution": {
@@ -10224,7 +10230,7 @@
         "kind": "agent",
         "name": "SIM-ONE Coding Worker lead"
       },
-      "goal": "Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while preventing ephemeral Flue sandbox storage from being represented as durable product storage and preserving delegation ownership and capability isolation.",
+      "goal": "Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while preventing ephemeral Flue sandbox storage from being represented as durable product storage and preserving delegation ownership and capability isolation. Add a canonical RunPod OpenAI-compatible chat provider and model card without changing the shipped primary model.",
       "id": "implement-agent-runtime",
       "inputs": [
         {
@@ -10303,7 +10309,10 @@
           "decision:d11-shared-task-graph-engine",
           "decision:d7-separate-project-and-task-graphs",
           "decision:d8-memory-helper-task-runs",
-          "decision:d9-flue-native-task-graph-runtime"
+          "decision:d9-flue-native-task-graph-runtime",
+          "flue-docs:api/provider-api",
+          "flue-docs:guide/models",
+          "https://docs.runpod.io/public-endpoints/models/moonshot-kimi"
         ],
         "write": [
           "src/agents/",
@@ -10315,7 +10324,12 @@
           "src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan",
           "scripts/ focused product verification assigned exclusively to this workstream",
           "docs/ and openwiki/ files assigned exclusively to this workstream",
-          "src/workspace-loader.ts"
+          "src/workspace-loader.ts",
+          "src/core/models/",
+          "src/core/config/runtime-environment.ts",
+          "sim-one.config.example",
+          "src/tests/models.test.ts",
+          "src/tests/runtime-environment.test.ts"
         ]
       },
       "resources": [
@@ -10338,7 +10352,10 @@
         "workspace-boundaries",
         "delegation",
         "sandbox",
-        "persistence"
+        "persistence",
+        "models",
+        "providers",
+        "runpod"
       ],
       "title": "Implement Agent Runtime And Workspace Boundaries",
       "type": "work"
@@ -11060,6 +11077,12 @@
           "evidence": "runtime:evidence/implement-product-delivery/canonical-configuration-documentation.json",
           "id": "canonical-configuration-documentation",
           "kind": "review"
+        },
+        {
+          "criterion": "Trusted CI maps the repository secret RUN_POD_API_KEY to canonical runtime RUNPOD_API_KEY, selects the RunPod card only inside live-model smoke processes, and leaves the shipped gorombo.config.json primary on MiniMax M3.",
+          "evidence": "runtime:evidence/implement-product-delivery/runpod-live-ci-selection.json",
+          "id": "runpod-live-ci-selection",
+          "kind": "test"
         }
       ],
       "execution": {
@@ -11153,7 +11176,15 @@
           "docs/operations/troubleshooting.md",
           "docs/archive/readme-before-release-rewrite.md",
           "docs/superpowers/plans/ documentation link maintenance when assigned exclusively to this workstream by artifact:implementation-plan",
-          "openwiki/"
+          "openwiki/",
+          "sim-one.config.example",
+          "scripts/test-ratatui-product.mjs",
+          "scripts/test-tui-e2e.mjs",
+          "scripts/runtime-configuration-files.test.mjs",
+          "src/core/config/runtime-environment.ts",
+          "src/core/models/",
+          "src/tests/models.test.ts",
+          "src/tests/runtime-environment.test.ts"
         ]
       },
       "resources": [
@@ -11172,7 +11203,9 @@
         "tui",
         "packaging",
         "ci",
-        "release"
+        "release",
+        "runpod",
+        "live-model"
       ],
       "title": "Implement Product Surfaces And Delivery",
       "type": "work"
@@ -12474,7 +12507,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The product smoke records a real assistant response of valid content; binary or process existence alone is insufficient.",
+          "criterion": "The product smoke selects its declared test model card, records a real assistant response of valid content through that card, and proves the response is not a provider error; binary or process existence alone is insufficient.",
           "evidence": "runtime:evidence/verify-sim-one-tui/result.json",
           "id": "verification-passed",
           "kind": "test"
@@ -12524,7 +12557,10 @@
           "OLLAMA_API_KEY",
           "OLLAMA_CLOUD_API_KEY",
           "CODEX_BRAIN_LOCAL_API_KEY",
-          "CODEX_BRAIN_LOCAL_API_URL"
+          "CODEX_BRAIN_LOCAL_API_URL",
+          "RUNPOD_API_KEY",
+          "RUNPOD_CHAT_BASE_URL",
+          "SIM_ONE_TEST_MODEL_CARD"
         ],
         "max_attempts": 2,
         "timeout_minutes": 15,
@@ -12741,7 +12777,7 @@
     {
       "acceptance": [
         {
-          "criterion": "The configured smoke posts through the built gateway agent route and receives a nonempty, non-error assistant response.",
+          "criterion": "The configured smoke selects its declared test model card, posts through the built gateway agent route, and receives a nonempty, non-error assistant response from that provider.",
           "evidence": "runtime:evidence/verify-tui-e2e/gateway-prompt.json",
           "id": "gateway-prompt-passed",
           "kind": "test"
@@ -12770,7 +12806,10 @@
         ],
         "completion_condition": "Every acceptance criterion has durable, independently inspectable evidence.",
         "environment": [
-          "OLLAMA_API_KEY"
+          "OLLAMA_API_KEY",
+          "RUNPOD_API_KEY",
+          "RUNPOD_CHAT_BASE_URL",
+          "SIM_ONE_TEST_MODEL_CARD"
         ],
         "max_attempts": 2,
         "timeout_minutes": 15,
@@ -18521,7 +18560,7 @@
     }
   ],
   "project": {
-    "context_version": "task-lifecycle-integration-retry-safety:2026-08-01",
+    "context_version": "runpod-live-model-ci:2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

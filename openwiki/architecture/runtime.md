@@ -111,6 +111,11 @@ Workflow HTTP invocation is asynchronous in Flue by default; route clients gener
 
 Model/provider setup is centralized under `src/core/models/`. Model cards define provider id, model id/specifier, capabilities, context/output budgets, and environment variable names. Cards must not contain secret values. Provider runtime resolves those declared environment variable names at runtime.
 
+The shipped primary remains MiniMax M3 through Ollama Cloud. The RunPod Kimi
+K2.6 card is a separately registered OpenAI-compatible provider used by trusted
+live-model CI when selected by the test harness; this does not enable automatic
+runtime failover.
+
 When changing model selection, context budgets, compaction, or provider setup, read `docs/architecture/model-system.md` and `docs/architecture/session-context-budget.md` first.
 
 ## Auth and telemetry

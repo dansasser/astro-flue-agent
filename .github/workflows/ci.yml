@@ -43,9 +43,14 @@ jobs:
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          RUNPOD_API_KEY: ${{ secrets.RUN_POD_API_KEY }}
         run: |
           test -n "$OLLAMA_API_KEY"
-          printf 'OLLAMA_API_KEY=%s\n' "$OLLAMA_API_KEY" > sim-one.config
+          test -n "$RUNPOD_API_KEY"
+          {
+            printf 'OLLAMA_API_KEY=%s\n' "$OLLAMA_API_KEY"
+            printf 'RUNPOD_API_KEY=%s\n' "$RUNPOD_API_KEY"
+          } > sim-one.config
           chmod 600 sim-one.config
 
       - name: Setup Rust
@@ -88,6 +93,8 @@ jobs:
         env:
           GOROMBO_TEST_MODE: '1'
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          RUNPOD_API_KEY: ${{ secrets.RUN_POD_API_KEY }}
+          SIM_ONE_TEST_MODEL_CARD: kimi-k2-6-runpod
 
       - name: Verify CLI binary
         run: test -f .gorombo/sim-one-cli/cli.js
@@ -103,6 +110,8 @@ jobs:
         env:
           GOROMBO_TEST_MODE: '1'
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          RUNPOD_API_KEY: ${{ secrets.RUN_POD_API_KEY }}
+          SIM_ONE_TEST_MODEL_CARD: kimi-k2-6-runpod
 
       - name: Verify WASM artifact in build output
         run: test -f .gorombo/sim-one-alpha/memory/gorombo_memory_bg.wasm

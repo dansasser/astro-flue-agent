@@ -79,13 +79,18 @@ const runtimeEnvironmentValues = parseEnv(
 const ollamaKey =
   runtimeEnvironmentValues.OLLAMA_API_KEY ||
   runtimeEnvironmentValues.OLLAMA_CLOUD_API_KEY;
-if (!ollamaKey) {
-  throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required in sim-one.config for the Ratatui product prompt test.');
+const runpodKey = runtimeEnvironmentValues.RUNPOD_API_KEY;
+if (!ollamaKey && !runpodKey) {
+  throw new Error('A supported live-model credential is required in sim-one.config for the Ratatui product prompt test.');
 }
 const productSmokeTestMode = process.env.GOROMBO_TEST_MODE === '1';
 const productSmokeOllamaKey =
   productSmokeTestMode
     ? ollamaKey
+    : 'shell-value-must-not-win';
+const productSmokeRunpodKey =
+  productSmokeTestMode
+    ? runpodKey
     : 'shell-value-must-not-win';
 const releaseArtifactLock = await acquireProductArtifactLock();
 const productFixtureRoot = mkdtempSync(join(tmpdir(), 'ratatui-relocated-product-'));
@@ -143,6 +148,10 @@ try {
     );
   }
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const testModelCard = process.env.SIM_ONE_TEST_MODEL_CARD?.trim();
+  if (testModelCard) {
+    config.models = { ...config.models, primary: testModelCard };
+  }
   config.gateway = { ...(config.gateway ?? {}), port };
   config.storage = {
     ...(config.storage ?? {}),
@@ -164,7 +173,11 @@ try {
     GOROMBO_RUNTIME_ROOT: runtimeRoot,
     SIM_ONE_PRODUCT_PATH: simOnePath,
     SIM_ONE_TUI_LOG_PATH: tuiDiagnosticsPath,
-    OLLAMA_API_KEY: productSmokeOllamaKey,
+    ...(productSmokeOllamaKey ? { OLLAMA_API_KEY: productSmokeOllamaKey } : {}),
+    ...(productSmokeRunpodKey ? { RUNPOD_API_KEY: productSmokeRunpodKey } : {}),
+    ...(runtimeEnvironmentValues.RUNPOD_CHAT_BASE_URL
+      ? { RUNPOD_CHAT_BASE_URL: runtimeEnvironmentValues.RUNPOD_CHAT_BASE_URL }
+      : {}),
     GOROMBO_WORKSPACE_ROOT: join(
       launchDirectory,
       'shell-workspace-must-not-win',

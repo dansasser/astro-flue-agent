@@ -10,11 +10,13 @@ export {
 } from '../../core/models/providers/ollama-cloud/index.js';
 export { nomicEmbedTextLocalCard, ollamaLocalCards } from '../../core/models/providers/ollama-local/index.js';
 export { allMiniLmL6V2OnnxCard, onnxLocalCards } from '../../core/models/providers/onnx-local/index.js';
+export { kimiK26RunpodCard, runpodCards } from '../../core/models/providers/runpod/index.js';
 
 import { codexBrainCards } from '../../core/models/providers/codex-brain/index.js';
 import { ollamaCloudCards } from '../../core/models/providers/ollama-cloud/index.js';
 import { ollamaLocalCards } from '../../core/models/providers/ollama-local/index.js';
 import { onnxLocalCards } from '../../core/models/providers/onnx-local/index.js';
+import { runpodCards } from '../../core/models/providers/runpod/index.js';
 import type { AgentModelCard } from '../../core/models/types.js';
 
 export const allModelCards = [
@@ -22,6 +24,7 @@ export const allModelCards = [
   ...codexBrainCards,
   ...ollamaLocalCards,
   ...onnxLocalCards,
+  ...runpodCards,
 ] as const;
 
 export function resolveModelCard(specifier: string): AgentModelCard | undefined {

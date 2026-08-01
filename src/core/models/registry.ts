@@ -6,10 +6,11 @@
   nomicEmbedTextCloudCard,
   nomicEmbedTextLocalCard,
   qwen35Card,
+  kimiK26RunpodCard,
 } from '../../core/models/catalog.js';
 import { loadGoromboConfig, type LoadGoromboConfigOptions } from '../../core/config/index.js';
 import { resolveModelCardEnv } from '../../core/models/env.js';
-import { codexBrainProviderId, ollamaCloudProviderId } from '../../core/models/provider-ids.js';
+import { codexBrainProviderId, ollamaCloudProviderId, runpodProviderId } from '../../core/models/provider-ids.js';
 import type { AgentModelCard, ModelRegistry, ModelRole } from '../../core/models/types.js';
 
 export interface ModelRegistryOptions extends LoadGoromboConfigOptions {}
@@ -69,6 +70,7 @@ function createModelCards(): AgentModelCard[] {
     qwen35Card,
     kimik27codeCard,
     codexBrainCard,
+    kimiK26RunpodCard,
     nomicEmbedTextCloudCard,
     nomicEmbedTextLocalCard,
   ];
@@ -93,6 +95,10 @@ function validateModelCardProviderEnv(env: Record<string, unknown>, card: AgentM
     if (!resolved.apiKey || !resolved.baseUrl) {
       throw new Error('CODEX_BRAIN_LOCAL_API_KEY and CODEX_BRAIN_LOCAL_API_URL are required for the Codex Brain model card.');
     }
+  }
+
+  if (providerId === runpodProviderId && !cloudKey) {
+    throw new Error('RUNPOD_API_KEY is required for RunPod model cards.');
   }
 }
 

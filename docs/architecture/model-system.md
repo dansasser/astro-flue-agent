@@ -29,13 +29,14 @@ Runtime setup has two layers:
 
 The orchestrator should not register providers itself. Runtime config selects a primary project model card and an optional backup card. The durable orchestrator agent uses the active card's specifier as the Flue model string. Session-budget and compaction code uses the selected card before estimating, reserving, or compacting context.
 
-## Ollama Cloud, Ollama Local, And Codex Brain
+## Ollama Cloud, Ollama Local, Codex Brain, And RunPod
 
 Ollama has two different API paths:
 
 - Direct Ollama Cloud API uses `https://ollama.com/v1` with `OLLAMA_API_KEY`.
 - Local Ollama uses `http://localhost:11434/v1` or another real Ollama local endpoint.
 - Codex Brain is a separate DT1/provider path, not an Ollama Local model. Its configured base URL must include `/v1`.
+- RunPod chat uses its OpenAI-compatible public endpoint with `RUNPOD_API_KEY`; its chat base URL is separate from image-generation transport configuration.
 
 The provider IDs intentionally reflect that split:
 
@@ -43,13 +44,14 @@ The provider IDs intentionally reflect that split:
 ollama-cloud  -> direct Ollama Cloud API
 ollama-local  -> local Ollama endpoint
 codex-brain   -> DT1 Codex Brain endpoint
+runpod        -> RunPod OpenAI-compatible public endpoint
 ```
 
 Cloud model cards use the direct Ollama Cloud model IDs, such as `minimax-m3` and `deepseek-v4-pro`. The `:cloud` suffix is for the local Ollama CLI/daemon path.
 
 ## Current Cards
 
-`src/core/models/catalog.ts` aggregates eight enabled cards:
+`src/core/models/catalog.ts` aggregates nine enabled cards:
 
 | Card key | Flue specifier | Role |
 | --- | --- | --- |
@@ -58,12 +60,13 @@ Cloud model cards use the direct Ollama Cloud model IDs, such as `minimax-m3` an
 | `qwen3-5-cloud` | `ollama-cloud/qwen3.5:397b` | Agentic chat |
 | `kimi-k2.7-code-cloud` | `ollama-cloud/kimi-k2.7-code:cloud` | Agentic chat |
 | `codex-brain` | `codex-brain/gpt-5.5` | Agentic chat |
+| `kimi-k2-6-runpod` | `runpod/kimi-k2.6` | Agentic chat |
 | `nomic-embed-text-cloud` | `ollama-cloud/nomic-embed-text` | Embedding |
 | `nomic-embed-text-local` | `ollama-local/nomic-embed-text` | Embedding |
 | `all-minilm-l6-v2-onnx` | `onnx-local/all-minilm-l6-v2` | Embedding |
 
 `minimax-m3-cloud` is the default agentic-chat card. The runtime chat registry
-uses the seven provider-backed chat and embedding cards from
+uses the eight provider-backed chat and embedding cards from
 `createModelCards()`. The embedding chain reads the complete catalog so the
 bundled ONNX card participates in cloud-to-local fallback.
 
@@ -74,6 +77,7 @@ bundled ONNX card participates in cloud-to-local fallback.
 | `qwen3-5-cloud` | 262,144 | provider 262,144 | 65,536 |
 | `kimi-k2.7-code-cloud` | 1,000,000 | guaranteed 256,000; provider 262,144 | 32,768 |
 | `codex-brain` | 128,000 | not separately reported | 32,000 |
+| `kimi-k2-6-runpod` | 262,144 | provider 262,144 | 32,768 |
 | `nomic-embed-text-cloud` | 8,192 | not separately reported | 768 dimensions |
 | `nomic-embed-text-local` | 8,192 | not separately reported | 768 dimensions |
 | `all-minilm-l6-v2-onnx` | 256 | not separately reported | 384 dimensions |
@@ -88,6 +92,11 @@ MiniMax M3 intentionally tracks more than one limit because MiniMax advertises 1
 4. `GOROMBO_MODEL` and `GOROMBO_MODEL_BACKUP` are rejected.
 5. Raw Flue model specifiers are not accepted as configuration.
 6. If a requested card key is missing, startup fails instead of choosing an unreviewed fallback.
+
+The shipped primary remains `minimax-m3-cloud`. Trusted live-model tests may
+set `SIM_ONE_TEST_MODEL_CARD` to select another reviewed card inside the test
+process; production runtime model selection still comes only from
+`gorombo.config.json`.
 
 Current default runtime config:
 
