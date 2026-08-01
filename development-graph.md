@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 75241c06d9ea141db460a380a15aab358c9f830a7dadc39476fbc60b0d78d400 -->
+<!-- development-graph-sha256: 05e11ca5adf83ac7fa7989af20a7f867abd152eb8fc910da4574cd18bde53145 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `55` |
+| Graph version | `56` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `orchestrator-durable-workspace-routing:2026-07-29` |
+| Context version | `task-lifecycle-graph-architecture:2026-07-31` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `75241c06d9ea141db460a380a15aab358c9f830a7dadc39476fbc60b0d78d400` |
+| Canonical checksum | `05e11ca5adf83ac7fa7989af20a7f867abd152eb8fc910da4574cd18bde53145` |
 
 ## Flow
 
@@ -98,6 +98,12 @@ flowchart TD
     n_resolve_d6_tui_approval_surface_placement{"Resolve D6 TUI Approval Surface Placement\\n(decision / planned)"}
     n_implement_capability_management_worker["Implement Capability Management Worker\\n(work / planned)"]
     n_implement_coding_worker_capability_authoring["Implement Coding Worker Capability Authoring\\n(work / planned)"]
+    n_resolve_d7_separate_project_and_task_graphs{"Separate Project And Task Lifecycle Graphs\\n(decision / planned)"}
+    n_resolve_d8_memory_helper_task_runs{"Extend Memory Helper For Durable Task Runs\\n(decision / planned)"}
+    n_resolve_d9_flue_native_task_graph_runtime{"Use Flue-Native Task Graph Runtime\\n(decision / planned)"}
+    n_resolve_d10_sealed_node_context{"Seal Per-Node Context Envelopes\\n(decision / planned)"}
+    n_resolve_d11_shared_task_graph_engine{"Share Task Graph Engine Across Agents\\n(decision / planned)"}
+    n_specify_task_lifecycle_architecture["Specify Task Lifecycle Graph Architecture\\n(work / planned)"]
     n_baseline_context -- "consumes" --> n_install_dependencies
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
@@ -744,6 +750,48 @@ flowchart TD
     n_resolve_d5_canonical_runtime_configuration -. "invalidates" .-> n_implement_coding_worker_capability_authoring
     n_implement_coding_worker_capability_authoring -- "consumes" --> n_integrate_and_repair
     n_implement_coding_worker_capability_authoring -. "invalidates" .-> n_integrate_and_repair
+    n_decide_architecture -- "consumes" --> n_resolve_d7_separate_project_and_task_graphs
+    n_decide_architecture -- "consumes" --> n_resolve_d8_memory_helper_task_runs
+    n_decide_architecture -- "consumes" --> n_resolve_d9_flue_native_task_graph_runtime
+    n_decide_architecture -- "consumes" --> n_resolve_d10_sealed_node_context
+    n_decide_architecture -- "consumes" --> n_resolve_d11_shared_task_graph_engine
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_specify_task_lifecycle_architecture
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_plan_implementation
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_implement_core_contracts
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_implement_agent_runtime
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_implement_ingress_operations
+    n_resolve_d7_separate_project_and_task_graphs -- "consumes" --> n_review_architecture_security
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_plan_implementation
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_implement_core_contracts
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_implement_memory_retrieval
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_implement_agent_runtime
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_implement_sim_one_tui_work_pane
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_verify_memory_smoke
+    n_resolve_d8_memory_helper_task_runs -- "consumes" --> n_review_architecture_security
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_plan_implementation
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_implement_core_contracts
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_implement_agent_runtime
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_implement_ingress_operations
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_integrate_and_repair
+    n_resolve_d9_flue_native_task_graph_runtime -- "consumes" --> n_review_architecture_security
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_plan_implementation
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_implement_core_contracts
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_implement_agent_runtime
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_implement_memory_retrieval
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_implement_capabilities_security
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_implement_ingress_operations
+    n_resolve_d10_sealed_node_context -- "consumes" --> n_review_architecture_security
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_plan_implementation
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_implement_agent_runtime
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_implement_ingress_operations
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_integrate_and_repair
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_implement_sim_one_tui_work_pane
+    n_resolve_d11_shared_task_graph_engine -- "consumes" --> n_review_architecture_security
+    n_specify_task_lifecycle_architecture -- "consumes" --> n_plan_implementation
 ```
 
 ## Nodes
@@ -824,6 +872,12 @@ flowchart TD
 | `resolve-d6-tui-approval-surface-placement` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Record the owner-selected drop-up approval interface above the prompt, following the slash-command menu display pattern while keeping the status surface at two rows. | decision:d6-tui-approval-surface-placement |
 | `implement-capability-management-worker` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Create the dedicated capability-manager worker and shared lifecycle service that safely administer user- and agent-added skills, tools, workers, and MCP servers through the existing runtime registry. | artifact:capability-management-worker-change |
 | `implement-coding-worker-capability-authoring` | `work` | `planned` | agent: SIM-ONE Coding Worker lead | Give the Coding Worker the skills and tools to design, build, validate, test, and package every supported capability kind while leaving runtime installation and activation to the capability-manager worker. | artifact:coding-worker-capability-authoring-change |
+| `resolve-d7-separate-project-and-task-graphs` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Keep repository development governance separate from per-request task execution while defining a governed cross-graph adapter. | decision:d7-separate-project-and-task-graphs |
+| `resolve-d8-memory-helper-task-runs` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Make the Rust/WASM Memory Helper the shared durable task-state authority and eliminate competing task-run state. | decision:d8-memory-helper-task-runs |
+| `resolve-d9-flue-native-task-graph-runtime` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Add application-owned task graph coordination while preserving Flue as the only agent runtime. | decision:d9-flue-native-task-graph-runtime |
+| `resolve-d10-sealed-node-context` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Make exact bounded context envelopes and capability absence enforceable for every model-executed task graph node. | decision:d10-sealed-node-context |
+| `resolve-d11-shared-task-graph-engine` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Use one graph engine for orchestrator and Coding Worker definitions while preserving private worker subgraphs and DLG authority. | decision:d11-shared-task-graph-engine |
+| `specify-task-lifecycle-architecture` | `work` | `planned` | agent: SIM-ONE architecture adapter | Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract. | artifact:task-lifecycle-architecture-spec |
 
 ## Edges
 
@@ -1475,6 +1529,48 @@ flowchart TD
 | `d5-invalidates-coding-worker-capability-authoring` | `resolve-d5-canonical-runtime-configuration` | `invalidates` | `implement-coding-worker-capability-authoring` | A material D5 change invalidates Coding Worker capability authoring. | artifact:coding-worker-capability-authoring-change | — |
 | `coding-worker-capability-authoring-to-integration-consumes` | `implement-coding-worker-capability-authoring` | `consumes` | `integrate-and-repair` | Integration requires the Coding Worker capability-authoring change. | artifact:coding-worker-capability-authoring-change | — |
 | `coding-worker-capability-authoring-invalidates-integration` | `implement-coding-worker-capability-authoring` | `invalidates` | `integrate-and-repair` | A material Coding Worker capability-authoring change invalidates the integrated change. | artifact:integrated-change | — |
+| `architecture-to-decide-project-task-graph-separation` | `decide-architecture` | `consumes` | `resolve-d7-separate-project-and-task-graphs` | The base architecture decision is current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `architecture-to-decide-memory-helper-task-runs` | `decide-architecture` | `consumes` | `resolve-d8-memory-helper-task-runs` | The base architecture decision is current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `architecture-to-decide-flue-native-task-graph-runtime` | `decide-architecture` | `consumes` | `resolve-d9-flue-native-task-graph-runtime` | The base architecture decision is current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `architecture-to-decide-sealed-node-context` | `decide-architecture` | `consumes` | `resolve-d10-sealed-node-context` | The base architecture decision is current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `architecture-to-decide-shared-task-graph-engine` | `decide-architecture` | `consumes` | `resolve-d11-shared-task-graph-engine` | The base architecture decision is current, accepted, and bound to this run. | artifact:architecture-decision | — |
+| `decide-project-task-graph-separation-to-task-graph-spec` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `specify-task-lifecycle-architecture` | The decision record is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-memory-helper-task-runs-to-task-graph-spec` | `resolve-d8-memory-helper-task-runs` | `consumes` | `specify-task-lifecycle-architecture` | The decision record is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-flue-native-task-graph-runtime-to-task-graph-spec` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `specify-task-lifecycle-architecture` | The decision record is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-sealed-node-context-to-task-graph-spec` | `resolve-d10-sealed-node-context` | `consumes` | `specify-task-lifecycle-architecture` | The decision record is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-shared-task-graph-engine-to-task-graph-spec` | `resolve-d11-shared-task-graph-engine` | `consumes` | `specify-task-lifecycle-architecture` | The decision record is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-project-task-graph-separation-to-plan-implementation` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `plan-implementation` | The architecture decision is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-project-task-graph-separation-to-implement-core-contracts` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `implement-core-contracts` | The architecture decision is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-project-task-graph-separation-to-implement-agent-runtime` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `implement-agent-runtime` | The architecture decision is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-project-task-graph-separation-to-implement-ingress-operations` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `implement-ingress-operations` | The architecture decision is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-project-task-graph-separation-to-review-architecture-security` | `resolve-d7-separate-project-and-task-graphs` | `consumes` | `review-architecture-security` | The architecture decision is current, accepted, and bound to this run. | decision:d7-separate-project-and-task-graphs | — |
+| `decide-memory-helper-task-runs-to-plan-implementation` | `resolve-d8-memory-helper-task-runs` | `consumes` | `plan-implementation` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-implement-core-contracts` | `resolve-d8-memory-helper-task-runs` | `consumes` | `implement-core-contracts` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-implement-memory-retrieval` | `resolve-d8-memory-helper-task-runs` | `consumes` | `implement-memory-retrieval` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-implement-agent-runtime` | `resolve-d8-memory-helper-task-runs` | `consumes` | `implement-agent-runtime` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-implement-sim-one-tui-work-pane` | `resolve-d8-memory-helper-task-runs` | `consumes` | `implement-sim-one-tui-work-pane` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-verify-memory-smoke` | `resolve-d8-memory-helper-task-runs` | `consumes` | `verify-memory-smoke` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-memory-helper-task-runs-to-review-architecture-security` | `resolve-d8-memory-helper-task-runs` | `consumes` | `review-architecture-security` | The architecture decision is current, accepted, and bound to this run. | decision:d8-memory-helper-task-runs | — |
+| `decide-flue-native-task-graph-runtime-to-plan-implementation` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `plan-implementation` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-flue-native-task-graph-runtime-to-implement-core-contracts` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `implement-core-contracts` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-flue-native-task-graph-runtime-to-implement-agent-runtime` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `implement-agent-runtime` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-flue-native-task-graph-runtime-to-implement-ingress-operations` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `implement-ingress-operations` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-flue-native-task-graph-runtime-to-integrate-and-repair` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `integrate-and-repair` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-flue-native-task-graph-runtime-to-review-architecture-security` | `resolve-d9-flue-native-task-graph-runtime` | `consumes` | `review-architecture-security` | The architecture decision is current, accepted, and bound to this run. | decision:d9-flue-native-task-graph-runtime | — |
+| `decide-sealed-node-context-to-plan-implementation` | `resolve-d10-sealed-node-context` | `consumes` | `plan-implementation` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-implement-core-contracts` | `resolve-d10-sealed-node-context` | `consumes` | `implement-core-contracts` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-implement-agent-runtime` | `resolve-d10-sealed-node-context` | `consumes` | `implement-agent-runtime` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-implement-memory-retrieval` | `resolve-d10-sealed-node-context` | `consumes` | `implement-memory-retrieval` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-implement-capabilities-security` | `resolve-d10-sealed-node-context` | `consumes` | `implement-capabilities-security` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-implement-ingress-operations` | `resolve-d10-sealed-node-context` | `consumes` | `implement-ingress-operations` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-sealed-node-context-to-review-architecture-security` | `resolve-d10-sealed-node-context` | `consumes` | `review-architecture-security` | The architecture decision is current, accepted, and bound to this run. | decision:d10-sealed-node-context | — |
+| `decide-shared-task-graph-engine-to-plan-implementation` | `resolve-d11-shared-task-graph-engine` | `consumes` | `plan-implementation` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-shared-task-graph-engine-to-implement-agent-runtime` | `resolve-d11-shared-task-graph-engine` | `consumes` | `implement-agent-runtime` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-shared-task-graph-engine-to-implement-ingress-operations` | `resolve-d11-shared-task-graph-engine` | `consumes` | `implement-ingress-operations` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-shared-task-graph-engine-to-integrate-and-repair` | `resolve-d11-shared-task-graph-engine` | `consumes` | `integrate-and-repair` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-shared-task-graph-engine-to-implement-sim-one-tui-work-pane` | `resolve-d11-shared-task-graph-engine` | `consumes` | `implement-sim-one-tui-work-pane` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `decide-shared-task-graph-engine-to-review-architecture-security` | `resolve-d11-shared-task-graph-engine` | `consumes` | `review-architecture-security` | The architecture decision is current, accepted, and bound to this run. | decision:d11-shared-task-graph-engine | — |
+| `task-graph-spec-to-plan-implementation` | `specify-task-lifecycle-architecture` | `consumes` | `plan-implementation` | The task lifecycle architecture specification is current, accepted, and bound to this run. | artifact:task-lifecycle-architecture-spec | — |
 
 ## Node contracts
 
@@ -1594,7 +1690,7 @@ flowchart TD
 
 - Goal: Produce the repository-owned executable implementation lineage for every required 0.1.0 member, with exact file ownership, decision boundaries, evidence, approval scopes, and rollback under the development graph.
 - Executor instructions: Verify the current graph, manifest, decision catalog, repository specifications, implementation lineage, and release ledger against artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed planning artifact. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution. Update doc/implementation-lineage.md; do not create an external plan.
-- Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement
+- Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement, artifact:task-lifecycle-architecture-spec, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime
 - Resources: project:implementation-lineage
 - Permissions: read [artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, decision:d1-github-auth-strategy, docs/getting-started/pre-release-status.md, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, specification-manifest.json, decisions.json, doc/decisions/d1-github-auth-strategy.md, doc/product-spec.md, doc/constraints-and-risks.md, doc/architecture-spec.md, doc/acceptance-spec.md, doc/open-questions.md, doc/product-spec-workspace.md, doc/architecture-spec-workspace.md, doc/acceptance-spec-workspace.md, doc/open-questions-workspace.md, doc/product-spec-file-access-history.md, doc/architecture-spec-file-access-history.md, doc/acceptance-spec-file-access-history.md, doc/open-questions-file-access-history.md, development-graph.json, doc/implementation-lineage.md, doc/product-spec-runtime-configuration.md, doc/architecture-spec-runtime-configuration.md, doc/acceptance-spec-runtime-configuration.md, doc/open-questions-runtime-configuration.md, doc/runtime-configuration-inventory.md, doc/decisions/d5-canonical-runtime-configuration.md, decision:d6-tui-approval-surface-placement, doc/decisions/d6-tui-approval-surface-placement.md]; write [doc/implementation-lineage.md]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1616,7 +1712,7 @@ flowchart TD
 
 - Goal: Implement authorized changes to shared types, Valibot schemas, protocols, model cards, configuration, architecture contracts, and Flue-discovered entrypoints.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d10-sealed-node-context, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime
 - Resources: project:core-contracts
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, authorized project files]; write [src/core/, src/app.ts, src/db.ts, docs/architecture/, flue.config.ts, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, src/index.ts]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1633,7 +1729,7 @@ flowchart TD
 
 - Goal: Implement authorized main-orchestrator, workflow, tool, skill, built-in lead-worker, worker-local internal-subagent, and persona-workspace changes while preventing ephemeral Flue sandbox storage from being represented as durable product storage and preserving delegation ownership and capability isolation.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Treat src/AGENTS.md as company-owned system instructions; src/workspace/ as the main-agent persona source; <runtime-root>/sim-one-alpha/workspace as the packaged persona copy; <runtime-root>/workspace as the persistent Coding Worker access root; src/engine/workers/<name>/workspace/ as built-in lead-worker persona guidance; and src/engine/workers/coding-worker/subagents/<name>/workspace/ as Coding Worker internal-subagent guidance. Do not expose the main orchestrator to Flue's generic virtual-sandbox file or shell tools. Route durable file, repository, generated-project, and handoff work to the Coding Worker, and route runtime capability lifecycle work to capability-manager. Runtime-loaded user workers remain capability profiles rather than built-in workspace directories. The orchestrator owns worker routing and exposes only lead workers; lead workers own internal-subagent selection. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix and stop for replan before any parallel file collision.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime
 - Resources: project:agent-runtime
 - Permissions: read [artifact:implementation-plan, authorized project files, src/AGENTS.md, src/workspace-loader.ts, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, docs/architecture/worker-system.md, docs/reference/configuration.md, openwiki/architecture/runtime.md, openwiki/workflows/product-and-agent-workflows.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts, decision:d2-workspace-root-isolation, doc/decisions/d2-workspace-root-isolation.md, decision:d5-canonical-runtime-configuration, doc/decisions/d5-canonical-runtime-configuration.md, flue-docs:guide/sandboxes]; write [src/agents/, src/workflows/, src/workspace/, src/engine/tools/, src/skills/, src/engine/workers/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan, scripts/ focused product verification assigned exclusively to this workstream, docs/ and openwiki/ files assigned exclusively to this workstream, src/workspace-loader.ts]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1659,7 +1755,7 @@ flowchart TD
 
 - Goal: Implement authorized structured memory, session memory, document indexing, knowledge storage, retrieval routing, embeddings, and Rust/WASM changes while keeping memory layers distinct.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d10-sealed-node-context, decision:d8-memory-helper-task-runs
 - Resources: project:memory-retrieval
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, authorized project files]; write [src/engine/memory/, src/engine/rag/, src/engine/embeddings/, crates/gorombo-memory/, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1676,7 +1772,7 @@ flowchart TD
 
 - Goal: Implement authorized capability-store, registry, MCP, approval, GitHub-auth, and policy enforcement changes with fail-closed trust boundaries.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before the capabilities/security lane's first bootstrap write and every later repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; never rely on approval code this lane is about to implement, and stop fail-closed on denied, missing, expired, or mismatched approval. Record every decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration, decision:d10-sealed-node-context
 - Resources: project:capabilities-security
 - Permissions: read [artifact:implementation-plan, authorized project files, decision:d5-canonical-runtime-configuration, doc/decisions/d5-canonical-runtime-configuration.md]; write [src/engine/capabilities/, src/engine/registries/, src/engine/approvals/, src/api/ingress/, docs/architecture/github-auth-system.md, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1696,7 +1792,7 @@ flowchart TD
 
 - Goal: Implement authorized connector normalization, authenticated API routes, connector-specific session policy, fresh and explicit-resume TUI lifecycle, durable transcript projection, schedules, and typed progress/telemetry surfaces.
 - Executor instructions: Use the Coding Worker lead and only its worker-local internal specialists. Before every repository mutation, call the already active Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Emit typed progress events for every handoff, tool call, edit group, and verification result. If the domain is unaffected, produce an evidence-backed no-change record. Follow the implementation plan's exact file-ownership matrix. Stop and replan before editing a file assigned to another parallel workstream; shared or cross-domain files must be serialized or reconciled by the integration node.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, decision:d5-canonical-runtime-configuration, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d9-flue-native-task-graph-runtime
 - Resources: project:ingress-operations
 - Permissions: read [artifact:implementation-plan, authorized project files, decision:d5-canonical-runtime-configuration, doc/decisions/d5-canonical-runtime-configuration.md]; write [src/api/, src/channels/, src/engine/session/, src/engine/schedules/, src/core/telemetry/, docs/operations/ files assigned exclusively to this workstream by artifact:implementation-plan, docs/architecture/tui-cli-session-flow.md when assigned exclusively to this workstream by artifact:implementation-plan, src/tests/ files assigned exclusively to this workstream by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1720,7 +1816,7 @@ flowchart TD
 
 - Goal: Implement the responsive SIM-ONE TUI work pane for tasks, usage and cost, Git state, and runtime status without regressing transcript or prompt interaction.
 - Executor instructions: Follow the SIM-ONE TUI work-pane graph contract, repository specifications, release ledger, and artifact:implementation-plan using SIM-ONE TUI product terminology. Before every repository mutation, call the Coding Worker approval service with the exact run, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Keep transcript, prompt, and work-pane viewport state independent. Assign every Rust, WASM, TypeScript, documentation, and focused-test file to this member or serialize it through product integration before editing.
-- Inputs: artifact:implementation-plan, artifact:beta-release-contract, artifact:connector-approval-controls-change
+- Inputs: artifact:implementation-plan, artifact:beta-release-contract, artifact:connector-approval-controls-change, decision:d11-shared-task-graph-engine, decision:d8-memory-helper-task-runs
 - Resources: project:sim-one-tui-work-pane
 - Permissions: read [artifact:implementation-plan, artifact:beta-release-contract, docs/architecture/tui-cli-session-flow.md, docs/operations/product-tui.md, docs/tui/, tui/ratatui/, crates/, doc/implementation-lineage.md, docs/getting-started/pre-release-status.md]; write [tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan, Rust/WASM helper files assigned exclusively to this member by artifact:implementation-plan, focused test files assigned exclusively to this member by artifact:implementation-plan]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `240` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -1780,7 +1876,7 @@ flowchart TD
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Before every integration or repair mutation, call the already active Coding Worker approval service with the exact run, failed evidence, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change
+- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
 - Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence, artifact:runtime-configuration-consolidation-change]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -2007,7 +2103,7 @@ flowchart TD
 
 - Goal: Exercise the real WASM memory engine, SQLite durability, retrieval, and Coding Worker memory path end to end.
 - Executor instructions: Execute the exact repository script as an argv array and retain full stdout, stderr, exit status, timing, and declared artifact digests.
-- Inputs: artifact:runtime-build, artifact:memory-wasm, artifact:embedding-model-assets
+- Inputs: artifact:runtime-build, artifact:memory-wasm, artifact:embedding-model-assets, decision:d8-memory-helper-task-runs
 - Resources: local-runtime-probe
 - Permissions: read [authorized project tree, node_modules/]; write [.tmp/tsc/, .gorombo test memory state, external:tmp/sim-one-memory-smoke-runtime-root]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `20` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -2039,7 +2135,7 @@ flowchart TD
 
 - Goal: Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability.
 - Executor instructions: Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, documented rollback, and release-document accuracy and readability.
-- Inputs: artifact:integrated-change, artifact:verification-summary
+- Inputs: artifact:integrated-change, artifact:verification-summary, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime
 - Resources: —
 - Permissions: read [artifact:integrated-change, artifact:verification-summary, AGENTS.md, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, README.md, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/architecture/, docs/getting-started/, docs/guides/, docs/operations/, docs/reference/, docs/tui/, openwiki/, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `90` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
@@ -2766,6 +2862,92 @@ flowchart TD
   - `progress-visible` (artifact): Durable typed progress covers classification, scaffold, edits, tests, security validation, packaging, and handoff without exposing hidden reasoning or secrets. Evidence: `runtime:evidence/implement-coding-worker-capability-authoring/progress-visible.json`
   - `focused-verification` (test): Focused tests generate, validate, package, and hand off fixtures for each capability kind and prove the capability-manager, not the Coding Worker, owns runtime installation and activation. Evidence: `runtime:evidence/implement-coding-worker-capability-authoring/focused-verification.json`
   - `protocol-routed-authoring-validation` (policy): Coding Worker capability classification, source validation, security checks, tests, packaging, and handoff consume the applicable Protocol Tool bundle; the handoff records protocol ids and applied rules and cannot substitute worker-local policy for protocol directives. Evidence: `runtime:evidence/implement-coding-worker-capability-authoring/protocol-routed-authoring-validation.json`
+
+### `resolve-d7-separate-project-and-task-graphs` — Separate Project And Task Lifecycle Graphs
+
+- Goal: Keep repository development governance separate from per-request task execution while defining a governed cross-graph adapter.
+- Executor instructions: Verify and preserve docs/architecture/decisions/d1-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Inputs: artifact:architecture-decision
+- Resources: docs/architecture/decisions/d1-separate-project-and-task-graphs.md
+- Permissions: read [artifact:architecture-decision, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation]; write [docs/architecture/decisions/d1-separate-project-and-task-graphs.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); The decision record is source-grounded, internally consistent, and bound to every affected consumer.
+- Side effects: `reversible` — Creates or updates docs/architecture/decisions/d1-separate-project-and-task-graphs.md.
+- Rollback: Restore docs/architecture/decisions/d1-separate-project-and-task-graphs.md from version control and invalidate its affected consumers.
+- Approval required: `false`
+- Acceptance:
+  - `decision-record-complete` (artifact): The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation. Evidence: `docs/architecture/decisions/d1-separate-project-and-task-graphs.md`
+
+### `resolve-d8-memory-helper-task-runs` — Extend Memory Helper For Durable Task Runs
+
+- Goal: Make the Rust/WASM Memory Helper the shared durable task-state authority and eliminate competing task-run state.
+- Executor instructions: Verify and preserve docs/architecture/decisions/d2-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Inputs: artifact:architecture-decision
+- Resources: docs/architecture/decisions/d2-memory-helper-task-runs.md
+- Permissions: read [artifact:architecture-decision, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation]; write [docs/architecture/decisions/d2-memory-helper-task-runs.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); The decision record is source-grounded, internally consistent, and bound to every affected consumer.
+- Side effects: `reversible` — Creates or updates docs/architecture/decisions/d2-memory-helper-task-runs.md.
+- Rollback: Restore docs/architecture/decisions/d2-memory-helper-task-runs.md from version control and invalidate its affected consumers.
+- Approval required: `false`
+- Acceptance:
+  - `decision-record-complete` (artifact): The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation. Evidence: `docs/architecture/decisions/d2-memory-helper-task-runs.md`
+
+### `resolve-d9-flue-native-task-graph-runtime` — Use Flue-Native Task Graph Runtime
+
+- Goal: Add application-owned task graph coordination while preserving Flue as the only agent runtime.
+- Executor instructions: Verify and preserve docs/architecture/decisions/d3-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Inputs: artifact:architecture-decision
+- Resources: docs/architecture/decisions/d3-flue-native-task-graph-runtime.md
+- Permissions: read [artifact:architecture-decision, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation]; write [docs/architecture/decisions/d3-flue-native-task-graph-runtime.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); The decision record is source-grounded, internally consistent, and bound to every affected consumer.
+- Side effects: `reversible` — Creates or updates docs/architecture/decisions/d3-flue-native-task-graph-runtime.md.
+- Rollback: Restore docs/architecture/decisions/d3-flue-native-task-graph-runtime.md from version control and invalidate its affected consumers.
+- Approval required: `false`
+- Acceptance:
+  - `decision-record-complete` (artifact): The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation. Evidence: `docs/architecture/decisions/d3-flue-native-task-graph-runtime.md`
+
+### `resolve-d10-sealed-node-context` — Seal Per-Node Context Envelopes
+
+- Goal: Make exact bounded context envelopes and capability absence enforceable for every model-executed task graph node.
+- Executor instructions: Verify and preserve docs/architecture/decisions/d4-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Inputs: artifact:architecture-decision
+- Resources: docs/architecture/decisions/d4-sealed-node-context.md
+- Permissions: read [artifact:architecture-decision, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation]; write [docs/architecture/decisions/d4-sealed-node-context.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); The decision record is source-grounded, internally consistent, and bound to every affected consumer.
+- Side effects: `reversible` — Creates or updates docs/architecture/decisions/d4-sealed-node-context.md.
+- Rollback: Restore docs/architecture/decisions/d4-sealed-node-context.md from version control and invalidate its affected consumers.
+- Approval required: `false`
+- Acceptance:
+  - `decision-record-complete` (artifact): The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation. Evidence: `docs/architecture/decisions/d4-sealed-node-context.md`
+
+### `resolve-d11-shared-task-graph-engine` — Share Task Graph Engine Across Agents
+
+- Goal: Use one graph engine for orchestrator and Coding Worker definitions while preserving private worker subgraphs and DLG authority.
+- Executor instructions: Verify and preserve docs/architecture/decisions/d5-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.
+- Inputs: artifact:architecture-decision
+- Resources: docs/architecture/decisions/d5-shared-task-graph-engine.md
+- Permissions: read [artifact:architecture-decision, AGENTS.md, docs/architecture/, src/, crates/gorombo-memory/, version-matched Flue documentation]; write [docs/architecture/decisions/d5-shared-task-graph-engine.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `45` minute(s); The decision record is source-grounded, internally consistent, and bound to every affected consumer.
+- Side effects: `reversible` — Creates or updates docs/architecture/decisions/d5-shared-task-graph-engine.md.
+- Rollback: Restore docs/architecture/decisions/d5-shared-task-graph-engine.md from version control and invalidate its affected consumers.
+- Approval required: `false`
+- Acceptance:
+  - `decision-record-complete` (artifact): The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation. Evidence: `docs/architecture/decisions/d5-shared-task-graph-engine.md`
+
+### `specify-task-lifecycle-architecture` — Specify Task Lifecycle Graph Architecture
+
+- Goal: Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract.
+- Executor instructions: Maintain docs/architecture/task-lifecycle-graphs.md as the normative architecture specification. Keep current behavior, accepted target behavior, implementation boundaries, acceptance evidence, and graph ownership explicit.
+- Inputs: decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine
+- Resources: docs/architecture/task-lifecycle-graphs.md
+- Permissions: read [decision:d1-project-task-graph-separation, decision:d2-memory-helper-task-runs, decision:d3-flue-native-task-graph-runtime, decision:d4-sealed-node-context, decision:d5-shared-task-graph-engine]; write [docs/architecture/task-lifecycle-graphs.md]; external [—]; destructive `false`
+- Execution: max `2` attempt(s), `60` minute(s); Every architecture acceptance criterion has durable, independently inspectable evidence.
+- Side effects: `reversible` — Creates or updates the task lifecycle graph architecture specification.
+- Rollback: Restore docs/architecture/task-lifecycle-graphs.md from version control and invalidate downstream planning and implementation.
+- Approval required: `false`
+- Acceptance:
+  - `dual-graph-boundary-complete` (policy): The specification keeps DLG and TLG definitions, run state, authority, mutation, and evidence separate while defining a governed adapter. Evidence: `docs/architecture/task-lifecycle-graphs.md`
+  - `memory-helper-boundary-complete` (review): The specification uses the Rust/WASM Memory Helper as shared durable task state and distinguishes user-visible checklist projection from execution state. Evidence: `docs/architecture/task-lifecycle-graphs.md`
+  - `flue-context-boundary-complete` (policy): The specification preserves Flue ownership and requires sealed per-node context envelopes, typed broker requests, interrupts, checkpoints, and bounded recovery. Evidence: `docs/architecture/task-lifecycle-graphs.md`
 
 ## Assumptions
 

@@ -7738,13 +7738,517 @@
       "max_traversals": null,
       "to": "integrate-and-repair",
       "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "The base architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "decide-architecture",
+      "id": "architecture-to-decide-project-task-graph-separation",
+      "max_traversals": null,
+      "to": "resolve-d7-separate-project-and-task-graphs",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "The base architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "decide-architecture",
+      "id": "architecture-to-decide-memory-helper-task-runs",
+      "max_traversals": null,
+      "to": "resolve-d8-memory-helper-task-runs",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "The base architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "decide-architecture",
+      "id": "architecture-to-decide-flue-native-task-graph-runtime",
+      "max_traversals": null,
+      "to": "resolve-d9-flue-native-task-graph-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "The base architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "decide-architecture",
+      "id": "architecture-to-decide-sealed-node-context",
+      "max_traversals": null,
+      "to": "resolve-d10-sealed-node-context",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-decision"
+      ],
+      "condition": "The base architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "decide-architecture",
+      "id": "architecture-to-decide-shared-task-graph-engine",
+      "max_traversals": null,
+      "to": "resolve-d11-shared-task-graph-engine",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The decision record is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-task-graph-spec",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The decision record is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-task-graph-spec",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The decision record is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-task-graph-spec",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The decision record is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-task-graph-spec",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The decision record is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-task-graph-spec",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-core-contracts",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-ingress-operations",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-review-architecture-security",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-core-contracts",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-memory-retrieval",
+      "max_traversals": null,
+      "to": "implement-memory-retrieval",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-sim-one-tui-work-pane",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-verify-memory-smoke",
+      "max_traversals": null,
+      "to": "verify-memory-smoke",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-review-architecture-security",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-core-contracts",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-ingress-operations",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-review-architecture-security",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-core-contracts",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-memory-retrieval",
+      "max_traversals": null,
+      "to": "implement-memory-retrieval",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-capabilities-security",
+      "max_traversals": null,
+      "to": "implement-capabilities-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-ingress-operations",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-review-architecture-security",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-agent-runtime",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-ingress-operations",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-integrate-and-repair",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-sim-one-tui-work-pane",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The architecture decision is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-review-architecture-security",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "The task lifecycle architecture specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-plan-implementation",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 55,
+  "graph_version": 56,
   "nodes": [
     {
       "acceptance": [
@@ -8602,6 +9106,36 @@
           "artifact": "decision:d6-tui-approval-surface-placement",
           "name": "resolved TUI approval drop-up decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:task-lifecycle-architecture-spec",
+          "name": "task-lifecycle-architecture-spec",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "d7-separate-project-and-task-graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
+          "required": true
         }
       ],
       "outputs": [
@@ -8728,6 +9262,26 @@
         {
           "artifact": "artifact:beta-release-contract",
           "name": "0.1.0 Beta release contract approval",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "d7-separate-project-and-task-graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
           "required": true
         }
       ],
@@ -8885,6 +9439,31 @@
           "artifact": "decision:d5-canonical-runtime-configuration",
           "name": "resolved canonical runtime configuration decision",
           "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "d7-separate-project-and-task-graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
+          "required": true
         }
       ],
       "outputs": [
@@ -9006,6 +9585,16 @@
           "artifact": "artifact:beta-release-contract",
           "name": "0.1.0 Beta release contract approval",
           "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
         }
       ],
       "outputs": [
@@ -9122,6 +9711,11 @@
         {
           "artifact": "decision:d5-canonical-runtime-configuration",
           "name": "resolved canonical runtime configuration decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
           "required": true
         }
       ],
@@ -9267,6 +9861,26 @@
           "artifact": "decision:d5-canonical-runtime-configuration",
           "name": "resolved canonical runtime configuration decision",
           "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "d7-separate-project-and-task-graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
+          "required": true
         }
       ],
       "outputs": [
@@ -9382,6 +9996,16 @@
         {
           "artifact": "artifact:connector-approval-controls-change",
           "name": "connector approval-controls change",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
           "required": true
         }
       ],
@@ -9983,6 +10607,16 @@
         {
           "artifact": "artifact:coding-worker-capability-authoring-change",
           "name": "Coding Worker capability authoring change",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
           "required": true
         }
       ],
@@ -11403,6 +12037,11 @@
           "artifact": "artifact:embedding-model-assets",
           "name": "embedding model assets",
           "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
         }
       ],
       "outputs": [
@@ -11654,6 +12293,31 @@
         {
           "artifact": "artifact:verification-summary",
           "name": "verification summary",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "d10-sealed-node-context",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "d11-shared-task-graph-engine",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "d7-separate-project-and-task-graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "d8-memory-helper-task-runs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "d9-flue-native-task-graph-runtime",
           "required": true
         }
       ],
@@ -16471,10 +17135,455 @@
       ],
       "title": "Implement Coding Worker Capability Authoring",
       "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
+          "evidence": "docs/architecture/decisions/d1-separate-project-and-task-graphs.md",
+          "id": "decision-record-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve docs/architecture/decisions/d1-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Keep repository development governance separate from per-request task execution while defining a governed cross-graph adapter.",
+      "id": "resolve-d7-separate-project-and-task-graphs",
+      "inputs": [
+        {
+          "artifact": "artifact:architecture-decision",
+          "name": "base architecture and ownership decision",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "format": "text/markdown",
+          "name": "Separate Project And Task Lifecycle Graphs"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:architecture-decision",
+          "AGENTS.md",
+          "docs/architecture/",
+          "src/",
+          "crates/gorombo-memory/",
+          "version-matched Flue documentation"
+        ],
+        "write": [
+          "docs/architecture/decisions/d1-separate-project-and-task-graphs.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/decisions/d1-separate-project-and-task-graphs.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates docs/architecture/decisions/d1-separate-project-and-task-graphs.md.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/decisions/d1-separate-project-and-task-graphs.md from version control and invalidate its affected consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "task-graph",
+        "flue"
+      ],
+      "title": "Separate Project And Task Lifecycle Graphs",
+      "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
+          "evidence": "docs/architecture/decisions/d2-memory-helper-task-runs.md",
+          "id": "decision-record-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve docs/architecture/decisions/d2-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Make the Rust/WASM Memory Helper the shared durable task-state authority and eliminate competing task-run state.",
+      "id": "resolve-d8-memory-helper-task-runs",
+      "inputs": [
+        {
+          "artifact": "artifact:architecture-decision",
+          "name": "base architecture and ownership decision",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "format": "text/markdown",
+          "name": "Extend Memory Helper For Durable Task Runs"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:architecture-decision",
+          "AGENTS.md",
+          "docs/architecture/",
+          "src/",
+          "crates/gorombo-memory/",
+          "version-matched Flue documentation"
+        ],
+        "write": [
+          "docs/architecture/decisions/d2-memory-helper-task-runs.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/decisions/d2-memory-helper-task-runs.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates docs/architecture/decisions/d2-memory-helper-task-runs.md.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/decisions/d2-memory-helper-task-runs.md from version control and invalidate its affected consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "task-graph",
+        "flue"
+      ],
+      "title": "Extend Memory Helper For Durable Task Runs",
+      "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
+          "evidence": "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md",
+          "id": "decision-record-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve docs/architecture/decisions/d3-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Add application-owned task graph coordination while preserving Flue as the only agent runtime.",
+      "id": "resolve-d9-flue-native-task-graph-runtime",
+      "inputs": [
+        {
+          "artifact": "artifact:architecture-decision",
+          "name": "base architecture and ownership decision",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "format": "text/markdown",
+          "name": "Use Flue-Native Task Graph Runtime"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:architecture-decision",
+          "AGENTS.md",
+          "docs/architecture/",
+          "src/",
+          "crates/gorombo-memory/",
+          "version-matched Flue documentation"
+        ],
+        "write": [
+          "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates docs/architecture/decisions/d3-flue-native-task-graph-runtime.md.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/decisions/d3-flue-native-task-graph-runtime.md from version control and invalidate its affected consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "task-graph",
+        "flue"
+      ],
+      "title": "Use Flue-Native Task Graph Runtime",
+      "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
+          "evidence": "docs/architecture/decisions/d4-sealed-node-context.md",
+          "id": "decision-record-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve docs/architecture/decisions/d4-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Make exact bounded context envelopes and capability absence enforceable for every model-executed task graph node.",
+      "id": "resolve-d10-sealed-node-context",
+      "inputs": [
+        {
+          "artifact": "artifact:architecture-decision",
+          "name": "base architecture and ownership decision",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "format": "text/markdown",
+          "name": "Seal Per-Node Context Envelopes"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:architecture-decision",
+          "AGENTS.md",
+          "docs/architecture/",
+          "src/",
+          "crates/gorombo-memory/",
+          "version-matched Flue documentation"
+        ],
+        "write": [
+          "docs/architecture/decisions/d4-sealed-node-context.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/decisions/d4-sealed-node-context.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates docs/architecture/decisions/d4-sealed-node-context.md.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/decisions/d4-sealed-node-context.md from version control and invalidate its affected consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "task-graph",
+        "flue"
+      ],
+      "title": "Seal Per-Node Context Envelopes",
+      "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
+          "evidence": "docs/architecture/decisions/d5-shared-task-graph-engine.md",
+          "id": "decision-record-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve docs/architecture/decisions/d5-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Use one graph engine for orchestrator and Coding Worker definitions while preserving private worker subgraphs and DLG authority.",
+      "id": "resolve-d11-shared-task-graph-engine",
+      "inputs": [
+        {
+          "artifact": "artifact:architecture-decision",
+          "name": "base architecture and ownership decision",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "format": "text/markdown",
+          "name": "Share Task Graph Engine Across Agents"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:architecture-decision",
+          "AGENTS.md",
+          "docs/architecture/",
+          "src/",
+          "crates/gorombo-memory/",
+          "version-matched Flue documentation"
+        ],
+        "write": [
+          "docs/architecture/decisions/d5-shared-task-graph-engine.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/decisions/d5-shared-task-graph-engine.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates docs/architecture/decisions/d5-shared-task-graph-engine.md.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/decisions/d5-shared-task-graph-engine.md from version control and invalidate its affected consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "task-graph",
+        "flue"
+      ],
+      "title": "Share Task Graph Engine Across Agents",
+      "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The specification keeps DLG and TLG definitions, run state, authority, mutation, and evidence separate while defining a governed adapter.",
+          "evidence": "docs/architecture/task-lifecycle-graphs.md",
+          "id": "dual-graph-boundary-complete",
+          "kind": "policy"
+        },
+        {
+          "criterion": "The specification uses the Rust/WASM Memory Helper as shared durable task state and distinguishes user-visible checklist projection from execution state.",
+          "evidence": "docs/architecture/task-lifecycle-graphs.md",
+          "id": "memory-helper-boundary-complete",
+          "kind": "review"
+        },
+        {
+          "criterion": "The specification preserves Flue ownership and requires sealed per-node context envelopes, typed broker requests, interrupts, checkpoints, and bounded recovery.",
+          "evidence": "docs/architecture/task-lifecycle-graphs.md",
+          "id": "flue-context-boundary-complete",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every architecture acceptance criterion has durable, independently inspectable evidence.",
+        "max_attempts": 2,
+        "timeout_minutes": 60
+      },
+      "executor": {
+        "instructions": "Maintain docs/architecture/task-lifecycle-graphs.md as the normative architecture specification. Keep current behavior, accepted target behavior, implementation boundaries, acceptance evidence, and graph ownership explicit.",
+        "kind": "agent",
+        "name": "SIM-ONE architecture adapter"
+      },
+      "goal": "Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract.",
+      "id": "specify-task-lifecycle-architecture",
+      "inputs": [
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "Separate Project And Task Lifecycle Graphs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "Extend Memory Helper For Durable Task Runs",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "Use Flue-Native Task Graph Runtime",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "Seal Per-Node Context Envelopes",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "Share Task Graph Engine Across Agents",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:task-lifecycle-architecture-spec",
+          "format": "text/markdown",
+          "name": "task lifecycle graph architecture specification"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "decision:d1-project-task-graph-separation",
+          "decision:d2-memory-helper-task-runs",
+          "decision:d3-flue-native-task-graph-runtime",
+          "decision:d4-sealed-node-context",
+          "decision:d5-shared-task-graph-engine"
+        ],
+        "write": [
+          "docs/architecture/task-lifecycle-graphs.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/task-lifecycle-graphs.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates the task lifecycle graph architecture specification.",
+        "level": "reversible",
+        "rollback": "Restore docs/architecture/task-lifecycle-graphs.md from version control and invalidate downstream planning and implementation."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "specification",
+        "task-graph",
+        "context-control"
+      ],
+      "title": "Specify Task Lifecycle Graph Architecture",
+      "type": "work"
     }
   ],
   "project": {
-    "context_version": "orchestrator-durable-workspace-routing:2026-07-29",
+    "context_version": "task-lifecycle-graph-architecture:2026-07-31",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

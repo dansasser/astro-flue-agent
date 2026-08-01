@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 55,
-  "context_version": "orchestrator-durable-workspace-routing:2026-07-29",
+  "graph_version": 56,
+  "context_version": "task-lifecycle-graph-architecture:2026-07-31",
   "specification_root": "doc",
   "documents": [
     {
@@ -301,6 +301,87 @@
       "affected_nodes": [
         "implement-tui-status-context-meter",
         "implement-connector-approval-controls"
+      ]
+    },
+    {
+      "id": "d7-separate-project-and-task-graphs",
+      "status": "open",
+      "source_path": "doc/decisions/d7-separate-project-and-task-graphs.md",
+      "decision_node": "resolve-d7-separate-project-and-task-graphs",
+      "artifact": "decision:d7-separate-project-and-task-graphs",
+      "affected_nodes": [
+        "implement-agent-runtime",
+        "implement-core-contracts",
+        "implement-ingress-operations",
+        "plan-implementation",
+        "review-architecture-security",
+        "specify-task-lifecycle-architecture"
+      ]
+    },
+    {
+      "id": "d8-memory-helper-task-runs",
+      "status": "open",
+      "source_path": "doc/decisions/d8-memory-helper-task-runs.md",
+      "decision_node": "resolve-d8-memory-helper-task-runs",
+      "artifact": "decision:d8-memory-helper-task-runs",
+      "affected_nodes": [
+        "implement-agent-runtime",
+        "implement-core-contracts",
+        "implement-memory-retrieval",
+        "implement-sim-one-tui-work-pane",
+        "plan-implementation",
+        "review-architecture-security",
+        "specify-task-lifecycle-architecture",
+        "verify-memory-smoke"
+      ]
+    },
+    {
+      "id": "d9-flue-native-task-graph-runtime",
+      "status": "open",
+      "source_path": "doc/decisions/d9-flue-native-task-graph-runtime.md",
+      "decision_node": "resolve-d9-flue-native-task-graph-runtime",
+      "artifact": "decision:d9-flue-native-task-graph-runtime",
+      "affected_nodes": [
+        "implement-agent-runtime",
+        "implement-core-contracts",
+        "implement-ingress-operations",
+        "integrate-and-repair",
+        "plan-implementation",
+        "review-architecture-security",
+        "specify-task-lifecycle-architecture"
+      ]
+    },
+    {
+      "id": "d10-sealed-node-context",
+      "status": "open",
+      "source_path": "doc/decisions/d10-sealed-node-context.md",
+      "decision_node": "resolve-d10-sealed-node-context",
+      "artifact": "decision:d10-sealed-node-context",
+      "affected_nodes": [
+        "implement-agent-runtime",
+        "implement-capabilities-security",
+        "implement-core-contracts",
+        "implement-ingress-operations",
+        "implement-memory-retrieval",
+        "plan-implementation",
+        "review-architecture-security",
+        "specify-task-lifecycle-architecture"
+      ]
+    },
+    {
+      "id": "d11-shared-task-graph-engine",
+      "status": "open",
+      "source_path": "doc/decisions/d11-shared-task-graph-engine.md",
+      "decision_node": "resolve-d11-shared-task-graph-engine",
+      "artifact": "decision:d11-shared-task-graph-engine",
+      "affected_nodes": [
+        "implement-agent-runtime",
+        "implement-ingress-operations",
+        "implement-sim-one-tui-work-pane",
+        "integrate-and-repair",
+        "plan-implementation",
+        "review-architecture-security",
+        "specify-task-lifecycle-architecture"
       ]
     }
   ],
