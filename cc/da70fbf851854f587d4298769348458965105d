@@ -1,0 +1,72 @@
+.github/workflows/ci.yml
+  s_a81fff26d52223::t_f534051fdf4d54 46,49-53,96-97,113-114
+docs/reference/configuration.md
+  s_a81fff26d52223::t_a15ea648dcf39f 111,115-117,267,271,277-279
+  s_a81fff26d52223::t_64f3ecceb9d110 280
+src/core/models/registry.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 9,13,73,99-101
+  s_a81fff26d52223::t_93bb9bdcd7305e 102
+src/core/models/providers/index.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 4,10
+specification-manifest.json
+  s_a81fff26d52223::t_a2d119714bf83b 4-5
+sim-one.config.example
+  s_a81fff26d52223::t_10d7ffeda8fefd 110-111,113-114
+src/core/models/providers/runpod/provider.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 1-41
+src/core/models/providers/runpod/index.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 1-8
+src/core/models/catalog.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 13,19,27
+src/core/config/runtime-environment.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 290-294
+src/tests/runtime-environment.test.ts
+  s_a81fff26d52223::t_be5cf0de83bf4f 153-169
+openwiki/architecture/runtime.md
+  s_a81fff26d52223::t_a15ea648dcf39f 114-118
+doc/runtime-configuration-inventory.md
+  s_a81fff26d52223::t_6930c1d22cb117 95
+  s_a81fff26d52223::t_a15ea648dcf39f 33
+src/core/models/providers/runpod/cards/index.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 1-5
+scripts/test-ratatui-product.mjs
+  s_a81fff26d52223::t_f534051fdf4d54 82-84,91-94,151-154
+  s_a81fff26d52223::t_10b3cc7954cdc4 176-180
+scripts/test-tui-e2e.mjs
+  s_a81fff26d52223::t_f534051fdf4d54 2,19,26-27,33-35,39-43,50-51,54-79,122-127
+src/core/models/provider-ids.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 5
+scripts/runtime-configuration-inventory.test.mjs
+  s_a81fff26d52223::t_6930c1d22cb117 50
+scripts/runtime-configuration-files.test.mjs
+  s_a81fff26d52223::t_be5cf0de83bf4f 197-201,221-226,231-234
+src/core/models/providers/runpod/cards/kimi-k2-6.ts
+  s_a81fff26d52223::t_10d7ffeda8fefd 1-29
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_a15ea648dcf39f 446-447
+src/tests/models.test.ts
+  s_a81fff26d52223::t_be5cf0de83bf4f 3,7,73-111,243,266-269
+docs/architecture/model-system.md
+  s_a81fff26d52223::t_a15ea648dcf39f 32,39,47,54,63,69,80,96-99
+  s_a81fff26d52223::t_f23f87ace58361 100
+development-graph.json
+  s_a81fff26d52223::t_4c1fed198f2083 9043,10215-10220,10233,10312-10315,10327-10332,10355-10358,11080-11085,11179-11187,11206-11208,12510,12560-12563,12780,12809-12812,18563
+development-graph.md
+  s_a81fff26d52223::t_b5af9460b13236 1,12,17,21,876,1862,1866,1885,1993,2007,2195,2232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "ccda70fbf851854f587d4298769348458965105d",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
