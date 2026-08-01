@@ -107,9 +107,11 @@ TELEGRAM_MENTION_PATTERNS=
 # secret; fine-grained PAT required for Coding Worker GitHub operations
 GITHUB_PERSONAL_ACCESS_TOKEN=
 
-# Runpod image generation
-# secret; required when Runpod image generation is requested
+# RunPod chat and image generation
+# secret; required when a RunPod model card or image generation is used
 RUNPOD_API_KEY=
+# optional URL; default: Moonshot Kimi OpenAI-compatible endpoint
+RUNPOD_CHAT_BASE_URL=
 # optional URL; default: Runpod SDK default
 RUNPOD_API_BASE_URL=
 # runtime-relative paths; defaults: packaged catalog and workspace/images

@@ -443,6 +443,8 @@ src/core/models/providers/
   Provider registration and provider-owned model cards.
   Providers resolve env bindings declared by their cards.
   Providers with multiple cards store them in their own cards/ subdirectory.
+  Includes the dedicated RunPod OpenAI-compatible chat provider; its base URL
+  is independent from the RunPod image SDK path.
 
 src/core/models/catalog.ts
   Aggregates provider-owned cards and resolves Flue model specifiers.

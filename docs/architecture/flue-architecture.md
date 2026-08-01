@@ -23,7 +23,7 @@ compaction
 sandboxes
 routing
 observability
-durable workflow runs
+workflow-run records for finite invocations
 MCP servers
 CLI
 SDK

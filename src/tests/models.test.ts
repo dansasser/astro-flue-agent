@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { codexBrainCard, deepseekV4ProCard, kimik27codeCard, minimaxM3Card, qwen35Card, resolveModelCard } from '../core/models/catalog.js';
+import { codexBrainCard, deepseekV4ProCard, kimiK26RunpodCard, kimik27codeCard, minimaxM3Card, qwen35Card, resolveModelCard } from '../core/models/catalog.js';
 import { configureRuntimeModels, createModelRegistry, selectModelCardForRole } from '../core/models/index.js';
 import { registerOllamaCloudProvider } from '../core/models/providers/ollama-cloud/index.js';
 import { resolveOllamaLocalProviderRegistration } from '../core/models/providers/ollama-local/index.js';
+import { registerRunpodProvider } from '../core/models/providers/runpod/index.js';
 
 test('model registry defaults agentic chat to MiniMax M3', () => {
   const registry = createModelRegistry({
@@ -67,6 +68,45 @@ test('Kimi K2.7 Code card tracks advertised and Ollama-reported context limits',
   assert.equal(kimik27codeCard.providerReportedContextWindow, 262_144);
   assert.equal(kimik27codeCard.maxOutputTokens, 32_768);
   assert.equal(kimik27codeCard.maxTokens, 32_768);
+});
+
+test('RunPod Kimi K2.6 card uses the dedicated OpenAI-compatible chat provider', () => {
+  assert.equal(kimiK26RunpodCard.key, 'kimi-k2-6-runpod');
+  assert.equal(kimiK26RunpodCard.specifier, 'runpod/kimi-k2.6');
+  assert.equal(kimiK26RunpodCard.env?.apiKey, 'RUNPOD_API_KEY');
+  assert.equal(kimiK26RunpodCard.env?.baseUrl, 'RUNPOD_CHAT_BASE_URL');
+  assert.equal(kimiK26RunpodCard.contextWindow, 262_144);
+  assert.equal(kimiK26RunpodCard.maxOutputTokens, 32_768);
+});
+
+test('model registry selects RunPod Kimi K2.6 by config model card key', () => {
+  const registry = configureRuntimeModels({
+    RUNPOD_API_KEY: 'test-key',
+  }, {
+    config: {
+      version: 1,
+      models: {
+        primary: 'kimi-k2-6-runpod',
+      },
+    },
+  });
+
+  assert.equal(registry.selectedModelCard.key, 'kimi-k2-6-runpod');
+  assert.equal(registry.selectedModelCard.specifier, 'runpod/kimi-k2.6');
+});
+
+test('runtime config requires the RunPod key when the RunPod card is selected', () => {
+  assert.throws(
+    () => configureRuntimeModels({}, {
+      config: {
+        version: 1,
+        models: {
+          primary: 'kimi-k2-6-runpod',
+        },
+      },
+    }),
+    /RUNPOD_API_KEY is required for RunPod model cards/,
+  );
 });
 
 test('Qwen 3.5 card tracks cloud context limits', () => {
@@ -200,6 +240,7 @@ test('model cards can be resolved from Flue specifier', () => {
   assert.equal(resolveModelCard('ollama-cloud/minimax-m3')?.key, 'minimax-m3-cloud');
   assert.equal(resolveModelCard('ollama-cloud/deepseek-v4-pro')?.key, 'deepseek-v4-pro-cloud');
   assert.equal(resolveModelCard('ollama-cloud/qwen3.5:397b')?.key, 'qwen3-5-cloud');
+  assert.equal(resolveModelCard('runpod/kimi-k2.6')?.key, 'kimi-k2-6-runpod');
   assert.equal(resolveModelCard('codex-brain/gpt-5.5')?.key, 'codex-brain');
 });
 
@@ -221,4 +262,8 @@ test('Ollama Local provider registration uses local endpoint environment values 
 
 test('Ollama Cloud provider registration tolerates an empty card list', () => {
   assert.doesNotThrow(() => registerOllamaCloudProvider({ OLLAMA_API_KEY: 'test-key' }, []));
+});
+
+test('RunPod provider registration tolerates an empty card list', () => {
+  assert.doesNotThrow(() => registerRunpodProvider({ RUNPOD_API_KEY: 'test-key' }, []));
 });

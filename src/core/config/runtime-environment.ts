@@ -287,8 +287,11 @@ export const runtimeEnvironmentDefinitions: readonly RuntimeEnvironmentDefinitio
     requiredWhen: 'Coding Worker GitHub operations are requested',
   }),
 
-  define('RUNPOD_API_KEY', 'runpod-image', 'secret', 'Runpod API credential.', {
-    requiredWhen: 'Runpod image generation is requested',
+  define('RUNPOD_API_KEY', 'runpod', 'secret', 'RunPod API credential for chat and image endpoints.', {
+    requiredWhen: 'A RunPod model card is selected or RunPod image generation is requested',
+  }),
+  define('RUNPOD_CHAT_BASE_URL', 'runpod', 'url', 'OpenAI-compatible RunPod chat base URL.', {
+    defaultDescription: 'https://api.runpod.ai/v2/moonshot-kimi/openai/v1',
   }),
   define('RUNPOD_API_BASE_URL', 'runpod-image', 'url', 'Runpod API base URL.', {
     defaultDescription: 'Runpod SDK default',

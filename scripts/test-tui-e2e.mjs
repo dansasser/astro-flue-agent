@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
@@ -16,49 +16,67 @@ const port = await getFreePort();
 const baseUrl = `http://127.0.0.1:${port}`;
 const runtimeRoot = resolve('.gorombo');
 const runtimeConfigPath = join(runtimeRoot, 'sim-one.config');
+const runtimeModelConfigPath = join(runtimeRoot, 'gorombo.config.json');
 if (!existsSync(runtimeConfigPath)) {
   throw new Error(
     `${runtimeConfigPath} does not exist. Build after creating sim-one.config.`,
   );
 }
 const runtimeConfigValues = parseEnv(readFileSync(runtimeConfigPath, 'utf8'));
+const originalRuntimeModelConfig = readFileSync(runtimeModelConfigPath, 'utf8');
+const testModelCard = process.env.SIM_ONE_TEST_MODEL_CARD?.trim();
 const requestSecret = process.env.GOROMBO_HTTP_TEST_API_SECRET || runtimeConfigValues.API_SECRET || 'tui-e2e-test-secret';
 const nodeArgs = ['.gorombo/sim-one-alpha/server.mjs'];
 const codingWorkspaceRoot = mkdtempSync(join(runtimeRoot, '.test-tui-e2e-workspace-'));
 
-// Use real Ollama Cloud key from env (CI passes it via secrets).
-// Codex Brain gets a placeholder — validation passes, server boots, test uses the primary model.
 const ollamaKey = runtimeConfigValues.OLLAMA_API_KEY || runtimeConfigValues.OLLAMA_CLOUD_API_KEY;
-if (!ollamaKey) {
-  throw new Error('OLLAMA_API_KEY or OLLAMA_CLOUD_API_KEY is required in sim-one.config for the TUI e2e test.');
+const runpodKey = runtimeConfigValues.RUNPOD_API_KEY;
+if (!ollamaKey && !runpodKey) {
+  throw new Error('A supported live-model credential is required in sim-one.config for the TUI e2e test.');
 }
 
 const modelEnv = {
-  OLLAMA_API_KEY: ollamaKey,
+  ...(ollamaKey ? { OLLAMA_API_KEY: ollamaKey } : {}),
+  ...(runpodKey ? { RUNPOD_API_KEY: runpodKey } : {}),
+  ...(runtimeConfigValues.RUNPOD_CHAT_BASE_URL
+    ? { RUNPOD_CHAT_BASE_URL: runtimeConfigValues.RUNPOD_CHAT_BASE_URL }
+    : {}),
   CODEX_BRAIN_LOCAL_API_KEY: runtimeConfigValues.CODEX_BRAIN_LOCAL_API_KEY || 'tui-e2e-placeholder',
   CODEX_BRAIN_LOCAL_API_URL: runtimeConfigValues.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
 };
 
-const child = spawn(process.execPath, nodeArgs, {
-  cwd: process.cwd(),
-  env: {
-    ...process.env,
-    ...modelEnv,
-    PORT: String(port),
-    API_SECRET: requestSecret,
-    GOROMBO_RUNTIME_ROOT: runtimeRoot,
-    GOROMBO_WORKSPACE_ROOT: codingWorkspaceRoot,
-    GOROMBO_TEST_MODE: '1',
-  },
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
-
 let stderr = '';
 let stdout = '';
-child.stderr.on('data', (chunk) => { stderr += String(chunk); });
-child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+let child;
+let runtimeModelConfigChanged = false;
 
 try {
+  if (testModelCard) {
+    const runtimeModelConfig = JSON.parse(originalRuntimeModelConfig);
+    runtimeModelConfig.models = {
+      ...runtimeModelConfig.models,
+      primary: testModelCard,
+    };
+    writeFileSync(runtimeModelConfigPath, `${JSON.stringify(runtimeModelConfig, null, 2)}\n`);
+    runtimeModelConfigChanged = true;
+  }
+
+  child = spawn(process.execPath, nodeArgs, {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      ...modelEnv,
+      PORT: String(port),
+      API_SECRET: requestSecret,
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+      GOROMBO_WORKSPACE_ROOT: codingWorkspaceRoot,
+      GOROMBO_TEST_MODE: '1',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stderr.on('data', (chunk) => { stderr += String(chunk); });
+  child.stdout.on('data', (chunk) => { stdout += String(chunk); });
+
   await waitForHealth();
   console.log('[tui-e2e] Server healthy, starting tests...');
 
@@ -101,7 +119,12 @@ try {
 
   console.log('\n[tui-e2e] All TUI end-to-end tests passed.');
 } finally {
-  await stopChild(child);
+  if (child) {
+    await stopChild(child);
+  }
+  if (runtimeModelConfigChanged) {
+    writeFileSync(runtimeModelConfigPath, originalRuntimeModelConfig);
+  }
   rmSync(codingWorkspaceRoot, { recursive: true, force: true });
 }
 

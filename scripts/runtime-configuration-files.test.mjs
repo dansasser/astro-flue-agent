@@ -194,6 +194,11 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
     /\/usr\/bin\/bwrap --ro-bind \/ \/ --unshare-all --share-net -- \/bin\/true/,
   );
   assert.match(workflow, /printf 'OLLAMA_API_KEY=%s\\n'/);
+  assert.match(workflow, /printf 'RUNPOD_API_KEY=%s\\n'/);
+  assert.match(
+    workflow,
+    /RUNPOD_API_KEY: \$\{\{ secrets\.RUN_POD_API_KEY \}\}/,
+  );
   assert.match(workflow, /chmod 600 sim-one\.config/);
   assert.ok(runtimeConfigStep, 'CI runtime configuration step is missing');
   assert.ok(ratatuiStep, 'Ratatui product smoke step is missing');
@@ -214,8 +219,18 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
     /OLLAMA_API_KEY: \$\{\{ secrets\.OLLAMA_API_KEY \}\}/,
   );
   assert.match(
+    ratatuiStep,
+    /RUNPOD_API_KEY: \$\{\{ secrets\.RUN_POD_API_KEY \}\}/,
+  );
+  assert.match(ratatuiStep, /SIM_ONE_TEST_MODEL_CARD: kimi-k2-6-runpod/);
+  assert.match(tuiEndToEndStep, /SIM_ONE_TEST_MODEL_CARD: kimi-k2-6-runpod/);
+  assert.match(
     productSmoke,
     /productSmokeTestMode\s*\?\s*ollamaKey\s*:\s*'shell-value-must-not-win'/,
+  );
+  assert.match(
+    productSmoke,
+    /productSmokeTestMode\s*\?\s*runpodKey\s*:\s*'shell-value-must-not-win'/,
   );
   assert.match(
     productSmoke,

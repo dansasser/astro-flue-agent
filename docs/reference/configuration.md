@@ -108,9 +108,13 @@ fails.
 | `deepseek-v4-pro-cloud` | `OLLAMA_API_KEY` or `OLLAMA_CLOUD_API_KEY` |
 | `qwen3-5-cloud` | `OLLAMA_API_KEY` or `OLLAMA_CLOUD_API_KEY` |
 | `kimi-k2.7-code-cloud` | `OLLAMA_API_KEY` or `OLLAMA_CLOUD_API_KEY` |
+| `kimi-k2-6-runpod` | `RUNPOD_API_KEY` |
 | `codex-brain` | `CODEX_BRAIN_LOCAL_API_URL` and `CODEX_BRAIN_LOCAL_API_KEY` |
 
 Ollama Cloud defaults to `https://ollama.com/v1`.
+RunPod chat defaults to
+`https://api.runpod.ai/v2/moonshot-kimi/openai/v1`; use
+`RUNPOD_CHAT_BASE_URL` only for a reviewed OpenAI-compatible chat endpoint.
 `CODEX_BRAIN_LOCAL_API_URL` must include the OpenAI-compatible `/v1` base path.
 
 Model cards own provider identifiers, context limits, output limits, and
@@ -260,14 +264,19 @@ Configure the vector database with `storage.vectorStorePath` in
 `gorombo.config.json`. The current runtime does not read a vector-store
 environment override.
 
-### Image Generation
+### RunPod Chat And Image Generation
 
 ```text
 RUNPOD_API_KEY
+RUNPOD_CHAT_BASE_URL
 RUNPOD_API_BASE_URL
 RUNPOD_IMAGE_MODELS_PATH
 GOROMBO_IMAGE_OUTPUT_DIR
 ```
+
+`RUNPOD_CHAT_BASE_URL` configures the OpenAI-compatible model provider.
+`RUNPOD_API_BASE_URL` remains specific to the image SDK path. Keeping these
+separate prevents a chat override from redirecting image requests.
 
 Relative image catalog and output paths resolve from the canonical runtime
 root. Image output is constrained to that root.
