@@ -7741,66 +7741,6 @@
     },
     {
       "artifacts": [
-        "artifact:architecture-decision"
-      ],
-      "condition": "The base architecture decision is current, accepted, and bound to this run.",
-      "exit_condition": null,
-      "from": "decide-architecture",
-      "id": "architecture-to-decide-project-task-graph-separation",
-      "max_traversals": null,
-      "to": "resolve-d7-separate-project-and-task-graphs",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
-        "artifact:architecture-decision"
-      ],
-      "condition": "The base architecture decision is current, accepted, and bound to this run.",
-      "exit_condition": null,
-      "from": "decide-architecture",
-      "id": "architecture-to-decide-memory-helper-task-runs",
-      "max_traversals": null,
-      "to": "resolve-d8-memory-helper-task-runs",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
-        "artifact:architecture-decision"
-      ],
-      "condition": "The base architecture decision is current, accepted, and bound to this run.",
-      "exit_condition": null,
-      "from": "decide-architecture",
-      "id": "architecture-to-decide-flue-native-task-graph-runtime",
-      "max_traversals": null,
-      "to": "resolve-d9-flue-native-task-graph-runtime",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
-        "artifact:architecture-decision"
-      ],
-      "condition": "The base architecture decision is current, accepted, and bound to this run.",
-      "exit_condition": null,
-      "from": "decide-architecture",
-      "id": "architecture-to-decide-sealed-node-context",
-      "max_traversals": null,
-      "to": "resolve-d10-sealed-node-context",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
-        "artifact:architecture-decision"
-      ],
-      "condition": "The base architecture decision is current, accepted, and bound to this run.",
-      "exit_condition": null,
-      "from": "decide-architecture",
-      "id": "architecture-to-decide-shared-task-graph-engine",
-      "max_traversals": null,
-      "to": "resolve-d11-shared-task-graph-engine",
-      "type": "consumes"
-    },
-    {
-      "artifacts": [
         "decision:d7-separate-project-and-task-graphs"
       ],
       "condition": "The decision record is current, accepted, and bound to this run.",
@@ -8242,13 +8182,745 @@
       "max_traversals": null,
       "to": "plan-implementation",
       "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository baseline is current and bound to this specification decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d10-sealed-node-context-consumes",
+      "max_traversals": null,
+      "to": "resolve-d10-sealed-node-context",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "A changed repository baseline invalidates the decision record and requires fresh resolution.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d10-sealed-node-context-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d10-sealed-node-context",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository baseline is current and bound to this specification decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d11-shared-task-graph-engine-consumes",
+      "max_traversals": null,
+      "to": "resolve-d11-shared-task-graph-engine",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "A changed repository baseline invalidates the decision record and requires fresh resolution.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d11-shared-task-graph-engine-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d11-shared-task-graph-engine",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository baseline is current and bound to this specification decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d7-separate-project-and-task-graphs-consumes",
+      "max_traversals": null,
+      "to": "resolve-d7-separate-project-and-task-graphs",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "A changed repository baseline invalidates the decision record and requires fresh resolution.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d7-separate-project-and-task-graphs-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d7-separate-project-and-task-graphs",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository baseline is current and bound to this specification decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d8-memory-helper-task-runs-consumes",
+      "max_traversals": null,
+      "to": "resolve-d8-memory-helper-task-runs",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "A changed repository baseline invalidates the decision record and requires fresh resolution.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d8-memory-helper-task-runs-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d8-memory-helper-task-runs",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository baseline is current and bound to this specification decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d9-flue-native-task-graph-runtime-consumes",
+      "max_traversals": null,
+      "to": "resolve-d9-flue-native-task-graph-runtime",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "A changed repository baseline invalidates the decision record and requires fresh resolution.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d9-flue-native-task-graph-runtime-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d9-flue-native-task-graph-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:agent-runtime-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-agent-runtime-invalidates",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:core-contracts-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-core-contracts-invalidates",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:ingress-operations-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-implement-ingress-operations-invalidates",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "decide-flue-native-task-graph-runtime-to-task-graph-spec-invalidates",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:agent-runtime-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-agent-runtime-invalidates",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:core-contracts-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-core-contracts-invalidates",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:memory-retrieval-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-memory-retrieval-invalidates",
+      "max_traversals": null,
+      "to": "implement-memory-retrieval",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-work-pane-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-implement-sim-one-tui-work-pane-invalidates",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-task-graph-spec-invalidates",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:memory-smoke-report"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "decide-memory-helper-task-runs-to-verify-memory-smoke-invalidates",
+      "max_traversals": null,
+      "to": "verify-memory-smoke",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:agent-runtime-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-agent-runtime-invalidates",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:core-contracts-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-core-contracts-invalidates",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:ingress-operations-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-implement-ingress-operations-invalidates",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "decide-project-task-graph-separation-to-task-graph-spec-invalidates",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:agent-runtime-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-agent-runtime-invalidates",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:capabilities-security-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-capabilities-security-invalidates",
+      "max_traversals": null,
+      "to": "implement-capabilities-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:core-contracts-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-core-contracts-invalidates",
+      "max_traversals": null,
+      "to": "implement-core-contracts",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:ingress-operations-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-ingress-operations-invalidates",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:memory-retrieval-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-implement-memory-retrieval-invalidates",
+      "max_traversals": null,
+      "to": "implement-memory-retrieval",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "decide-sealed-node-context-to-task-graph-spec-invalidates",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:agent-runtime-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-agent-runtime-invalidates",
+      "max_traversals": null,
+      "to": "implement-agent-runtime",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:ingress-operations-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-ingress-operations-invalidates",
+      "max_traversals": null,
+      "to": "implement-ingress-operations",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:sim-one-tui-work-pane-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-implement-sim-one-tui-work-pane-invalidates",
+      "max_traversals": null,
+      "to": "implement-sim-one-tui-work-pane",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "decide-shared-task-graph-engine-to-task-graph-spec-invalidates",
+      "max_traversals": null,
+      "to": "specify-task-lifecycle-architecture",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "The task lifecycle architecture specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-review-architecture-security-consumes",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:task-lifecycle-architecture-spec"
+      ],
+      "condition": "The task lifecycle architecture specification is current, accepted, and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material change to the consumed task-lifecycle decision or specification invalidates this downstream output and requires fresh execution.",
+      "exit_condition": null,
+      "from": "specify-task-lifecycle-architecture",
+      "id": "task-graph-spec-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d7-separate-project-and-task-graphs"
+      ],
+      "condition": "The resolved task-lifecycle decision is current and bound to specification verification.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "resolve-d7-separate-project-and-task-graphs-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material decision change invalidates specification verification and requires fresh evidence.",
+      "exit_condition": null,
+      "from": "resolve-d7-separate-project-and-task-graphs",
+      "id": "resolve-d7-separate-project-and-task-graphs-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d8-memory-helper-task-runs"
+      ],
+      "condition": "The resolved task-lifecycle decision is current and bound to specification verification.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "resolve-d8-memory-helper-task-runs-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material decision change invalidates specification verification and requires fresh evidence.",
+      "exit_condition": null,
+      "from": "resolve-d8-memory-helper-task-runs",
+      "id": "resolve-d8-memory-helper-task-runs-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d9-flue-native-task-graph-runtime"
+      ],
+      "condition": "The resolved task-lifecycle decision is current and bound to specification verification.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "resolve-d9-flue-native-task-graph-runtime-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material decision change invalidates specification verification and requires fresh evidence.",
+      "exit_condition": null,
+      "from": "resolve-d9-flue-native-task-graph-runtime",
+      "id": "resolve-d9-flue-native-task-graph-runtime-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d10-sealed-node-context"
+      ],
+      "condition": "The resolved task-lifecycle decision is current and bound to specification verification.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "resolve-d10-sealed-node-context-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material decision change invalidates specification verification and requires fresh evidence.",
+      "exit_condition": null,
+      "from": "resolve-d10-sealed-node-context",
+      "id": "resolve-d10-sealed-node-context-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d11-shared-task-graph-engine"
+      ],
+      "condition": "The resolved task-lifecycle decision is current and bound to specification verification.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "resolve-d11-shared-task-graph-engine-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material decision change invalidates specification verification and requires fresh evidence.",
+      "exit_condition": null,
+      "from": "resolve-d11-shared-task-graph-engine",
+      "id": "resolve-d11-shared-task-graph-engine-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 56,
+  "graph_version": 58,
   "nodes": [
     {
       "acceptance": [
@@ -9109,32 +9781,32 @@
         },
         {
           "artifact": "artifact:task-lifecycle-architecture-spec",
-          "name": "task-lifecycle-architecture-spec",
+          "name": "task lifecycle graph architecture specification",
           "required": true
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         }
       ],
@@ -9189,7 +9861,13 @@
           "doc/runtime-configuration-inventory.md",
           "doc/decisions/d5-canonical-runtime-configuration.md",
           "decision:d6-tui-approval-surface-placement",
-          "doc/decisions/d6-tui-approval-surface-placement.md"
+          "doc/decisions/d6-tui-approval-surface-placement.md",
+          "artifact:task-lifecycle-architecture-spec",
+          "decision:d10-sealed-node-context",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d7-separate-project-and-task-graphs",
+          "decision:d8-memory-helper-task-runs",
+          "decision:d9-flue-native-task-graph-runtime"
         ],
         "write": [
           "doc/implementation-lineage.md"
@@ -9266,22 +9944,22 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         }
       ],
@@ -9298,7 +9976,11 @@
         "read": [
           "artifact:implementation-plan",
           "artifact:beta-release-contract",
-          "authorized project files"
+          "authorized project files",
+          "decision:d10-sealed-node-context",
+          "decision:d7-separate-project-and-task-graphs",
+          "decision:d8-memory-helper-task-runs",
+          "decision:d9-flue-native-task-graph-runtime"
         ],
         "write": [
           "src/core/",
@@ -9442,27 +10124,27 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         }
       ],
@@ -9496,7 +10178,12 @@
           "doc/decisions/d2-workspace-root-isolation.md",
           "decision:d5-canonical-runtime-configuration",
           "doc/decisions/d5-canonical-runtime-configuration.md",
-          "flue-docs:guide/sandboxes"
+          "flue-docs:guide/sandboxes",
+          "decision:d10-sealed-node-context",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d7-separate-project-and-task-graphs",
+          "decision:d8-memory-helper-task-runs",
+          "decision:d9-flue-native-task-graph-runtime"
         ],
         "write": [
           "src/agents/",
@@ -9588,12 +10275,12 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         }
       ],
@@ -9610,7 +10297,9 @@
         "read": [
           "artifact:implementation-plan",
           "artifact:beta-release-contract",
-          "authorized project files"
+          "authorized project files",
+          "decision:d10-sealed-node-context",
+          "decision:d8-memory-helper-task-runs"
         ],
         "write": [
           "src/engine/memory/",
@@ -9715,7 +10404,7 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         }
       ],
@@ -9733,7 +10422,8 @@
           "artifact:implementation-plan",
           "authorized project files",
           "decision:d5-canonical-runtime-configuration",
-          "doc/decisions/d5-canonical-runtime-configuration.md"
+          "doc/decisions/d5-canonical-runtime-configuration.md",
+          "decision:d10-sealed-node-context"
         ],
         "write": [
           "src/engine/capabilities/",
@@ -9864,22 +10554,22 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         }
       ],
@@ -9897,7 +10587,11 @@
           "artifact:implementation-plan",
           "authorized project files",
           "decision:d5-canonical-runtime-configuration",
-          "doc/decisions/d5-canonical-runtime-configuration.md"
+          "doc/decisions/d5-canonical-runtime-configuration.md",
+          "decision:d10-sealed-node-context",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d7-separate-project-and-task-graphs",
+          "decision:d9-flue-native-task-graph-runtime"
         ],
         "write": [
           "src/api/",
@@ -10000,12 +10694,12 @@
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         }
       ],
@@ -10028,7 +10722,9 @@
           "tui/ratatui/",
           "crates/",
           "doc/implementation-lineage.md",
-          "docs/getting-started/pre-release-status.md"
+          "docs/getting-started/pre-release-status.md",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d8-memory-helper-task-runs"
         ],
         "write": [
           "tui/ratatui/ files assigned exclusively to this member by artifact:implementation-plan",
@@ -10611,12 +11307,12 @@
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         }
       ],
@@ -10635,7 +11331,9 @@
           "authorized project tree",
           "domain change artifacts",
           "verification evidence",
-          "artifact:runtime-configuration-consolidation-change"
+          "artifact:runtime-configuration-consolidation-change",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d9-flue-native-task-graph-runtime"
         ],
         "write": [
           "authorized project files across affected domains, excluding src/AGENTS.md"
@@ -12040,7 +12738,7 @@
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         }
       ],
@@ -12056,7 +12754,8 @@
         "external": [],
         "read": [
           "authorized project tree",
-          "node_modules/"
+          "node_modules/",
+          "decision:d8-memory-helper-task-runs"
         ],
         "write": [
           ".tmp/tsc/",
@@ -12297,27 +12996,32 @@
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
           "required": true
         },
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
+          "required": true
+        },
+        {
+          "artifact": "artifact:task-lifecycle-architecture-spec",
+          "name": "task lifecycle graph architecture specification",
           "required": true
         }
       ],
@@ -12362,7 +13066,14 @@
           "src/tests/workspace-loader.test.ts",
           "src/tests/coding-worker.test.ts",
           "src/tests/coding-worker-internal-subagents.test.ts",
-          "src/tests/research-agent.test.ts"
+          "src/tests/research-agent.test.ts",
+          "decision:d10-sealed-node-context",
+          "decision:d11-shared-task-graph-engine",
+          "decision:d7-separate-project-and-task-graphs",
+          "decision:d8-memory-helper-task-runs",
+          "decision:d9-flue-native-task-graph-runtime",
+          "artifact:task-lifecycle-architecture-spec",
+          "docs/architecture/task-lifecycle-graphs.md"
         ],
         "write": []
       },
@@ -14291,7 +15002,7 @@
           "kind": "schema"
         },
         {
-          "criterion": "D4 blocks only its named consumer, while resolved D1, D2, D3, D5, and D6 are consumed by planning, verification, and every declared affected implementation or release member.",
+          "criterion": "D4 remains the only open owner decision and blocks only its named consumer; resolved D1-D3 and D5-D11 are consumed by specification, planning, verification, and every declared affected implementation or release member.",
           "evidence": "runtime:evidence/verify-release-reconciliation-specifications/open-decisions-isolated.json",
           "id": "open-decisions-isolated",
           "kind": "policy"
@@ -14430,6 +15141,36 @@
           "artifact": "decision:d6-tui-approval-surface-placement",
           "name": "resolved TUI approval drop-up decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:task-lifecycle-architecture-spec",
+          "name": "task lifecycle graph architecture specification",
+          "required": true
+        },
+        {
+          "artifact": "decision:d7-separate-project-and-task-graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d8-memory-helper-task-runs",
+          "name": "resolved durable task-run storage decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d9-flue-native-task-graph-runtime",
+          "name": "resolved Flue-native task graph runtime decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d10-sealed-node-context",
+          "name": "resolved sealed per-node context decision",
+          "required": true
+        },
+        {
+          "artifact": "decision:d11-shared-task-graph-engine",
+          "name": "resolved shared task graph engine decision",
+          "required": true
         }
       ],
       "outputs": [
@@ -14469,7 +15210,19 @@
           "doc/runtime-configuration-inventory.md",
           "doc/decisions/d5-canonical-runtime-configuration.md",
           "decision:d6-tui-approval-surface-placement",
-          "doc/decisions/d6-tui-approval-surface-placement.md"
+          "doc/decisions/d6-tui-approval-surface-placement.md",
+          "artifact:task-lifecycle-architecture-spec",
+          "docs/architecture/task-lifecycle-graphs.md",
+          "decision:d7-separate-project-and-task-graphs",
+          "doc/decisions/d7-separate-project-and-task-graphs.md",
+          "decision:d8-memory-helper-task-runs",
+          "doc/decisions/d8-memory-helper-task-runs.md",
+          "decision:d9-flue-native-task-graph-runtime",
+          "doc/decisions/d9-flue-native-task-graph-runtime.md",
+          "decision:d10-sealed-node-context",
+          "doc/decisions/d10-sealed-node-context.md",
+          "decision:d11-shared-task-graph-engine",
+          "doc/decisions/d11-shared-task-graph-engine.md"
         ],
         "write": []
       },
@@ -17140,7 +17893,7 @@
       "acceptance": [
         {
           "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
-          "evidence": "docs/architecture/decisions/d1-separate-project-and-task-graphs.md",
+          "evidence": "doc/decisions/d7-separate-project-and-task-graphs.md",
           "id": "decision-record-complete",
           "kind": "artifact"
         }
@@ -17151,7 +17904,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve docs/architecture/decisions/d1-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d7-separate-project-and-task-graphs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17159,8 +17912,8 @@
       "id": "resolve-d7-separate-project-and-task-graphs",
       "inputs": [
         {
-          "artifact": "artifact:architecture-decision",
-          "name": "base architecture and ownership decision",
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
           "required": true
         }
       ],
@@ -17175,25 +17928,28 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:architecture-decision",
+          "artifact:baseline-context",
           "AGENTS.md",
           "docs/architecture/",
           "src/",
           "crates/gorombo-memory/",
-          "version-matched Flue documentation"
+          "version-matched Flue documentation",
+          "doc/decisions/d7-separate-project-and-task-graphs.md",
+          "decisions.json",
+          "specification-manifest.json"
         ],
         "write": [
-          "docs/architecture/decisions/d1-separate-project-and-task-graphs.md"
+          "doc/decisions/d7-separate-project-and-task-graphs.md"
         ]
       },
       "resources": [
-        "docs/architecture/decisions/d1-separate-project-and-task-graphs.md"
+        "doc/decisions/d7-separate-project-and-task-graphs.md"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates or updates docs/architecture/decisions/d1-separate-project-and-task-graphs.md.",
+        "description": "Creates or updates doc/decisions/d7-separate-project-and-task-graphs.md.",
         "level": "reversible",
-        "rollback": "Restore docs/architecture/decisions/d1-separate-project-and-task-graphs.md from version control and invalidate its affected consumers."
+        "rollback": "Restore doc/decisions/d7-separate-project-and-task-graphs.md from version control and invalidate its affected consumers."
       },
       "state": "planned",
       "tags": [
@@ -17209,7 +17965,7 @@
       "acceptance": [
         {
           "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
-          "evidence": "docs/architecture/decisions/d2-memory-helper-task-runs.md",
+          "evidence": "doc/decisions/d8-memory-helper-task-runs.md",
           "id": "decision-record-complete",
           "kind": "artifact"
         }
@@ -17220,7 +17976,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve docs/architecture/decisions/d2-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d8-memory-helper-task-runs.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17228,8 +17984,8 @@
       "id": "resolve-d8-memory-helper-task-runs",
       "inputs": [
         {
-          "artifact": "artifact:architecture-decision",
-          "name": "base architecture and ownership decision",
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
           "required": true
         }
       ],
@@ -17244,25 +18000,28 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:architecture-decision",
+          "artifact:baseline-context",
           "AGENTS.md",
           "docs/architecture/",
           "src/",
           "crates/gorombo-memory/",
-          "version-matched Flue documentation"
+          "version-matched Flue documentation",
+          "doc/decisions/d8-memory-helper-task-runs.md",
+          "decisions.json",
+          "specification-manifest.json"
         ],
         "write": [
-          "docs/architecture/decisions/d2-memory-helper-task-runs.md"
+          "doc/decisions/d8-memory-helper-task-runs.md"
         ]
       },
       "resources": [
-        "docs/architecture/decisions/d2-memory-helper-task-runs.md"
+        "doc/decisions/d8-memory-helper-task-runs.md"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates or updates docs/architecture/decisions/d2-memory-helper-task-runs.md.",
+        "description": "Creates or updates doc/decisions/d8-memory-helper-task-runs.md.",
         "level": "reversible",
-        "rollback": "Restore docs/architecture/decisions/d2-memory-helper-task-runs.md from version control and invalidate its affected consumers."
+        "rollback": "Restore doc/decisions/d8-memory-helper-task-runs.md from version control and invalidate its affected consumers."
       },
       "state": "planned",
       "tags": [
@@ -17278,7 +18037,7 @@
       "acceptance": [
         {
           "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
-          "evidence": "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md",
+          "evidence": "doc/decisions/d9-flue-native-task-graph-runtime.md",
           "id": "decision-record-complete",
           "kind": "artifact"
         }
@@ -17289,7 +18048,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve docs/architecture/decisions/d3-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d9-flue-native-task-graph-runtime.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17297,8 +18056,8 @@
       "id": "resolve-d9-flue-native-task-graph-runtime",
       "inputs": [
         {
-          "artifact": "artifact:architecture-decision",
-          "name": "base architecture and ownership decision",
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
           "required": true
         }
       ],
@@ -17313,25 +18072,28 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:architecture-decision",
+          "artifact:baseline-context",
           "AGENTS.md",
           "docs/architecture/",
           "src/",
           "crates/gorombo-memory/",
-          "version-matched Flue documentation"
+          "version-matched Flue documentation",
+          "doc/decisions/d9-flue-native-task-graph-runtime.md",
+          "decisions.json",
+          "specification-manifest.json"
         ],
         "write": [
-          "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md"
+          "doc/decisions/d9-flue-native-task-graph-runtime.md"
         ]
       },
       "resources": [
-        "docs/architecture/decisions/d3-flue-native-task-graph-runtime.md"
+        "doc/decisions/d9-flue-native-task-graph-runtime.md"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates or updates docs/architecture/decisions/d3-flue-native-task-graph-runtime.md.",
+        "description": "Creates or updates doc/decisions/d9-flue-native-task-graph-runtime.md.",
         "level": "reversible",
-        "rollback": "Restore docs/architecture/decisions/d3-flue-native-task-graph-runtime.md from version control and invalidate its affected consumers."
+        "rollback": "Restore doc/decisions/d9-flue-native-task-graph-runtime.md from version control and invalidate its affected consumers."
       },
       "state": "planned",
       "tags": [
@@ -17347,7 +18109,7 @@
       "acceptance": [
         {
           "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
-          "evidence": "docs/architecture/decisions/d4-sealed-node-context.md",
+          "evidence": "doc/decisions/d10-sealed-node-context.md",
           "id": "decision-record-complete",
           "kind": "artifact"
         }
@@ -17358,7 +18120,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve docs/architecture/decisions/d4-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d10-sealed-node-context.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17366,8 +18128,8 @@
       "id": "resolve-d10-sealed-node-context",
       "inputs": [
         {
-          "artifact": "artifact:architecture-decision",
-          "name": "base architecture and ownership decision",
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
           "required": true
         }
       ],
@@ -17382,25 +18144,28 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:architecture-decision",
+          "artifact:baseline-context",
           "AGENTS.md",
           "docs/architecture/",
           "src/",
           "crates/gorombo-memory/",
-          "version-matched Flue documentation"
+          "version-matched Flue documentation",
+          "doc/decisions/d10-sealed-node-context.md",
+          "decisions.json",
+          "specification-manifest.json"
         ],
         "write": [
-          "docs/architecture/decisions/d4-sealed-node-context.md"
+          "doc/decisions/d10-sealed-node-context.md"
         ]
       },
       "resources": [
-        "docs/architecture/decisions/d4-sealed-node-context.md"
+        "doc/decisions/d10-sealed-node-context.md"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates or updates docs/architecture/decisions/d4-sealed-node-context.md.",
+        "description": "Creates or updates doc/decisions/d10-sealed-node-context.md.",
         "level": "reversible",
-        "rollback": "Restore docs/architecture/decisions/d4-sealed-node-context.md from version control and invalidate its affected consumers."
+        "rollback": "Restore doc/decisions/d10-sealed-node-context.md from version control and invalidate its affected consumers."
       },
       "state": "planned",
       "tags": [
@@ -17416,7 +18181,7 @@
       "acceptance": [
         {
           "criterion": "The decision records its question, selected approach, rationale, rejected alternatives, consequences, affected graph consumers, and revisit trigger without overstating current implementation.",
-          "evidence": "docs/architecture/decisions/d5-shared-task-graph-engine.md",
+          "evidence": "doc/decisions/d11-shared-task-graph-engine.md",
           "id": "decision-record-complete",
           "kind": "artifact"
         }
@@ -17427,7 +18192,7 @@
         "timeout_minutes": 45
       },
       "executor": {
-        "instructions": "Verify and preserve docs/architecture/decisions/d5-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
+        "instructions": "Verify and preserve doc/decisions/d11-shared-task-graph-engine.md. Compare the current source, version-matched Flue documentation, and the accepted task lifecycle architecture. Record alternatives, consequences, affected consumers, and revisit triggers without claiming implementation.",
         "kind": "agent",
         "name": "SIM-ONE architecture adapter"
       },
@@ -17435,8 +18200,8 @@
       "id": "resolve-d11-shared-task-graph-engine",
       "inputs": [
         {
-          "artifact": "artifact:architecture-decision",
-          "name": "base architecture and ownership decision",
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
           "required": true
         }
       ],
@@ -17451,25 +18216,28 @@
         "destructive": false,
         "external": [],
         "read": [
-          "artifact:architecture-decision",
+          "artifact:baseline-context",
           "AGENTS.md",
           "docs/architecture/",
           "src/",
           "crates/gorombo-memory/",
-          "version-matched Flue documentation"
+          "version-matched Flue documentation",
+          "doc/decisions/d11-shared-task-graph-engine.md",
+          "decisions.json",
+          "specification-manifest.json"
         ],
         "write": [
-          "docs/architecture/decisions/d5-shared-task-graph-engine.md"
+          "doc/decisions/d11-shared-task-graph-engine.md"
         ]
       },
       "resources": [
-        "docs/architecture/decisions/d5-shared-task-graph-engine.md"
+        "doc/decisions/d11-shared-task-graph-engine.md"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates or updates docs/architecture/decisions/d5-shared-task-graph-engine.md.",
+        "description": "Creates or updates doc/decisions/d11-shared-task-graph-engine.md.",
         "level": "reversible",
-        "rollback": "Restore docs/architecture/decisions/d5-shared-task-graph-engine.md from version control and invalidate its affected consumers."
+        "rollback": "Restore doc/decisions/d11-shared-task-graph-engine.md from version control and invalidate its affected consumers."
       },
       "state": "planned",
       "tags": [
@@ -17500,6 +18268,12 @@
           "evidence": "docs/architecture/task-lifecycle-graphs.md",
           "id": "flue-context-boundary-complete",
           "kind": "policy"
+        },
+        {
+          "criterion": "The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority.",
+          "evidence": "docs/architecture/task-lifecycle-graphs.md",
+          "id": "shared-engine-boundary-complete",
+          "kind": "policy"
         }
       ],
       "execution": {
@@ -17517,27 +18291,27 @@
       "inputs": [
         {
           "artifact": "decision:d7-separate-project-and-task-graphs",
-          "name": "Separate Project And Task Lifecycle Graphs",
+          "name": "resolved project and task lifecycle graph separation decision",
           "required": true
         },
         {
           "artifact": "decision:d8-memory-helper-task-runs",
-          "name": "Extend Memory Helper For Durable Task Runs",
+          "name": "resolved durable task-run storage decision",
           "required": true
         },
         {
           "artifact": "decision:d9-flue-native-task-graph-runtime",
-          "name": "Use Flue-Native Task Graph Runtime",
+          "name": "resolved Flue-native task graph runtime decision",
           "required": true
         },
         {
           "artifact": "decision:d10-sealed-node-context",
-          "name": "Seal Per-Node Context Envelopes",
+          "name": "resolved sealed per-node context decision",
           "required": true
         },
         {
           "artifact": "decision:d11-shared-task-graph-engine",
-          "name": "Share Task Graph Engine Across Agents",
+          "name": "resolved shared task graph engine decision",
           "required": true
         }
       ],
@@ -17552,11 +18326,16 @@
         "destructive": false,
         "external": [],
         "read": [
-          "decision:d1-project-task-graph-separation",
-          "decision:d2-memory-helper-task-runs",
-          "decision:d3-flue-native-task-graph-runtime",
-          "decision:d4-sealed-node-context",
-          "decision:d5-shared-task-graph-engine"
+          "decision:d7-separate-project-and-task-graphs",
+          "doc/decisions/d7-separate-project-and-task-graphs.md",
+          "decision:d8-memory-helper-task-runs",
+          "doc/decisions/d8-memory-helper-task-runs.md",
+          "decision:d9-flue-native-task-graph-runtime",
+          "doc/decisions/d9-flue-native-task-graph-runtime.md",
+          "decision:d10-sealed-node-context",
+          "doc/decisions/d10-sealed-node-context.md",
+          "decision:d11-shared-task-graph-engine",
+          "doc/decisions/d11-shared-task-graph-engine.md"
         ],
         "write": [
           "docs/architecture/task-lifecycle-graphs.md"
@@ -17583,7 +18362,7 @@
     }
   ],
   "project": {
-    "context_version": "task-lifecycle-graph-architecture:2026-07-31",
+    "context_version": "task-lifecycle-spec-verifier-lineage:2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

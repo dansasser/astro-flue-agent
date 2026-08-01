@@ -55,6 +55,8 @@ Building around it preserves one durable task model for agents and the TUI.
 - `implement-sim-one-tui-work-pane`
 - `verify-memory-smoke`
 - `review-architecture-security`
+- `specify-task-lifecycle-architecture`
+- `verify-release-reconciliation-specifications`
 
 ## Revisit Trigger
 

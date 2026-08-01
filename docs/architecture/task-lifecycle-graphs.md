@@ -32,8 +32,9 @@ rewrite the other.
   model call.
 - Making the TUI, Telegram, or another connector own agent orchestration.
 - Allowing an agent to approve its own graph mutation or side effect.
-- Using a Flue workflow as the durable TLG scheduler. Flue workflows are finite
-  run records and are not resumable TypeScript execution.
+- Using a Flue workflow as the durable TLG scheduler. Each Flue workflow run is
+  a finite function invocation with a recorded result and events; Flue does not
+  checkpoint arbitrary TypeScript execution for step-level resume.
 
 ## Terminology
 
@@ -252,8 +253,29 @@ receives the task acceptance contract, relevant diff, verification evidence,
 and applicable rules, not every earlier transcript or unrelated task-memory
 record.
 
-The current JSON Coding Worker task-run store is migration input. It must not
-remain a competing source of truth after graph-run persistence is active.
+### Coding Worker Task-Run Migration
+
+The current `JsonFileCodingTaskRunStore` file is schema version 0 migration
+input. Import maps each record's `taskId`, status, session plan, plan, events,
+verification evidence, checkpoint, and timestamps into one versioned
+`coding-task` TLG run, its node/checkpoint state, and evidence references. The
+import records the source-file checksum and a per-record migration identity so
+retries are idempotent and conflicting duplicates fail closed.
+
+During compatibility rollout, the JSON store remains the read/write authority
+and the new store receives validated imports only. Terminal records import as
+historical completed, blocked, or failed runs. Non-terminal records import as
+interrupted runs: a complete validated checkpoint may be offered for explicit
+resume, while a missing, stale, or invalid checkpoint becomes `needs-human` and
+must not replay model, tool, approval, Git, or GitHub effects automatically.
+
+The Rust/WASM-backed task-run store becomes authoritative only after migration
+tests prove complete record accounting, field and status mapping, idempotent
+re-import, schema-version rejection, active-run recovery, restart hydration,
+event/evidence preservation, and rollback from the pre-cutover backup. At
+cutover the JSON file is retained read-only for audit and compatibility; all
+writers switch atomically to the new store. The JSON store is removed only in a
+later separately approved migration after the rollback window closes.
 
 ## Development Graph Adapter
 
@@ -274,8 +296,9 @@ validate repository DLG and current checksum
 ```
 
 A proposed DLG topology change remains a governed graph mutation with preview,
-authority, validation, rollback, and targeted invalidation. A TLG may recommend
-that mutation but never applies it silently.
+checksum and run-version bindings, acting authority, validation, evidence,
+rollback, and targeted invalidation. It is separately approved from the TLG
+run. A TLG may recommend that mutation but never applies it silently.
 
 ## State And Reducer Rules
 
@@ -344,6 +367,9 @@ Implementation is not complete until tests prove:
    without directly editing graph run state.
 10. Typed progress and terminal events remain observable through current
     connector and TUI streams.
+11. The orchestrator and Coding Worker use one shared graph engine with separate
+    validated definitions and private worker subgraph state, while DLG
+    definition, run-state, mutation, and evidence authority remains separate.
 
 ## Decisions
 

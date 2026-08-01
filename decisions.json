@@ -85,7 +85,7 @@
       "id": "d7-separate-project-and-task-graphs",
       "title": "D7 Separate Project And Task Lifecycle Graphs",
       "question": "Should one graph represent both repository development governance and the execution of an individual agent request?",
-      "status": "open",
+      "status": "resolved",
       "source_path": "doc/decisions/d7-separate-project-and-task-graphs.md",
       "affected_nodes": [
         "implement-agent-runtime",
@@ -93,14 +93,15 @@
         "implement-ingress-operations",
         "plan-implementation",
         "review-architecture-security",
-        "specify-task-lifecycle-architecture"
+        "specify-task-lifecycle-architecture",
+        "verify-release-reconciliation-specifications"
       ]
     },
     {
       "id": "d8-memory-helper-task-runs",
       "title": "D8 Extend The Memory Helper For Durable Task Runs",
       "question": "Where should durable task graph state live, given the existing Rust/WebAssembly Memory Helper already maintains project-scoped checklists, todos, notes, and task handoffs?",
-      "status": "open",
+      "status": "resolved",
       "source_path": "doc/decisions/d8-memory-helper-task-runs.md",
       "affected_nodes": [
         "implement-agent-runtime",
@@ -110,14 +111,15 @@
         "plan-implementation",
         "review-architecture-security",
         "specify-task-lifecycle-architecture",
-        "verify-memory-smoke"
+        "verify-memory-smoke",
+        "verify-release-reconciliation-specifications"
       ]
     },
     {
       "id": "d9-flue-native-task-graph-runtime",
       "title": "D9 Use A Flue-Native Application Graph Coordinator",
       "question": "Should SIM-ONE Alpha add LangGraph as a second agent runtime, use a Flue workflow as the graph scheduler, or build the task coordinator around Flue's existing agent surfaces?",
-      "status": "open",
+      "status": "resolved",
       "source_path": "doc/decisions/d9-flue-native-task-graph-runtime.md",
       "affected_nodes": [
         "implement-agent-runtime",
@@ -126,14 +128,15 @@
         "integrate-and-repair",
         "plan-implementation",
         "review-architecture-security",
-        "specify-task-lifecycle-architecture"
+        "specify-task-lifecycle-architecture",
+        "verify-release-reconciliation-specifications"
       ]
     },
     {
       "id": "d10-sealed-node-context",
       "title": "D10 Seal Per-Node Context Envelopes",
       "question": "How should graph state manipulate model context without passing the complete conversation, project graph, workspace, retrieval store, and tool history into every agent node?",
-      "status": "open",
+      "status": "resolved",
       "source_path": "doc/decisions/d10-sealed-node-context.md",
       "affected_nodes": [
         "implement-agent-runtime",
@@ -143,14 +146,15 @@
         "implement-memory-retrieval",
         "plan-implementation",
         "review-architecture-security",
-        "specify-task-lifecycle-architecture"
+        "specify-task-lifecycle-architecture",
+        "verify-release-reconciliation-specifications"
       ]
     },
     {
       "id": "d11-shared-task-graph-engine",
       "title": "D11 Share One Graph Engine Across Orchestrator And Coding Worker",
       "question": "Should the main orchestrator and Coding Worker have unrelated task loops, or should they use one graph runtime with different definitions and private state?",
-      "status": "open",
+      "status": "resolved",
       "source_path": "doc/decisions/d11-shared-task-graph-engine.md",
       "affected_nodes": [
         "implement-agent-runtime",
@@ -159,7 +163,8 @@
         "integrate-and-repair",
         "plan-implementation",
         "review-architecture-security",
-        "specify-task-lifecycle-architecture"
+        "specify-task-lifecycle-architecture",
+        "verify-release-reconciliation-specifications"
       ]
     }
   ]

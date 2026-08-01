@@ -21,6 +21,7 @@ runtime flow or inspect a specific subsystem.
 | [Orchestrator Flow](orchestrator-flow.md) | Concise connector-to-orchestrator execution path |
 | [Protocol System](protocol-system.md) | SQLite protocol storage, trusted selectors, loading, matching, enforcement, and failure behavior |
 | [Worker System](worker-system.md) | Researcher, Coding Worker, internal subagents, runtime-added workers, progress, and authority boundaries |
+| [Task Lifecycle Graph Architecture](task-lifecycle-graphs.md) | Separate project and task graph authority, durable task state, sealed node context, recovery, and migration contracts |
 | [Schedules System](schedules-system.md) | Durable schedule definitions, in-process firing, dispatch, retries, run history, and management surfaces |
 | [GitHub MCP And Repository Authentication](github-auth-system.md) | Coding Worker MCP ownership, PAT isolation, anonymous Git, and mutation approvals |
 

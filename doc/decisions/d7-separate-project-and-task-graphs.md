@@ -49,6 +49,8 @@ project intent or make repository history depend on connector session state.
 - `implement-agent-runtime`
 - `implement-ingress-operations`
 - `review-architecture-security`
+- `specify-task-lifecycle-architecture`
+- `verify-release-reconciliation-specifications`
 
 ## Revisit Trigger
 

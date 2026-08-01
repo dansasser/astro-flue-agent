@@ -56,6 +56,8 @@ surface for each invocation.
 - `implement-capabilities-security`
 - `implement-ingress-operations`
 - `review-architecture-security`
+- `specify-task-lifecycle-architecture`
+- `verify-release-reconciliation-specifications`
 
 ## Revisit Trigger
 

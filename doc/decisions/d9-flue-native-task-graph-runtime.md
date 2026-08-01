@@ -56,6 +56,8 @@ ownership.
 - `implement-ingress-operations`
 - `integrate-and-repair`
 - `review-architecture-security`
+- `specify-task-lifecycle-architecture`
+- `verify-release-reconciliation-specifications`
 
 ## Revisit Trigger
 

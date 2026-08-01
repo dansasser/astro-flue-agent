@@ -21,8 +21,12 @@ receives a structured result and evidence projection.
 
 Project graph engineering remains a Coding Worker capability. When a coding
 task is bound to a DLG node, the graph engine uses a dedicated governed adapter
-to claim, complete, fail, or interrupt that node. The main orchestrator does not
-directly mutate repository graph state.
+to claim, complete, fail, or interrupt that node. The adapter binds the exact
+Development Lifecycle Graph definition and checksum, branch-local run state and
+run version, append-only event history, acting authority, and evidence records.
+Any DLG definition mutation is a separate operation that is previewed, approved,
+validated, recorded, and reversible. The main orchestrator does not directly
+mutate the DLG definition, run state, or event history.
 
 ## Rationale
 
@@ -52,6 +56,8 @@ ownership and capabilities.
 - `integrate-and-repair`
 - `implement-sim-one-tui-work-pane`
 - `review-architecture-security`
+- `specify-task-lifecycle-architecture`
+- `verify-release-reconciliation-specifications`
 
 ## Revisit Trigger
 

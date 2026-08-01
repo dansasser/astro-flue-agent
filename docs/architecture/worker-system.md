@@ -81,6 +81,12 @@ The Coding Worker also persists task checkpoints and uses structured task
 memory, including notes, todos, and checklists, to maintain execution state
 outside the prompt.
 
+The current `JsonFileCodingTaskRunStore` remains authoritative until the
+[Task Lifecycle Graph migration boundary](task-lifecycle-graphs.md#coding-worker-task-run-migration)
+passes its import, compatibility, restart-recovery, and cutover tests. Cutover
+must not leave the JSON store and Rust/WASM-backed task-run store writable as
+competing authorities.
+
 The Coding Worker's file APIs use a Flue Node local session rooted at
 `<runtime-root>/workspace`. Shell, Git, and verification child processes run
 inside a Bubblewrap mount and process namespace that exposes the workspace
