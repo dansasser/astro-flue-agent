@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -117,7 +118,7 @@ test('lsp_document_symbols returns normalized symbols when server is available',
     });
 
     const docSymbolsTool = getTool(tools, 'lsp_document_symbols');
-    const raw = await docSymbolsTool.execute({ path: 'calc.ts' });
+    const raw = await runTool(docSymbolsTool, { path: 'calc.ts' });
     const output = JSON.parse(raw) as {
       provider: string;
       lspAvailable: boolean;
@@ -174,7 +175,7 @@ test('lsp_go_to_definition returns normalized locations', async () => {
     });
 
     const defTool = getTool(tools, 'lsp_go_to_definition');
-    const raw = await defTool.execute({ path: 'calc.ts', line: 8, character: 9 });
+    const raw = await runTool(defTool, { path: 'calc.ts', line: 8, character: 9 });
     const output = JSON.parse(raw) as {
       provider: string;
       lspAvailable: boolean;
@@ -231,7 +232,7 @@ test('lsp_find_references returns normalized references', async () => {
     });
 
     const refTool = getTool(tools, 'lsp_find_references');
-    const raw = await refTool.execute({ path: 'calc.ts', line: 3, character: 13 });
+    const raw = await runTool(refTool, { path: 'calc.ts', line: 3, character: 13 });
     const output = JSON.parse(raw) as {
       provider: string;
       result: { references: Array<{ uri: string }> };
@@ -271,7 +272,7 @@ test('lsp_hover returns hover contents', async () => {
     });
 
     const hoverTool = getTool(tools, 'lsp_hover');
-    const raw = await hoverTool.execute({ path: 'calc.ts', line: 8, character: 9 });
+    const raw = await runTool(hoverTool, { path: 'calc.ts', line: 8, character: 9 });
     const output = JSON.parse(raw) as {
       provider: string;
       result: { hover: { contents: { value: string } } };
@@ -311,7 +312,7 @@ test('lsp_prepare_rename returns range', async () => {
     });
 
     const renameTool = getTool(tools, 'lsp_prepare_rename');
-    const raw = await renameTool.execute({ path: 'calc.ts', line: 8, character: 9 });
+    const raw = await runTool(renameTool, { path: 'calc.ts', line: 8, character: 9 });
     const output = JSON.parse(raw) as {
       provider: string;
       result: { range: { start: { line: number } }; placeholder?: string };
@@ -355,7 +356,7 @@ test('lsp_workspace_symbol searches workspace symbols', async () => {
     });
 
     const workspaceSymbolTool = getTool(tools, 'lsp_workspace_symbol');
-    const raw = await workspaceSymbolTool.execute({ query: 'Calc' });
+    const raw = await runTool(workspaceSymbolTool, { query: 'Calc' });
     const output = JSON.parse(raw) as {
       provider: string;
       result: { symbols: Array<{ name: string; containerName?: string }> };
@@ -379,7 +380,7 @@ test('tool reports lsp unavailable for unsupported file extension', async () => 
     const tools = createLspTools({ workspaceRoot });
 
     const docSymbolsTool = getTool(tools, 'lsp_document_symbols');
-    const raw = await docSymbolsTool.execute({ path: 'projects/test-app/README.md' });
+    const raw = await runTool(docSymbolsTool, { path: 'projects/test-app/README.md' });
     const output = JSON.parse(raw) as {
       provider: string;
       lspAvailable: boolean;
@@ -415,7 +416,7 @@ test('wrapper tool returns empty when no symbol exists anywhere', async () => {
     });
 
     const navigateTool = getTool(tools, 'coding_symbol_navigate');
-    const raw = await navigateTool.execute({ symbol: 'NonexistentSymbol' });
+    const raw = await runTool(navigateTool, { symbol: 'NonexistentSymbol' });
     const output = JSON.parse(raw) as {
       symbol: string;
       provider: string;

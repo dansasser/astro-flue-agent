@@ -62,7 +62,7 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
       name: 'coding_schedule_create',
       description:
         'Create a recurring or one-shot scheduled coding-worker loop. kind: "cron"|"every"|"at". schedule: cron expr / interval (e.g. "20m") / ISO 8601 timestamp. prompt: the loop-step instruction. targetAgent defaults to "coding-worker" (orchestrator delegates to the coding-worker subagent). Scope (projectId) is injected from the worker context; never pass it. Mutating repo side effects inside a scheduled run still require approval.',
-      parameters: v.object({
+      input: v.object({
         slug: SlugSchema,
         kind: KindSchema,
         schedule: ScheduleExprSchema,
@@ -72,7 +72,7 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
         payload: v.optional(v.record(v.string(), v.unknown())),
         deleteAfterRun: v.optional(v.boolean()),
       }),
-      execute: async ({ slug, kind, schedule, prompt, targetAgent, tz, payload, deleteAfterRun }) => {
+      run: async ({ data: { slug, kind, schedule, prompt, targetAgent, tz, payload, deleteAfterRun } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const record = manager.store.upsert({
@@ -94,8 +94,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_pause',
       description: 'Pause a coding-worker schedule (must belong to this project).',
-      parameters: v.object({ slug: SlugSchema }),
-      execute: async ({ slug }) => {
+      input: v.object({ slug: SlugSchema }),
+      run: async ({ data: { slug } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -113,8 +113,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_resume',
       description: 'Resume a paused coding-worker schedule (must belong to this project).',
-      parameters: v.object({ slug: SlugSchema }),
-      execute: async ({ slug }) => {
+      input: v.object({ slug: SlugSchema }),
+      run: async ({ data: { slug } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -132,7 +132,7 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_update',
       description: 'Update a coding-worker schedule\'s expression, prompt, payload, timezone, or enabled flag (must belong to this project).',
-      parameters: v.object({
+      input: v.object({
         slug: SlugSchema,
         schedule: v.optional(ScheduleExprSchema),
         prompt: v.optional(PromptSchema),
@@ -140,7 +140,7 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
         tz: v.optional(v.pipe(v.string(), v.minLength(1))),
         enabled: v.optional(v.boolean()),
       }),
-      execute: async ({ slug, schedule, prompt, payload, tz, enabled }) => {
+      run: async ({ data: { slug, schedule, prompt, payload, tz, enabled } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -164,8 +164,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_delete',
       description: 'Delete a coding-worker schedule and its run history; stops the in-memory Croner job immediately (must belong to this project).',
-      parameters: v.object({ slug: SlugSchema }),
-      execute: async ({ slug }) => {
+      input: v.object({ slug: SlugSchema }),
+      run: async ({ data: { slug } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -179,8 +179,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_list',
       description: 'List schedules belonging to this project (compact rows).',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         return JSON.stringify({ schedules: manager.store.listForOwner(scope) });
@@ -189,8 +189,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_get',
       description: 'Get the full definition of one coding-worker schedule by slug (must belong to this project).',
-      parameters: v.object({ slug: SlugSchema }),
-      execute: async ({ slug }) => {
+      input: v.object({ slug: SlugSchema }),
+      run: async ({ data: { slug } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -203,8 +203,8 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_run_now',
       description: 'Force-fire a coding-worker schedule now. Returns the runId (must belong to this project).',
-      parameters: v.object({ slug: SlugSchema }),
-      execute: async ({ slug }) => {
+      input: v.object({ slug: SlugSchema }),
+      run: async ({ data: { slug } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);
@@ -221,11 +221,11 @@ export function createCodingScheduleTools(options: CodingScheduleToolsOptions): 
     defineTool({
       name: 'coding_schedule_runs',
       description: 'List recent run history for one coding-worker schedule by slug (must belong to this project).',
-      parameters: v.object({
+      input: v.object({
         slug: SlugSchema,
         limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(500))),
       }),
-      execute: async ({ slug, limit }) => {
+      run: async ({ data: { slug, limit } }) => {
         const manager = requireManager();
         const scope = requireTrustedScope(ownerScope);
         const owned = loadOwnedSchedule(manager.store, String(slug), scope);

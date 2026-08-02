@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -103,7 +104,7 @@ test('capability-manager mutations fail closed and executable activation require
     mkdirSync(sourcePath, { recursive: true });
     writeFileSync(
       join(sourcePath, 'index.mjs'),
-      "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
+      "import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport default defineTool({ name: 'fixture', description: 'Test fixture.', input: v.object({}), run: async () => 'ok' });\n",
     );
     const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
@@ -125,7 +126,7 @@ test('capability-manager mutations fail closed and executable activation require
       requestedEnabled: true,
     };
 
-    const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
+    const pendingAdd = JSON.parse(await runTool(add, addArgs)) as {
       blocked: boolean;
       request: { id: string; actionType: string; metadata: Record<string, unknown> };
     };
@@ -158,7 +159,7 @@ test('capability-manager mutations fail closed and executable activation require
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    const added = JSON.parse(await add.execute(addArgs)) as {
+    const added = JSON.parse(await runTool(add, addArgs)) as {
       record: { enabled: boolean };
       restartRequired: boolean;
       progress: Array<{ type: string }>;
@@ -174,7 +175,7 @@ test('capability-manager mutations fail closed and executable activation require
       kind: 'tool',
       id: 'approved-tool',
     };
-    const pendingEnable = JSON.parse(await enable.execute(enableArgs)) as {
+    const pendingEnable = JSON.parse(await runTool(enable, enableArgs)) as {
       blocked: boolean;
       request: { id: string; actionType: string };
     };
@@ -188,7 +189,7 @@ test('capability-manager mutations fail closed and executable activation require
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    const enabled = JSON.parse(await enable.execute(enableArgs)) as {
+    const enabled = JSON.parse(await runTool(enable, enableArgs)) as {
       record: { enabled: boolean };
       activationState: string;
     };
@@ -225,7 +226,7 @@ test('capability-manager approvals distinguish different private local sources',
     };
 
     const first = JSON.parse(
-      await add.execute({ ...commonArgs, sourceRef: firstSource }),
+      await runTool(add, { ...commonArgs, sourceRef: firstSource }),
     ) as {
       request: {
         dedupeKey: string;
@@ -233,7 +234,7 @@ test('capability-manager approvals distinguish different private local sources',
       };
     };
     const second = JSON.parse(
-      await add.execute({ ...commonArgs, sourceRef: secondSource }),
+      await runTool(add, { ...commonArgs, sourceRef: secondSource }),
     ) as typeof first;
 
     assert.notEqual(first.request.dedupeKey, second.request.dedupeKey);
@@ -263,7 +264,7 @@ test('capability-manager rejects malformed protocols before creating approval re
     const add = getTool(profile.tools ?? [], 'capability_add');
     await assert.rejects(
       () =>
-        add.execute({
+        runTool(add, {
           taskId: 'malformed-protocols',
           eventId: 'malformed-protocols',
           kind: 'mcp',
@@ -303,7 +304,7 @@ test('capability-manager stores MCP connections in the runtime capability regist
       mcpTransport: 'streamable-http',
     };
 
-    const pending = JSON.parse(await add.execute(addArgs)) as {
+    const pending = JSON.parse(await runTool(add, addArgs)) as {
       blocked: boolean;
       request: { id: string };
     };
@@ -315,7 +316,7 @@ test('capability-manager stores MCP connections in the runtime capability regist
       principal: { id: 'operator-1', roles: ['operator'] },
     });
 
-    const added = JSON.parse(await add.execute(addArgs)) as {
+    const added = JSON.parse(await runTool(add, addArgs)) as {
       record: { kind: string; source: string; enabled: boolean };
       protocolContext: { directives: Array<{ id: string }> };
     };
@@ -354,7 +355,7 @@ test('capability-manager applies partial MCP updates without resending the store
       mcpTransport: 'streamable-http',
       mcpTokenEnv: 'MCP_AUTH_TOKEN',
     };
-    const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
+    const pendingAdd = JSON.parse(await runTool(add, addArgs)) as {
       request: { id: string };
     };
     await fixture.approvalService.recordDecision({
@@ -363,7 +364,7 @@ test('capability-manager applies partial MCP updates without resending the store
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    await add.execute(addArgs);
+    await runTool(add, addArgs);
 
     const update = getTool(profile.tools ?? [], 'capability_update');
     const updateArgs = {
@@ -373,7 +374,7 @@ test('capability-manager applies partial MCP updates without resending the store
       id: 'partial-manager-mcp',
       mcpTransport: 'sse',
     };
-    const pendingUpdate = JSON.parse(await update.execute(updateArgs)) as {
+    const pendingUpdate = JSON.parse(await runTool(update, updateArgs)) as {
       request: { id: string };
     };
     await fixture.approvalService.recordDecision({
@@ -382,7 +383,7 @@ test('capability-manager applies partial MCP updates without resending the store
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    const updated = JSON.parse(await update.execute(updateArgs)) as {
+    const updated = JSON.parse(await runTool(update, updateArgs)) as {
       record: { config: Record<string, unknown> };
     };
 
@@ -400,7 +401,7 @@ test('capability-manager applies partial MCP updates without resending the store
       mcpTokenEnv: 'MCP_TOKEN',
     };
     const pendingTokenUpdate = JSON.parse(
-      await update.execute(tokenUpdateArgs),
+      await runTool(update, tokenUpdateArgs),
     ) as {
       request: { id: string };
     };
@@ -411,7 +412,7 @@ test('capability-manager applies partial MCP updates without resending the store
       principal: { id: 'operator-1', roles: ['operator'] },
     });
     const tokenUpdated = JSON.parse(
-      await update.execute(tokenUpdateArgs),
+      await runTool(update, tokenUpdateArgs),
     ) as {
       record: { config: Record<string, unknown> };
     };
@@ -444,7 +445,7 @@ test('capability update approval binds the complete mutation payload', async () 
       mcpUrl: 'https://mcp.example.test/api',
       mcpTransport: 'streamable-http',
     };
-    const pendingAdd = JSON.parse(await add.execute(addArgs)) as {
+    const pendingAdd = JSON.parse(await runTool(add, addArgs)) as {
       request: { id: string };
     };
     await fixture.approvalService.recordDecision({
@@ -453,7 +454,7 @@ test('capability update approval binds the complete mutation payload', async () 
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    await add.execute(addArgs);
+    await runTool(add, addArgs);
 
     const update = getTool(profile.tools ?? [], 'capability_update');
     const firstArgs = {
@@ -464,7 +465,7 @@ test('capability update approval binds the complete mutation payload', async () 
       name: 'Approved name',
       description: 'Approved description',
     };
-    const pendingFirst = JSON.parse(await update.execute(firstArgs)) as {
+    const pendingFirst = JSON.parse(await runTool(update, firstArgs)) as {
       request: {
         id: string;
         metadata: Record<string, unknown>;
@@ -482,7 +483,7 @@ test('capability update approval binds the complete mutation payload', async () 
     });
 
     const changed = JSON.parse(
-      await update.execute({
+      await runTool(update, {
         ...firstArgs,
         name: 'Unapproved replacement name',
       }),
@@ -521,7 +522,7 @@ test('capability-manager rejects unsupported npm lifecycle sources', async () =>
 
     await assert.rejects(
       () =>
-        validate.execute({
+        runTool(validate, {
           eventId: 'unsupported-npm-source',
           kind: 'skill',
           id: 'unsupported-npm-source',
@@ -603,7 +604,7 @@ function createToolSource(root: string, name: string): string {
   mkdirSync(source, { recursive: true });
   writeFileSync(
     join(source, 'index.mjs'),
-    "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
+    "import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport default defineTool({ name: 'fixture', description: 'Test fixture.', input: v.object({}), run: async () => 'ok' });\n",
   );
   return source;
 }

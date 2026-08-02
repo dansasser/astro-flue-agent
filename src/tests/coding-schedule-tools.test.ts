@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 /**
  * Scope-enforcement test for coding-worker schedule tools (plan §9, AGENTS.md
  * project boundary). Verifies that a coding-worker on project A cannot
@@ -66,24 +67,24 @@ test('coding schedule tools enforce project scope (cross-project denied, list fi
 
     // get on projB's schedule -> scope error
     const getResult = toolByName(tools, 'coding_schedule_get');
-    const getOut = JSON.parse(await getResult.execute({ slug: 'b-sched' }) as string) as { error?: string };
+    const getOut = JSON.parse(await runTool(getResult, { slug: 'b-sched' }) as string) as { error?: string };
     assert.match(getOut.error ?? '', /does not belong to this owner scope/, 'get denied cross-project');
 
     // delete on projB's schedule -> scope error, schedule still present
     const deleteTool = toolByName(tools, 'coding_schedule_delete');
-    const delOut = JSON.parse(await deleteTool.execute({ slug: 'b-sched' }) as string) as { error?: string; deleted?: boolean };
+    const delOut = JSON.parse(await runTool(deleteTool, { slug: 'b-sched' }) as string) as { error?: string; deleted?: boolean };
     assert.match(delOut.error ?? '', /does not belong to this owner scope/, 'delete denied cross-project');
     assert.ok(manager.store.getBySlug('b-sched'), 'projB schedule not deleted by projA');
 
     // list (projA) -> does not include b-sched
     const listTool = toolByName(tools, 'coding_schedule_list');
-    const listOut = JSON.parse(await listTool.execute({}) as string) as { schedules: { slug: string }[] };
+    const listOut = JSON.parse(await runTool(listTool, {}) as string) as { schedules: { slug: string }[] };
     assert.equal(listOut.schedules.length, 0, 'projA list excludes projB schedule');
 
     // create a projA schedule via the tool -> list now includes it
     const createTool = toolByName(tools, 'coding_schedule_create');
-    await createTool.execute({ slug: 'a-sched', kind: 'cron', schedule: '0 9 * * *', prompt: 'a' }) as string;
-    const listAfter = JSON.parse(await listTool.execute({}) as string) as { schedules: { slug: string }[] };
+    await runTool(createTool, { slug: 'a-sched', kind: 'cron', schedule: '0 9 * * *', prompt: 'a' }) as string;
+    const listAfter = JSON.parse(await runTool(listTool, {}) as string) as { schedules: { slug: string }[] };
     assert.deepEqual(
       listAfter.schedules.map((s) => s.slug),
       ['a-sched'],
@@ -92,7 +93,7 @@ test('coding schedule tools enforce project scope (cross-project denied, list fi
     assert.equal(manager.store.getBySlug('a-sched')?.ownerScope, 'projA', 'created schedule owned by projA');
 
     // delete own (projA) schedule -> succeeds
-    const delOwn = JSON.parse(await deleteTool.execute({ slug: 'a-sched' }) as string) as { deleted?: boolean };
+    const delOwn = JSON.parse(await runTool(deleteTool, { slug: 'a-sched' }) as string) as { deleted?: boolean };
     assert.equal(delOwn.deleted, true, 'projA can delete its own schedule');
     assert.equal(manager.store.getBySlug('a-sched'), null, 'a-sched gone');
   } finally {
@@ -110,7 +111,7 @@ test('coding schedule tools fail closed when no project scope is injected', asyn
     const tools = createCodingScheduleTools({ projectId: undefined });
     const listTool = toolByName(tools, 'coding_schedule_list');
     await assert.rejects(
-      () => listTool.execute({}),
+      () => runTool(listTool, {}),
       /trusted project scope/,
       'no projectId -> fail closed',
     );

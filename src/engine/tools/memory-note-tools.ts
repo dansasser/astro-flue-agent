@@ -17,14 +17,14 @@ export const storeSessionNoteTool = defineTool({
   name: 'store_session_note',
   description:
     'Pin a session note (a fact/reminder) for the current scope. Scope is derived from the trusted eventId; never pass scope.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     title: v.pipe(v.string(), v.minLength(1)),
     content: v.pipe(v.string(), v.minLength(1)),
     tags: TagsSchema,
     importance: v.optional(NoteImportanceSchema),
   }),
-  execute: async ({ eventId, title, content, tags, importance }) => {
+  run: async ({ data: { eventId, title, content, tags, importance } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const note = await engine.createSessionNote({
@@ -44,7 +44,7 @@ export const updateSessionNoteTool = defineTool({
   name: 'update_session_note',
   description:
     'Update a session note (title, content, tags, importance, status). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
     title: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -53,7 +53,7 @@ export const updateSessionNoteTool = defineTool({
     status: v.optional(NoteStatusSchema),
     importance: v.optional(NoteImportanceSchema),
   }),
-  execute: async ({ eventId, id, title, content, tags, status, importance }) => {
+  run: async ({ data: { eventId, id, title, content, tags, status, importance } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const note = await engine.updateSessionNote({
@@ -73,11 +73,11 @@ export const updateSessionNoteTool = defineTool({
 export const archiveSessionNoteTool = defineTool({
   name: 'archive_session_note',
   description: 'Archive a session note (status -> archived). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
   }),
-  execute: async ({ eventId, id }) => {
+  run: async ({ data: { eventId, id } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const note = await engine.updateSessionNote({
@@ -94,12 +94,12 @@ export const listSessionNotesTool = defineTool({
   name: 'list_session_notes',
   description:
     'List active session notes for the current scope. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     limit: v.optional(v.number()),
     includeArchived: v.optional(v.boolean()),
   }),
-  execute: async ({ eventId, limit, includeArchived }) => {
+  run: async ({ data: { eventId, limit, includeArchived } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const records = await engine.query({

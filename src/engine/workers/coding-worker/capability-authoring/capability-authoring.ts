@@ -101,6 +101,8 @@ export function scaffoldCapabilityFiles(input: {
   const name = singleLine(input.name);
   const description = singleLine(input.description) || `${name} capability.`;
   const configKeys = normalizeConfigurationKeys(input.requiredConfigurationKeys ?? []);
+  const idLiteral = JSON.stringify(input.id);
+  const descriptionLiteral = JSON.stringify(description);
 
   switch (input.authoringKind) {
     case 'skill':
@@ -111,13 +113,13 @@ export function scaffoldCapabilityFiles(input: {
     case 'tool':
       return [{
         path: 'index.mjs',
-        content: `import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\n\nexport default defineTool({\n  name: '${input.id.replace(/-/g, '_')}',\n  description: '${escapeSingleQuoted(description)}',\n  parameters: v.object({ input: v.string() }),\n  execute: async ({ input }) => input,\n});\n`,
+        content: `import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\n\nexport default defineTool({\n  name: ${JSON.stringify(input.id.replace(/-/g, '_'))},\n  description: ${descriptionLiteral},\n  input: v.object({ input: v.string() }),\n  run: async ({ data: { input } }) => input,\n});\n`,
       }];
     case 'worker':
       return [
         {
           path: 'index.mjs',
-          content: `import { defineAgentProfile } from '@flue/runtime';\n\nexport default defineAgentProfile({\n  name: '${input.id}',\n  description: '${escapeSingleQuoted(description)}',\n  instructions: 'Follow the applicable protocol bundle and return structured evidence.',\n});\n`,
+          content: `import { defineSubagent } from '@flue/runtime';\n\nfunction WorkerDelegate() {\n  return 'Follow the applicable protocol bundle and return structured evidence.';\n}\n\nexport default defineSubagent({\n  name: ${idLiteral},\n  description: ${descriptionLiteral},\n  agent: WorkerDelegate,\n});\n`,
         },
         {
           path: 'workspace/AGENTS.md',
@@ -139,7 +141,7 @@ export function scaffoldCapabilityFiles(input: {
         },
         {
           path: 'src/index.mjs',
-          content: `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';\n\nconst server = new McpServer({ name: '${input.id}', version: '0.1.0' });\nserver.registerTool('status', { description: '${escapeSingleQuoted(description)}', inputSchema: {} }, async () => ({ content: [{ type: 'text', text: 'ready' }] }));\nawait server.connect(new StdioServerTransport());\n`,
+          content: `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';\nimport { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';\n\nconst server = new McpServer({ name: ${idLiteral}, version: '0.1.0' });\nserver.registerTool('status', { description: ${descriptionLiteral}, inputSchema: {} }, async () => ({ content: [{ type: 'text', text: 'ready' }] }));\nawait server.connect(new StdioServerTransport());\n`,
         },
       ];
     case 'mcp-connection':
@@ -300,11 +302,11 @@ function validateKindContract(
     }
     case 'worker': {
       const content = requireFile(resolve(root, 'index.mjs'), 'Worker packages require index.mjs.');
-      if (!hasExportedFlueFactory(content, 'defineAgentProfile')) {
-        throw new Error('Worker index.mjs must export a Flue defineAgentProfile(...) definition.');
+      if (!hasExportedFlueFactory(content, 'defineSubagent')) {
+        throw new Error('Worker index.mjs must export a Flue defineSubagent(...) definition.');
       }
       requireFile(resolve(root, 'workspace', 'AGENTS.md'), 'Worker packages require workspace/AGENTS.md.');
-      return ['worker-index', 'flue-agent-profile-export', 'worker-workspace'];
+      return ['worker-index', 'flue-subagent-export', 'worker-workspace'];
     }
     case 'mcp-server': {
       const content = requireFile(resolve(root, 'src', 'index.mjs'), 'MCP server packages require src/index.mjs.');
@@ -459,10 +461,6 @@ function requireFile(path: string, message: string): string {
 
 function singleLine(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
-}
-
-function escapeSingleQuoted(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 function normalizePath(value: string): string {

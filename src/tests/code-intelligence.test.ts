@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -247,7 +248,7 @@ test('Flue code-intelligence tools parse a file through the sandbox', async () =
     });
 
     const parseTool = getTool(tools, 'coding_ast_parse_file');
-    const output = JSON.parse(await parseTool.execute({ path: 'calc.ts' })) as {
+    const output = JSON.parse(await runTool(parseTool, { path: 'calc.ts' })) as {
       language: string;
       symbols: Array<{ name: string; kind: string }>;
       imports: Array<{ source: string }>;
@@ -276,7 +277,7 @@ test('Flue symbol navigation tool finds declarations and references', async () =
     });
 
     const navigateTool = getTool(tools, 'coding_symbol_navigate');
-    const output = JSON.parse(await navigateTool.execute({ symbol: 'Calculator' })) as {
+    const output = JSON.parse(await runTool(navigateTool, { symbol: 'Calculator' })) as {
       symbol: string;
       declarations: Array<{ path: string; kind: string }>;
       references: Array<{ path: string }>;
@@ -309,7 +310,7 @@ test('Flue import graph tool builds graph and focuses on a path', async () => {
     });
 
     const graphTool = getTool(tools, 'coding_import_graph');
-    const output = JSON.parse(await graphTool.execute({ path: 'calc.ts' })) as {
+    const output = JSON.parse(await runTool(graphTool, { path: 'calc.ts' })) as {
       nodes: Array<{ path: string; outgoing: Array<{ target: string }> }>;
       parsedFiles: string[];
       focusPath: string;
@@ -341,7 +342,7 @@ test('Flue find declarations tool returns only declarations', async () => {
     });
 
     const findTool = getTool(tools, 'coding_find_symbol_declarations');
-    const output = JSON.parse(await findTool.execute({ symbol: 'add' })) as {
+    const output = JSON.parse(await runTool(findTool, { symbol: 'add' })) as {
       symbol: string;
       declarations: Array<{ path: string; kind: string }>;
       parsedFiles: string[];
@@ -369,7 +370,7 @@ test('Flue find references tool returns only references', async () => {
     });
 
     const findTool = getTool(tools, 'coding_find_symbol_references');
-    const output = JSON.parse(await findTool.execute({ symbol: 'Calculator' })) as {
+    const output = JSON.parse(await runTool(findTool, { symbol: 'Calculator' })) as {
       symbol: string;
       references: Array<{ path: string }>;
       parsedFiles: string[];

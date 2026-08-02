@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import {
@@ -14,6 +15,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as v from 'valibot';
 import { createOrchestratorComposition } from '../agents/orchestrator.js';
+import { createEmptyRuntimeCapabilitySnapshot } from '../engine/capabilities/runtime-capability-snapshot.js';
 import { CodingFileEditSchema, CodingImplementerResultSchema } from '../core/schemas/coding-worker.js';
 import { evaluateCodingApproval, createCodingApprovalRequest } from '../engine/workers/coding-worker/approvals/approval-policy.js';
 import {
@@ -602,7 +604,7 @@ test('test-debug submit result tool returns debug edits from fake failing verifi
   ].join('\n');
 
   const output = JSON.parse(
-    await submit.execute({
+    await runTool(submit, {
       debugEdits: [
         {
           path: 'index.js',
@@ -687,7 +689,7 @@ test('GitHub side effects are approval-gated and GitHub read tool is mockable', 
 
   assert.ok(readContext);
   const output = JSON.parse(
-    await readContext.execute({
+    await runTool(readContext, {
       owner: 'dansasser',
       repo: 'sim-one-alpha',
       issueNumber: 7,
@@ -872,7 +874,7 @@ test('coding worker profile wires GitHub read context with a client and supports
 
     const readContext = getTool(subagent.tools ?? [], 'coding_github_read_context');
     const context = JSON.parse(
-      await readContext.execute({
+      await runTool(readContext, {
         owner: 'dansasser',
         repo: 'sim-one-alpha',
         issueNumber: 7,
@@ -898,7 +900,7 @@ test('coding worker profile wires GitHub read context with a client and supports
     assert.equal(payload?.checks?.[0]?.conclusion, 'SUCCESS');
 
     const readFile = getTool(subagent.tools ?? [], 'coding_repo_read_file');
-    const file = JSON.parse(await readFile.execute({ path: 'README.md' })) as { content?: string };
+    const file = JSON.parse(await runTool(readFile, { path: 'README.md' })) as { content?: string };
     assert.equal(file.content, '# scoped repo\n');
   } finally {
     rmrf(project.workspaceRoot);
@@ -918,7 +920,7 @@ test('coding worker remains available when optional GitHub MCP connection fails'
     });
 
     const readFile = getTool(subagent.tools ?? [], 'coding_repo_read_file');
-    const file = JSON.parse(await readFile.execute({ path: 'README.md' })) as {
+    const file = JSON.parse(await runTool(readFile, { path: 'README.md' })) as {
       content?: string;
     };
     assert.equal(file.content, '# available worker\n');
@@ -928,7 +930,7 @@ test('coding worker remains available when optional GitHub MCP connection fails'
       'coding_github_read_context',
     );
     const context = JSON.parse(
-      await readContext.execute({
+      await runTool(readContext, {
         owner: 'dansasser',
         repo: 'sim-one-alpha',
       }),
@@ -1005,7 +1007,7 @@ test('GitHub tools read extended PR context and gate PR updates through approval
 
   const readContext = getTool(tools, 'coding_github_read_context');
   const context = JSON.parse(
-    await readContext.execute({
+    await runTool(readContext, {
       owner: 'dansasser',
       repo: 'sim-one-alpha',
       issueNumber: 7,
@@ -1026,7 +1028,7 @@ test('GitHub tools read extended PR context and gate PR updates through approval
 
   const updatePr = getTool(tools, 'coding_github_update_pr');
   const blocked = JSON.parse(
-    await updatePr.execute({
+    await runTool(updatePr, {
       taskId: 'task-gh-update',
       owner: 'dansasser',
       repo: 'sim-one-alpha',
@@ -1052,7 +1054,7 @@ test('GitHub tools read extended PR context and gate PR updates through approval
     principal: { id: 'operator', roles: ['operator'] },
   });
   const approved = JSON.parse(
-    await updatePr.execute({
+    await runTool(updatePr, {
       taskId: 'task-gh-update',
       owner: 'dansasser',
       repo: 'sim-one-alpha',
@@ -1093,7 +1095,7 @@ test('GitHub tools verify explicit PR base, head, draft status, and checks', asy
   const verifyPr = getTool(tools, 'coding_github_verify_pr');
 
   const verified = JSON.parse(
-    await verifyPr.execute({
+    await runTool(verifyPr, {
       owner: 'dansasser',
       repo: 'sim-one-alpha',
       pullRequestNumber: 13,
@@ -1112,7 +1114,7 @@ test('GitHub tools verify explicit PR base, head, draft status, and checks', asy
   assert.deepEqual(verified.actions[0]?.payload.mismatches, []);
 
   const mismatch = JSON.parse(
-    await verifyPr.execute({
+    await runTool(verifyPr, {
       owner: 'dansasser',
       repo: 'sim-one-alpha',
       pullRequestNumber: 13,
@@ -1276,14 +1278,14 @@ test('GitHub tools list issues and pull requests through the configured client',
   });
 
   const listIssues = getTool(tools, 'coding_github_list_issues');
-  const issuesOutput = JSON.parse(await listIssues.execute({ owner: 'owner', repo: 'repo' })) as {
+  const issuesOutput = JSON.parse(await runTool(listIssues, { owner: 'owner', repo: 'repo' })) as {
     actions: Array<{ action: string; payload: { issues?: Array<{ title: string }> } }>;
   };
   assert.equal(issuesOutput.actions[0]?.action, 'list_issues');
   assert.equal(issuesOutput.actions[0]?.payload.issues?.[0]?.title, 'Issue');
 
   const listPrs = getTool(tools, 'coding_github_list_prs');
-  const prsOutput = JSON.parse(await listPrs.execute({ owner: 'owner', repo: 'repo' })) as {
+  const prsOutput = JSON.parse(await runTool(listPrs, { owner: 'owner', repo: 'repo' })) as {
     actions: Array<{ action: string; payload: { pullRequests?: Array<{ baseRef?: string }> } }>;
   };
   assert.equal(prsOutput.actions[0]?.action, 'list_prs');
@@ -1316,7 +1318,7 @@ test('GitHub tools do not default PR base when omitted', async () => {
   });
 
   const blocked = JSON.parse(
-    await getTool(tools, 'coding_github_update_pr').execute({
+    await runTool(getTool(tools, 'coding_github_update_pr'), {
       taskId: 'task-base-default',
       owner: 'owner',
       repo: 'repo',
@@ -1334,7 +1336,7 @@ test('GitHub tools do not default PR base when omitted', async () => {
     decidedBy: 'operator',
     principal: { id: 'operator', roles: ['operator'] },
   });
-  await getTool(tools, 'coding_github_update_pr').execute({
+  await runTool(getTool(tools, 'coding_github_update_pr'), {
     taskId: 'task-base-default',
     owner: 'owner',
     repo: 'repo',
@@ -1353,7 +1355,7 @@ test('coding worker tools create projects under the workspace root and scope fil
     const workspaceTools = createCodingRepoTools({ workspaceRoot, targetKind: 'workspace' });
     const createProject = getTool(workspaceTools, 'coding_project_create');
     const created = JSON.parse(
-      await createProject.execute({
+      await runTool(createProject, {
         name: 'Answer App',
         directoryKind: 'projects',
         initializeReadme: true,
@@ -1376,23 +1378,23 @@ test('coding worker tools create projects under the workspace root and scope fil
     const patch = getTool(projectTools, 'coding_repo_apply_patch');
     const read = getTool(projectTools, 'coding_repo_read_file');
 
-    const failing = JSON.parse(await shell.execute({ command: 'node test.js' })) as { exitCode: number };
+    const failing = JSON.parse(await runTool(shell, { command: 'node test.js' })) as { exitCode: number };
     assert.equal(failing.exitCode, 1);
 
     const patchResult = JSON.parse(
-      await patch.execute({
+      await runTool(patch, {
         path: 'index.js',
         edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
       }),
     ) as { replacements: number };
     assert.equal(patchResult.replacements, 1);
 
-    const passing = JSON.parse(await shell.execute({ command: 'node test.js' })) as { exitCode: number };
+    const passing = JSON.parse(await runTool(shell, { command: 'node test.js' })) as { exitCode: number };
     assert.equal(passing.exitCode, 0);
 
-    const output = JSON.parse(await read.execute({ path: 'index.js' })) as { content: string };
+    const output = JSON.parse(await runTool(read, { path: 'index.js' })) as { content: string };
     assert.match(output.content, /return 42/);
-    await assert.rejects(() => read.execute({ path: '../README.md' }), /escapes coding-worker/);
+    await assert.rejects(() => runTool(read, { path: '../README.md' }), /escapes coding-worker/);
   } finally {
     rmrf(workspaceRoot);
   }
@@ -1574,7 +1576,7 @@ test('coding worker edit transaction tool applies and rolls back through the rep
     const applyTransaction = getTool(tools, 'coding_repo_apply_transaction');
 
     const success = JSON.parse(
-      await applyTransaction.execute({
+      await runTool(applyTransaction, {
         id: 'tool-tx',
         edits: [
           { path: 'x.js', oldText: 'const x = 1;', newText: 'const x = 2;', expectedOccurrences: 1 },
@@ -1588,7 +1590,7 @@ test('coding worker edit transaction tool applies and rolls back through the rep
     assert.equal(readFileSync(join(workspaceRoot, 'z.js'), 'utf8'), 'const z = 3;\n');
 
     const fail = JSON.parse(
-      await applyTransaction.execute({
+      await runTool(applyTransaction, {
         id: 'tool-tx-fail',
         edits: [
           { path: 'x.js', oldText: 'const x = 1;', newText: 'const x = 9;', expectedOccurrences: 1 },
@@ -1625,7 +1627,7 @@ test('repo workflow tools gate branch creation through approval service', async 
     );
 
     const blocked = JSON.parse(
-      await branchTool.execute({
+      await runTool(branchTool, {
         taskId: 'task-branch',
         branch: 'feature-runtime',
       }),
@@ -1640,7 +1642,7 @@ test('repo workflow tools gate branch creation through approval service', async 
       principal: { id: 'operator', roles: ['operator'] },
     });
     const created = JSON.parse(
-      await branchTool.execute({
+      await runTool(branchTool, {
         taskId: 'task-branch',
         branch: 'feature-runtime',
       }),
@@ -1685,7 +1687,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
     });
     const clone = getTool(tools, 'coding_repo_clone');
     const blockedClone = JSON.parse(
-      await clone.execute({
+      await runTool(clone, {
         taskId: 'task-clone',
         remoteUrl: sourceRepoPath,
         slug: 'cloned-repo',
@@ -1701,7 +1703,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
       principal: { id: 'operator', roles: ['operator'] },
     });
     const cloned = JSON.parse(
-      await clone.execute({
+      await runTool(clone, {
         taskId: 'task-clone',
         remoteUrl: sourceRepoPath,
         slug: 'cloned-repo',
@@ -1713,7 +1715,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
 
     const register = getTool(tools, 'coding_repo_register');
     const blockedRegister = JSON.parse(
-      await register.execute({
+      await runTool(register, {
         taskId: 'task-register',
         slug: 'cloned-alias',
         repoRelativePath: 'repos/cloned-repo',
@@ -1730,7 +1732,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
       principal: { id: 'operator', roles: ['operator'] },
     });
     const registered = JSON.parse(
-      await register.execute({
+      await runTool(register, {
         taskId: 'task-register',
         slug: 'cloned-alias',
         repoRelativePath: 'repos/cloned-repo',
@@ -1741,7 +1743,7 @@ test('repo workflow tools clone, register, and discover workspace repositories t
     assert.equal(registered.repo?.slug, 'cloned-alias');
 
     const discover = getTool(tools, 'coding_repo_discover');
-    const discovered = JSON.parse(await discover.execute({})) as {
+    const discovered = JSON.parse(await runTool(discover, {})) as {
       registered?: Array<{ slug: string }>;
       discovered?: Array<{ repoRelativePath: string }>;
     };
@@ -1773,7 +1775,7 @@ test('repo workflow metadata uses the injected canonical coding-worker state roo
     });
     const register = getTool(tools, 'coding_repo_register');
     const blocked = JSON.parse(
-      await register.execute({
+      await runTool(register, {
         taskId: 'task-state-root',
         slug: 'example',
         repoRelativePath,
@@ -1788,7 +1790,7 @@ test('repo workflow metadata uses the injected canonical coding-worker state roo
     });
 
     const registered = JSON.parse(
-      await register.execute({
+      await runTool(register, {
         taskId: 'task-state-root',
         slug: 'example',
         repoRelativePath,
@@ -1820,11 +1822,14 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
   writeExecutableProjectFiles(project.repoPath);
 
   try {
-    const config = createOrchestratorComposition({
-      ...createModelEnv(),
-      GOROMBO_RUNTIME_ROOT: runtimeRoot,
-      GOROMBO_WORKSPACE_ROOT: 'workspace',
-    });
+    const config = createOrchestratorComposition(
+      {
+        ...createModelEnv(),
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
+      },
+      createEmptyRuntimeCapabilitySnapshot(),
+    );
 
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_apply_patch'), false);
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_shell_run'), false);
@@ -1838,12 +1843,12 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
     const patch = getTool(codingWorker.tools, 'coding_repo_apply_patch');
     const shell = getTool(codingWorker.tools, 'coding_shell_run');
 
-    await patch.execute({
+    await runTool(patch, {
       path: `${project.projectRelativePath}/index.js`,
       edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
     });
     const output = JSON.parse(
-      await shell.execute({ command: 'node test.js', cwd: project.projectRelativePath }),
+      await runTool(shell, { command: 'node test.js', cwd: project.projectRelativePath }),
     ) as { exitCode: number };
 
     assert.equal(output.exitCode, 0);
@@ -1861,7 +1866,7 @@ test('coding worker workspace scope can edit workspace files and reject path esc
     const patch = getTool(tools, 'coding_repo_apply_patch');
     const read = getTool(tools, 'coding_repo_read_file');
 
-    await patch.execute({
+    await runTool(patch, {
       path: 'USER.md',
       edits: [
         {
@@ -1872,9 +1877,9 @@ test('coding worker workspace scope can edit workspace files and reject path esc
       ],
     });
 
-    const output = JSON.parse(await read.execute({ path: 'USER.md' })) as { content: string };
+    const output = JSON.parse(await runTool(read, { path: 'USER.md' })) as { content: string };
     assert.match(output.content, /main orchestrator agent/);
-    await assert.rejects(() => read.execute({ path: '../outside.txt' }), /escapes coding-worker/);
+    await assert.rejects(() => runTool(read, { path: '../outside.txt' }), /escapes coding-worker/);
   } finally {
     rmrf(workspaceRoot);
   }
@@ -1947,11 +1952,11 @@ test('coding worker shell tool blocks git and GitHub writes without approval', a
       }),
       'coding_shell_run',
     );
-    const output = JSON.parse(await shell.execute({ command: 'git -C . push origin main' })) as {
+    const output = JSON.parse(await runTool(shell, { command: 'git -C . push origin main' })) as {
       blocked?: boolean;
       approvalAction?: string;
     };
-    const ghOutput = JSON.parse(await shell.execute({ command: 'gh api repos/example/example -XPOST' })) as {
+    const ghOutput = JSON.parse(await runTool(shell, { command: 'gh api repos/example/example -XPOST' })) as {
       blocked?: boolean;
       approvalAction?: string;
     };
@@ -1980,7 +1985,7 @@ test('coding worker git commit tool requires approval and commits when approved'
     );
 
     const blocked = JSON.parse(
-      await commit.execute({
+      await runTool(commit, {
         taskId: 'task-commit',
         message: 'Update answer',
         paths: ['index.js'],
@@ -2028,7 +2033,7 @@ test('coding worker git commit tool requires approval and commits when approved'
       'coding_git_commit',
     );
     const output = JSON.parse(
-      await approvedCommit.execute({
+      await runTool(approvedCommit, {
         taskId: 'task-commit',
         message: injectedMessage,
         paths: ['index.js'],
@@ -2121,7 +2126,7 @@ test('approval-gated push disables repository hooks', async () => {
     );
 
     const result = JSON.parse(
-      await push.execute({
+      await runTool(push, {
         taskId: 'task-hook-safe-push',
         remote: 'origin',
         branch,
@@ -2163,7 +2168,7 @@ test('coding worker GitHub PR creation tool is approval-gated', async () => {
       'coding_github_create_pr',
     );
     const output = JSON.parse(
-      await createPr.execute({
+      await runTool(createPr, {
         taskId: 'task-pr',
         owner: 'dansasser',
         repo: 'sim-one-alpha',
@@ -2420,7 +2425,7 @@ test('coding implementer submit result validates and emits a CodingImplementerRe
   const submit = getTool(tools, 'coding_implementer_submit_result');
 
   const result = JSON.parse(
-    await submit.execute({
+    await runTool(submit, {
       fileEdits: [{ path: 'index.js', oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
       writeFiles: [{ path: 'new.js', content: 'console.log("ok");\n' }],
       verificationCommands: [{ name: 'unit', command: 'node test.js', required: true, reason: 'verify' }],
@@ -2441,7 +2446,7 @@ test('coding implementer submit result validates and emits a CodingImplementerRe
 
   await assert.rejects(
     () =>
-      submit.execute({
+      runTool(submit, {
         fileEdits: [{ path: 123, oldText: 'a', newText: 'b' }],
         writeFiles: [],
         verificationCommands: [],
@@ -2462,7 +2467,7 @@ test('coding repo apply patch produces valid CodingFileEdit objects', async () =
     const patch = getTool(tools, 'coding_repo_apply_patch');
 
     const result = JSON.parse(
-      await patch.execute({
+      await runTool(patch, {
         path: 'index.js',
         edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
       }),
@@ -2495,7 +2500,7 @@ test('coding repo apply exact edit works and returns a valid CodingFileEdit', as
     const exactEdit = getTool(tools, 'coding_repo_apply_exact_edit');
 
     const result = JSON.parse(
-      await exactEdit.execute({
+      await runTool(exactEdit, {
         path: 'index.js',
         oldText: 'return 41;',
         newText: 'return 42;',
@@ -3123,7 +3128,7 @@ function createEndToEndDelegate(input: EndToEndDelegateInput): (
     });
     const branchTool = getTool(workflowTools, 'coding_repo_branch_create');
     const branchResult = JSON.parse(
-      await branchTool.execute({
+      await runTool(branchTool, {
         taskId: request.task.taskId,
         branch,
         checkout: true,
@@ -3141,7 +3146,7 @@ function createEndToEndDelegate(input: EndToEndDelegateInput): (
     });
     const commitTool = getTool(gitTools, 'coding_git_commit');
     const commitResult = JSON.parse(
-      await commitTool.execute({
+      await runTool(commitTool, {
         taskId: request.task.taskId,
         message,
         paths: ['index.js'],
@@ -3156,7 +3161,7 @@ function createEndToEndDelegate(input: EndToEndDelegateInput): (
     // Approval-gated push to the local bare remote.
     const pushTool = getTool(gitTools, 'coding_git_push');
     const pushResult = JSON.parse(
-      await pushTool.execute({
+      await runTool(pushTool, {
         taskId: request.task.taskId,
         remote: 'origin',
         branch,
@@ -3171,7 +3176,7 @@ function createEndToEndDelegate(input: EndToEndDelegateInput): (
     });
     const requestApproval = getTool(githubTools, 'coding_github_request_approval');
     const approvalResult = JSON.parse(
-      await requestApproval.execute({
+      await runTool(requestApproval, {
         taskId: request.task.taskId,
         actionType: 'github.pr.create',
         summary: 'Create PR for off-by-one fix',

@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -49,7 +50,7 @@ test('coding_task_handoff_plan_to_checklist copies a task run plan into a durabl
 
   const handoff = getTool(tools, 'coding_task_handoff_plan_to_checklist');
   const result = JSON.parse(
-    await handoff.execute({ taskId: 'task-handoff', sourceTaskId: 'src-task-1' }),
+    await runTool(handoff, { taskId: 'task-handoff', sourceTaskId: 'src-task-1' }),
   ) as { checklist: { id: string; title: string; items: { title: string; status: string; tags: string[] }[] } };
 
   assert.equal(result.checklist.title, 'Handoff: src-task-1');
@@ -81,7 +82,7 @@ test('coding_task_handoff_plan_to_checklist rejects an unknown source task', asy
     });
     const handoff = getTool(tools, 'coding_task_handoff_plan_to_checklist');
     await assert.rejects(
-      handoff.execute({ taskId: 't', sourceTaskId: 'no-such-task' }),
+      runTool(handoff, { taskId: 't', sourceTaskId: 'no-such-task' }),
       /not found/,
     );
   } finally {
@@ -121,7 +122,7 @@ test('coding task handoff reads task runs from the injected canonical state root
     });
     const handoff = getTool(tools, 'coding_task_handoff_plan_to_checklist');
     const result = JSON.parse(
-      await handoff.execute({
+      await runTool(handoff, {
         taskId: 'handoff-state-root',
         sourceTaskId: 'state-root-task',
       }),

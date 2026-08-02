@@ -12,7 +12,7 @@ export const generateImageTool = defineTool({
   name: 'generate_image',
   description:
     'Generate or edit an image using Runpod Public Endpoints, download the resulting image file, and save it to workspace/images/. Returns the local file path and metadata.',
-  parameters: v.object({
+  input: v.object({
     prompt: v.string(),
     eventId: v.string(),
     model: v.optional(v.string()),
@@ -28,7 +28,7 @@ export const generateImageTool = defineTool({
     maxPollAttempts: v.optional(v.number()),
     pollIntervalMillis: v.optional(v.number()),
   }),
-  execute: async (input) => {
+  run: async ({ data: input }) => {
     const apiKey = readStringEnv('RUNPOD_API_KEY');
     if (!apiKey) {
       return JSON.stringify({ ok: false, error: 'RUNPOD_API_KEY is not configured.' });

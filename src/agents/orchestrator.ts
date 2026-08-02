@@ -2,11 +2,13 @@
 
 import {
   type AgentProps,
+  type McpConnectionDefinition,
   type SandboxFactory,
   type Skill,
   type SubagentDefinition,
   type ToolDefinition,
   useModel,
+  useMcpConnection,
   useSandbox,
   useSkill,
   useSubagent,
@@ -68,6 +70,12 @@ import {
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import greetingPreflight from '../skills/greeting-preflight/SKILL.md';
+import {
+  loadRuntimeCapabilitySnapshot,
+  type RuntimeCapabilitySnapshot,
+} from '../engine/capabilities/runtime-capability-snapshot.js';
+
+const runtimeCapabilitySnapshot = await loadRuntimeCapabilitySnapshot(process.env);
 
 export const orchestratorInstructions = [
   composeWorkspaceInstructions({
@@ -84,13 +92,19 @@ export interface OrchestratorComposition {
   skills: Skill[];
   tools: ToolDefinition[];
   subagents: SubagentDefinition[];
+  mcpConnections: McpConnectionDefinition[];
   cwd: string;
   sandbox: SandboxFactory;
 }
 
 export function createOrchestratorComposition(
   env: Record<string, unknown> = process.env,
+  runtimeCapabilities?: RuntimeCapabilitySnapshot,
 ): OrchestratorComposition {
+  const resolvedRuntimeCapabilities = resolveRuntimeCapabilitySnapshot(
+    env,
+    runtimeCapabilities,
+  );
   const models = configureRuntimeModels(env);
   const selectedModelCard = models.selectedModelCard;
   const runtimeRoot = resolveGoromboRuntimeRoot({ env });
@@ -131,32 +145,84 @@ export function createOrchestratorComposition(
     scheduleRunsTool,
     telegramReplyTool,
   ];
+  const subagents: SubagentDefinition[] = [
+    createCapabilityManagerSubagent({ env }),
+    createCodingWorkerSubagent({
+      workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
+      stateRoot: runtimePaths.codingWorkerState,
+      env: createCodingWorkerToolEnv(env, runtimeRoot),
+      githubMcp: runtimeCodingWorkerGithubMcp,
+    }),
+    createResearcherSubagent(),
+  ];
+  const runtimeTools = retainUniqueRuntimeDefinitions(
+    'tool',
+    tools,
+    resolvedRuntimeCapabilities.tools,
+  );
+  const runtimeSubagents = retainUniqueRuntimeDefinitions(
+    'subagent',
+    subagents,
+    resolvedRuntimeCapabilities.subagents,
+  );
 
   return {
     model: selectedModelCard.specifier,
     compaction: createFlueCompactionConfig(selectedModelCard),
     instructions: orchestratorInstructions,
-    skills: [greetingPreflight],
-    tools,
-    subagents: [
-      createCapabilityManagerSubagent({ env }),
-      createCodingWorkerSubagent({
-        workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
-        stateRoot: runtimePaths.codingWorkerState,
-        env: createCodingWorkerToolEnv(env, runtimeRoot),
-        githubMcp: runtimeCodingWorkerGithubMcp,
-      }),
-      createResearcherSubagent(),
-    ],
+    skills: [greetingPreflight, ...resolvedRuntimeCapabilities.skills],
+    tools: [...tools, ...runtimeTools],
+    subagents: [...subagents, ...runtimeSubagents],
+    mcpConnections: resolvedRuntimeCapabilities.mcpConnections,
     cwd: runtimePaths.packagedServer,
     sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
   };
+}
+
+function retainUniqueRuntimeDefinitions<T extends { name: string }>(
+  kind: 'tool' | 'subagent',
+  builtins: T[],
+  runtimeDefinitions: T[],
+): T[] {
+  const usedNames = new Set(builtins.map((definition) => definition.name));
+  return runtimeDefinitions.filter((definition) => {
+    if (usedNames.has(definition.name)) {
+      console.error(
+        `[capabilities] Ignoring runtime ${kind} ${definition.name}: the exported name conflicts with an attached definition.`,
+      );
+      return false;
+    }
+    usedNames.add(definition.name);
+    return true;
+  });
+}
+
+function resolveRuntimeCapabilitySnapshot(
+  env: Record<string, unknown>,
+  runtimeCapabilities: RuntimeCapabilitySnapshot | undefined,
+): RuntimeCapabilitySnapshot {
+  if (runtimeCapabilities) {
+    return runtimeCapabilities;
+  }
+  if (env === process.env) {
+    return runtimeCapabilitySnapshot;
+  }
+  throw new Error(
+    'A capability snapshot loaded from the same environment is required for a custom orchestrator runtime.',
+  );
 }
 
 export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
 
   useModel(composition.model, { compaction: composition.compaction });
+  useRuntimeCapabilities(composition);
+  useSandbox(composition.sandbox, { cwd: composition.cwd });
+  return composition.instructions;
+}
+Orchestrator.agentName = 'orchestrator';
+
+function useRuntimeCapabilities(composition: OrchestratorComposition): void {
   for (const skill of composition.skills) {
     useSkill(skill);
   }
@@ -166,10 +232,10 @@ export function Orchestrator(_props: AgentProps): string {
   for (const subagent of composition.subagents) {
     useSubagent(subagent);
   }
-  useSandbox(composition.sandbox, { cwd: composition.cwd });
-  return composition.instructions;
+  for (const connection of composition.mcpConnections) {
+    useMcpConnection(connection);
+  }
 }
-Orchestrator.agentName = 'orchestrator';
 
 export function createOrchestratorSandbox(packagedServerRoot: string): SandboxFactory {
   return {
@@ -232,7 +298,6 @@ The following capabilities are actually attached to this main agent at runtime:
 - Tool: \`list_image_artifacts\`
 - Tool: \`schedule_create\` / \`schedule_pause\` / \`schedule_resume\` / \`schedule_update\` / \`schedule_delete\` / \`schedule_list\` / \`schedule_get\` / \`schedule_run_now\` / \`schedule_runs\` (scheduled/recurring/one-shot agent turns; ownerScope is derived from the trusted eventId and enforced on every non-create op)
 - Tool: \`telegram_reply\` (when TELEGRAM_BOT_TOKEN is configured)
-- MCP: \`astro-docs\` (built-in — search Astro framework documentation via \`mcp__astro-docs__search_astro_docs\`)
 - Subagent: \`researcher\`
 - Subagent: \`coding-worker\` (repository inspection/editing, shell/test/debug, code review, repository lifecycle, approval-gated git operations, and GitHub work)
 - Subagent: \`capability-manager\` (validated, approval-gated runtime skill, tool, worker, and MCP lifecycle administration)

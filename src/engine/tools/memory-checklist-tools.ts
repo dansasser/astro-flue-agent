@@ -29,7 +29,7 @@ export const createChecklistTool = defineTool({
   name: 'create_checklist',
   description:
     'Create a structured-memory checklist for the current scope (actor/conversation/project). Items may be nested via parentId up to the configured max depth. Scope is derived from the trusted eventId; never pass scope.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     title: v.pipe(v.string(), v.minLength(1)),
     slug: SlugSchema,
@@ -37,7 +37,7 @@ export const createChecklistTool = defineTool({
     tags: TagsSchema,
     items: v.optional(v.array(InitialItemSchema)),
   }),
-  execute: async ({ eventId, title, slug, description, tags, items }) => {
+  run: async ({ data: { eventId, title, slug, description, tags, items } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.createChecklist({
@@ -58,7 +58,7 @@ export const updateChecklistTool = defineTool({
   name: 'update_checklist',
   description:
     'Update a checklist (rename, re-slug, archive, replace tags). Use archive_checklist to archive. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
     title: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -67,7 +67,7 @@ export const updateChecklistTool = defineTool({
     tags: TagsSchema,
     status: v.optional(ChecklistStatusSchema),
   }),
-  execute: async ({ eventId, id, title, slug, description, tags, status }) => {
+  run: async ({ data: { eventId, id, title, slug, description, tags, status } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.updateChecklist({
@@ -89,7 +89,7 @@ export const addChecklistItemTool = defineTool({
   name: 'add_checklist_item',
   description:
     'Add an item to a checklist. parentId attaches it under an existing item (nesting bounded by max depth). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     checklistId: v.pipe(v.string(), v.minLength(1)),
     parentId: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -100,7 +100,7 @@ export const addChecklistItemTool = defineTool({
     tags: TagsSchema,
     dueAt: v.optional(v.string()),
   }),
-  execute: async ({ eventId, checklistId, parentId, title, description, status, ordinal, tags, dueAt }) => {
+  run: async ({ data: { eventId, checklistId, parentId, title, description, status, ordinal, tags, dueAt } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.addChecklistItem({
@@ -124,7 +124,7 @@ export const updateChecklistItemTool = defineTool({
   name: 'update_checklist_item',
   description:
     'Update a checklist item (title, status, description, tags, due/completed dates). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     checklistId: v.pipe(v.string(), v.minLength(1)),
     itemId: v.pipe(v.string(), v.minLength(1)),
@@ -136,7 +136,7 @@ export const updateChecklistItemTool = defineTool({
     dueAt: v.optional(v.string()),
     completedAt: v.optional(v.string()),
   }),
-  execute: async ({ eventId, checklistId, itemId, title, description, status, ordinal, tags, dueAt, completedAt }) => {
+  run: async ({ data: { eventId, checklistId, itemId, title, description, status, ordinal, tags, dueAt, completedAt } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.updateChecklistItem({
@@ -161,14 +161,14 @@ export const moveChecklistItemTool = defineTool({
   name: 'move_checklist_item',
   description:
     'Move a checklist item under a new parent and/or reorder it (ordinal). Pass parentId as empty/omit to move to top level. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     checklistId: v.pipe(v.string(), v.minLength(1)),
     itemId: v.pipe(v.string(), v.minLength(1)),
     parentId: v.optional(v.string()),
     ordinal: v.optional(v.number()),
   }),
-  execute: async ({ eventId, checklistId, itemId, parentId, ordinal }) => {
+  run: async ({ data: { eventId, checklistId, itemId, parentId, ordinal } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.updateChecklistItem({
@@ -187,11 +187,11 @@ export const moveChecklistItemTool = defineTool({
 export const archiveChecklistTool = defineTool({
   name: 'archive_checklist',
   description: 'Archive a checklist (status -> archived). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
   }),
-  execute: async ({ eventId, id }) => {
+  run: async ({ data: { eventId, id } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const checklist = await engine.updateChecklist({
@@ -209,12 +209,12 @@ export const listChecklistsTool = defineTool({
   name: 'list_checklists',
   description:
     'List active checklists for the current scope. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     limit: v.optional(v.number()),
     includeArchived: v.optional(v.boolean()),
   }),
-  execute: async ({ eventId, limit, includeArchived }) => {
+  run: async ({ data: { eventId, limit, includeArchived } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const records = await engine.query({

@@ -1,7 +1,11 @@
-import { defineAgentProfile } from '@flue/runtime';
+import { defineSubagent } from '@flue/runtime';
 
-export default defineAgentProfile({
+function TestWorker() {
+  return 'Base instructions from the module.';
+}
+
+export default defineSubagent({
   name: 'test-worker',
   description: 'A test worker for automated testing.',
-  instructions: 'Base instructions from the module.',
+  agent: TestWorker,
 });

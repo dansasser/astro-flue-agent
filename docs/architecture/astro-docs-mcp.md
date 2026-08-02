@@ -9,10 +9,10 @@ https://mcp.docs.astro.build/mcp
 
 ## Runtime Ownership
 
-`src/engine/capabilities/builtin-mcp.ts` connects the server during
-orchestrator initialization and returns the available MCP tools. The
-orchestrator merges those tools with explicitly attached product tools and
-enabled user MCP tools.
+`src/engine/capabilities/builtin-mcp.ts` defines the connection, and the
+Researcher mounts it during agent initialization. The main orchestrator does
+not receive this source-backed retrieval capability; it delegates applicable
+work to the Researcher.
 
 The built-in server exposes:
 
@@ -33,8 +33,8 @@ The built-in MCP connection is separate from runtime-added MCP records:
 
 ```text
 built-in astro-docs definition
--> connectBuiltinMcpServers()
--> MCP tools attached to orchestrator
+-> Researcher Flue MCP connection
+-> MCP tools attached to Researcher
 
 enabled runtime MCP record
 -> connectUserMcpServers()
@@ -60,7 +60,7 @@ enabled runtime MCP record
 | --- | --- |
 | Built-in MCP connection | `src/engine/capabilities/builtin-mcp.ts` |
 | User MCP broker | `src/engine/capabilities/mcp-broker.ts` |
-| Orchestrator attachment | `src/agents/orchestrator.ts` |
+| Researcher attachment | `src/engine/workers/researcher/researcher.ts` |
 | Built-in manifest generation | `scripts/generate-builtin-registry.mjs` |
 | Collision checks | `src/engine/capabilities/collision-check.ts` |
 

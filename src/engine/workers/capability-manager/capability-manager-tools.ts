@@ -27,6 +27,25 @@ import type { CodingApprovalActionType } from '../../../engine/workers/coding-wo
 const kindSchema = v.picklist(['skill', 'tool', 'worker', 'mcp']);
 const sourceSchema = v.picklist(['github', 'local']);
 const transportSchema = v.picklist(['streamable-http', 'sse']);
+const capabilityInputEntries = {
+  eventId: v.string(),
+  kind: kindSchema,
+  id: v.string(),
+  name: v.string(),
+  description: v.optional(v.string()),
+  source: v.optional(sourceSchema),
+  sourceRef: v.optional(v.string()),
+  version: v.optional(v.string()),
+  requestedEnabled: v.optional(v.boolean()),
+  mcpUrl: v.optional(v.string()),
+  mcpTransport: v.optional(transportSchema),
+  mcpTokenEnv: v.optional(v.string()),
+};
+const capabilityValidationInputSchema = v.object(capabilityInputEntries);
+const capabilityMutationInputSchema = v.object({
+  taskId: v.string(),
+  ...capabilityInputEntries,
+});
 
 export interface CapabilityLifecycleServiceSession {
   service: CapabilityLifecycleService;
@@ -110,10 +129,10 @@ export function createCapabilityManagerTools(
       name: 'capability_list',
       description:
         'List runtime capability records from the authoritative SIM-ONE registry, optionally filtered by kind.',
-      parameters: v.object({
+      input: v.object({
         kind: v.optional(kindSchema),
       }),
-      execute: async (args) =>
+      run: async ({ data: args }) =>
         withService(options.serviceFactory, (service) =>
           JSON.stringify(service.list(args.kind), null, 2),
         ),
@@ -122,11 +141,11 @@ export function createCapabilityManagerTools(
       name: 'capability_inspect',
       description:
         'Inspect one runtime capability record and its current activation state without exposing credential values.',
-      parameters: v.object({
+      input: v.object({
         kind: kindSchema,
         id: v.string(),
       }),
-      execute: async (args) =>
+      run: async ({ data: args }) =>
         withService(options.serviceFactory, (service) =>
           JSON.stringify(service.inspect(args.kind, args.id), null, 2),
         ),
@@ -135,8 +154,8 @@ export function createCapabilityManagerTools(
       name: 'capability_validate',
       description:
         'Validate a proposed skill, tool, worker, or MCP capability source and metadata without changing the registry.',
-      parameters: capabilityInputSchema(false),
-      execute: async (args) => {
+      input: capabilityValidationInputSchema,
+      run: async ({ data: args }) => {
         const typedArgs = args as CapabilityToolInputArgs;
         const protocolBundle = await loadTrustedProtocolBundle(
           options.protocolBundleLoader,
@@ -158,8 +177,8 @@ export function createCapabilityManagerTools(
       name: 'capability_add',
       description:
         'Request approval to add a validated runtime capability. Executable tools, workers, and MCP connections are always installed disabled.',
-      parameters: capabilityInputSchema(true),
-      execute: async (args) => {
+      input: capabilityMutationInputSchema,
+      run: async ({ data: args }) => {
         const typedArgs = args as CapabilityToolInputArgs & { taskId: string };
         const input = readAddInput(typedArgs);
         return executeApprovedMutation(options, {
@@ -182,7 +201,7 @@ export function createCapabilityManagerTools(
       name: 'capability_update',
       description:
         'Request approval to update and revalidate an existing runtime capability source or non-secret metadata.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         eventId: v.string(),
         kind: kindSchema,
@@ -196,7 +215,7 @@ export function createCapabilityManagerTools(
         mcpTransport: v.optional(transportSchema),
         mcpTokenEnv: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const input: CapabilityLifecycleUpdateInput = {
           kind: args.kind,
           id: args.id,
@@ -228,13 +247,13 @@ export function createCapabilityManagerTools(
       defineTool({
         name: `capability_${operation}`,
         description: `Request approval to ${operation} one runtime capability.`,
-        parameters: v.object({
+        input: v.object({
           taskId: v.string(),
           eventId: v.string(),
           kind: kindSchema,
           id: v.string(),
         }),
-        execute: async (args) =>
+        run: async ({ data: args }) =>
           executeApprovedMutation(options, {
             taskId: args.taskId,
             eventId: args.eventId,
@@ -246,24 +265,6 @@ export function createCapabilityManagerTools(
       }),
     ),
   ];
-}
-
-function capabilityInputSchema(withTaskId: boolean) {
-  return v.object({
-    ...(withTaskId ? { taskId: v.string() } : {}),
-    eventId: v.string(),
-    kind: kindSchema,
-    id: v.string(),
-    name: v.string(),
-    description: v.optional(v.string()),
-    source: v.optional(sourceSchema),
-    sourceRef: v.optional(v.string()),
-    version: v.optional(v.string()),
-    requestedEnabled: v.optional(v.boolean()),
-    mcpUrl: v.optional(v.string()),
-    mcpTransport: v.optional(transportSchema),
-    mcpTokenEnv: v.optional(v.string()),
-  });
 }
 
 function readAddInput(args: {

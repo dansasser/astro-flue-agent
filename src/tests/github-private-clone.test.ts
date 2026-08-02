@@ -1,8 +1,10 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import type { ToolDefinition } from '@flue/runtime';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import { InMemoryCodingRepoRegistry } from '../engine/workers/coding-worker/repo/repo-registry.js';
 import { createCodingRepoWorkflowTools } from '../engine/workers/coding-worker/tools/coding-repo-workflow-tools.js';
@@ -40,7 +42,7 @@ test('public GitHub HTTPS clone succeeds anonymously without loading PAT credent
   const clone = getTool(tools, 'coding_repo_clone');
 
   try {
-    const githubBlocked = JSON.parse(await clone.execute({
+    const githubBlocked = JSON.parse(await runTool(clone, {
       taskId: 'clone-github', remoteUrl: 'https://github.com/owner/public.git', slug: 'public',
     })) as { request: { id: string } };
     await approvalService.recordDecision({
@@ -49,7 +51,7 @@ test('public GitHub HTTPS clone succeeds anonymously without loading PAT credent
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    await clone.execute({ taskId: 'clone-github', remoteUrl: 'https://github.com/owner/public.git', slug: 'public' });
+    await runTool(clone, { taskId: 'clone-github', remoteUrl: 'https://github.com/owner/public.git', slug: 'public' });
     assert.equal(calls.length, 1);
     assert.equal(credentialLoads, 0);
     assert.deepEqual(calls.at(-1)?.env, {
@@ -99,7 +101,7 @@ test('private GitHub HTTPS clone retries with command-scoped PAT credentials', a
   const clone = getTool(tools, 'coding_repo_clone');
 
   try {
-    const blocked = JSON.parse(await clone.execute({
+    const blocked = JSON.parse(await runTool(clone, {
       taskId: 'clone-private',
       remoteUrl: 'https://github.com/owner/private.git',
       slug: 'private',
@@ -110,7 +112,7 @@ test('private GitHub HTTPS clone retries with command-scoped PAT credentials', a
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    await clone.execute({
+    await runTool(clone, {
       taskId: 'clone-private',
       remoteUrl: 'https://github.com/owner/private.git',
       slug: 'private',
@@ -129,10 +131,8 @@ test('private GitHub HTTPS clone retries with command-scoped PAT credentials', a
   }
 });
 
-function getTool(tools: unknown[], name: string): {
-  execute(args: { taskId: string; remoteUrl: string; slug: string }): Promise<string>;
-} {
-  const tool = (tools as Array<{ name: string; execute: unknown }>).find((candidate) => candidate.name === name);
+function getTool(tools: ToolDefinition[], name: string): ToolDefinition {
+  const tool = tools.find((candidate) => candidate.name === name);
   assert.ok(tool, `Missing ${name} tool.`);
-  return tool as unknown as { execute(args: { taskId: string; remoteUrl: string; slug: string }): Promise<string> };
+  return tool;
 }

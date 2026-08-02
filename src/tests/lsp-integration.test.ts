@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -46,7 +47,7 @@ test('lsp_document_symbols with real typescript-language-server', async () => {
   });
 
   const docSymbolsTool = getTool(tools, 'lsp_document_symbols');
-  const raw = await docSymbolsTool.execute({ path: 'src/calc.ts' });
+  const raw = await runTool(docSymbolsTool, { path: 'src/calc.ts' });
   const output = JSON.parse(raw) as {
     provider: string;
     lspAvailable: boolean;
@@ -87,8 +88,8 @@ test('lsp_go_to_definition with real typescript-language-server', async () => {
   // `add` at line 3 character 15 in main.ts. typescript-language-server resolves
   // it to the declaration in calc.ts.
   const docTool = getTool(tools, 'lsp_document_symbols');
-  await docTool.execute({ path: 'src/calc.ts' });
-  const raw = await defTool.execute({ path: 'src/main.ts', line: 3, character: 16 });
+  await runTool(docTool, { path: 'src/calc.ts' });
+  const raw = await runTool(defTool, { path: 'src/main.ts', line: 3, character: 16 });
   const output = JSON.parse(raw) as {
     provider: string;
     lspAvailable: boolean;
@@ -126,7 +127,7 @@ test('lsp_document_symbols with real pyright-langserver', async () => {
   });
 
   const docSymbolsTool = getTool(tools, 'lsp_document_symbols');
-  const raw = await docSymbolsTool.execute({ path: 'greeter.py' });
+  const raw = await runTool(docSymbolsTool, { path: 'greeter.py' });
   const output = JSON.parse(raw) as {
     provider: string;
     lspAvailable: boolean;
@@ -164,7 +165,7 @@ test('lsp_hover with real pyright-langserver', async () => {
 
   const hoverTool = getTool(tools, 'lsp_hover');
   // Position of `make_greeter` call in main.py on line 4 (0-indexed line 3)
-  const raw = await hoverTool.execute({ path: 'main.py', line: 4, character: 15 });
+  const raw = await runTool(hoverTool, { path: 'main.py', line: 4, character: 15 });
   const output = JSON.parse(raw) as {
     provider: string;
     lspAvailable: boolean;

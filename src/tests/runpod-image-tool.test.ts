@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -77,7 +78,7 @@ test('persistImageArtifact writes row and indexes memory', () => {
 test('record_image_artifact tool rejects a nonexistent eventId', async () => {
   await assert.rejects(
     async () => {
-      await recordImageArtifactTool.execute({
+      await runTool(recordImageArtifactTool, {
         eventId: 'nonexistent-event-id',
         artifactId: randomUUID(),
         filePath: '/tmp/test.png',

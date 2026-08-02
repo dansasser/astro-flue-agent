@@ -8,7 +8,7 @@ export function createCodingTriageTools(): ToolDefinition[] {
       name: 'coding_triage_submit_result',
       description:
         'Submit the final structured triage result containing an explicit plan, files to inspect, and the recommended execution path.',
-      parameters: v.object({
+      input: v.object({
         plan: v.array(
           v.object({
             id: v.string(),
@@ -38,7 +38,7 @@ export function createCodingTriageTools(): ToolDefinition[] {
           v.literal('manual'),
         ]),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const result: CodingTriageResult = {
           plan: args.plan || [],
           filesToInspect: args.filesToInspect || [],

@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -25,7 +26,7 @@ test('memory checklist tools trust boundary: missing eventId is rejected', async
   const { cleanup } = await setupMemoryToolTest();
   try {
     await assert.rejects(
-      createChecklistTool.execute({ eventId: 'missing-event-id', title: 't', slug: 's' } as never),
+      runTool(createChecklistTool, { eventId: 'missing-event-id', title: 't', slug: 's' } as never),
       /trusted eventId/,
     );
   } finally {
@@ -37,35 +38,35 @@ test('create_checklist + add_checklist_item + list_checklists round-trip through
   const { event, cleanup } = await setupMemoryToolTest({ projectId: 'proj-cl' });
   try {
     const created = JSON.parse(
-      await createChecklistTool.execute({ eventId: event.id, title: 'Phase 0', slug: 'phase-0', items: [{ title: 'Schemas' }] }),
+      await runTool(createChecklistTool, { eventId: event.id, title: 'Phase 0', slug: 'phase-0', items: [{ title: 'Schemas' }] }),
     ) as { checklist: { id: string; items: { id: string; title: string }[] } };
     const checklistId = created.checklist.id;
     const firstItemId = created.checklist.items[0].id;
 
     const withChild = JSON.parse(
-      await addChecklistItemTool.execute({ eventId: event.id, checklistId, parentId: firstItemId, title: 'Nested' }),
+      await runTool(addChecklistItemTool, { eventId: event.id, checklistId, parentId: firstItemId, title: 'Nested' }),
     ) as { checklist: { items: { id: string; title: string; parentId?: string; children: unknown[] }[] } };
     const nested = findInTree(withChild.checklist.items as TreeItem[], 'Nested');
     assert.ok(nested, 'rendered tree contains the nested item');
     assert.equal(nested?.parentId, firstItemId);
 
     const moved = JSON.parse(
-      await moveChecklistItemTool.execute({ eventId: event.id, checklistId, itemId: nested?.id ?? '', ordinal: 5 }),
+      await runTool(moveChecklistItemTool, { eventId: event.id, checklistId, itemId: nested?.id ?? '', ordinal: 5 }),
     ) as { checklist: { items: TreeItem[] } };
     assert.ok(findInTree(moved.checklist.items, 'Nested'), 'moved item still present');
 
-    const archived = JSON.parse(await archiveChecklistTool.execute({ eventId: event.id, id: checklistId })) as {
+    const archived = JSON.parse(await runTool(archiveChecklistTool, { eventId: event.id, id: checklistId })) as {
       checklist: { status: string };
     };
     assert.equal(archived.checklist.status, 'archived');
 
-    const listed = JSON.parse(await listChecklistsTool.execute({ eventId: event.id, includeArchived: true })) as {
+    const listed = JSON.parse(await runTool(listChecklistsTool, { eventId: event.id, includeArchived: true })) as {
       checklists: { id: string }[];
     };
     assert.ok(listed.checklists.some((c) => c.id === checklistId));
 
     // Default list (excludeArchived) should not include the archived checklist.
-    const activeListed = JSON.parse(await listChecklistsTool.execute({ eventId: event.id })) as {
+    const activeListed = JSON.parse(await runTool(listChecklistsTool, { eventId: event.id })) as {
       checklists: { id: string; status: string }[];
     };
     assert.ok(!activeListed.checklists.some((c) => c.id === checklistId));
@@ -78,10 +79,10 @@ test('update_checklist_item changes item status', async () => {
   const { event, cleanup } = await setupMemoryToolTest({ projectId: 'proj-cl2' });
   try {
     const created = JSON.parse(
-      await createChecklistTool.execute({ eventId: event.id, title: 'CL', slug: 'cl', items: [{ title: 'A' }] }),
+      await runTool(createChecklistTool, { eventId: event.id, title: 'CL', slug: 'cl', items: [{ title: 'A' }] }),
     ) as { checklist: { id: string; items: { id: string }[] } };
     const updated = JSON.parse(
-      await updateChecklistItemTool.execute({
+      await runTool(updateChecklistItemTool, {
         eventId: event.id,
         checklistId: created.checklist.id,
         itemId: created.checklist.items[0].id,

@@ -87,8 +87,8 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
       name: 'coding_repo_discover',
       description:
         'Discover registered and checked-out coding repositories under workspaceRoot/repos and workspaceRoot/projects.',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const sandbox = await getSandbox();
         const registry = await getRepoRegistry();
         const registered = await registry.list();
@@ -104,7 +104,7 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
       name: 'coding_repo_register',
       description:
         'Approval-gated registration of an existing workspace repository in the coding-worker repo registry.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         slug: v.string(),
         repoRelativePath: v.string(),
@@ -113,7 +113,7 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
         repo: v.optional(v.string()),
         defaultBranch: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const slug = normalizeProjectSlug(requireString(args.slug, 'slug'));
         const repoRelativePath = normalizeRepoWorkspaceRelativePath(
           requireString(args.repoRelativePath, 'repoRelativePath'),
@@ -158,7 +158,7 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
       name: 'coding_repo_clone',
       description:
         'Approval-gated git clone into workspaceRoot/repos/<slug> and registration in the coding-worker repo registry.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         remoteUrl: v.string(),
         slug: v.optional(v.string()),
@@ -167,7 +167,7 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
         repo: v.optional(v.string()),
         defaultBranch: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const remoteUrl = normalizeRepoUrl(requireString(args.remoteUrl, 'remoteUrl'));
         const slug = normalizeProjectSlug(readString(args.slug) ?? repoSlugFromRemote(remoteUrl));
         const branch = readString(args.branch);
@@ -243,8 +243,8 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
     defineTool({
       name: 'coding_repo_git_state',
       description: 'Read branch, dirty state, and changed files for the selected coding-worker repo scope.',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const sandbox = await getSandbox();
         const status = await sandbox.execFile('git', ['status', '--short', '--branch'], {
           timeoutSeconds: 30,
@@ -261,12 +261,12 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
     defineTool({
       name: 'coding_repo_fetch',
       description: 'Approval-gated git fetch for the selected coding-worker repo scope.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         remote: v.optional(v.string()),
         prune: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const rawRemote = readString(args.remote) ?? 'origin';
         if (rawRemote.startsWith('-')) {
           return toInvalidOperandResult('remote', rawRemote);
@@ -294,13 +294,13 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
     defineTool({
       name: 'coding_repo_sync',
       description: 'Approval-gated git pull --ff-only for the selected coding-worker repo scope.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         remote: v.optional(v.string()),
         branch: v.optional(v.string()),
         prune: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const rawRemote = readString(args.remote) ?? 'origin';
         if (rawRemote.startsWith('-')) {
           return toInvalidOperandResult('remote', rawRemote);
@@ -345,13 +345,13 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
     defineTool({
       name: 'coding_repo_branch_create',
       description: 'Approval-gated branch creation in the selected coding-worker repo scope.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         branch: v.string(),
         startPoint: v.optional(v.string()),
         checkout: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const branch = normalizeGitRef(requireString(args.branch, 'branch'), 'branch');
         const startPoint = readString(args.startPoint);
         if (startPoint !== undefined && startPoint.startsWith('-')) {
@@ -387,14 +387,14 @@ export function createCodingRepoWorkflowTools(options: CodingRepoWorkflowToolsOp
     defineTool({
       name: 'coding_repo_worktree_create',
       description: 'Approval-gated git worktree creation under workspaceRoot/repos/<slug>.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         branch: v.string(),
         directoryName: v.optional(v.string()),
         startPoint: v.optional(v.string()),
         createBranch: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const branch = normalizeGitRef(requireString(args.branch, 'branch'), 'branch');
         const rawStartPoint = readString(args.startPoint);
         if (rawStartPoint !== undefined && rawStartPoint.startsWith('-')) {

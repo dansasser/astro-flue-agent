@@ -50,12 +50,13 @@ test('worker-loader: loads worker with workspace files', async () => {
   const records = [makeWorkerRecord(workerId)];
   const result = await loadUserWorkers(records, { GOROMBO_CAPABILITIES_DIR: tempCapabilitiesDir });
 
-  assert.equal(result.profiles.length, 1, 'should load 1 profile');
-  assert.equal(result.profiles[0].name, 'test-worker', 'profile name should match');
-  assert.ok(result.profiles[0].instructions, 'profile should have instructions');
+  assert.equal(result.subagents.length, 1, 'should load 1 subagent');
+  assert.equal(result.subagents[0].name, 'test-worker', 'subagent name should match');
+  const instructions = result.subagents[0].agent();
+  assert.ok(instructions, 'subagent should have instructions');
   assert.ok(
-    result.profiles[0].instructions.includes('test worker'),
-    `instructions should include workspace content, got: ${result.profiles[0].instructions?.slice(0, 200)}`,
+    instructions.includes('test worker'),
+    `instructions should include workspace content, got: ${instructions.slice(0, 200)}`,
   );
   assert.equal(result.errors.length, 0, 'should have no errors');
 });
@@ -79,7 +80,7 @@ test('worker-loader: fails closed when workspace is missing', async () => {
   const records = [makeWorkerRecord(workerId)];
   const result = await loadUserWorkers(records, { GOROMBO_CAPABILITIES_DIR: tempCapabilitiesDir });
 
-  assert.equal(result.profiles.length, 0, 'should load 0 profiles (fail closed)');
+  assert.equal(result.subagents.length, 0, 'should load 0 subagents (fail closed)');
   assert.equal(result.errors.length, 1, 'should report 1 error');
   assert.ok(result.errors[0].error.includes('workspace'), `error should mention workspace, got: ${result.errors[0].error}`);
 });
@@ -89,20 +90,20 @@ test('worker-loader: reports error for invalid module', async () => {
   const workerDir = resolve(tempCapabilitiesDir, 'workers', workerId);
   mkdirSync(workerDir, { recursive: true });
 
-  // Write an invalid module (no defineAgentProfile export)
+  // Write an invalid module with no defineSubagent export.
   const { writeFileSync } = await import('node:fs');
   writeFileSync(resolve(workerDir, 'index.mjs'), 'export default {};\n');
 
   const records = [makeWorkerRecord(workerId)];
   const result = await loadUserWorkers(records, { GOROMBO_CAPABILITIES_DIR: tempCapabilitiesDir });
 
-  assert.equal(result.profiles.length, 0, 'should load 0 profiles');
+  assert.equal(result.subagents.length, 0, 'should load 0 subagents');
   assert.ok(result.errors.length >= 1, 'should report at least 1 error');
 });
 
 test('worker-loader: returns empty for empty input', async () => {
   const result = await loadUserWorkers([], { GOROMBO_CAPABILITIES_DIR: tempCapabilitiesDir });
-  assert.equal(result.profiles.length, 0);
+  assert.equal(result.subagents.length, 0);
   assert.equal(result.errors.length, 0);
 });
 

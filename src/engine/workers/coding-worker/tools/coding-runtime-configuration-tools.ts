@@ -27,8 +27,8 @@ export function createCodingRuntimeConfigurationTools(
       name: 'coding_runtime_config_status',
       description:
         'List supported SIM-ONE runtime configuration metadata and redacted configured/missing status. Never returns values.',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const loadResult = inspectRuntimeEnvironmentFile(options.configPath);
         const statuses = new Map(
           runtimeEnvironmentStatus(loadResult).map((status) => [
@@ -61,8 +61,8 @@ export function createCodingRuntimeConfigurationTools(
       name: 'coding_runtime_config_validate',
       description:
         'Validate the canonical SIM-ONE runtime configuration and return only redacted counts, key names, and deprecated aliases.',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const loadResult = inspectRuntimeEnvironmentFile(options.configPath);
         return JSON.stringify(
           {
@@ -83,13 +83,13 @@ export function createCodingRuntimeConfigurationTools(
       name: 'coding_runtime_config_update',
       description:
         'Request an approval-gated update or removal of one registered SIM-ONE runtime configuration key. A secret set may use only the exact value the user explicitly supplied for this requested change; the tool never returns configured values.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         key: v.string(),
         operation: v.picklist(['set', 'remove']),
         value: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const value = args.operation === 'remove' ? '' : args.value;
         if (args.operation === 'set' && value === undefined) {
           throw new Error('value is required for a set operation.');

@@ -38,7 +38,6 @@ export async function loadUserTools(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({ id: record.id, error: message });
-      console.error(`[capabilities] Tool loader failed for ${record.id}: ${message}`);
     }
   }
 
@@ -51,7 +50,7 @@ function isToolLike(value: unknown): value is ToolDefinition {
     value !== null &&
     'name' in value &&
     typeof (value as { name: unknown }).name === 'string' &&
-    'execute' in value &&
-    typeof (value as { execute: unknown }).execute === 'function'
+    'run' in value &&
+    typeof (value as { run: unknown }).run === 'function'
   );
 }

@@ -175,7 +175,7 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
     mkdirSync(wrappedTool, { recursive: true });
     writeFileSync(
       join(wrappedTool, 'index.mjs'),
-      "import { defineTool } from '@flue/runtime';\nexport const makeTool = () => defineTool({ name: 'wrapped', parameters: {}, execute: async () => 'ok' });\n",
+      "import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport const makeTool = () => defineTool({ name: 'wrapped', description: 'Wrapped fixture.', input: v.object({}), run: async () => 'ok' });\n",
     );
     assert.throws(
       () =>
@@ -314,7 +314,7 @@ test('capability lifecycle rejects invalid contracts and secret values', () => {
         Buffer.from('//'),
         Buffer.from([0]),
         Buffer.from(
-          `\nimport { defineTool } from '@flue/agent';\nexport default defineTool({ name: 'nul-tool', description: '', parameters: {}, execute: async () => 'ok' });\n`,
+          `\nimport { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport default defineTool({ name: 'nul-tool', description: 'NUL fixture.', input: v.object({}), run: async () => 'ok' });\n`,
         ),
       ]),
     );
@@ -914,13 +914,13 @@ function createSourceFixture(root: string, kind: Exclude<CapabilityKind, 'mcp'>,
     case 'tool':
       writeFileSync(
         join(source, 'index.mjs'),
-        "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
+        "import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport default defineTool({ name: 'fixture', description: 'Test fixture.', input: v.object({}), run: async () => 'ok' });\n",
       );
       break;
     case 'worker':
       writeFileSync(
         join(source, 'index.mjs'),
-        "import { defineAgentProfile } from '@flue/runtime';\nexport default defineAgentProfile({ name: 'fixture', instructions: 'test' });\n",
+        "import { defineSubagent } from '@flue/runtime';\nfunction FixtureWorker() { return 'test'; }\nexport default defineSubagent({ name: 'fixture', description: 'Test fixture.', agent: FixtureWorker });\n",
       );
       mkdirSync(join(source, 'workspace'), { recursive: true });
       writeFileSync(join(source, 'workspace', 'AGENTS.md'), '# Fixture worker\n');

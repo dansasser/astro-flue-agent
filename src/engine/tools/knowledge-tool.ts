@@ -10,13 +10,13 @@ export const addKnowledgeTool = defineTool({
   name: 'add_knowledge',
   description:
     'Add a piece of knowledge to the searchable vector knowledge base. Use this when the user shares a fact, preference, instruction, or context that should be remembered and retrievable later.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     title: v.string(),
     content: v.string(),
     tags: v.optional(v.array(v.string())),
   }),
-  execute: async ({ eventId, title, content, tags }) => {
+  run: async ({ data: { eventId, title, content, tags } }) => {
     const event = getTrustedKnowledgeEvent(eventId);
 
     const actorId = event.actor.id;

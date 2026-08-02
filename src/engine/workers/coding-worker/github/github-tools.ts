@@ -67,14 +67,14 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_read_context',
       description:
         'Read GitHub issue, pull request, and check context for a coding-worker task. This is a read-only GitHub capability.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         issueNumber: v.optional(v.number()),
         pullRequestNumber: v.optional(v.number()),
       }),
-      execute: async (args) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'read_context', 'Read GitHub context', async () => {
+      run: async ({ data: args }) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'read_context', 'Read GitHub context', async () => {
         const client = options.client;
         if (!client) {
           return toGithubResult({
@@ -120,7 +120,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_verify_pr',
       description:
         'Read and verify GitHub PR base, head, draft status, and optionally checks for a coding-worker task.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
@@ -130,7 +130,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         expectedDraft: v.optional(v.boolean()),
         requireChecksPassed: v.optional(v.boolean()),
       }),
-      execute: async (args) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'verify_pr', 'Verify GitHub PR', async () => {
+      run: async ({ data: args }) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'verify_pr', 'Verify GitHub PR', async () => {
         const client = options.client;
         if (!client) {
           return toGithubResult({
@@ -187,13 +187,13 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_list_issues',
       description: 'List GitHub issues for a repository. Read-only.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         state: v.optional(v.string()),
       }),
-      execute: async (args) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'list_issues', 'List GitHub issues', async () => {
+      run: async ({ data: args }) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'list_issues', 'List GitHub issues', async () => {
         const client = options.client;
         if (!client?.listIssues) {
           return toGithubResult({
@@ -230,13 +230,13 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_list_prs',
       description: 'List GitHub pull requests for a repository. Read-only.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         state: v.optional(v.string()),
       }),
-      execute: async (args) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'list_prs', 'List GitHub PRs', async () => {
+      run: async ({ data: args }) => withGithubToolProgress(options, readString(args.taskId) ?? 'unknown', 'list_prs', 'List GitHub PRs', async () => {
         const client = options.client;
         if (!client?.listPullRequests) {
           return toGithubResult({
@@ -274,14 +274,14 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_branch_from_pr',
       description:
         'Approval-gated local branch creation from a GitHub pull request head through gh CLI. Requires approval for `${taskId}:repo.branch.create`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         pullRequestNumber: v.number(),
         branchName: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'branch_from_pr', 'Create branch from PR', async () => {
           if (!options.client?.createBranchFromPullRequest) {
@@ -335,7 +335,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_review_comment',
       description:
         'Approval-gated line-specific GitHub PR review comment creation. Requires approval for `${taskId}:github.review_comment`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
@@ -347,7 +347,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         commitId: v.optional(v.string()),
         inReplyTo: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'review_comment', 'Create review comment', async () => {
           if (!options.client?.createReviewComment) {
@@ -411,14 +411,14 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_rerun_check',
       description:
         'Approval-gated GitHub Actions workflow-run rerun. Requires approval for `${taskId}:github.check.rerun`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         runId: v.string(),
         rerunFailedJobs: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'rerun_check', 'Rerun GitHub check', async () => {
           if (!options.client?.rerunCheck) {
@@ -478,13 +478,13 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_fork_repo',
       description:
         'Approval-gated GitHub repository fork creation. Requires approval for `${taskId}:github.fork_repo`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         organization: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'fork_repo', 'Fork GitHub repository', async () => {
           if (!options.client?.forkRepository) {
@@ -541,7 +541,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
       name: 'coding_github_request_approval',
       description:
         'Create an approval request for a GitHub, git, or repo side effect. This tool does not perform the side effect.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         actionType: v.union([
           v.literal('git.commit'),
@@ -568,7 +568,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         risk: v.string(),
         target: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'approve_request', 'Request approval', async () => {
           const request = await approvalService.createRequest({
@@ -596,7 +596,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_update_pr',
       description: 'Approval-gated GitHub PR metadata update through the configured GitHub client.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
@@ -605,7 +605,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         body: v.optional(v.string()),
         base: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'update_pr', 'Update GitHub PR', async () => {
           if (!options.client?.updatePullRequest) {
@@ -671,14 +671,14 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_set_pr_ready',
       description: 'Approval-gated GitHub PR ready/draft status update.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         pullRequestNumber: v.number(),
         ready: v.boolean(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'ready_pr', 'Set PR ready/draft status', async () => {
           if (!options.client?.setPullRequestReady) {
@@ -735,14 +735,14 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_comment_pr',
       description: 'Approval-gated GitHub PR comment creation.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
         pullRequestNumber: v.number(),
         body: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'comment', 'Comment on GitHub PR', async () => {
           if (!options.client?.commentOnPullRequest) {
@@ -797,7 +797,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_update_issue',
       description: 'Approval-gated GitHub issue metadata update.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
@@ -805,7 +805,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         title: v.optional(v.string()),
         body: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'update_issue', 'Update GitHub issue', async () => {
           if (!options.client?.updateIssue) {
@@ -866,7 +866,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
     defineTool({
       name: 'coding_github_update_review_thread',
       description: 'Approval-gated GitHub PR review-thread reply or resolution update.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.optional(v.string()),
         owner: v.string(),
         repo: v.string(),
@@ -876,7 +876,7 @@ export function createCodingGitHubTools(input?: GitHubClient | CodingGitHubTools
         replyBody: v.optional(v.string()),
         resolve: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = readString(args.taskId) ?? 'unknown';
         return withGithubToolProgress(options, taskId, 'update_review_thread', 'Update GitHub review thread', async () => {
           if (!options.client?.updateReviewThread) {
