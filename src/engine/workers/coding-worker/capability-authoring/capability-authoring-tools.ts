@@ -78,13 +78,13 @@ export function createCodingCapabilityAuthoringTools(
       name: 'coding_capability_classify',
       description:
         'Record a protocol-governed capability classification as skill, tool, worker, MCP server, or MCP connection before source authoring.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         protocolBundle: protocolBundleSchema(),
         authoringKind: authoringKindSchema,
         rationale: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const protocolContext = compileCapabilityProtocolContext(
           args.protocolBundle as unknown as ProtocolBundle,
         );
@@ -109,7 +109,7 @@ export function createCodingCapabilityAuthoringTools(
       name: 'coding_capability_scaffold',
       description:
         'Create an approval-gated capability source package inside the selected Coding Worker project or repository. Supports skill, tool, worker, MCP server, and MCP connection packages and never writes the runtime registry.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         protocolBundle: protocolBundleSchema(),
         authoringKind: authoringKindSchema,
@@ -119,7 +119,7 @@ export function createCodingCapabilityAuthoringTools(
         packagePath: v.optional(v.string()),
         requiredConfigurationKeys: v.optional(v.array(v.string())),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const protocolContext = compileCapabilityProtocolContext(
           args.protocolBundle as unknown as ProtocolBundle,
         );
@@ -223,8 +223,8 @@ export function createCodingCapabilityAuthoringTools(
       name: 'coding_capability_validate',
       description:
         'Validate a capability package inside the selected Coding Worker target against the applicable protocol bundle, Flue/SIM-ONE contracts, secret scan, host-path scan, and deterministic digest without touching the runtime registry.',
-      parameters: validationSchema(),
-      execute: async (args) => {
+      input: validationSchema(),
+      run: async ({ data: args }) => {
         const validation = validateCapabilityPackage({
           scopePath: target.scopePath,
           packagePath: normalizePackagePath(args.packagePath),
@@ -248,12 +248,12 @@ export function createCodingCapabilityAuthoringTools(
       name: 'coding_capability_test',
       description:
         'Run a bounded test command inside a protocol-validated capability package and attest the exact content digest for handoff. Git and GitHub writes are blocked.',
-      parameters: v.object({
+      input: v.object({
         ...validationSchemaEntries(),
         command: v.string(),
         timeoutSeconds: v.optional(v.number()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const packagePath = normalizePackagePath(args.packagePath);
         const protocolBundle = args.protocolBundle as unknown as ProtocolBundle;
         const validation = validateCapabilityPackage({
@@ -345,7 +345,7 @@ export function createCodingCapabilityAuthoringTools(
       name: 'coding_capability_prepare_handoff',
       description:
         'Validate a workspace capability package and return the portable typed handoff consumed by capability-manager. Does not install, enable, or mutate the runtime registry.',
-      parameters: v.object({
+      input: v.object({
         ...validationSchemaEntries(),
         name: v.string(),
         description: v.string(),
@@ -353,7 +353,7 @@ export function createCodingCapabilityAuthoringTools(
         requestedActivation: v.optional(v.picklist(['enabled', 'disabled'])),
         operation: v.optional(v.picklist(['validate', 'add', 'update'])),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const packagePath = normalizePackagePath(args.packagePath);
         const validation = validateCapabilityPackage({
           scopePath: target.scopePath,

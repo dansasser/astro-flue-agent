@@ -8,7 +8,7 @@ export function createCodingImplementerTools(): ToolDefinition[] {
       name: 'coding_implementer_submit_result',
       description:
         'Submit the final structured implementation result containing file edits, files written, and commands needed to verify them. The result must match the CodingImplementerResult schema exactly; invalid submissions will be rejected.',
-      parameters: v.object({
+      input: v.object({
         fileEdits: v.array(
           v.object({
             path: v.string(),
@@ -34,7 +34,7 @@ export function createCodingImplementerTools(): ToolDefinition[] {
           })
         ),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const result = v.parse(CodingImplementerResultSchema, args);
         return JSON.stringify({ status: 'submitted', result }, null, 2);
       },

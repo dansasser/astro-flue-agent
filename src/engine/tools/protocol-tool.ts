@@ -26,7 +26,7 @@ export interface ProtocolToolInput {
 export const loadProtocolsTool = defineTool({
   name: 'load_protocols',
   description: 'Load applicable protocol directives from the SQLite protocol store.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     connector: v.optional(v.string()),
     messageKind: v.optional(v.string()),
@@ -38,7 +38,7 @@ export const loadProtocolsTool = defineTool({
     workflow: v.optional(v.string()),
     task: v.optional(v.string()),
   }),
-  execute: async (input) => {
+  run: async ({ data: input }) => {
     const event = createProtocolLookupEvent(input as ProtocolToolInput);
     const bundle = await provider.loadApplicable(event);
 

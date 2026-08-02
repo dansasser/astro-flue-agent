@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { webResearchTool } from '../engine/tools/web-research-tool.js';
@@ -39,7 +40,7 @@ test('web_research tool accepts string budget controls and webFetch mode', async
       );
 
     const result = JSON.parse(
-      await webResearchTool.execute({
+      await runTool(webResearchTool, {
         eventId: seeded.id,
         text: 'Find the official source.',
         depth: 'basic',
@@ -97,7 +98,7 @@ test('web_research tool falls back to explicit actor/conversation when event is 
     };
 
     const result = JSON.parse(
-      await webResearchTool.execute({
+      await runTool(webResearchTool, {
         eventId: 'nonexistent-event-id',
         text: 'query',
         actorId: 'tui-user',

@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import {
   existsSync,
@@ -51,7 +52,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
           entry.kind === 'mcp-connection' ? ['GOROMBO_MCP_TOKEN'] : [],
       };
       const classification = JSON.parse(
-        await fixture.classify.execute({
+        await runTool(fixture.classify, {
           taskId: args.taskId,
           protocolBundle: args.protocolBundle,
           authoringKind: entry.kind,
@@ -70,7 +71,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
       );
 
       const pending = JSON.parse(
-        await fixture.scaffold.execute(args),
+        await runTool(fixture.scaffold, args),
       ) as { blocked: boolean; request: { id: string; actionType: string } };
       assert.equal(pending.blocked, true);
       assert.equal(pending.request.actionType, 'file.edit');
@@ -83,12 +84,12 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         principal: { id: 'operator-1', roles: ['operator'] },
       });
       const created = JSON.parse(
-        await fixture.scaffold.execute(args),
+        await runTool(fixture.scaffold, args),
       ) as { status: string };
       assert.equal(created.status, 'created');
 
       const firstValidation = JSON.parse(
-        await fixture.validate.execute({
+        await runTool(fixture.validate, {
           taskId: args.taskId,
           protocolBundle: args.protocolBundle,
           authoringKind: entry.kind,
@@ -109,7 +110,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         protocolContext: { directives: Array<{ id: string; rules: string[] }> };
       };
       const secondValidation = JSON.parse(
-        await fixture.validate.execute({
+        await runTool(fixture.validate, {
           taskId: args.taskId,
           protocolBundle: args.protocolBundle,
           authoringKind: entry.kind,
@@ -135,7 +136,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
       if (entry.kind === 'skill') {
         await assert.rejects(
           () =>
-            fixture.handoff.execute({
+            runTool(fixture.handoff, {
               taskId: args.taskId,
               protocolBundle: args.protocolBundle,
               authoringKind: entry.kind,
@@ -150,7 +151,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
         );
       }
       const testEvidence = JSON.parse(
-        await fixture.testCapability.execute({
+        await runTool(fixture.testCapability, {
           taskId: args.taskId,
           protocolBundle: args.protocolBundle,
           authoringKind: entry.kind,
@@ -170,7 +171,7 @@ test('Coding Worker scaffolds, validates, and prepares protocol-governed handoff
       assert.equal(testEvidence.contentDigest, firstValidation.contentDigest);
 
       const handoff = JSON.parse(
-        await fixture.handoff.execute({
+        await runTool(fixture.handoff, {
           taskId: args.taskId,
           protocolBundle: args.protocolBundle,
           authoringKind: entry.kind,
@@ -247,7 +248,7 @@ test('capability authoring validation fails closed without an applicable protoco
   try {
     await assert.rejects(
       () =>
-        fixture.validate.execute({
+        runTool(fixture.validate, {
           taskId: 'missing-protocols',
           authoringKind: 'skill',
           id: 'missing-protocols',
@@ -284,7 +285,7 @@ test('denied capability scaffolding and escaped paths never mutate the workspace
       packagePath: 'capability-packages/denied-tool',
     };
     const pending = JSON.parse(
-      await fixture.scaffold.execute(args),
+      await runTool(fixture.scaffold, args),
     ) as { request: { id: string } };
     await fixture.approvalService.recordDecision({
       requestId: pending.request.id,
@@ -293,14 +294,14 @@ test('denied capability scaffolding and escaped paths never mutate the workspace
       principal: { id: 'operator-1', roles: ['operator'] },
     });
     const denied = JSON.parse(
-      await fixture.scaffold.execute(args),
+      await runTool(fixture.scaffold, args),
     ) as { blocked: boolean };
     assert.equal(denied.blocked, true);
     assert.equal(existsSync(join(fixture.workspaceRoot, args.packagePath)), false);
 
     await assert.rejects(
       () =>
-        fixture.scaffold.execute({
+        runTool(fixture.scaffold, {
           ...args,
           taskId: 'escaped-scaffold',
           packagePath: '../outside-workspace',
@@ -309,7 +310,7 @@ test('denied capability scaffolding and escaped paths never mutate the workspace
     );
     await assert.rejects(
       () =>
-        fixture.scaffold.execute({
+        runTool(fixture.scaffold, {
           ...args,
           taskId: 'absolute-scaffold',
           packagePath: join(tmpdir(), 'outside-workspace'),
@@ -327,7 +328,7 @@ test('existing capability scaffolds validate protocols without creating no-op ap
   try {
     mkdirSync(join(fixture.workspaceRoot, packagePath), { recursive: true });
     const result = JSON.parse(
-      await fixture.scaffold.execute({
+      await runTool(fixture.scaffold, {
         taskId: 'existing-scaffold',
         protocolBundle: createProtocolBundle('existing-scaffold'),
         authoringKind: 'tool',
@@ -346,7 +347,7 @@ test('existing capability scaffolds validate protocols without creating no-op ap
 
     await assert.rejects(
       () =>
-        fixture.scaffold.execute({
+        runTool(fixture.scaffold, {
           taskId: 'existing-malformed-protocol',
           protocolBundle: {
             eventId: 'existing-malformed-protocol',
@@ -499,7 +500,7 @@ async function approveAndScaffold(
   },
 ): Promise<void> {
   const pending = JSON.parse(
-    await fixture.scaffold.execute(args),
+    await runTool(fixture.scaffold, args),
   ) as { request: { id: string } };
   await fixture.approvalService.recordDecision({
     requestId: pending.request.id,
@@ -507,7 +508,7 @@ async function approveAndScaffold(
     decidedBy: 'operator-1',
     principal: { id: 'operator-1', roles: ['operator'] },
   });
-  await fixture.scaffold.execute(args);
+  await runTool(fixture.scaffold, args);
 }
 
 function createProtocolBundle(eventId: string): ProtocolBundle {

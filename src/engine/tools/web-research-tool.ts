@@ -14,7 +14,7 @@ export const webResearchTool = defineTool({
   name: 'web_research',
   description:
     'Researcher-only tool that runs the web research workflow with query planning, caching, web search, page fetch, source packing, and confidence metadata. Scope is read from the trusted eventId when available; falls back to explicit actorId/conversationId when the event is not persisted (e.g. direct TUI agent sessions).',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     text: v.string(),
     actorId: v.optional(v.string()),
@@ -29,7 +29,7 @@ export const webResearchTool = defineTool({
     minSources: v.optional(v.union([v.number(), v.string()])),
     maxIterations: v.optional(v.union([v.number(), v.string()])),
   }),
-  execute: async ({
+  run: async ({ data: {
     eventId,
     text,
     actorId: fallbackActorId,
@@ -43,7 +43,7 @@ export const webResearchTool = defineTool({
     freshness,
     minSources,
     maxIterations,
-  }) => {
+  } }) => {
     const event = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(eventId);
     const actorId = event?.actor.id ?? fallbackActorId ?? 'researcher';
     const conversationId = event?.conversation.id ?? fallbackConversationId ?? 'researcher-session';

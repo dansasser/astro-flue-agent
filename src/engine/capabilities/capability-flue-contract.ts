@@ -15,7 +15,7 @@ const ts = loadTypeScript();
 
 export function hasExportedFlueFactory(
   content: string,
-  factoryName: 'defineTool' | 'defineAgentProfile',
+  factoryName: 'defineTool' | 'defineSubagent',
 ): boolean {
   const source = ts.createSourceFile(
     'index.mjs',

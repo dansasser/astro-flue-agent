@@ -849,9 +849,9 @@ function validateSourceContract(
         throw new Error(`Worker capability ${id} must include index.mjs.`);
       }
       const content = readFileSync(modulePath, 'utf8');
-      if (!hasExportedFlueFactory(content, 'defineAgentProfile')) {
+      if (!hasExportedFlueFactory(content, 'defineSubagent')) {
         throw new Error(
-          `Worker capability ${id} must export a direct Flue defineAgentProfile(...) result.`,
+          `Worker capability ${id} must export a direct Flue defineSubagent(...) result.`,
         );
       }
       const workspace = resolve(path, 'workspace');
@@ -863,7 +863,7 @@ function validateSourceContract(
           `Worker capability ${id} must include a workspace directory with a recognized persona file.`,
         );
       }
-      return ['worker-index', 'flue-agent-profile-export', 'worker-workspace'];
+      return ['worker-index', 'flue-subagent-export', 'worker-workspace'];
     }
   }
 }

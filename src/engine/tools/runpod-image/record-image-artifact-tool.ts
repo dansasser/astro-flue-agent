@@ -9,7 +9,7 @@ export const recordImageArtifactTool = defineTool({
   name: 'record_image_artifact',
   description:
     'Persist metadata for a generated image into SQLite and index it in session memory for retrieval.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     artifactId: v.string(),
     filePath: v.string(),
@@ -25,7 +25,7 @@ export const recordImageArtifactTool = defineTool({
     referenceImageUrls: v.optional(v.array(v.string())),
     sourceUrl: v.optional(v.string()),
   }),
-  execute: async (input) => {
+  run: async ({ data: input }) => {
     const event = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(input.eventId);
     if (!event) {
       throw new Error(`record_image_artifact requires a trusted eventId persisted by chat ingress; ${input.eventId} not found`);

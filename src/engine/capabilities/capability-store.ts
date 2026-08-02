@@ -37,11 +37,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_capabilities_id_unique
 
 export interface CreateCapabilityStoreOptions {
   dbPath?: string;
+  env?: Record<string, unknown>;
 }
 
 export function createCapabilityStore(options: CreateCapabilityStoreOptions = {}): CapabilityStore {
-  const rawPath = options.dbPath ?? process.env.GOROMBO_CAPABILITY_DB_PATH ?? 'db/capabilities.sqlite';
-  const dbPath = resolveRuntimePath(rawPath);
+  const env = options.env ?? process.env;
+  const configuredPath = env.GOROMBO_CAPABILITY_DB_PATH;
+  const rawPath = options.dbPath
+    ?? (typeof configuredPath === 'string' ? configuredPath : undefined)
+    ?? 'db/capabilities.sqlite';
+  const dbPath = resolveRuntimePath(rawPath, { env });
 
   mkdirSync(dirname(dbPath), { recursive: true });
   const database = new DatabaseSync(dbPath, { timeout: 5_000 });

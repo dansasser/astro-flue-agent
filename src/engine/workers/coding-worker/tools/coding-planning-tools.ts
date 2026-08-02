@@ -37,14 +37,14 @@ export function createCodingPlanningTools(options: CodingPlanningToolsOptions = 
       name: 'coding_plan_create',
       description:
         'Create an explicit initial worker-local plan for a coding task. Returns CodingPlanItem[] with owners, descriptions, and statuses.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         text: v.string(),
         filesToInspect: v.optional(v.array(v.string())),
         hasGithubContext: v.optional(v.boolean()),
         packageManager: v.optional(v.string()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const task = {
           taskId: args.taskId,
           text: args.text,
@@ -74,7 +74,7 @@ export function createCodingPlanningTools(options: CodingPlanningToolsOptions = 
       name: 'coding_plan_replan',
       description:
         'Replan the worker-local loop after a failure or when new context is discovered. Returns an updated CodingPlanItem[].',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         currentStep: CodingWorkerLoopStepSchema,
         turn: v.number(),
@@ -124,7 +124,7 @@ export function createCodingPlanningTools(options: CodingPlanningToolsOptions = 
           )
         ),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const replanArgs = args as ReplanToolArgs;
         const state = buildLoopStateFromToolArgs(replanArgs);
         const failureContext: ReplanFailureContext = {

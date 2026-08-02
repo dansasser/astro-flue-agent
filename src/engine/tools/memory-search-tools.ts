@@ -15,7 +15,7 @@ export const searchMemoryRecordsTool = defineTool({
   name: 'search_memory_records',
   description:
     'Keyword/tag search across structured memory (checklists, todos, session notes) for the current scope. Returns RetrievedContext records with provider "structured-memory". Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     text: v.optional(v.string()),
     tags: TagsSchema,
@@ -23,7 +23,7 @@ export const searchMemoryRecordsTool = defineTool({
     limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
     includeArchived: v.optional(v.boolean()),
   }),
-  execute: async ({ eventId, text, tags, kinds, limit, includeArchived }) => {
+  run: async ({ data: { eventId, text, tags, kinds, limit, includeArchived } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const records = await engine.query({

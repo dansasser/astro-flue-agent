@@ -50,11 +50,11 @@ async function buildMemoryRouter(): Promise<MemoryRouter> {
 export const retrieveMemoryTool = defineTool({
   name: 'retrieve_memory',
   description: 'Retrieve relevant context from persisted session memory and structured memory (checklists, todos, session notes).',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     text: v.string(),
   }),
-  execute: async ({ eventId, text }) => {
+  run: async ({ data: { eventId, text } }) => {
     const event = getTrustedMemoryLookupEvent(eventId);
     const actorId = requireScopeValue(event.actor.id, 'actorId');
     const conversationId = requireScopeValue(event.conversation.id, 'conversationId');

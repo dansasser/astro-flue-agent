@@ -2,11 +2,13 @@ import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import {
-  connectMcpServer,
-  type McpServerConnection,
-  type McpServerOptions,
+  createMcpConnection,
+  defineMcpConnection,
+  type McpConnection,
+  type McpConnectionDefinition,
   type ToolDefinition,
 } from '@flue/runtime';
+import { runToolForText } from '../../../tools/direct-tool-runner.js';
 import type {
   GitHubClient,
   GithubCheckSummary,
@@ -51,14 +53,13 @@ const backendToolNames = [
 ] as const;
 
 type GithubMcpConnector = (
-  name: string,
-  options: McpServerOptions,
-) => Promise<McpServerConnection>;
+  definition: McpConnectionDefinition,
+) => Promise<McpConnection>;
 
 export interface CodingWorkerGithubMcpOptions {
   env?: Record<string, unknown>;
   connect?: GithubMcpConnector;
-  connection?: McpServerConnection;
+  connection?: McpConnection;
   gitRunner?: GitRunner;
 }
 
@@ -78,7 +79,7 @@ type GitRunner = (
 let defaultConnection:
   | {
       fingerprint: string;
-      promise: Promise<McpServerConnection>;
+      promise: Promise<McpConnection>;
     }
   | undefined;
 
@@ -494,7 +495,7 @@ export class McpGitHubClient implements GitHubClient {
     if (!tool) {
       throw new Error(`Official GitHub MCP tool is unavailable: ${name}`);
     }
-    return parseMcpToolResult(await tool.execute(args));
+    return parseMcpToolResult(await runToolForText(tool, args));
   }
 
   private async runGit(args: string[], cwd: string): Promise<void> {
@@ -532,10 +533,11 @@ export function resetGithubMcpConnectionForTest(): void {
 async function connectDefaultGithubMcp(
   token: string,
   connector: GithubMcpConnector | undefined,
-): Promise<McpServerConnection> {
+): Promise<McpConnection> {
+  const definition = createOfficialGithubMcpDefinition(token);
   if (connector) {
     try {
-      return await connector('github', connectionOptions(token));
+      return await connector(definition);
     } catch (error) {
       throw new Error(
         `Official GitHub MCP connection failed: ${safeErrorMessage(error, token)}`,
@@ -546,7 +548,7 @@ async function connectDefaultGithubMcp(
   if (!defaultConnection || defaultConnection.fingerprint !== fingerprint) {
     defaultConnection = {
       fingerprint,
-      promise: connectMcpServer('github', connectionOptions(token)).catch((error) => {
+      promise: createMcpConnection(definition).catch((error: unknown) => {
         defaultConnection = undefined;
         throw new Error(
           `Official GitHub MCP connection failed: ${safeErrorMessage(error, token)}`,
@@ -557,15 +559,19 @@ async function connectDefaultGithubMcp(
   return defaultConnection.promise;
 }
 
-function connectionOptions(token: string): McpServerOptions {
-  return {
+export function createOfficialGithubMcpDefinition(
+  token: string,
+): McpConnectionDefinition {
+  return defineMcpConnection({
+    name: 'github',
     url: officialGithubMcpUrl,
+    auth: () => token,
     headers: {
-      Authorization: `Bearer ${token}`,
       'X-MCP-Tools': backendToolNames.join(','),
     },
+    tools: [...backendToolNames],
     timeoutMs: 60_000,
-  };
+  });
 }
 
 function indexTools(tools: ToolDefinition[]): Map<string, ToolDefinition> {
