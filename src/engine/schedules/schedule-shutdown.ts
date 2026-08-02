@@ -8,17 +8,15 @@
  * graceful-shutdown path and left reclaimable — see the durable-execution doc;
  * we do not duplicate that reconciliation here).
  *
- * The grace window is advisory for v1: `manager.stop()` resolves pending
- * observations immediately so the process can exit promptly. Flue's
- * submission reconciliation (resume/reclaim on next startup) handles the
- * durable side.
+ * The manager waits for the configured grace window, then aborts any remaining
+ * exact-submission reads so every admitted run reaches a durable terminal state.
  */
 
 import type { ScheduleManager } from '../../engine/schedules/schedule-manager.js';
 import { scheduleProgressEmitter } from '../../engine/schedules/schedule-manager.js';
 
 export interface ScheduleShutdownOptions {
-  /** Advisory grace window in seconds (v1: informational; stop() is synchronous). */
+  /** Grace window in seconds before remaining settlements are aborted. */
   graceSeconds?: number;
   /** Logger; defaults to console.error. */
   log?: (message: string) => void;
@@ -40,15 +38,14 @@ export function registerScheduleShutdown(
   const log = options.log ?? ((msg) => console.error(`[schedules] ${msg}`));
   const graceSeconds = options.graceSeconds ?? 60;
 
-  const handler = (signal: NodeJS.Signals) => {
+  const handler = async (signal: NodeJS.Signals) => {
     scheduleProgressEmitter('schedule.shutdown', { signal, graceSeconds });
     log(`received ${signal}; draining schedule manager (grace ${graceSeconds}s)`);
     try {
-      manager.stop();
+      await manager.stop(graceSeconds * 1_000);
     } catch (error) {
       log(`schedule manager stop error: ${error instanceof Error ? error.message : String(error)}`);
     }
-    // Let Flue's own graceful-shutdown path handle in-flight agent submissions.
   };
 
   process.once('SIGTERM', handler);

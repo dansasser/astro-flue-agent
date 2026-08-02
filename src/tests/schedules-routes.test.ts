@@ -42,7 +42,7 @@ async function withApiSecret(secret: string | undefined, fn: () => Promise<void>
   }
 }
 
-function makeAppWithManager(settlementTimeoutMs = 50): { app: Hono; path: string; cleanup: () => void } {
+function makeAppWithManager(settlementTimeoutMs = 50): { app: Hono; path: string; cleanup: () => Promise<void> } {
   const path = tempDbPath();
   const store = new ScheduleStore(path);
   const fakeDispatch = async (args: DispatchScheduleArgs): Promise<ScheduleDispatchResult> => ({
@@ -50,7 +50,7 @@ function makeAppWithManager(settlementTimeoutMs = 50): { app: Hono; path: string
     acceptedAt: new Date().toISOString(),
     uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
-    settlement: Promise.resolve({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
+    settle: (signal) => rejectWhenAborted(signal),
   });
   const config = resolveScheduleConfig({}, {});
   const manager = new ScheduleManager({
@@ -69,8 +69,8 @@ function makeAppWithManager(settlementTimeoutMs = 50): { app: Hono; path: string
   return {
     app,
     path,
-    cleanup: () => {
-      manager.stop();
+    cleanup: async () => {
+      await manager.stop();
       __setScheduleManagerForTesting(null);
       rmSync(path, { force: true });
     },
@@ -93,7 +93,7 @@ test('schedules route: 503 when API_SECRET is not configured', async () => {
       const res = await app.request('/api/schedules', { headers: headers(false) });
       assert.equal(res.status, 503);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -106,7 +106,7 @@ test('schedules route: 401 without x-api-secret', async () => {
       assert.equal(res.status, 401);
       assert.deepEqual(await res.json(), { error: 'Unauthorized' });
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -172,7 +172,7 @@ test('schedules route: create -> get -> list -> update -> pause/resume -> delete
       const getAfter = await app.request('/api/schedules/daily', { headers: headers(false) });
       assert.equal(getAfter.status, 404);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -188,7 +188,7 @@ test('schedules route: create rejects bad payload with 400', async () => {
       });
       assert.equal(res.status, 400);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -214,9 +214,10 @@ test('schedules route: run (no wait) returns runId; ?wait=1 reaches terminal', a
       // ?wait=1 reaches timeout after 30ms, so the route returns 502.
       const waitRun = await app.request('/api/schedules/run-test/run?wait=1', { method: 'POST', headers: headers() });
       const waitBody = (await waitRun.json()) as { status: string };
-      assert.ok(['timeout', 'ok', 'error', 'skipped'].includes(waitBody.status), `wait returned a terminal status: ${waitBody.status}`);
+      assert.equal(waitRun.status, 502);
+      assert.equal(waitBody.status, 'timeout');
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -252,7 +253,7 @@ test('schedules route: runs history + one-run detail + 404s', async () => {
       const missingSched = await app.request('/api/schedules/nope/runs', { headers: headers(false) });
       assert.equal(missingSched.status, 404);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -276,7 +277,20 @@ test('schedules route: maxAttempts must be a positive integer', async () => {
       });
       assert.equal(ok.status, 201, 'maxAttempts=3 accepted');
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
+
+function rejectWhenAborted(signal: AbortSignal | undefined): Promise<never> {
+  return new Promise((_, reject) => {
+    if (!signal) {
+      return;
+    }
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+  });
+}

@@ -117,6 +117,83 @@ test('failed settlements project failed operation state', () => {
   assert.equal(page.exchanges[0]?.activities.at(-1)?.error, 'model unavailable');
 });
 
+test('tool-only assistant activity without settlement remains running', () => {
+  const value = snapshot('session-1', 'submission-1', '');
+  value.settlements = [];
+  const page = projectSessionTranscript({
+    session: { id: 'session-1' },
+    prompts: [prompt('event-1', 'submission-1', 'Keep working')],
+    snapshots: [value],
+  });
+
+  assert.equal(page.exchanges[0]?.status, 'running');
+  assert.equal(page.exchanges[0]?.assistant, undefined);
+  assert.equal(page.exchanges[0]?.activities.some((activity) => activity.kind === 'tool'), true);
+});
+
+test('hidden and diagnostic assistant messages never enter the public transcript', () => {
+  const value = snapshot('session-1', 'submission-1', 'private diagnostic output');
+  value.messages[0]!.display = 'diagnostic';
+  const page = projectSessionTranscript({
+    session: { id: 'session-1' },
+    prompts: [prompt('event-1', 'submission-1', 'Public prompt')],
+    snapshots: [value],
+  });
+
+  assert.equal(page.exchanges[0]?.prompt?.text, 'Public prompt');
+  assert.equal(page.exchanges[0]?.assistant, undefined);
+  assert.equal(JSON.stringify(page).includes('private diagnostic output'), false);
+});
+
+test('multiple compaction markers stay at their generation boundaries', () => {
+  const first = snapshot('session-1', 'submission-1', 'First answer');
+  appendCompaction(first, 'compact-1', 'first private summary');
+  const second = snapshot('session-1-g1', 'submission-2', 'Second answer');
+  appendCompaction(second, 'compact-2', 'second private summary');
+  const third = snapshot('session-1-g2', 'submission-3', 'Third answer');
+  const generations: ChatSessionGenerationRecord[] = [
+    { sessionId: 'session-1', generation: 0, instanceId: 'session-1', createdAt: '2026-08-01T00:00:00.000Z' },
+    {
+      sessionId: 'session-1',
+      generation: 1,
+      instanceId: 'session-1-g1',
+      continuationSummary: 'first private summary',
+      compactionSubmissionId: 'compact-1',
+      createdAt: '2026-08-01T00:01:00.000Z',
+    },
+    {
+      sessionId: 'session-1',
+      generation: 2,
+      instanceId: 'session-1-g2',
+      continuationSummary: 'second private summary',
+      compactionSubmissionId: 'compact-2',
+      createdAt: '2026-08-01T00:02:00.000Z',
+    },
+  ];
+  const page = projectSessionTranscript({
+    session: { id: 'session-1' },
+    prompts: [
+      prompt('event-1', 'submission-1', 'First'),
+      prompt('event-2', 'submission-2', 'Second'),
+      prompt('event-3', 'submission-3', 'Third'),
+    ],
+    snapshots: [first, second, third],
+    generations,
+  });
+
+  assert.deepEqual(
+    page.exchanges.map((exchange) => ({
+      submissionId: exchange.submissionId,
+      compactions: exchange.activities.filter((activity) => activity.name === 'session compacted').length,
+    })),
+    [
+      { submissionId: 'submission-1', compactions: 1 },
+      { submissionId: 'submission-2', compactions: 1 },
+      { submissionId: 'submission-3', compactions: 0 },
+    ],
+  );
+});
+
 test('transcript cursor validates and pagination returns newest exchanges', () => {
   const cursor = { v: 1 as const, receivedAt: '2026-08-01T00:00:00.000Z', eventId: 'event-1' };
   assert.deepEqual(decodeTranscriptCursor(encodeTranscriptCursor(cursor)), cursor);
@@ -136,6 +213,32 @@ test('transcript cursor validates and pagination returns newest exchanges', () =
   assert.equal(page.exchanges[0]?.assistant?.text, 'two answer');
   assert.equal(page.page.hasOlder, true);
   assert.ok(page.page.before);
+});
+
+test('stream offset belongs to the active generation or resets when its snapshot is missing', () => {
+  const generations: ChatSessionGenerationRecord[] = [
+    {
+      sessionId: 'session-1',
+      generation: 0,
+      instanceId: 'session-1',
+      createdAt: '2026-08-01T00:00:00.000Z',
+    },
+    {
+      sessionId: 'session-1',
+      generation: 1,
+      instanceId: 'session-1-g1-aabbccdd',
+      createdAt: '2026-08-01T00:01:00.000Z',
+    },
+  ];
+  const page = projectSessionTranscript({
+    session: { id: 'session-1' },
+    prompts: [prompt('event-1', 'submission-1', 'before compaction')],
+    snapshots: [snapshot('session-1', 'submission-1', 'old generation answer')],
+    generations,
+  });
+
+  assert.equal(page.stream.instanceId, 'session-1-g1-aabbccdd');
+  assert.equal(page.stream.nextOffset, '-1');
 });
 
 test('backward transcript pages exclude assistants outside the prompt cursor window', async () => {
@@ -212,4 +315,28 @@ function snapshot(
       ],
     }],
   };
+}
+
+function appendCompaction(
+  value: FlueConversationSnapshot,
+  submissionId: string,
+  summary: string,
+): void {
+  value.messages.push({
+    id: `${submissionId}-signal`,
+    role: 'system',
+    purpose: 'dispatch',
+    display: 'hidden',
+    submissionId,
+    signal: { tagName: 'session_compaction' },
+    parts: [{ type: 'text', text: 'compact', state: 'done' }],
+  }, {
+    id: `${submissionId}-assistant`,
+    role: 'assistant',
+    purpose: 'assistant',
+    display: 'visible',
+    submissionId,
+    parts: [{ type: 'text', text: summary, state: 'done' }],
+  });
+  value.settlements.push({ submissionId, outcome: 'completed' });
 }

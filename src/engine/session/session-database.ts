@@ -172,6 +172,7 @@ export class GoromboSessionDatabase {
   private readonly vectorStore?: VectorStore;
   private readonly embeddingClient?: EmbeddingClient;
   private pendingStorageOps = new Map<string, Promise<unknown>>();
+  private pendingFlueSnapshotIndexes = new Map<string, Promise<void>>();
 
   constructor(
     readonly filePath = defaultSessionDatabasePath,
@@ -238,12 +239,45 @@ export class GoromboSessionDatabase {
     sessionId: string,
     snapshot: FlueConversationSnapshot,
   ): Promise<void> {
+    const indexKey = `${sessionId}\u0000${snapshot.conversationId}`;
+    const previous = this.pendingFlueSnapshotIndexes.get(indexKey) ?? Promise.resolve();
+    const current = previous
+      .catch(() => undefined)
+      .then(() => this.indexFlueConversationSnapshotSerial(sessionId, snapshot));
+    this.pendingFlueSnapshotIndexes.set(indexKey, current);
+    try {
+      await current;
+    } finally {
+      if (this.pendingFlueSnapshotIndexes.get(indexKey) === current) {
+        this.pendingFlueSnapshotIndexes.delete(indexKey);
+      }
+    }
+  }
+
+  private async indexFlueConversationSnapshotSerial(
+    sessionId: string,
+    snapshot: FlueConversationSnapshot,
+  ): Promise<void> {
+    const indexed = this.database
+      .prepare(
+        `SELECT offset
+         FROM flue_conversation_index_state
+         WHERE session_id = ? AND conversation_id = ?`,
+      )
+      .get(sessionId, snapshot.conversationId) as { offset: string } | undefined;
+    if (indexed?.offset === snapshot.offset) {
+      return;
+    }
+
     const now = new Date().toISOString();
-    const prompts = this.listNormalizedMessageEventsForSession({
-      sessionId,
-      limit: 1_000,
-    }).filter((record) => record.delivery.instanceId === snapshot.conversationId);
-    const entries: LegacyBetaConversationData['entries'] = [
+    const storageKey = `flue-v2:${snapshot.conversationId}`;
+    const prompts = this.listAllNormalizedMessageEventsForSession(sessionId)
+      .filter((record) => record.delivery.instanceId === snapshot.conversationId);
+    const entriesById = new Map<string, LegacyBetaConversationData['entries'][number]>();
+    for (const entry of this.listExistingAssistantMemoryEntries(storageKey)) {
+      entriesById.set(entry.id, entry);
+    }
+    for (const entry of [
       ...prompts.map((record) => ({
         id: `event:${record.event.id}`,
         type: 'message',
@@ -262,14 +296,67 @@ export class GoromboSessionDatabase {
           timestamp: now,
           message: { role: 'assistant', content: readMessageText(message) },
         })),
-    ];
+    ] satisfies LegacyBetaConversationData['entries']) {
+      entriesById.set(entry.id, entry);
+    }
+    const entries = [...entriesById.values()]
+      .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
 
     await this.indexSessionMemory(
-      `flue-v2:${snapshot.conversationId}`,
+      storageKey,
       'orchestrator',
       sessionId,
       { createdAt: now, updatedAt: now, entries },
     );
+    this.database
+      .prepare(
+        `INSERT INTO flue_conversation_index_state
+         (session_id, conversation_id, offset, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(session_id, conversation_id) DO UPDATE SET
+           offset = excluded.offset,
+           updated_at = excluded.updated_at`,
+      )
+      .run(sessionId, snapshot.conversationId, snapshot.offset, now);
+  }
+
+  private listExistingAssistantMemoryEntries(
+    storageKey: string,
+  ): LegacyBetaConversationData['entries'] {
+    const rows = this.database
+      .prepare(
+        `SELECT entry_id, content, created_at
+         FROM session_memory_chunks
+         WHERE source_storage_key = ? AND role = 'assistant'`,
+      )
+      .all(storageKey) as unknown as Array<{
+        entry_id: string;
+        content: string;
+        created_at: string;
+      }>;
+    return rows.map((row) => ({
+      id: row.entry_id,
+      type: 'message',
+      timestamp: row.created_at,
+      message: { role: 'assistant', content: row.content },
+    }));
+  }
+
+  private listAllNormalizedMessageEventsForSession(
+    sessionId: string,
+  ): SessionNormalizedMessageRecord[] {
+    const records: SessionNormalizedMessageRecord[] = [];
+    let before: string | undefined;
+    do {
+      const page = this.listNormalizedMessageEventsForSession({
+        sessionId,
+        limit: 1_000,
+        ...(before ? { before } : {}),
+      });
+      records.unshift(...page);
+      before = page.length === 1_000 ? page[0]?.event.id : undefined;
+    } while (before);
+    return records;
   }
 
   async deleteLegacyBetaConversation(storageKey: string): Promise<void> {
@@ -1135,6 +1222,14 @@ export class GoromboSessionDatabase {
 
       CREATE INDEX IF NOT EXISTS idx_flue_instance_sessions_updated
         ON flue_instance_sessions(instance_id, updated_at);
+
+      CREATE TABLE IF NOT EXISTS flue_conversation_index_state (
+        session_id TEXT NOT NULL,
+        conversation_id TEXT NOT NULL,
+        offset TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (session_id, conversation_id)
+      );
 
       CREATE TABLE IF NOT EXISTS chat_sessions (
         session_id TEXT PRIMARY KEY,

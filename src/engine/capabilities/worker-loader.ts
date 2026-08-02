@@ -36,7 +36,6 @@ export async function loadUserWorkers(
           `No Flue 2 subagents found in worker module ${modulePath}. `
           + 'Expected a direct defineSubagent(...) default, array, or named export.';
         errors.push({ id: record.id, error: message });
-        console.error(`[capabilities] Worker loader: ${message}`);
         continue;
       }
 
@@ -44,7 +43,6 @@ export async function loadUserWorkers(
       if (!existsSync(workspaceDir)) {
         const message = `Worker ${record.id} has no workspace/ directory - all workers must have workspace persona files`;
         errors.push({ id: record.id, error: message });
-        console.error(`[capabilities] Worker loader: ${message}`);
         continue;
       }
 
@@ -54,7 +52,6 @@ export async function loadUserWorkers(
       if (existingFiles.length === 0) {
         const message = `Worker ${record.id} workspace/ directory exists but contains no recognized persona files`;
         errors.push({ id: record.id, error: message });
-        console.error(`[capabilities] Worker loader: ${message}`);
         continue;
       }
 
@@ -70,7 +67,6 @@ export async function loadUserWorkers(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({ id: record.id, error: message });
-      console.error(`[capabilities] Worker loader failed for ${record.id}: ${message}`);
     }
   }
 

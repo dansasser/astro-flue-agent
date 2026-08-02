@@ -10,14 +10,13 @@ export interface ScheduleDispatchResult {
   acceptedAt: string;
   uid: string;
   instanceId: string;
-  settlement: Promise<AgentReply>;
+  settle(signal?: AbortSignal): Promise<AgentReply>;
 }
 
 export interface DispatchScheduleArgs {
   instanceId: string;
   targetAgent: ScheduleTargetAgent;
   input: Omit<ScheduleRunInput, 'type' | 'instanceId' | 'targetAgent'>;
-  signal?: AbortSignal;
 }
 
 export async function dispatchSchedule(args: DispatchScheduleArgs): Promise<ScheduleDispatchResult> {
@@ -55,7 +54,7 @@ export async function dispatchSchedule(args: DispatchScheduleArgs): Promise<Sche
     acceptedAt: receipt.acceptedAt,
     uid: receipt.uid,
     instanceId: args.instanceId,
-    settlement: handle.read(receipt, args.signal ? { signal: args.signal } : undefined),
+    settle: (signal) => handle.read(receipt, signal ? { signal } : undefined),
   };
 }
 

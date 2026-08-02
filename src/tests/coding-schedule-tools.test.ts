@@ -28,7 +28,7 @@ function makeManager(path: string): ScheduleManager {
     acceptedAt: new Date().toISOString(),
     uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
-    settlement: Promise.resolve({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
+    settle: async () => ({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
   });
   const config = resolveScheduleConfig({}, {});
   const manager = new ScheduleManager({
@@ -96,7 +96,7 @@ test('coding schedule tools enforce project scope (cross-project denied, list fi
     assert.equal(delOwn.deleted, true, 'projA can delete its own schedule');
     assert.equal(manager.store.getBySlug('a-sched'), null, 'a-sched gone');
   } finally {
-    manager.stop();
+    await manager.stop();
     __setScheduleManagerForTesting(null);
     rmSync(path, { force: true });
   }
@@ -115,7 +115,7 @@ test('coding schedule tools fail closed when no project scope is injected', asyn
       'no projectId -> fail closed',
     );
   } finally {
-    manager.stop();
+    await manager.stop();
     __setScheduleManagerForTesting(null);
     rmSync(path, { force: true });
   }

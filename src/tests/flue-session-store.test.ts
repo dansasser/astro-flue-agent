@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { linkSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -36,6 +36,28 @@ test('Flue 2 and beta database paths cannot alias', () => {
   assert.throws(() => createGoromboPersistenceRuntime(config(directory, 'same.sqlite', 'same.sqlite')),
     /must not point to the legacy Flue database/);
   rmSync(directory, { recursive: true, force: true });
+});
+
+test('Flue 2 and beta databases reject symlink and hardlink aliases', () => {
+  for (const aliasKind of ['symlink', 'hardlink'] as const) {
+    const directory = mkdtempSync(join(tmpdir(), `sim-one-flue-${aliasKind}-`));
+    try {
+      const target = join(directory, 'target.sqlite');
+      const alias = join(directory, 'alias.sqlite');
+      writeFileSync(target, 'existing database');
+      if (aliasKind === 'symlink') {
+        symlinkSync('target.sqlite', alias);
+      } else {
+        linkSync(target, alias);
+      }
+      assert.throws(
+        () => createGoromboPersistenceRuntime(config(directory, 'target.sqlite', 'alias.sqlite')),
+        /must not point to the legacy Flue database/,
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
 });
 
 test('product sessions keep stable ids while compaction rotates Flue runtime generations', () => {

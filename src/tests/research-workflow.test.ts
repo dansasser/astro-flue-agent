@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { createResearchPrompt } from '../workflows/research.js';
 
 test('research workflow prompt instructs the researcher to use retrieval controls', () => {
   const prompt = createResearchPrompt({
+    operationId: 'official-docs-lookup',
     text: 'Find the official Ollama web search API docs URL.',
     actorId: 'user-1',
     conversationId: 'thread-1',
@@ -26,6 +28,7 @@ test('research workflow prompt instructs the researcher to use retrieval control
 
 test('research workflow prompt lets deep web research use depth defaults', () => {
   const prompt = createResearchPrompt({
+    operationId: 'deep-current-search',
     text: 'Do deep research on current AI search options.',
     depth: 'deep',
   });
@@ -35,4 +38,11 @@ test('research workflow prompt lets deep web research use depth defaults', () =>
   assert.doesNotMatch(prompt, /maxContextTokens:/);
   assert.doesNotMatch(prompt, /maxFetches:/);
   assert.doesNotMatch(prompt, /webFetch:/);
+});
+
+test('research retries reuse a caller operation id while separate operations differ', () => {
+  const source = readFileSync('src/workflows/research.ts', 'utf8');
+  assert.match(source, /operationId/);
+  assert.match(source, /`research:\$\{instanceId\}:\$\{payload\.operationId\}`/);
+  assert.doesNotMatch(source, /Date\.now\(\)/);
 });
