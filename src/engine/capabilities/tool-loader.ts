@@ -51,7 +51,7 @@ function isToolLike(value: unknown): value is ToolDefinition {
     value !== null &&
     'name' in value &&
     typeof (value as { name: unknown }).name === 'string' &&
-    'execute' in value &&
-    typeof (value as { execute: unknown }).execute === 'function'
+    'run' in value &&
+    typeof (value as { run: unknown }).run === 'function'
   );
 }

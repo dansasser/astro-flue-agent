@@ -194,12 +194,12 @@ export const telegramReplyTool = defineTool({
   name: 'telegram_reply',
   description:
     'Reply to the Telegram conversation that triggered the current event. Pass the eventId from the trusted Telegram chat context.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     text: v.string(),
     format: v.optional(v.picklist(['text', 'markdownv2'])),
   }),
-  execute: async ({ eventId, text, format }) => {
+  run: async ({ data: { eventId, text, format } }) => {
     const event = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(eventId);
     if (!event) {
       throw new Error('telegram_reply requires a trusted eventId persisted by chat ingress.');

@@ -57,11 +57,11 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_repo_list_files',
       description:
         'List files inside the selected coding-worker workspace/project scope. Skips heavy generated directories by default.',
-      parameters: v.object({
+      input: v.object({
         root: v.optional(v.string()),
         maxFiles: v.optional(v.number()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const files = await listRepoFiles(sandbox, {
           root: readString(args.root) ?? '.',
@@ -73,10 +73,10 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
     defineTool({
       name: 'coding_repo_read_file',
       description: 'Read a UTF-8 file inside the selected coding-worker workspace/project scope.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const path = requireString(args.path, 'path');
         const content = await sandbox.readFile(path);
@@ -89,12 +89,12 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
     defineTool({
       name: 'coding_repo_search',
       description: 'Search UTF-8 files for a literal string inside the selected coding-worker workspace/project scope.',
-      parameters: v.object({
+      input: v.object({
         query: v.string(),
         root: v.optional(v.string()),
         maxResults: v.optional(v.number()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const results = await searchRepo(sandbox, {
           query: requireString(args.query, 'query'),
@@ -108,11 +108,11 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_repo_write_file',
       description:
         'Write a UTF-8 file inside the selected coding-worker workspace/project scope. Use for complete-file generated outputs or explicit replacements.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         content: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const path = requireString(args.path, 'path');
         await sandbox.writeFile(path, requireString(args.content, 'content'));
@@ -131,7 +131,7 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_repo_apply_patch',
       description:
         'Apply exact text replacements to one UTF-8 file inside the selected coding-worker workspace/project scope. Each edit must include oldText and newText. Returns the applied CodingFileEdit objects so you can verify them before building your final submit_result.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         edits: v.array(
           v.object({
@@ -141,7 +141,7 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
           }),
         ),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const path = requireString(args.path, 'path');
         const edits = readPatchEdits(args.edits);
@@ -172,13 +172,13 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_repo_apply_exact_edit',
       description:
         'Apply a single exact text replacement to one UTF-8 file inside the selected coding-worker workspace/project scope. Accepts one CodingFileEdit (path, oldText, newText, optional expectedOccurrences) and returns the applied edit object. Use this when you have one focused change to apply and verify.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         oldText: v.string(),
         newText: v.string(),
         expectedOccurrences: v.optional(v.number()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const path = requireString(args.path, 'path');
         const normalizedPath = normalizeRepoRelativePath(sandbox.repoPath, path);
@@ -209,7 +209,7 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_repo_apply_transaction',
       description:
         'Apply multiple UTF-8 file writes and exact-text patches atomically inside the selected coding-worker workspace/project scope. If any operation fails, every change made so far is rolled back and the result reports which operation failed and why.',
-      parameters: v.object({
+      input: v.object({
         id: v.optional(v.string()),
         writes: v.optional(
           v.array(
@@ -230,7 +230,7 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
           ),
         ),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const writes = readTransactionWrites(args.writes);
         const edits = readTransactionEdits(args.edits);
@@ -258,12 +258,12 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_shell_run',
       description:
         'Run a command through the selected coding-worker workspace/project scope. Git/GitHub write commands are blocked and must use approval-gated paths.',
-      parameters: v.object({
+      input: v.object({
         command: v.string(),
         cwd: v.optional(v.string()),
         timeoutSeconds: v.optional(v.number()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const command = requireString(args.command, 'command');
         const policy = evaluateCodingShellCommand(command);
         if (!policy.allowed) {
@@ -296,13 +296,13 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
       name: 'coding_project_create',
       description:
         'Create or resolve a project directory under the runtime workspace root. Projects are stored in projects/<slug>; repos are stored in repos/<slug>.',
-      parameters: v.object({
+      input: v.object({
         name: v.optional(v.string()),
         slug: v.optional(v.string()),
         directoryKind: v.optional(v.string()),
         initializeReadme: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const directoryKind = readProjectDirectoryKind(args.directoryKind);
         const slugSource = readString(args.slug) ?? requireString(args.name, 'name');
@@ -345,14 +345,14 @@ export function createCodingRepoTools(options: CodingRepoToolsOptions): ToolDefi
     defineTool({
       name: 'coding_progress_emit',
       description: 'Emit a sanitized public coding-worker progress event for orchestrator/user visibility.',
-      parameters: v.object({
+      input: v.object({
         type: v.string(),
         summary: v.string(),
         action: v.optional(v.string()),
         nextAction: v.optional(v.string()),
         evidence: v.optional(v.array(v.string())),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         if (!options.reporter || !options.taskId) {
           return toToolJson({
             available: false,

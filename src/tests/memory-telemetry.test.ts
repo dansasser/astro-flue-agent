@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -14,7 +15,7 @@ test('create_checklist emits a sanitized memory_mutation telemetry event with no
   const before = flueTelemetryStore.memoryMutationSnapshot().mutations.length;
   const { event, cleanup } = await setupMemoryToolTest({ projectId: 'proj-tel' });
   try {
-    await createChecklistTool.execute({ eventId: event.id, title: 'Telemetry', slug: 'telemetry' });
+    await runTool(createChecklistTool, { eventId: event.id, title: 'Telemetry', slug: 'telemetry' });
     const after = flueTelemetryStore.memoryMutationSnapshot().mutations;
     const added = after.slice(before);
     const evt = added.find((e) => e.toolName === 'create_checklist');

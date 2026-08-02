@@ -142,12 +142,12 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_go_to_definition',
       description:
         'Find the definition(s) of a symbol at a specific position in a source file using the language server.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         line: v.number(),
         character: v.number(),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-go-to-definition', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-go-to-definition', async () => {
         const path = requireString(args.path, 'path');
         const line = requireNonNegativeInteger(args.line, 'line');
         const character = requireNonNegativeInteger(args.character, 'character');
@@ -174,13 +174,13 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_find_references',
       description:
         'Find all references to a symbol at a specific position in a source file using the language server.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         line: v.number(),
         character: v.number(),
         includeDeclaration: v.optional(v.boolean()),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-find-references', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-find-references', async () => {
         const path = requireString(args.path, 'path');
         const line = requireNonNegativeInteger(args.line, 'line');
         const character = requireNonNegativeInteger(args.character, 'character');
@@ -209,10 +209,10 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_document_symbols',
       description:
         'List all symbols defined in a source file using the language server.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-document-symbols', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-document-symbols', async () => {
         const path = requireString(args.path, 'path');
         const document = await withDocument(path);
         if (!document.ok) {
@@ -236,10 +236,10 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_workspace_symbol',
       description:
         'Search for symbols across the whole workspace using the language server.',
-      parameters: v.object({
+      input: v.object({
         query: v.string(),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-workspace-symbol', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-workspace-symbol', async () => {
         const query = requireString(args.query, 'query');
         // Use the workspace root as the project root; the registry will pick the
         // default language server for the first supported language it finds, or
@@ -282,12 +282,12 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_hover',
       description:
         'Get hover/type information for a symbol at a specific position in a source file using the language server.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         line: v.number(),
         character: v.number(),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-hover', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-hover', async () => {
         const path = requireString(args.path, 'path');
         const line = requireNonNegativeInteger(args.line, 'line');
         const character = requireNonNegativeInteger(args.character, 'character');
@@ -314,12 +314,12 @@ export function createLspTools(options: LspToolsOptions): ToolDefinition[] {
       name: 'lsp_prepare_rename',
       description:
         'Ask the language server for the range that would be renamed at a specific position.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
         line: v.number(),
         character: v.number(),
       }),
-      execute: async (args) => withToolProgress(options, 'lsp-prepare-rename', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'lsp-prepare-rename', async () => {
         const path = requireString(args.path, 'path');
         const line = requireNonNegativeInteger(args.line, 'line');
         const character = requireNonNegativeInteger(args.character, 'character');

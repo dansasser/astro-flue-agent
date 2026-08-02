@@ -2,11 +2,13 @@
 
 import {
   type AgentProps,
+  type McpConnectionDefinition,
   type SandboxFactory,
   type Skill,
   type SubagentDefinition,
   type ToolDefinition,
   useModel,
+  useMcpConnection,
   useSandbox,
   useSkill,
   useSubagent,
@@ -65,6 +67,13 @@ import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/codi
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import greetingPreflight from '../skills/greeting-preflight/SKILL.md';
+import { getBuiltinMcpConnections } from '../engine/capabilities/builtin-mcp.js';
+import {
+  loadRuntimeCapabilitySnapshot,
+  type RuntimeCapabilitySnapshot,
+} from '../engine/capabilities/runtime-capability-snapshot.js';
+
+const runtimeCapabilitySnapshot = await loadRuntimeCapabilitySnapshot(process.env);
 
 export const orchestratorInstructions = [
   composeWorkspaceInstructions({
@@ -81,12 +90,14 @@ export interface OrchestratorComposition {
   skills: Skill[];
   tools: ToolDefinition[];
   subagents: SubagentDefinition[];
+  mcpConnections: McpConnectionDefinition[];
   cwd: string;
   sandbox: SandboxFactory;
 }
 
 export function createOrchestratorComposition(
   env: Record<string, unknown> = process.env,
+  runtimeCapabilities: RuntimeCapabilitySnapshot = runtimeCapabilitySnapshot,
 ): OrchestratorComposition {
   const models = configureRuntimeModels(env);
   const selectedModelCard = models.selectedModelCard;
@@ -133,8 +144,8 @@ export function createOrchestratorComposition(
     model: selectedModelCard.specifier,
     compaction: createFlueCompactionConfig(selectedModelCard),
     instructions: orchestratorInstructions,
-    skills: [greetingPreflight],
-    tools,
+    skills: [greetingPreflight, ...runtimeCapabilities.skills],
+    tools: [...tools, ...runtimeCapabilities.tools],
     subagents: [
       createCapabilityManagerSubagent({ env }),
       createCodingWorkerSubagent({
@@ -143,6 +154,11 @@ export function createOrchestratorComposition(
         env: createCodingWorkerToolEnv(env, runtimeRoot),
       }),
       createResearcherSubagent(),
+      ...runtimeCapabilities.subagents,
+    ],
+    mcpConnections: [
+      ...getBuiltinMcpConnections(),
+      ...runtimeCapabilities.mcpConnections,
     ],
     cwd: runtimePaths.packagedServer,
     sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
@@ -153,6 +169,13 @@ export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
 
   useModel(composition.model, { compaction: composition.compaction });
+  useRuntimeCapabilities(composition);
+  useSandbox(composition.sandbox, { cwd: composition.cwd });
+  return composition.instructions;
+}
+Orchestrator.agentName = 'orchestrator';
+
+function useRuntimeCapabilities(composition: OrchestratorComposition): void {
   for (const skill of composition.skills) {
     useSkill(skill);
   }
@@ -162,10 +185,10 @@ export function Orchestrator(_props: AgentProps): string {
   for (const subagent of composition.subagents) {
     useSubagent(subagent);
   }
-  useSandbox(composition.sandbox, { cwd: composition.cwd });
-  return composition.instructions;
+  for (const connection of composition.mcpConnections) {
+    useMcpConnection(connection);
+  }
 }
-Orchestrator.agentName = 'orchestrator';
 
 export function createOrchestratorSandbox(packagedServerRoot: string): SandboxFactory {
   return {

@@ -17,7 +17,7 @@ export const createTodoTool = defineTool({
   name: 'create_todo',
   description:
     'Create a standalone todo for the current scope. Scope is derived from the trusted eventId; never pass scope.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     title: v.pipe(v.string(), v.minLength(1)),
     slug: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -26,7 +26,7 @@ export const createTodoTool = defineTool({
     tags: TagsSchema,
     dueAt: v.optional(v.string()),
   }),
-  execute: async ({ eventId, title, slug, description, priority, tags, dueAt }) => {
+  run: async ({ data: { eventId, title, slug, description, priority, tags, dueAt } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const todo = await engine.createTodo({
@@ -48,7 +48,7 @@ export const updateTodoTool = defineTool({
   name: 'update_todo',
   description:
     'Update a todo (title, priority, status, tags, due date). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
     title: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -58,7 +58,7 @@ export const updateTodoTool = defineTool({
     tags: TagsSchema,
     dueAt: v.optional(v.string()),
   }),
-  execute: async ({ eventId, id, title, description, priority, status, tags, dueAt }) => {
+  run: async ({ data: { eventId, id, title, description, priority, status, tags, dueAt } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const todo = await engine.updateTodo({
@@ -80,11 +80,11 @@ export const updateTodoTool = defineTool({
 export const completeTodoTool = defineTool({
   name: 'complete_todo',
   description: 'Mark a todo completed. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
   }),
-  execute: async ({ eventId, id }) => {
+  run: async ({ data: { eventId, id } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const todo = await engine.updateTodo({
@@ -101,11 +101,11 @@ export const completeTodoTool = defineTool({
 export const cancelTodoTool = defineTool({
   name: 'cancel_todo',
   description: 'Cancel a todo (status -> cancelled). Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     id: v.pipe(v.string(), v.minLength(1)),
   }),
-  execute: async ({ eventId, id }) => {
+  run: async ({ data: { eventId, id } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const todo = await engine.updateTodo({
@@ -123,12 +123,12 @@ export const listTodosTool = defineTool({
   name: 'list_todos',
   description:
     'List active todos for the current scope. Scope is derived from the trusted eventId.',
-  parameters: v.object({
+  input: v.object({
     eventId: v.string(),
     limit: v.optional(v.number()),
     includeArchived: v.optional(v.boolean()),
   }),
-  execute: async ({ eventId, limit, includeArchived }) => {
+  run: async ({ data: { eventId, limit, includeArchived } }) => {
     const event = getTrustedMemoryEvent(eventId);
     const engine = await getMemoryEngine();
     const records = await engine.query({

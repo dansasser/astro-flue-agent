@@ -119,14 +119,14 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
       name: 'coding_task_create_checklist',
       description:
         'Create a project-scoped checklist for the current coding task. projectId is injected from the worker context; never pass scope.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         title: v.pipe(v.string(), v.minLength(1)),
         slug: SlugSchema,
         description: v.optional(v.string()),
         tags: TagsSchema,
       }),
-      execute: async ({ taskId, title, slug, description, tags }) => {
+      run: async ({ data: { taskId, title, slug, description, tags } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const checklist = await engine.createChecklist({
@@ -147,7 +147,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_add_checklist_item',
       description: 'Add an item to a project-scoped checklist.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         checklistId: v.pipe(v.string(), v.minLength(1)),
         parentId: v.optional(v.pipe(v.string(), v.minLength(1))),
@@ -158,7 +158,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
         tags: TagsSchema,
         dueAt: v.optional(v.string()),
       }),
-      execute: async ({ taskId, checklistId, parentId, title, description, status, ordinal, tags, dueAt }) => {
+      run: async ({ data: { taskId, checklistId, parentId, title, description, status, ordinal, tags, dueAt } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const checklist = await engine.addChecklistItem({
@@ -183,7 +183,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_add_todo',
       description: 'Create a todo scoped to the current coding task/project.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         title: v.pipe(v.string(), v.minLength(1)),
         description: v.optional(v.string()),
@@ -191,7 +191,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
         tags: TagsSchema,
         dueAt: v.optional(v.string()),
       }),
-      execute: async ({ taskId, title, description, priority, tags, dueAt }) => {
+      run: async ({ data: { taskId, title, description, priority, tags, dueAt } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const todo = await engine.createTodo({
@@ -213,11 +213,11 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_complete_todo',
       description: 'Mark a coding-task todo completed.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         id: v.pipe(v.string(), v.minLength(1)),
       }),
-      execute: async ({ taskId, id }) => {
+      run: async ({ data: { taskId, id } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const todo = await engine.updateTodo({
@@ -236,14 +236,14 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_store_note',
       description: 'Pin a decision/convention discovered during the coding run.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         title: v.pipe(v.string(), v.minLength(1)),
         content: v.pipe(v.string(), v.minLength(1)),
         tags: TagsSchema,
         importance: v.optional(NoteImportanceSchema),
       }),
-      execute: async ({ taskId, title, content, tags, importance }) => {
+      run: async ({ data: { taskId, title, content, tags, importance } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const note = await engine.createSessionNote({
@@ -264,11 +264,11 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_archive_note',
       description: 'Archive a coding-task session note.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         id: v.pipe(v.string(), v.minLength(1)),
       }),
-      execute: async ({ taskId, id }) => {
+      run: async ({ data: { taskId, id } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const note = await engine.updateSessionNote({
@@ -287,7 +287,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
     defineTool({
       name: 'coding_task_search_memory',
       description: 'Keyword/tag search across project-scoped structured memory.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         text: v.optional(v.string()),
         tags: TagsSchema,
@@ -295,7 +295,7 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
         limit: v.optional(v.number()),
         includeArchived: v.optional(v.boolean()),
       }),
-      execute: async ({ taskId: _taskId, text, tags, kinds, limit, includeArchived }) => {
+      run: async ({ data: { taskId: _taskId, text, tags, kinds, limit, includeArchived } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const records = await engine.query({
@@ -314,11 +314,11 @@ export function createCodingTaskMemoryTools(options: CodingTaskMemoryToolsOption
       name: 'coding_task_handoff_plan_to_checklist',
       description:
         'Copy the plan items of a finished/blocked coding task run into a new durable checklist so the Memory Helper becomes the cross-run handoff (Decision 9).',
-      parameters: v.object({
+      input: v.object({
         taskId: v.pipe(v.string(), v.minLength(1)),
         sourceTaskId: v.pipe(v.string(), v.minLength(1)),
       }),
-      execute: async ({ taskId, sourceTaskId }) => {
+      run: async ({ data: { taskId, sourceTaskId } }) => {
         requireTrustedScope();
         const engine = await options.engineLoader();
         const store = options.taskRunStore

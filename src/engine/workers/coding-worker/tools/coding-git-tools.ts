@@ -55,8 +55,8 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
     defineTool({
       name: 'coding_git_status',
       description: 'Read git status for the selected coding-worker project/repo scope.',
-      parameters: v.object({}),
-      execute: async () => {
+      input: v.object({}),
+      run: async () => {
         const sandbox = await getSandbox();
         const result = await sandbox.exec('git status --short --branch', { timeoutSeconds: 30 });
         return toToolJson(result);
@@ -65,10 +65,10 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
     defineTool({
       name: 'coding_git_diff',
       description: 'Read git diff for the selected coding-worker project/repo scope.',
-      parameters: v.object({
+      input: v.object({
         statOnly: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const sandbox = await getSandbox();
         const command = args.statOnly === true ? 'git diff --stat' : 'git diff';
         const result = await sandbox.exec(command, { timeoutSeconds: 30 });
@@ -79,12 +79,12 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
       name: 'coding_git_commit',
       description:
         'Approval-gated git commit. Requires an approval decision for the deterministic request id `${taskId}:git.commit`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         message: v.string(),
         paths: v.optional(v.array(v.string())),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = requireString(args.taskId, 'taskId');
         const paths = readStringArray(args.paths);
         const approval = await evaluateGitApproval(options, {
@@ -126,12 +126,12 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
       name: 'coding_git_push',
       description:
         'Approval-gated git push. Requires an approval decision for the deterministic request id `${taskId}:git.push`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         remote: v.optional(v.string()),
         branch: v.string(),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         const taskId = requireString(args.taskId, 'taskId');
         const remote = readString(args.remote) ?? 'origin';
         const branch = requireString(args.branch, 'branch');
@@ -168,7 +168,7 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
       name: 'coding_github_create_pr',
       description:
         'Approval-gated GitHub PR creation through the official GitHub MCP. Requires approval for `${taskId}:github.pr.create`.',
-      parameters: v.object({
+      input: v.object({
         taskId: v.string(),
         owner: v.string(),
         repo: v.string(),
@@ -178,7 +178,7 @@ export function createCodingGitTools(options: CodingGitToolsOptions): ToolDefini
         head: v.string(),
         draft: v.optional(v.boolean()),
       }),
-      execute: async (args) => {
+      run: async ({ data: args }) => {
         if (!options.githubClient?.createPullRequest) {
           return toGithubResult({
             action: 'create_pr',

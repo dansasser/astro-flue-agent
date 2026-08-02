@@ -34,6 +34,7 @@ import {
 } from '../../../../../engine/workers/coding-worker/tools/code-intelligence/symbol-index.js';
 import { createLspTools } from '../../../../../engine/workers/coding-worker/tools/code-intelligence/lsp/lsp-tools.js';
 import type { LspToolResult } from '../../../../../engine/workers/coding-worker/tools/code-intelligence/lsp/lsp-types.js';
+import { runToolForText } from '../../../../../engine/tools/direct-tool-runner.js';
 
 export interface CodingCodeIntelligenceToolsOptions extends CodingWorkspaceTargetInput {
   env?: Record<string, string | undefined>;
@@ -106,10 +107,10 @@ export function createCodingCodeIntelligenceTools(
       name: 'coding_ast_parse_file',
       description:
         'Parse a source file into an abstract syntax tree summary: symbols, imports, and exports. Supports TypeScript, JavaScript, and Python.',
-      parameters: v.object({
+      input: v.object({
         path: v.string(),
       }),
-      execute: async (args) => withToolProgress(options, 'ast-parse', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'ast-parse', async () => {
         const sandbox = await getSandbox();
         const path = requireString(args.path, 'path');
         const content = await sandbox.readFile(path);
@@ -126,12 +127,12 @@ export function createCodingCodeIntelligenceTools(
       name: 'coding_symbol_navigate',
       description:
         'Find declarations and references for a symbol by name across the scoped source files. Prefers LSP where available, falls back to custom AST parsers. Supports TypeScript, JavaScript, and Python.',
-      parameters: v.object({
+      input: v.object({
         symbol: v.string(),
         root: v.optional(v.string()),
         maxFiles: v.optional(v.number()),
       }),
-      execute: async (args) => withToolProgress(options, 'symbol-navigate', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'symbol-navigate', async () => {
         const sandbox = await getSandbox();
         const symbol = requireString(args.symbol, 'symbol');
         const root = readString(args.root) ?? '.';
@@ -182,12 +183,12 @@ export function createCodingCodeIntelligenceTools(
       name: 'coding_find_symbol_declarations',
       description:
         'Find all declarations of a symbol by name across the scoped source files. Prefers LSP where available, falls back to custom AST parsers.',
-      parameters: v.object({
+      input: v.object({
         symbol: v.string(),
         root: v.optional(v.string()),
         maxFiles: v.optional(v.number()),
       }),
-      execute: async (args) => withToolProgress(options, 'find-declarations', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'find-declarations', async () => {
         const sandbox = await getSandbox();
         const symbol = requireString(args.symbol, 'symbol');
         const root = readString(args.root) ?? '.';
@@ -235,12 +236,12 @@ export function createCodingCodeIntelligenceTools(
       name: 'coding_find_symbol_references',
       description:
         'Find all references to a symbol by name across the scoped source files. Prefers LSP where available, falls back to custom AST parsers.',
-      parameters: v.object({
+      input: v.object({
         symbol: v.string(),
         root: v.optional(v.string()),
         maxFiles: v.optional(v.number()),
       }),
-      execute: async (args) => withToolProgress(options, 'find-references', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'find-references', async () => {
         const sandbox = await getSandbox();
         const symbol = requireString(args.symbol, 'symbol');
         const root = readString(args.root) ?? '.';
@@ -288,12 +289,12 @@ export function createCodingCodeIntelligenceTools(
       name: 'coding_import_graph',
       description:
         'Build an import graph for the scoped source files. Returns nodes, outgoing edges, incoming edges, dependencies, and dependents. Supports TypeScript, JavaScript, and Python.',
-      parameters: v.object({
+      input: v.object({
         root: v.optional(v.string()),
         maxFiles: v.optional(v.number()),
         path: v.optional(v.string()),
       }),
-      execute: async (args) => withToolProgress(options, 'import-graph', async () => {
+      run: async ({ data: args }) => withToolProgress(options, 'import-graph', async () => {
         const sandbox = await getSandbox();
         const root = readString(args.root) ?? '.';
         const maxFiles = readPositiveInteger(args.maxFiles) ?? 200;
@@ -453,7 +454,7 @@ async function tryLspSymbolLookup(
 
   for (const file of candidates) {
     try {
-      const symbolsRaw = await documentSymbolsTool.execute({ path: file });
+      const symbolsRaw = await runToolForText(documentSymbolsTool, { path: file });
       const symbolsResult = JSON.parse(symbolsRaw) as LspToolResult<{ symbols: Array<Record<string, unknown>> }>;
       if (!symbolsResult.lspAvailable) {
         continue;
@@ -474,12 +475,12 @@ async function tryLspSymbolLookup(
         }
 
         const [definitionsRaw, referencesRaw] = await Promise.all([
-          definitionTool.execute({
+          runToolForText(definitionTool, {
             path: file,
             line: range.start.line,
             character: range.start.character,
           }),
-          referencesTool.execute({
+          runToolForText(referencesTool, {
             path: file,
             line: range.start.line,
             character: range.start.character,

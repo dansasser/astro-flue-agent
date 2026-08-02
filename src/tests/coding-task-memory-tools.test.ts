@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -39,12 +40,12 @@ test('coding_task_create_checklist injects projectId from the worker context (mo
   const tool = getTool(tools, 'coding_task_create_checklist');
   // Inspect the actual parameter schema keys (not stringified text, which can
   // false-match on description wording) to prove scope/projectId are not exposed.
-  const paramKeys = new Set(Object.keys((tool.parameters as { entries?: Record<string, unknown> }).entries ?? {}));
+  const paramKeys = new Set(Object.keys((tool.input as { entries?: Record<string, unknown> }).entries ?? {}));
   assert.ok(!paramKeys.has('projectId'), 'projectId must not be a model-facing parameter');
   assert.ok(!paramKeys.has('scope'), 'scope must not be a model-facing parameter');
 
   const result = JSON.parse(
-    await tool.execute({ taskId: 'task-1', title: 'Phase 2', slug: 'phase-2' }),
+    await runTool(tool, { taskId: 'task-1', title: 'Phase 2', slug: 'phase-2' }),
   ) as { checklist: { scope: { projectId?: string }; id: string } };
   assert.equal(result.checklist.scope.projectId, 'proj-cw');
 });
@@ -53,7 +54,7 @@ test('coding_task_add_todo records an audit-only memory.write event on the appro
   const { tools, approvalService } = await setup();
   const tool = getTool(tools, 'coding_task_add_todo');
   const created = JSON.parse(
-    await tool.execute({ taskId: 'task-audit', title: 'Todo' }),
+    await runTool(tool, { taskId: 'task-audit', title: 'Todo' }),
   ) as { todo: { id: string } };
   const records = await approvalService.listRecords('task-audit');
   const memoryWrite = records.find((r) => r.request.actionType === 'memory.write');
@@ -67,7 +68,7 @@ test('coding_task memory tools require a taskId (trust anchor)', async () => {
   const { tools } = await setup();
   const tool = getTool(tools, 'coding_task_add_todo');
   await assert.rejects(
-    tool.execute({ taskId: '', title: 'x' } as never),
+    runTool(tool, { taskId: '', title: 'x' } as never),
     /length|taskId|required schema/i,
   );
 });
@@ -75,10 +76,10 @@ test('coding_task memory tools require a taskId (trust anchor)', async () => {
 test('coding_task_search_memory returns RetrievedContext with provider structured-memory', async () => {
   const { tools } = await setup();
   const createTool = getTool(tools, 'coding_task_create_checklist');
-  await createTool.execute({ taskId: 'task-s', title: 'Searchable', slug: 'searchable' });
+  await runTool(createTool, { taskId: 'task-s', title: 'Searchable', slug: 'searchable' });
   const searchTool = getTool(tools, 'coding_task_search_memory');
   const result = JSON.parse(
-    await searchTool.execute({ taskId: 'task-s', text: 'searchable' }),
+    await runTool(searchTool, { taskId: 'task-s', text: 'searchable' }),
   ) as { contexts: { provider: string; metadata: { kind: string } }[] };
   assert.ok(result.contexts.length > 0);
   assert.equal(result.contexts[0].provider, 'structured-memory');
@@ -96,12 +97,12 @@ test('coding_task memory tools fail closed at execution time when no trusted pro
   });
   const createTool = getTool(tools, 'coding_task_create_checklist');
   await assert.rejects(
-    createTool.execute({ taskId: 'task-no-scope', title: 'x', slug: 'x' }),
+    runTool(createTool, { taskId: 'task-no-scope', title: 'x', slug: 'x' }),
     /trusted project scope/,
   );
   const searchTool = getTool(tools, 'coding_task_search_memory');
   await assert.rejects(
-    searchTool.execute({ taskId: 'task-no-scope', text: 'x' }),
+    runTool(searchTool, { taskId: 'task-no-scope', text: 'x' }),
     /trusted project scope/,
   );
 });

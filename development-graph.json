@@ -9376,7 +9376,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 66,
+  "graph_version": 67,
   "nodes": [
     {
       "acceptance": [
@@ -19319,47 +19319,53 @@
           "kind": "policy"
         },
         {
-          "criterion": "Every built-in and generated tool uses input, run({data}), and valid result envelopes; no parameters or execute marker remains.",
+          "criterion": "Every built-in, worker-owned, and generated tool uses input, run({ data }), and valid result envelopes; no beta parameters or execute definition marker remains in the owned capability surface.",
           "evidence": "runtime:evidence/migrate-flue-v2-capabilities/tools.json",
           "id": "tool-contract-complete",
           "kind": "test"
         },
         {
-          "criterion": "Skill imports use Flue 2 SKILL.md semantics without removed import attributes or protocol leakage.",
+          "criterion": "Skill imports and inline skills use Flue 2 SKILL.md and defineSkill semantics without removed import attributes or protocol leakage.",
           "evidence": "runtime:evidence/migrate-flue-v2-capabilities/skills.json",
           "id": "skill-contract-complete",
           "kind": "test"
         },
         {
-          "criterion": "Built-in and runtime MCP connections use supported Flue 2 connection hooks while preserving canonical config, ownership, and approval controls.",
+          "criterion": "Built-in, GitHub, and runtime-added MCP connections use supported Flue 2 connection definitions and hooks while preserving canonical config, ownership, credential, and approval controls.",
           "evidence": "runtime:evidence/migrate-flue-v2-capabilities/mcp.json",
           "id": "mcp-contract-complete",
           "kind": "test"
         },
         {
-          "criterion": "Capability package schemas, validators, scaffolds, CLI add flows, fixtures, and documentation examples agree on the Flue 2 contracts.",
+          "criterion": "The orchestrator and coding worker mount their authorized dynamic capability resources without exposing worker-internal agents or bypassing approval gates.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/mounts.json",
+          "id": "capability-mounts-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Capability package schemas, validators, scaffolds, CLI add flows, fixtures, and authoring instructions agree on the Flue 2 contracts.",
           "evidence": "runtime:evidence/migrate-flue-v2-capabilities/runtime-packages.json",
           "id": "runtime-scaffolds-complete",
           "kind": "test"
         },
         {
-          "criterion": "Focused capability, registry, approval, generated-package, and type checks pass.",
+          "criterion": "Focused capability, registry, approval, generated-package, MCP, agent-mount, and type checks pass; exact diagnostics owned by later migration stacks are retained as handoff evidence.",
           "evidence": "runtime:evidence/migrate-flue-v2-capabilities/verification.json",
           "id": "capabilities-focused-verification",
           "kind": "test"
         }
       ],
       "execution": {
-        "completion_condition": "All capability contracts and generated forms pass focused verification below the file cap.",
+        "completion_condition": "All owned capability contracts, mounts, and generated forms pass focused verification below the file cap, with exact later-stack diagnostics recorded.",
         "max_attempts": 3,
         "timeout_minutes": 360
       },
       "executor": {
-        "instructions": "Convert tools, skills, MCP, registries, and runtime package contracts consistently. Preserve protocol and approval boundaries.",
+        "instructions": "Convert tools, skills, MCP connections, registries, runtime package contracts, and their agent mount points consistently. Preserve protocol-first routing, capability ownership, credentials, and approval boundaries. Do not add beta compatibility shims or migrate session, workflow, and connector lifecycle APIs assigned to later stacks.",
         "kind": "agent",
         "name": "SIM-ONE Flue capability migrator"
       },
-      "goal": "Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, and approval-preserving adapters.",
+      "goal": "Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, approval-preserving adapters, and authorized agent mounts.",
       "id": "migrate-flue-v2-capabilities",
       "inputs": [
         {
@@ -19384,32 +19390,53 @@
         ],
         "read": [
           "artifact:flue-v2-agents-workers-change",
+          "package.json",
+          "node_modules/@flue/",
+          "src/agents/orchestrator.ts",
+          "src/channels/telegram.ts",
           "src/engine/tools/",
           "src/skills/",
           "src/engine/capabilities/",
           "src/engine/registries/",
+          "src/engine/workers/capability-manager/",
+          "src/engine/workers/coding-worker/",
           "scripts/",
           "src/tests/",
           "docs/architecture/flue-v2-migration.md"
         ],
         "write": [
+          "src/agents/orchestrator.ts",
+          "src/channels/telegram.ts tool definition only",
           "src/engine/tools/",
           "src/skills/",
           "src/engine/capabilities/",
           "src/engine/registries/",
-          "scripts/ capability scaffold and validation files",
+          "src/engine/workers/capability-manager/",
+          "src/engine/workers/coding-worker/coding-worker.ts",
+          "src/engine/workers/coding-worker/runtime-capabilities.ts",
+          "src/engine/workers/coding-worker/skills.ts",
+          "src/engine/workers/coding-worker/capability-authoring/",
+          "src/engine/workers/coding-worker/github/",
+          "src/engine/workers/coding-worker/skills/",
+          "src/engine/workers/coding-worker/tools/",
+          "scripts/generate-builtin-registry.mjs",
+          "scripts/capability-admin.mjs",
+          "scripts/test-capability-product.mjs",
           "src/tests/ files assigned exclusively to capability migration"
         ]
       },
       "resources": [
+        "src/agents/orchestrator.ts",
         "src/engine/tools/",
         "src/skills/",
         "src/engine/capabilities/",
-        "src/engine/registries/"
+        "src/engine/registries/",
+        "src/engine/workers/capability-manager/",
+        "src/engine/workers/coding-worker/"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Migrates capability contracts and registries.",
+        "description": "Migrates capability contracts, registries, generated forms, and authorized agent mounts.",
         "level": "reversible",
         "rollback": "Restore milestone files from the prior stacked commit."
       },
@@ -19971,7 +19998,7 @@
     }
   ],
   "project": {
-    "context_version": "sim-one-alpha-flue-v2-agents-router-scope-2026-08-01",
+    "context_version": "sim-one-alpha-flue-v2-capabilities-scope-2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

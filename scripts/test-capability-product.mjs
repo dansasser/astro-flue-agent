@@ -408,13 +408,13 @@ function createSource(kind, id) {
     case 'tool':
       writeFileSync(
         join(source, 'index.mjs'),
-        "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'product-tool', parameters: {}, execute: async () => 'ok' });\n",
+        "import { defineTool } from '@flue/runtime';\nimport * as v from 'valibot';\nexport default defineTool({ name: 'product-tool', description: 'Product fixture.', input: v.object({}), run: async () => 'ok' });\n",
       );
       break;
     case 'worker':
       writeFileSync(
         join(source, 'index.mjs'),
-        "import { defineAgentProfile } from '@flue/runtime';\nexport default defineAgentProfile({ name: 'product-worker', instructions: 'Product fixture.' });\n",
+        "import { defineSubagent } from '@flue/runtime';\nfunction ProductWorker() { return 'Product fixture.'; }\nexport default defineSubagent({ name: 'product-worker', description: 'Product fixture.', agent: ProductWorker });\n",
       );
       mkdirSync(join(source, 'workspace'), { recursive: true });
       writeFileSync(

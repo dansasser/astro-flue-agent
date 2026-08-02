@@ -1,3 +1,4 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import {
   chmodSync,
@@ -24,7 +25,7 @@ test('Coding Worker runtime configuration status is complete and redacted', asyn
       approvalService: createInMemoryCodingApprovalService(),
     });
     const status = JSON.parse(
-      await getTool(tools, 'coding_runtime_config_status').execute({}),
+      await runTool(getTool(tools, 'coding_runtime_config_status'), {}),
     ) as {
       file: string;
       valid: boolean;
@@ -65,7 +66,7 @@ test('Coding Worker runtime configuration updates require matching approval and 
       value: 'deep',
     };
 
-    const pending = JSON.parse(await update.execute(args)) as {
+    const pending = JSON.parse(await runTool(update, args)) as {
       blocked: boolean;
       request: { id: string };
     };
@@ -81,7 +82,7 @@ test('Coding Worker runtime configuration updates require matching approval and 
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    const completed = JSON.parse(await update.execute(args)) as {
+    const completed = JSON.parse(await runTool(update, args)) as {
       updated: boolean;
       key: string;
       operation: string;
@@ -126,7 +127,7 @@ test('Coding Worker runtime configuration writes user-supplied secrets only afte
       operation: 'set' as const,
       value: suppliedSecret,
     };
-    const pending = JSON.parse(await update.execute(args)) as {
+    const pending = JSON.parse(await runTool(update, args)) as {
       blocked: boolean;
       request: { id: string };
     };
@@ -152,7 +153,7 @@ test('Coding Worker runtime configuration writes user-supplied secrets only afte
       decidedBy: 'operator-1',
       principal: { id: 'operator-1', roles: ['operator'] },
     });
-    const completed = JSON.parse(await update.execute(args)) as {
+    const completed = JSON.parse(await runTool(update, args)) as {
       updated: boolean;
       key: string;
       operation: string;
@@ -202,7 +203,7 @@ test('Coding Worker runtime configuration denial never writes the supplied secre
       operation: 'set' as const,
       value: suppliedSecret,
     };
-    const pending = JSON.parse(await update.execute(args)) as {
+    const pending = JSON.parse(await runTool(update, args)) as {
       blocked: boolean;
       request: { id: string };
     };
@@ -214,7 +215,7 @@ test('Coding Worker runtime configuration denial never writes the supplied secre
       principal: { id: 'operator-1', roles: ['operator'] },
       reason: 'Do not change this credential.',
     });
-    const denied = JSON.parse(await update.execute(args)) as {
+    const denied = JSON.parse(await runTool(update, args)) as {
       blocked: boolean;
     };
 

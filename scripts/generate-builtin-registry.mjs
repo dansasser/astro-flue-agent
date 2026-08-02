@@ -69,15 +69,15 @@ function extractToolNames(content) {
 }
 
 /**
- * Extract subagent names from `defineAgentProfile({ name: ... })` blocks.
+ * Extract subagent names from `defineSubagent({ name: ... })` blocks.
  * The name field may be a string literal or an identifier referencing a
  * const declared in the same file. When it is an identifier, we resolve
  * it by scanning the file for `const <id> = '...'` or
  * `export const <id> = '...'` declarations.
  */
-function extractAgentProfileNames(content) {
+function extractSubagentNames(content) {
   const names = [];
-  const defineProfileRegex = /defineAgentProfile\(\s*\{/g;
+  const defineProfileRegex = /defineSubagent\(\s*\{/g;
   let match;
   while ((match = defineProfileRegex.exec(content)) !== null) {
     const startIdx = match.index + match[0].length;
@@ -127,13 +127,12 @@ function extractRegistryIds(content) {
 }
 
 /**
- * Scan for imported skills via `import ... with { type: 'skill' }` or
- * similar patterns. The skill name is the directory name from the import
- * path.
+ * Scan for static SKILL.md imports. Flue 2 recognizes the file extension
+ * directly and no longer uses import attributes.
  */
 function extractImportedSkills(content) {
   const skills = [];
-  const importRegex = /import\s+[^;]*?from\s*['"]([^'"]+)['"]\s*with\s*\{\s*type:\s*['"]skill['"]\s*\}/g;
+  const importRegex = /import\s+[^;]*?from\s*['"]([^'"]+\/SKILL\.md)['"]\s*;?/g;
   let match;
   while ((match = importRegex.exec(content)) !== null) {
     const importPath = match[1];
@@ -179,12 +178,12 @@ function main() {
   }
 
   // 2. Subagents: scan orchestrator and top-level worker files for
-  //    defineAgentProfile. Worker-internal subagents under
+  //    defineSubagent. Worker-internal subagents under
   //    src/engine/workers/<name>/subagents/ are intentionally excluded — they
   //    are owned by the worker lead and never exposed to the orchestrator.
   const orchestratorContent = safeReadFile(ORCHESTRATOR_FILE);
   if (orchestratorContent) {
-    for (const name of extractAgentProfileNames(orchestratorContent)) {
+    for (const name of extractSubagentNames(orchestratorContent)) {
       subagents.add(name);
     }
   }
@@ -197,7 +196,7 @@ function main() {
         if (relative.split(/[/\\]/).includes('subagents')) continue;
         const content = safeReadFile(file);
         if (!content) continue;
-        for (const name of extractAgentProfileNames(content)) {
+        for (const name of extractSubagentNames(content)) {
           subagents.add(name);
         }
       }

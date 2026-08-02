@@ -1,9 +1,11 @@
+import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import type { McpServerConnection, ToolDefinition } from '@flue/runtime';
+import { defineTool, type McpConnection, type McpConnectionDefinition, type ToolDefinition } from '@flue/runtime';
+import * as v from 'valibot';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import {
   connectCodingWorkerGithubMcp,
@@ -25,23 +27,26 @@ test('GitHub PAT uses the official environment key only', () => {
 });
 
 test('Coding Worker connects through Flue and exposes only read-only GitHub MCP tools', async () => {
-  const calls: Array<{ name: string; options: Record<string, unknown> }> = [];
+  const calls: McpConnectionDefinition[] = [];
   const connection = fakeConnection();
   const integration = await connectCodingWorkerGithubMcp({
     env: {
       GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
       GOROMBO_RUNTIME_ROOT: '/tmp/github-mcp-test/.gorombo',
     },
-    connect: async (name, options) => {
-      calls.push({ name, options: options as unknown as Record<string, unknown> });
+    connect: async (definition) => {
+      calls.push(definition);
       return connection;
     },
   });
 
   assert.equal(calls.length, 1);
-  assert.equal(calls[0]?.name, 'github');
-  const headers = new Headers(calls[0]?.options.headers as HeadersInit);
-  assert.equal(headers.get('authorization'), 'Bearer secret-pat');
+  const definition = calls[0];
+  assert.ok(definition);
+  assert.equal(definition.name, 'github');
+  assert.equal(await resolveMcpAuth(definition), 'secret-pat');
+  const headers = new Headers(definition.headers);
+  assert.equal(headers.get('authorization'), null);
   assert.match(headers.get('x-mcp-tools') ?? '', /issue_read/);
   assert.match(headers.get('x-mcp-tools') ?? '', /update_pull_request/);
   assert.match(headers.get('x-mcp-tools') ?? '', /add_comment_to_pending_review/);
@@ -295,7 +300,7 @@ test('approval gate blocks MCP mutation until the exact request is approved', as
     issueNumber: 7,
     title: 'Updated title',
   };
-  const blocked = JSON.parse(await update.execute(args)) as {
+  const blocked = JSON.parse(await runTool(update, args)) as {
     actions: Array<{ payload: { request?: { id: string }; blocked?: boolean } }>;
   };
   assert.equal(updates, 0);
@@ -307,7 +312,7 @@ test('approval gate blocks MCP mutation until the exact request is approved', as
     decidedBy: 'operator',
     principal: { id: 'operator', roles: ['operator'] },
   });
-  await update.execute(args);
+  await runTool(update, args);
   assert.equal(updates, 1);
 });
 
@@ -338,7 +343,7 @@ test('Git credential helper stores no PAT and lives under the canonical runtime 
 
 function fakeConnection(
   calls: Array<{ name: string; args: Record<string, unknown> }> = [],
-): McpServerConnection {
+): McpConnection {
   const outputs: Record<string, (args: Record<string, unknown>) => unknown> = {
     issue_read: (args) => ({
       number: args.issue_number,
@@ -391,11 +396,12 @@ function fakeConnection(
   ];
   return {
     name: 'github',
-    tools: names.map((name): ToolDefinition => ({
+    tools: names.map((name): ToolDefinition => defineTool({
       name: `mcp__github__${name}`,
       description: name,
-      parameters: { type: 'object', properties: {} },
-      async execute(args) {
+      input: v.looseObject({}),
+      async run({ data }) {
+        const args = data as Record<string, unknown>;
         calls.push({ name, args });
         return JSON.stringify(outputs[name]?.(args) ?? { id: 'result-id' });
       },
@@ -412,4 +418,10 @@ function getTool(tools: ToolDefinition[], name: string): ToolDefinition {
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function resolveMcpAuth(definition: McpConnectionDefinition): Promise<string | undefined> {
+  return typeof definition.auth === 'function'
+    ? definition.auth()
+    : definition.auth;
 }
