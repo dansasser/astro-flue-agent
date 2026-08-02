@@ -1,0 +1,30 @@
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_44521121e6532b 951-977
+src/engine/workers/coding-worker/coding-worker.ts
+  s_a81fff26d52223::t_44521121e6532b 30-33,58-61,291
+src/tests/github-mcp.test.ts
+  s_a81fff26d52223::t_44521121e6532b 12,99-112
+  s_a81fff26d52223::t_b79393aeb53302 113-114
+src/tests/flue-v2-agents.test.ts
+  s_a81fff26d52223::t_2ddd7b31421655 91-92,94-96
+src/engine/workers/coding-worker/github/github-mcp.ts
+  s_a81fff26d52223::t_44521121e6532b 117-137
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_44521121e6532b 64-67,147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "46d0c0c9c37f5b57ee29b34ead21bf2bff396ad4",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
