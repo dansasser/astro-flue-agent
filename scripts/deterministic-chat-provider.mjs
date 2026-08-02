@@ -1,8 +1,22 @@
 import { createServer } from 'node:http';
 
-export async function startDeterministicChatProvider() {
+export async function startDeterministicChatProvider(options = {}) {
   let requestCount = 0;
+  let resolveRequestStarted;
+  let resolveAbortedRequest;
+  let resolveUnexpectedError;
+  const requestStarted = new Promise((resolvePromise) => {
+    resolveRequestStarted = resolvePromise;
+  });
+  const abortedRequestObserved = new Promise((resolvePromise) => {
+    resolveAbortedRequest = resolvePromise;
+  });
+  const unexpectedErrorObserved = new Promise((resolvePromise) => {
+    resolveUnexpectedError = resolvePromise;
+  });
   const server = createServer(async (request, response) => {
+    resolveRequestStarted();
+    request.once('aborted', () => resolveAbortedRequest());
     try {
       for await (const _chunk of request) {
         // Drain the request before returning the deterministic SSE response.
@@ -13,6 +27,7 @@ export async function startDeterministicChatProvider() {
         return;
       }
       requestCount += 1;
+      await options.beforeResponse?.({ request, response, requestCount });
 
       const completionId = `chatcmpl-sim-one-${requestCount}`;
       const events = [
@@ -41,7 +56,17 @@ export async function startDeterministicChatProvider() {
         connection: 'close',
       });
       response.end(`${events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')}data: [DONE]\n\n`);
-    } catch {
+    } catch (error) {
+      if (request.aborted || error?.code === 'ECONNRESET' || error?.name === 'AbortError') {
+        resolveAbortedRequest();
+      } else {
+        resolveUnexpectedError(error);
+        if (options.onUnexpectedError) {
+          options.onUnexpectedError(error);
+        } else {
+          console.error('[deterministic-chat-provider] request failed:', error);
+        }
+      }
       if (!response.destroyed) {
         response.destroy();
       }
@@ -59,6 +84,9 @@ export async function startDeterministicChatProvider() {
   return {
     baseUrl: `http://127.0.0.1:${address.port}/v1`,
     requestCount: () => requestCount,
+    requestStarted,
+    abortedRequestObserved,
+    unexpectedErrorObserved,
     close: () =>
       new Promise((resolvePromise, reject) => {
         server.close((error) => (error ? reject(error) : resolvePromise()));

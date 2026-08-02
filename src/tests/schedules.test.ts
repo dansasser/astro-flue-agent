@@ -46,7 +46,7 @@ function makeManagerWithFakes(path: string, settlementTimeoutMs = 4000) {
     acceptedAt: new Date().toISOString(),
     uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
-    settlement: Promise.resolve({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
+    settle: async () => ({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
   });
   const config = resolveScheduleConfig({ maxConcurrentRuns: 4 }, {});
   const manager = new ScheduleManager({
@@ -126,7 +126,7 @@ test('three-surface: persistence + real Croner firing + exact settlement', async
     assert.equal(done?.status, 'ok', 'surface 3: terminal ok came from the submission settlement');
     assert.equal(manager.store.getBySlug('every-second')?.lastRunStatus, 'ok', 'schedule lastRunStatus updated to ok');
   } finally {
-    manager.stop();
+    await manager.stop();
     rmSync(path, { force: true });
   }
 });
@@ -149,7 +149,7 @@ test('three-surface: disabled schedule does not fire (rehydrate respects enabled
     assert.equal(sched?.lastFiredAt, null, 'disabled schedule never fired');
     assert.equal(manager.store.listRuns(sched!.id, 10).length, 0, 'disabled schedule produced no runs');
   } finally {
-    manager.stop();
+    await manager.stop();
     rmSync(path, { force: true });
   }
 });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { escapeRegExp } from './test-utils.js';
 
 test('SKILL.md loader accepts CRLF frontmatter', () => {
   const script = [
@@ -58,6 +59,7 @@ test('Flue 2 foundation uses coordinated package pins and Vite build commands', 
     scripts: Record<string, string>;
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
+    engines: { node: string };
   };
 
   assert.equal(packageJson.dependencies['@flue/runtime'], '2.0.1');
@@ -67,6 +69,7 @@ test('Flue 2 foundation uses coordinated package pins and Vite build commands', 
   assert.equal(packageJson.dependencies['@earendil-works/pi-ai'], '0.83.0');
   assert.equal(packageJson.dependencies['just-bash'], '3.2.0');
   assert.equal(packageJson.devDependencies.vite, '8.2.0');
+  assert.equal(packageJson.engines.node, '>=22.18.0');
   assert.match(packageJson.scripts.build, /^vite build/);
   assert.equal(packageJson.scripts.dev, 'vite dev');
 
@@ -105,10 +108,6 @@ test('application mounts the orchestrator with the explicit Flue 2 router', () =
   }
 });
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 test('custom model providers use Pi provider objects and Flue setProvider', () => {
   const providerPaths = [
     'src/core/models/providers/codex-brain/provider.ts',
@@ -127,4 +126,27 @@ test('custom model providers use Pi provider objects and Flue setProvider', () =
   const sharedProviderSource = readFileSync('src/core/models/pi-provider.ts', 'utf8');
   assert.match(sharedProviderSource, /createProvider/);
   assert.match(sharedProviderSource, /openAICompletionsApi/);
+});
+
+test('local research command targets the Flue 2 researcher agent module', () => {
+  const source = readFileSync('scripts/research.mjs', 'utf8');
+  assert.match(source, /src\/engine\/workers\/researcher\/researcher\.ts/);
+  assert.match(source, /--message/);
+  assert.doesNotMatch(source, /'run',\s*'research'/);
+  assert.doesNotMatch(source, /--payload/);
+});
+
+test('documented Coding Worker skill ids match their runtime names', () => {
+  const source = readFileSync('src/engine/workers/coding-worker/skills.ts', 'utf8');
+  const docs = readFileSync('docs/architecture/skill-system.md', 'utf8');
+  for (const name of [
+    'coding-worker-triage-loop',
+    'coding-worker-code-change-loop',
+    'coding-worker-ci-debug-loop',
+    'coding-worker-code-review-loop',
+    'coding-worker-github-pr-loop',
+  ]) {
+    assert.match(source, new RegExp(escapeRegExp(`name: '${name}'`)));
+    assert.match(docs, new RegExp(escapeRegExp(`\`${name}\``)));
+  }
 });

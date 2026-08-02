@@ -63,6 +63,9 @@ test('runtime snapshot loads promoted Flue 2 skills and MCP definitions from its
 
 test('runtime snapshot reports a mismatched skill identity without mounting it', async () => {
   const fixture = createFixture();
+  const errors: string[] = [];
+  const originalConsoleError = console.error;
+  console.error = (...values: unknown[]) => errors.push(values.map(String).join(' '));
   try {
     const skillRoot = join(fixture.runtimeRoot, 'capabilities', 'skills', 'registry-name');
     mkdirSync(skillRoot, { recursive: true });
@@ -82,10 +85,43 @@ test('runtime snapshot reports a mismatched skill identity without mounting it',
     assert.equal(snapshot.failures.length, 1);
     assert.equal(snapshot.failures[0]?.kind, 'skill');
     assert.match(snapshot.failures[0]?.error ?? '', /does not match registry id/);
+    assert.equal(errors.length, 1);
   } finally {
+    console.error = originalConsoleError;
     rmSync(fixture.root, { recursive: true, force: true });
   }
 });
+
+for (const [field, value] of [
+  ['license', '[]'],
+  ['compatibility', '{}'],
+  ['allowed-tools', '[]'],
+] as const) {
+  test(`runtime snapshot rejects malformed optional skill field ${field}`, async () => {
+    const fixture = createFixture();
+    try {
+      const skillRoot = join(fixture.runtimeRoot, 'capabilities', 'skills', 'invalid-skill');
+      mkdirSync(skillRoot, { recursive: true });
+      writeFileSync(
+        join(skillRoot, 'SKILL.md'),
+        `---\nname: invalid-skill\ndescription: Invalid optional field fixture.\n${field}: ${value}\n---\n\nDo not mount.\n`,
+      );
+      const store = createCapabilityStore({ env: fixture.env });
+      try {
+        store.insert(record({ id: 'invalid-skill', kind: 'skill' }));
+      } finally {
+        store.close();
+      }
+
+      const snapshot = await loadRuntimeCapabilitySnapshot(fixture.env);
+      assert.equal(snapshot.skills.length, 0);
+      assert.equal(snapshot.failures.length, 1);
+      assert.match(snapshot.failures[0]?.error ?? '', new RegExp(`${field} must be a string`));
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  });
+}
 
 test('runtime snapshot records a capability-store open failure and remains empty', async () => {
   const fixture = createFixture();
