@@ -111,6 +111,11 @@ jobs:
         env:
           GOROMBO_TEST_MODE: '1'
 
+      - name: Telegram product smoke
+        run: pnpm run test:telegram-product
+        env:
+          GOROMBO_TEST_MODE: '1'
+
       - name: TUI end-to-end test
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm run test:tui

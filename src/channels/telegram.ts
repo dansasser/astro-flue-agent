@@ -191,6 +191,7 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
       attributes: {
         updateId: String(update.update_id),
         eventId: normalized.id,
+        messageId: String(incoming.message_id),
       },
       body: createChatPrompt(normalized),
     },

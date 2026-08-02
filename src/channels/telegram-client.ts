@@ -1,5 +1,6 @@
 import { defineTool } from '@flue/runtime';
 import { Api } from 'grammy';
+import { chunkTelegramText } from '../api/connectors/telegram/telegram-api.js';
 import type { NormalizedMessageEvent } from '../core/types/index.js';
 import { goromboPersistenceRuntime } from '../db.js';
 import * as v from 'valibot';
@@ -16,6 +17,11 @@ export interface TelegramConversationData {
   chatId: string | number;
   messageThreadId?: number;
   directMessagesTopicId?: number;
+}
+
+export interface TelegramDeliveryBinding {
+  eventId: string;
+  replyToMessageId?: number;
 }
 
 function isTestMode(): boolean {
@@ -57,7 +63,7 @@ export const client = new Proxy({} as Api, {
 
 export function createTelegramReplyTool(
   conversation: TelegramConversationData | undefined,
-  eventId: string | undefined,
+  delivery: TelegramDeliveryBinding | undefined,
   dependencies: TelegramReplyToolDependencies = {},
 ) {
   const telegramClient = dependencies.client ?? client;
@@ -74,33 +80,72 @@ export function createTelegramReplyTool(
       text: v.pipe(v.string(), v.minLength(1)),
       format: v.optional(v.picklist(['text', 'markdownv2'])),
     }),
-    run: async ({ data: { text, format } }) => {
+    run: async ({ data: { text, format }, log }) => {
       if (!conversation) {
         throw new Error('telegram_reply is missing the Telegram conversation bound at instance creation.');
       }
-      if (!eventId) {
+      if (!delivery) {
         throw new Error('telegram_reply is missing the current verified Telegram delivery event.');
       }
-      const event = loadEvent(eventId);
+      const event = loadEvent(delivery.eventId);
       if (!event || event.connector !== 'telegram') {
         throw new Error('telegram_reply requires the current trusted Telegram event.');
       }
 
-      const rawMessage = event.raw as { message?: { message_id?: number } } | undefined;
-      const replyTo = rawMessage?.message?.message_id;
       if (String(conversation.chatId) !== event.conversation.id) {
         throw new Error('telegram_reply delivery does not match the bound Telegram conversation.');
       }
-      await telegramClient.sendMessage(conversation.chatId, text, {
-        reply_to_message_id: Number.isFinite(replyTo) ? Number(replyTo) : undefined,
-        message_thread_id: conversation.messageThreadId,
-        direct_messages_topic_id: conversation.directMessagesTopicId,
-        parse_mode: format === 'markdownv2' ? 'MarkdownV2' : undefined,
+      const chunks = chunkTelegramText(text);
+      log.info('Telegram send started.', {
+        event: 'telegram.send_started',
+        chunkCount: chunks.length,
+      });
+      try {
+        for (const [index, chunk] of chunks.entries()) {
+          await telegramClient.sendMessage(conversation.chatId, chunk, {
+            reply_to_message_id: index === 0 ? delivery.replyToMessageId : undefined,
+            message_thread_id: conversation.messageThreadId,
+            direct_messages_topic_id: conversation.directMessagesTopicId,
+            parse_mode: format === 'markdownv2' ? 'MarkdownV2' : undefined,
+          });
+        }
+      } catch (error) {
+        log.error('Telegram send failed.', {
+          event: 'telegram.send_failed',
+          chunkCount: chunks.length,
+          errorType: error instanceof Error ? error.name : 'unknown',
+        });
+        throw error;
+      }
+      log.info('Telegram send completed.', {
+        event: 'telegram.send_completed',
+        chunkCount: chunks.length,
       });
 
       return 'sent';
     },
   });
+}
+
+export function resolveTelegramDelivery(delivery: {
+  kind: string;
+  type?: string;
+  attributes?: Record<string, string>;
+}): TelegramDeliveryBinding | undefined {
+  if (delivery.kind !== 'signal' || delivery.type !== 'telegram.message') {
+    return undefined;
+  }
+  const eventId = delivery.attributes?.eventId?.trim();
+  if (!eventId) {
+    return undefined;
+  }
+  const replyToMessageId = Number(delivery.attributes?.messageId);
+  return {
+    eventId,
+    ...(Number.isSafeInteger(replyToMessageId) && replyToMessageId > 0
+      ? { replyToMessageId }
+      : {}),
+  };
 }
 
 export function asTelegramConversationData(

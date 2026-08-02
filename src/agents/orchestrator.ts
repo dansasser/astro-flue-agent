@@ -69,6 +69,7 @@ import type { AgentModelCard } from '../core/models/types.js';
 import {
   asTelegramConversationData,
   createTelegramReplyTool,
+  resolveTelegramDelivery,
   type TelegramConversationData,
 } from '../channels/telegram-client.js';
 import {
@@ -206,7 +207,7 @@ export function Orchestrator(_props: AgentProps): string {
   useTool(
     createTelegramReplyTool(
       asTelegramConversationData(initialData),
-      resolveTelegramEventId(delivery),
+      resolveTelegramDelivery(delivery),
     ),
   );
   useSandbox(composition.sandbox, { cwd: composition.cwd });
@@ -223,17 +224,6 @@ export function Orchestrator(_props: AgentProps): string {
   return composition.instructions;
 }
 Orchestrator.agentName = 'orchestrator';
-
-export function resolveTelegramEventId(delivery: {
-  kind: string;
-  type?: string;
-  attributes?: Record<string, string>;
-}): string | undefined {
-  if (delivery.kind !== 'signal' || delivery.type !== 'telegram.message') {
-    return undefined;
-  }
-  return delivery.attributes?.eventId;
-}
 
 function isOrchestratorInitialData(value: unknown): value is OrchestratorInitialData {
   if (!value || typeof value !== 'object') {

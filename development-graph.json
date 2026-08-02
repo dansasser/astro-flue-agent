@@ -9646,13 +9646,33 @@
       "max_traversals": null,
       "to": "deliver-flue-v2-stacked-pull-requests",
       "type": "consumes"
+    },
+    {
+      "artifacts": [],
+      "condition": "Verification-regression documentation writes finish before the Telegram repair begins so their shared documentation scope cannot overlap.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-verification-regressions",
+      "id": "repair-flue-v2-verification-regressions-to-repair-flue-v2-telegram-connector-flow-requires",
+      "max_traversals": null,
+      "to": "repair-flue-v2-telegram-connector-flow",
+      "type": "requires"
+    },
+    {
+      "artifacts": [],
+      "condition": "The TUI harness package-manifest writes finish before the Telegram repair begins so package.json and pnpm-lock.yaml cannot be changed concurrently.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-tui-e2e-harness",
+      "id": "repair-flue-v2-tui-e2e-harness-to-repair-flue-v2-telegram-connector-flow-requires",
+      "max_traversals": null,
+      "to": "repair-flue-v2-telegram-connector-flow",
+      "type": "requires"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 78,
+  "graph_version": 79,
   "nodes": [
     {
       "acceptance": [
@@ -20480,7 +20500,7 @@
         "kind": "hybrid",
         "name": "SIM-ONE Flue verification repair"
       },
-      "goal": "Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.",
+      "goal": "Repair the three bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.",
       "id": "repair-flue-v2-verification-regressions",
       "inputs": [
         {
@@ -20966,7 +20986,7 @@
     }
   ],
   "project": {
-    "context_version": "flue-v2-stacked-pr-delivery-ci-bootstrap:2026-08-02",
+    "context_version": "flue-v2-pr86-review-repair-2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

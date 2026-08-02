@@ -14,16 +14,24 @@ if (!existsSync(serverPath) || !existsSync(configPath)) {
 }
 
 const releaseArtifactLock = await acquireProductArtifactLock();
-const workspaceRoot = mkdtempSync(join(runtimeRoot, '.test-telegram-product-'));
-const flueV2DatabasePath = join(workspaceRoot, 'flue-v2.sqlite');
-const sessionDatabasePath = join(workspaceRoot, 'sessions.sqlite');
-const originalConfig = readFileSync(configPath, 'utf8');
-const fixtures = await startDeterministicTelegramFixtures();
+let workspaceRoot;
+let flueV2DatabasePath;
+let sessionDatabasePath;
+let originalConfig;
+let fixtures;
 let child;
 let stderr = '';
 let stdout = '';
 
 try {
+  workspaceRoot = mkdtempSync(join(runtimeRoot, '.test-telegram-product-'));
+  flueV2DatabasePath = join(workspaceRoot, 'flue-v2.sqlite');
+  sessionDatabasePath = join(workspaceRoot, 'sessions.sqlite');
+  originalConfig = readFileSync(configPath, 'utf8');
+  fixtures = await startDeterministicTelegramFixtures({
+    botToken: 'telegram-product-token',
+  });
+
   const config = JSON.parse(originalConfig);
   const previousPrimary = config.models?.primary;
   config.models = {
@@ -59,6 +67,8 @@ try {
   assert(outbound.every((message) => String(message.chat_id) === '9001'), 'outbound Telegram destination changed');
   assert(String(outbound[0].text).includes('telegram:100'), 'first reply did not correspond to update 100');
   assert(String(outbound[1].text).includes('telegram:101'), 'second reply did not correspond to update 101');
+  assert(outbound[0].reply_to_message_id === 500, 'first reply did not target message 500');
+  assert(outbound[1].reply_to_message_id === 501, 'second reply did not target message 501');
 
   const database = new DatabaseSync(flueV2DatabasePath, { readOnly: true });
   const submissions = database.prepare(`
@@ -77,13 +87,31 @@ try {
   console.log(`[telegram-product] one persisted Flue session handled ${submissions.length} settled submissions.`);
   console.log('[telegram-product] PASS');
 } finally {
-  if (child) {
-    await stopGateway(child.process);
+  try {
+    if (child) {
+      await stopGateway(child.process);
+    }
+  } finally {
+    try {
+      if (fixtures) {
+        await fixtures.close();
+      }
+    } finally {
+      try {
+        if (originalConfig !== undefined) {
+          writeFileSync(configPath, originalConfig);
+        }
+      } finally {
+        try {
+          if (workspaceRoot) {
+            rmSync(workspaceRoot, { recursive: true, force: true });
+          }
+        } finally {
+          await releaseArtifactLock();
+        }
+      }
+    }
   }
-  await fixtures.close();
-  writeFileSync(configPath, originalConfig);
-  rmSync(workspaceRoot, { recursive: true, force: true });
-  await releaseArtifactLock();
 }
 
 async function startGateway() {
@@ -116,8 +144,20 @@ async function startGateway() {
   processHandle.stderr.on('data', (chunk) => {
     stderr += String(chunk);
   });
-  await waitForHealth(port, processHandle);
-  return { process: processHandle, port };
+  try {
+    await waitForHealth(port, processHandle);
+    return { process: processHandle, port };
+  } catch (error) {
+    try {
+      await stopGateway(processHandle);
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        'Gateway startup failed and the spawned process could not be stopped.',
+      );
+    }
+    throw error;
+  }
 }
 
 async function postTelegramUpdate(port, updateId, messageId, text) {
@@ -169,7 +209,7 @@ async function waitFor(predicate, label, timeoutMs = 90_000) {
 
 function diagnosticState() {
   let submissions = [];
-  if (existsSync(flueV2DatabasePath)) {
+  if (flueV2DatabasePath && existsSync(flueV2DatabasePath)) {
     const database = new DatabaseSync(flueV2DatabasePath, { readOnly: true });
     submissions = database.prepare(`
       SELECT submission_id, session_key, status, error

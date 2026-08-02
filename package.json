@@ -34,7 +34,7 @@
     "connect": "node scripts/run-flue.mjs connect orchestrator local --target node --session local",
     "dev": "vite dev",
     "docs:check": "python3 scripts/check-documentation.py",
-    "test:unit": "node scripts/run-unit-tests.mjs && node --test scripts/deterministic-chat-provider.test.mjs scripts/pnpm-deploy-command.test.mjs scripts/portable-node-modules.test.mjs scripts/product-artifact-lock.test.mjs scripts/runtime-configuration-files.test.mjs scripts/runtime-configuration-inventory.test.mjs scripts/runtime-root.test.mjs",
+    "test:unit": "node scripts/run-unit-tests.mjs && node --test scripts/deterministic-chat-provider.test.mjs scripts/deterministic-telegram-provider.test.mjs scripts/pnpm-deploy-command.test.mjs scripts/portable-node-modules.test.mjs scripts/product-artifact-lock.test.mjs scripts/runtime-configuration-files.test.mjs scripts/runtime-configuration-inventory.test.mjs scripts/runtime-root.test.mjs",
     "test:capability-product": "node scripts/test-capability-product.mjs",
     "test:http": "node scripts/test-built-http.mjs",
     "test:tui": "node scripts/test-tui-e2e.mjs",

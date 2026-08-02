@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd -->
+<!-- development-graph-sha256: 680028fa55138d9cfd8c65490141eeb1fb636c5e26d156f9e2dc3ef6e72adf87 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `78` |
+| Graph version | `79` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-stacked-pr-delivery-ci-bootstrap:2026-08-02` |
+| Context version | `flue-v2-pr86-review-repair-2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd` |
+| Canonical checksum | `680028fa55138d9cfd8c65490141eeb1fb636c5e26d156f9e2dc3ef6e72adf87` |
 
 ## Flow
 
@@ -924,6 +924,8 @@ flowchart TD
     n_migrate_flue_v2_product_packaging -- "consumes" --> n_repair_flue_v2_telegram_connector_flow
     n_repair_flue_v2_telegram_connector_flow -- "consumes" --> n_verify_flue_v2_production_migration
     n_verify_flue_v2_production_migration -- "consumes" --> n_deliver_flue_v2_stacked_pull_requests
+    n_repair_flue_v2_verification_regressions -- "requires" --> n_repair_flue_v2_telegram_connector_flow
+    n_repair_flue_v2_tui_e2e_harness -- "requires" --> n_repair_flue_v2_telegram_connector_flow
 ```
 
 ## Nodes
@@ -1020,7 +1022,7 @@ flowchart TD
 | `migrate-flue-v2-documentation` | `work` | `planned` | agent: SIM-ONE Flue documentation migrator | Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified. | artifact:flue-v2-documentation-change |
 | `verify-flue-v2-production-migration` | `verification` | `planned` | hybrid: SIM-ONE Flue production verifier | Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity. | artifact:flue-v2-production-verification |
 | `resolve-d12-flue-v2-persistence-and-compaction` | `decision` | `planned` | agent: SIM-ONE Flue migration architect | Bind Flue 2 to a separate persistence namespace while preserving SIM-ONE product sessions and implementing explicit compaction through public runtime generations. | decision:d12-flue-v2-persistence-and-compaction |
-| `repair-flue-v2-verification-regressions` | `work` | `planned` | hybrid: SIM-ONE Flue verification repair | Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture. | artifact:flue-v2-verification-repair |
+| `repair-flue-v2-verification-regressions` | `work` | `planned` | hybrid: SIM-ONE Flue verification repair | Repair the three bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture. | artifact:flue-v2-verification-repair |
 | `repair-flue-v2-memory-smoke-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 memory smoke repair | Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract. | artifact:flue-v2-memory-smoke-repair |
 | `repair-flue-v2-tui-e2e-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 TUI E2E repair | Migrate the TUI end-to-end product harness from the removed beta synchronous HTTP contract to the Flue 2 conversation client contract. | artifact:flue-v2-tui-e2e-repair |
 | `repair-flue-v2-telegram-connector-flow` | `work` | `planned` | hybrid: SIM-ONE Flue 2 Telegram connector repair | Complete and prove the Flue 2 Telegram connector flow from verified webhook ingress through persistent conversation routing to outbound Bot API delivery. | artifact:flue-v2-telegram-connector-repair |
@@ -1835,6 +1837,8 @@ flowchart TD
 | `migrate-flue-v2-product-packaging-to-repair-flue-v2-telegram-connector-flow-consumes` | `migrate-flue-v2-product-packaging` | `consumes` | `repair-flue-v2-telegram-connector-flow` | The verified Flue 2 product package remains current. | artifact:flue-v2-product-packaging-change | — |
 | `repair-flue-v2-telegram-connector-flow-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-telegram-connector-flow` | `consumes` | `verify-flue-v2-production-migration` | The Telegram connector repair is verified before final production verification resumes. | artifact:flue-v2-telegram-connector-repair | — |
 | `verify-flue-v2-production-migration-to-deliver-flue-v2-stacked-pull-requests-consumes` | `verify-flue-v2-production-migration` | `consumes` | `deliver-flue-v2-stacked-pull-requests` | The complete Flue 2 production migration remains verified before GitHub stack publication begins. | artifact:flue-v2-production-verification | — |
+| `repair-flue-v2-verification-regressions-to-repair-flue-v2-telegram-connector-flow-requires` | `repair-flue-v2-verification-regressions` | `requires` | `repair-flue-v2-telegram-connector-flow` | Verification-regression documentation writes finish before the Telegram repair begins so their shared documentation scope cannot overlap. | — | — |
+| `repair-flue-v2-tui-e2e-harness-to-repair-flue-v2-telegram-connector-flow-requires` | `repair-flue-v2-tui-e2e-harness` | `requires` | `repair-flue-v2-telegram-connector-flow` | The TUI harness package-manifest writes finish before the Telegram repair begins so package.json and pnpm-lock.yaml cannot be changed concurrently. | — | — |
 
 ## Node contracts
 
@@ -3405,7 +3409,7 @@ flowchart TD
 
 ### `repair-flue-v2-verification-regressions` — Repair Flue 2 Verification Regressions
 
-- Goal: Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.
+- Goal: Repair the three bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.
 - Executor instructions: Apply only the three verified corrections exposed by final unit verification, run focused checks first, then typecheck and documentation/graph checks, and preserve the project-scoped Coding Worker boundary.
 - Inputs: artifact:flue-v2-agents-workers-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-documentation-change
 - Resources: src/workflows/research.ts, src/tests/coding-worker.test.ts, docs/architecture/flue-architecture.md

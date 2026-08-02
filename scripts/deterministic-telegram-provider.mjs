@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 
-export async function startDeterministicTelegramFixtures() {
+export async function startDeterministicTelegramFixtures({ botToken = 'telegram-product-token' } = {}) {
   const modelRequests = [];
   const telegramMessages = [];
   const telegramRequests = [];
@@ -47,8 +47,8 @@ export async function startDeterministicTelegramFixtures() {
 
   const telegramServer = createServer(async (request, response) => {
     telegramRequests.push({ method: request.method, url: request.url });
-    const match = /^\/bot[^/]+\/sendMessage$/.exec(request.url ?? '');
-    if (request.method !== 'POST' || !match) {
+    const expectedPath = `/bot${botToken}/sendMessage`;
+    if (request.method !== 'POST' || request.url !== expectedPath) {
       respondJson(response, 404, { ok: false, description: 'not found' });
       return;
     }
@@ -65,7 +65,12 @@ export async function startDeterministicTelegramFixtures() {
     });
   });
 
-  await Promise.all([listen(modelServer), listen(telegramServer)]);
+  try {
+    await Promise.all([listen(modelServer), listen(telegramServer)]);
+  } catch (error) {
+    await Promise.allSettled([closeIfListening(modelServer), closeIfListening(telegramServer)]);
+    throw error;
+  }
   return {
     modelBaseUrl: `http://127.0.0.1:${serverPort(modelServer)}/v1`,
     telegramApiRoot: `http://127.0.0.1:${serverPort(telegramServer)}`,
@@ -170,6 +175,10 @@ function close(server) {
   return new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
+}
+
+function closeIfListening(server) {
+  return server.listening ? close(server) : Promise.resolve();
 }
 
 function serverPort(server) {
