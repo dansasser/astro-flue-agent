@@ -1,0 +1,29 @@
+docs/architecture/astro-docs-mcp.md
+  s_a81fff26d52223::t_ffb70c5fb9b73f 12-15,36-37,63
+src/tests/flue-v2-capabilities.test.ts
+  s_a81fff26d52223::t_d8477c1516e96e 89-100
+src/engine/workers/researcher/researcher.ts
+  s_a81fff26d52223::t_ffb70c5fb9b73f 6,10,22,47,59,69,82,93-100,127
+src/engine/capabilities/mcp-broker.ts
+  s_a81fff26d52223::t_ffb70c5fb9b73f 35-41
+src/tests/runtime-capability-snapshot.test.ts
+  s_a81fff26d52223::t_d8477c1516e96e 95-125
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_ffb70c5fb9b73f 176
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "fe5a1cb13ff3922dafd2675c2ede6fa71c74aa5d",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
