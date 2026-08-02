@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const toolSourceFiles = [
-  'src/channels/telegram.ts',
+  'src/channels/telegram-client.ts',
   'src/engine/tools/knowledge-tool.ts',
   'src/engine/tools/memory-checklist-tools.ts',
   'src/engine/tools/memory-note-tools.ts',
