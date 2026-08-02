@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 088ac941c042f96a8c5e40765c524966c0e8862ef75121a131f8c12ff7102bab -->
+<!-- development-graph-sha256: 8a8974752d30e1afd34004b0444a961df288940cc1e5c45edab82fbf6b8b38fb -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `73` |
+| Graph version | `74` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-verification-repair:2026-08-02` |
+| Context version | `flue-v2-memory-smoke-repair:2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `088ac941c042f96a8c5e40765c524966c0e8862ef75121a131f8c12ff7102bab` |
+| Canonical checksum | `8a8974752d30e1afd34004b0444a961df288940cc1e5c45edab82fbf6b8b38fb` |
 
 ## Flow
 
@@ -115,6 +115,7 @@ flowchart TD
     n_verify_flue_v2_production_migration(["Verify Flue 2 Production Migration\\n(verification / planned)"])
     n_resolve_d12_flue_v2_persistence_and_compaction{"Resolve Flue 2 Persistence History And Compaction\\n(decision / planned)"}
     n_repair_flue_v2_verification_regressions["Repair Flue 2 Verification Regressions\\n(work / planned)"]
+    n_repair_flue_v2_memory_smoke_harness["Repair Flue 2 Memory Smoke Harness\\n(work / planned)"]
     n_baseline_context -- "consumes" --> n_install_dependencies
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
@@ -909,6 +910,9 @@ flowchart TD
     n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_verification_regressions
     n_migrate_flue_v2_documentation -- "consumes" --> n_repair_flue_v2_verification_regressions
     n_repair_flue_v2_verification_regressions -- "consumes" --> n_verify_flue_v2_production_migration
+    n_migrate_flue_v2_capabilities -- "consumes" --> n_repair_flue_v2_memory_smoke_harness
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_memory_smoke_harness
+    n_repair_flue_v2_memory_smoke_harness -- "consumes" --> n_verify_flue_v2_production_migration
 ```
 
 ## Nodes
@@ -1006,6 +1010,7 @@ flowchart TD
 | `verify-flue-v2-production-migration` | `verification` | `planned` | hybrid: SIM-ONE Flue production verifier | Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity. | artifact:flue-v2-production-verification |
 | `resolve-d12-flue-v2-persistence-and-compaction` | `decision` | `planned` | agent: SIM-ONE Flue migration architect | Bind Flue 2 to a separate persistence namespace while preserving SIM-ONE product sessions and implementing explicit compaction through public runtime generations. | decision:d12-flue-v2-persistence-and-compaction |
 | `repair-flue-v2-verification-regressions` | `work` | `planned` | hybrid: SIM-ONE Flue verification repair | Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture. | artifact:flue-v2-verification-repair |
+| `repair-flue-v2-memory-smoke-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 memory smoke repair | Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract. | artifact:flue-v2-memory-smoke-repair |
 
 ## Edges
 
@@ -1805,6 +1810,9 @@ flowchart TD
 | `migrate-flue-v2-execution-persistence-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-verification-regressions` | The verified execution migration remains current. | artifact:flue-v2-execution-persistence-change | — |
 | `migrate-flue-v2-documentation-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-documentation` | `consumes` | `repair-flue-v2-verification-regressions` | The verified documentation migration remains current. | artifact:flue-v2-documentation-change | — |
 | `repair-flue-v2-verification-regressions-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-verification-regressions` | `consumes` | `verify-flue-v2-production-migration` | The bounded final-verification repair is verified before production verification resumes. | artifact:flue-v2-verification-repair | — |
+| `migrate-flue-v2-capabilities-to-repair-flue-v2-memory-smoke-harness-consumes` | `migrate-flue-v2-capabilities` | `consumes` | `repair-flue-v2-memory-smoke-harness` | The verified Flue 2 capability definitions remain current. | artifact:flue-v2-capabilities-change | — |
+| `migrate-flue-v2-execution-persistence-to-repair-flue-v2-memory-smoke-harness-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-memory-smoke-harness` | The verified Flue 2 structured-memory execution and persistence migration remains current. | artifact:flue-v2-execution-persistence-change | — |
+| `repair-flue-v2-memory-smoke-harness-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-memory-smoke-harness` | `consumes` | `verify-flue-v2-production-migration` | The deterministic memory smoke repair is verified before final production verification resumes. | artifact:flue-v2-memory-smoke-repair | — |
 
 ## Node contracts
 
@@ -3344,9 +3352,9 @@ flowchart TD
 
 - Goal: Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity.
 - Executor instructions: Run every configured check and real product flow. Do not infer working status from a process or port. Retain output-level evidence.
-- Inputs: artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair
+- Inputs: artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair, artifact:flue-v2-memory-smoke-repair
 - Resources: authorized project tree, .gorombo/, runtime:evidence/verify-flue-v2-production-migration/
-- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
+- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair, artifact:flue-v2-memory-smoke-repair]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
 - Execution: max `3` attempt(s), `600` minute(s); Every migration acceptance criterion passes and all prospective PR slices remain below 100 files.
 - Side effects: `reversible` — Builds and exercises local product artifacts without opening a PR or publishing.
 - Rollback: Stop local test processes and remove only generated test/build artifacts.
@@ -3389,6 +3397,22 @@ flowchart TD
   - `project-scope-test-corrected` (test): The coding-worker ownership test invokes project-scoped tools with project-root-relative paths while continuing to prove that repository execution is available only through the coding-worker lead. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/coding-worker.json`
   - `research-ownership-explicit` (test): The current Flue architecture contract explicitly states that the orchestrator must not directly call web search and the architecture contract test passes. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/documentation.json`
   - `repair-verification-green` (test): Focused tests, typecheck, documentation checks, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/verification.json`
+
+### `repair-flue-v2-memory-smoke-harness` — Repair Flue 2 Memory Smoke Harness
+
+- Goal: Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract.
+- Executor instructions: Replace only stale beta direct tool invocations in the deterministic memory smoke with the project's shared Flue 2 direct-tool runner, then prove the entire smoke and focused memory contracts.
+- Inputs: artifact:flue-v2-capabilities-change, artifact:flue-v2-execution-persistence-change
+- Resources: scripts/smoke-memory-helper.mjs, src/engine/tools/direct-tool-runner.ts
+- Permissions: read [artifact:flue-v2-capabilities-change, artifact:flue-v2-execution-persistence-change, scripts/smoke-memory-helper.mjs, src/engine/tools/direct-tool-runner.ts, src/engine/tools/, src/engine/workers/coding-worker/tools/, src/tests/, node_modules/@flue/runtime/docs/]; write [scripts/smoke-memory-helper.mjs, runtime:evidence/repair-flue-v2-memory-smoke-harness/]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `120` minute(s); The deterministic memory smoke passes end to end under the Flue 2 tool contract and the bounded milestone is committed and pushed.
+- Side effects: `reversible` — Repairs one deterministic product smoke harness and writes local verification evidence.
+- Rollback: Revert the bounded memory-smoke repair commit and restore the prior harness.
+- Approval required: `false`
+- Acceptance:
+  - `memory-smoke-uses-flue-v2-tool-contract` (test): The deterministic memory smoke invokes every orchestrator and Coding Worker Flue 2 tool through the shared direct-tool runner and contains no beta execute calls. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/static-scan.json`
+  - `memory-smoke-passes` (probe): The complete memory smoke creates, retrieves, restarts, and verifies orchestrator and Coding Worker structured-memory records with the Flue 2 tool contract. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/memory-smoke.log`
+  - `memory-smoke-repair-verified` (test): Typecheck, focused memory tests, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/verification.json`
 
 ## Assumptions
 

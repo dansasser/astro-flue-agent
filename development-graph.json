@@ -9514,13 +9514,49 @@
       "max_traversals": null,
       "to": "verify-flue-v2-production-migration",
       "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-capabilities-change"
+      ],
+      "condition": "The verified Flue 2 capability definitions remain current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-capabilities",
+      "id": "migrate-flue-v2-capabilities-to-repair-flue-v2-memory-smoke-harness-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-memory-smoke-harness",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-execution-persistence-change"
+      ],
+      "condition": "The verified Flue 2 structured-memory execution and persistence migration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-execution-persistence",
+      "id": "migrate-flue-v2-execution-persistence-to-repair-flue-v2-memory-smoke-harness-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-memory-smoke-harness",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-memory-smoke-repair"
+      ],
+      "condition": "The deterministic memory smoke repair is verified before final production verification resumes.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-memory-smoke-harness",
+      "id": "repair-flue-v2-memory-smoke-harness-to-verify-flue-v2-production-migration-consumes",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 73,
+  "graph_version": 74,
   "nodes": [
     {
       "acceptance": [
@@ -20162,6 +20198,11 @@
           "artifact": "artifact:flue-v2-verification-repair",
           "name": "verified final migration repair",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-memory-smoke-repair",
+          "name": "verified Flue 2 memory smoke repair",
+          "required": true
         }
       ],
       "outputs": [
@@ -20181,7 +20222,8 @@
           "authorized project tree",
           "node_modules/",
           "artifact:flue-v2-documentation-change",
-          "artifact:flue-v2-verification-repair"
+          "artifact:flue-v2-verification-repair",
+          "artifact:flue-v2-memory-smoke-repair"
         ],
         "write": [
           ".gorombo/",
@@ -20397,10 +20439,101 @@
       ],
       "title": "Repair Flue 2 Verification Regressions",
       "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The deterministic memory smoke invokes every orchestrator and Coding Worker Flue 2 tool through the shared direct-tool runner and contains no beta execute calls.",
+          "evidence": "runtime:evidence/repair-flue-v2-memory-smoke-harness/static-scan.json",
+          "id": "memory-smoke-uses-flue-v2-tool-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "The complete memory smoke creates, retrieves, restarts, and verifies orchestrator and Coding Worker structured-memory records with the Flue 2 tool contract.",
+          "evidence": "runtime:evidence/repair-flue-v2-memory-smoke-harness/memory-smoke.log",
+          "id": "memory-smoke-passes",
+          "kind": "probe"
+        },
+        {
+          "criterion": "Typecheck, focused memory tests, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files.",
+          "evidence": "runtime:evidence/repair-flue-v2-memory-smoke-harness/verification.json",
+          "id": "memory-smoke-repair-verified",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The deterministic memory smoke passes end to end under the Flue 2 tool contract and the bounded milestone is committed and pushed.",
+        "max_attempts": 3,
+        "timeout_minutes": 120
+      },
+      "executor": {
+        "instructions": "Replace only stale beta direct tool invocations in the deterministic memory smoke with the project's shared Flue 2 direct-tool runner, then prove the entire smoke and focused memory contracts.",
+        "kind": "hybrid",
+        "name": "SIM-ONE Flue 2 memory smoke repair"
+      },
+      "goal": "Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract.",
+      "id": "repair-flue-v2-memory-smoke-harness",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-capabilities-change",
+          "name": "verified Flue 2 capability definitions",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-execution-persistence-change",
+          "name": "verified Flue 2 memory execution and persistence",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-memory-smoke-repair",
+          "format": "git-diff",
+          "name": "Flue 2 memory smoke harness repair"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:flue-v2-capabilities-change",
+          "artifact:flue-v2-execution-persistence-change",
+          "scripts/smoke-memory-helper.mjs",
+          "src/engine/tools/direct-tool-runner.ts",
+          "src/engine/tools/",
+          "src/engine/workers/coding-worker/tools/",
+          "src/tests/",
+          "node_modules/@flue/runtime/docs/"
+        ],
+        "write": [
+          "scripts/smoke-memory-helper.mjs",
+          "runtime:evidence/repair-flue-v2-memory-smoke-harness/"
+        ]
+      },
+      "resources": [
+        "scripts/smoke-memory-helper.mjs",
+        "src/engine/tools/direct-tool-runner.ts"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Repairs one deterministic product smoke harness and writes local verification evidence.",
+        "level": "reversible",
+        "rollback": "Revert the bounded memory-smoke repair commit and restore the prior harness."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "memory",
+        "repair",
+        "verification"
+      ],
+      "title": "Repair Flue 2 Memory Smoke Harness",
+      "type": "work"
     }
   ],
   "project": {
-    "context_version": "flue-v2-verification-repair:2026-08-02",
+    "context_version": "flue-v2-memory-smoke-repair:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

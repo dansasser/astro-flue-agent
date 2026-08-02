@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 73,
-  "context_version": "flue-v2-verification-repair:2026-08-02",
+  "graph_version": 74,
+  "context_version": "flue-v2-memory-smoke-repair:2026-08-02",
   "specification_root": "doc",
   "documents": [
     {
