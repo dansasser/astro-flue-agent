@@ -17,11 +17,16 @@ TUI, Web API, or schedule
 -> product-session or schedule-run resolution
 -> init(Orchestrator, { id })
 -> dispatch(message)
--> exact receipt persisted by the owning application boundary
--> read(receipt) until settlement
+-> owning application boundary applies its documented admission-persistence order
+-> read(receipt) until exact settlement
 -> protocols, memory, tools, MCP, or worker delegation
 -> root orchestrator response or approved side effect
 ```
+
+Product chat reads the exact settlement before persisting delivery correlation.
+Schedules persist `submissionId` and `acceptedAt` immediately after admission,
+then await settlement. The two application boundaries intentionally use
+different persistence order and document it in their flows below.
 
 ## Runtime Primitives
 
