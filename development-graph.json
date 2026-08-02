@@ -9466,13 +9466,61 @@
       "max_traversals": null,
       "to": "plan-implementation",
       "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-agents-workers-change"
+      ],
+      "condition": "The verified agent and Coding Worker migration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-agents-workers",
+      "id": "migrate-flue-v2-agents-workers-to-repair-flue-v2-verification-regressions-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-verification-regressions",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-execution-persistence-change"
+      ],
+      "condition": "The verified execution migration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-execution-persistence",
+      "id": "migrate-flue-v2-execution-persistence-to-repair-flue-v2-verification-regressions-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-verification-regressions",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-documentation-change"
+      ],
+      "condition": "The verified documentation migration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-documentation",
+      "id": "migrate-flue-v2-documentation-to-repair-flue-v2-verification-regressions-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-verification-regressions",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-verification-repair"
+      ],
+      "condition": "The bounded final-verification repair is verified before production verification resumes.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-verification-regressions",
+      "id": "repair-flue-v2-verification-regressions-to-verify-flue-v2-production-migration-consumes",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 72,
+  "graph_version": 73,
   "nodes": [
     {
       "acceptance": [
@@ -20109,6 +20157,11 @@
           "artifact": "artifact:flue-v2-documentation-change",
           "name": "completed Flue 2 documentation",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-verification-repair",
+          "name": "verified final migration repair",
+          "required": true
         }
       ],
       "outputs": [
@@ -20127,7 +20180,8 @@
         "read": [
           "authorized project tree",
           "node_modules/",
-          "artifact:flue-v2-documentation-change"
+          "artifact:flue-v2-documentation-change",
+          "artifact:flue-v2-verification-repair"
         ],
         "write": [
           ".gorombo/",
@@ -20238,10 +20292,115 @@
       ],
       "title": "Resolve Flue 2 Persistence History And Compaction",
       "type": "decision"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The research workflow prompt preserves explicit providerFailures reporting and tells the researcher to omit unspecified budget controls so depth defaults remain authoritative.",
+          "evidence": "runtime:evidence/repair-flue-v2-verification-regressions/research.json",
+          "id": "research-contract-restored",
+          "kind": "test"
+        },
+        {
+          "criterion": "The coding-worker ownership test invokes project-scoped tools with project-root-relative paths while continuing to prove that repository execution is available only through the coding-worker lead.",
+          "evidence": "runtime:evidence/repair-flue-v2-verification-regressions/coding-worker.json",
+          "id": "project-scope-test-corrected",
+          "kind": "test"
+        },
+        {
+          "criterion": "The current Flue architecture contract explicitly states that the orchestrator must not directly call web search and the architecture contract test passes.",
+          "evidence": "runtime:evidence/repair-flue-v2-verification-regressions/documentation.json",
+          "id": "research-ownership-explicit",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused tests, typecheck, documentation checks, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files.",
+          "evidence": "runtime:evidence/repair-flue-v2-verification-regressions/verification.json",
+          "id": "repair-verification-green",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All four failed contracts pass with no unrelated source changes and the repair milestone is committed and pushed.",
+        "max_attempts": 3,
+        "timeout_minutes": 120
+      },
+      "executor": {
+        "instructions": "Apply only the three verified corrections exposed by final unit verification, run focused checks first, then typecheck and documentation/graph checks, and preserve the project-scoped Coding Worker boundary.",
+        "kind": "hybrid",
+        "name": "SIM-ONE Flue verification repair"
+      },
+      "goal": "Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.",
+      "id": "repair-flue-v2-verification-regressions",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-agents-workers-change",
+          "name": "verified Flue 2 agents and workers migration",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-execution-persistence-change",
+          "name": "verified Flue 2 execution and persistence migration",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-documentation-change",
+          "name": "verified Flue 2 documentation migration",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-verification-repair",
+          "format": "git-diff",
+          "name": "Flue 2 final verification repair"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:flue-v2-agents-workers-change",
+          "artifact:flue-v2-execution-persistence-change",
+          "artifact:flue-v2-documentation-change",
+          "src/engine/workers/coding-worker/",
+          "src/workflows/research.ts",
+          "src/tests/coding-worker.test.ts",
+          "src/tests/research-workflow.test.ts",
+          "src/tests/architecture-contract.test.ts",
+          "docs/architecture/flue-architecture.md"
+        ],
+        "write": [
+          "src/workflows/research.ts",
+          "src/tests/coding-worker.test.ts",
+          "docs/architecture/flue-architecture.md",
+          "runtime:evidence/repair-flue-v2-verification-regressions/"
+        ]
+      },
+      "resources": [
+        "src/workflows/research.ts",
+        "src/tests/coding-worker.test.ts",
+        "docs/architecture/flue-architecture.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Repairs three tracked files and writes local verification evidence.",
+        "level": "reversible",
+        "rollback": "Revert the bounded repair commit and restore the prior three tracked files."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "repair",
+        "verification"
+      ],
+      "title": "Repair Flue 2 Verification Regressions",
+      "type": "work"
     }
   ],
   "project": {
-    "context_version": "flue-v2-connectors-clients-packaging-scope:2026-08-01",
+    "context_version": "flue-v2-verification-repair:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

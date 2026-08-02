@@ -1813,11 +1813,11 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
     const shell = getTool(codingWorker.tools, 'coding_shell_run');
 
     await runTool(patch, {
-      path: `${project.projectRelativePath}/index.js`,
+      path: 'index.js',
       edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
     });
     const output = JSON.parse(
-      await runTool(shell, { command: 'node test.js', cwd: project.projectRelativePath }),
+      await runTool(shell, { command: 'node test.js' }),
     ) as { exitCode: number };
 
     assert.equal(output.exitCode, 0);

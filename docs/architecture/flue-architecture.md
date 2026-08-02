@@ -199,8 +199,9 @@ User prompt
 -> root orchestrator response
 ```
 
-The orchestrator routes and delegates. The researcher owns web research. Nested
-worker output remains internal until the orchestrator synthesizes the public
+The orchestrator routes and delegates. The researcher owns web research.
+The orchestrator must not directly call web search or a web-capable retrieval path.
+Nested worker output remains internal until the orchestrator synthesizes the public
 response.
 
 ## Related Documentation

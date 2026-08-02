@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b -->
+<!-- development-graph-sha256: 088ac941c042f96a8c5e40765c524966c0e8862ef75121a131f8c12ff7102bab -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `72` |
+| Graph version | `73` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-connectors-clients-packaging-scope:2026-08-01` |
+| Context version | `flue-v2-verification-repair:2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b` |
+| Canonical checksum | `088ac941c042f96a8c5e40765c524966c0e8862ef75121a131f8c12ff7102bab` |
 
 ## Flow
 
@@ -114,6 +114,7 @@ flowchart TD
     n_migrate_flue_v2_documentation["Update Flue 2 Documentation\\n(work / planned)"]
     n_verify_flue_v2_production_migration(["Verify Flue 2 Production Migration\\n(verification / planned)"])
     n_resolve_d12_flue_v2_persistence_and_compaction{"Resolve Flue 2 Persistence History And Compaction\\n(decision / planned)"}
+    n_repair_flue_v2_verification_regressions["Repair Flue 2 Verification Regressions\\n(work / planned)"]
     n_baseline_context -- "consumes" --> n_install_dependencies
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
@@ -904,6 +905,10 @@ flowchart TD
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_migrate_flue_v2_documentation
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_verify_release_reconciliation_specifications
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_plan_implementation
+    n_migrate_flue_v2_agents_workers -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_migrate_flue_v2_documentation -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_repair_flue_v2_verification_regressions -- "consumes" --> n_verify_flue_v2_production_migration
 ```
 
 ## Nodes
@@ -1000,6 +1005,7 @@ flowchart TD
 | `migrate-flue-v2-documentation` | `work` | `planned` | agent: SIM-ONE Flue documentation migrator | Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified. | artifact:flue-v2-documentation-change |
 | `verify-flue-v2-production-migration` | `verification` | `planned` | hybrid: SIM-ONE Flue production verifier | Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity. | artifact:flue-v2-production-verification |
 | `resolve-d12-flue-v2-persistence-and-compaction` | `decision` | `planned` | agent: SIM-ONE Flue migration architect | Bind Flue 2 to a separate persistence namespace while preserving SIM-ONE product sessions and implementing explicit compaction through public runtime generations. | decision:d12-flue-v2-persistence-and-compaction |
+| `repair-flue-v2-verification-regressions` | `work` | `planned` | hybrid: SIM-ONE Flue verification repair | Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture. | artifact:flue-v2-verification-repair |
 
 ## Edges
 
@@ -1795,6 +1801,10 @@ flowchart TD
 | `resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-documentation-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `migrate-flue-v2-documentation` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
 | `resolve-d12-flue-v2-persistence-and-compaction-to-verify-release-reconciliation-specifications-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `verify-release-reconciliation-specifications` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
 | `resolve-d12-flue-v2-persistence-and-compaction-to-plan-implementation-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `plan-implementation` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
+| `migrate-flue-v2-agents-workers-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-agents-workers` | `consumes` | `repair-flue-v2-verification-regressions` | The verified agent and Coding Worker migration remains current. | artifact:flue-v2-agents-workers-change | — |
+| `migrate-flue-v2-execution-persistence-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-verification-regressions` | The verified execution migration remains current. | artifact:flue-v2-execution-persistence-change | — |
+| `migrate-flue-v2-documentation-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-documentation` | `consumes` | `repair-flue-v2-verification-regressions` | The verified documentation migration remains current. | artifact:flue-v2-documentation-change | — |
+| `repair-flue-v2-verification-regressions-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-verification-regressions` | `consumes` | `verify-flue-v2-production-migration` | The bounded final-verification repair is verified before production verification resumes. | artifact:flue-v2-verification-repair | — |
 
 ## Node contracts
 
@@ -3334,9 +3344,9 @@ flowchart TD
 
 - Goal: Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity.
 - Executor instructions: Run every configured check and real product flow. Do not infer working status from a process or port. Retain output-level evidence.
-- Inputs: artifact:flue-v2-documentation-change
+- Inputs: artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair
 - Resources: authorized project tree, .gorombo/, runtime:evidence/verify-flue-v2-production-migration/
-- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
+- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
 - Execution: max `3` attempt(s), `600` minute(s); Every migration acceptance criterion passes and all prospective PR slices remain below 100 files.
 - Side effects: `reversible` — Builds and exercises local product artifacts without opening a PR or publishing.
 - Rollback: Stop local test processes and remove only generated test/build artifacts.
@@ -3362,6 +3372,23 @@ flowchart TD
 - Approval required: `false`
 - Acceptance:
   - `flue-v2-persistence-decision-complete` (artifact): The decision records the exact Flue 2 database path, beta rollback archive, app-owned session/history boundary, public dispatch/read compaction rotation, failure behavior, and affected consumers. Evidence: `doc/decisions/d12-flue-v2-persistence-and-compaction.md`
+
+### `repair-flue-v2-verification-regressions` — Repair Flue 2 Verification Regressions
+
+- Goal: Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.
+- Executor instructions: Apply only the three verified corrections exposed by final unit verification, run focused checks first, then typecheck and documentation/graph checks, and preserve the project-scoped Coding Worker boundary.
+- Inputs: artifact:flue-v2-agents-workers-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-documentation-change
+- Resources: src/workflows/research.ts, src/tests/coding-worker.test.ts, docs/architecture/flue-architecture.md
+- Permissions: read [artifact:flue-v2-agents-workers-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-documentation-change, src/engine/workers/coding-worker/, src/workflows/research.ts, src/tests/coding-worker.test.ts, src/tests/research-workflow.test.ts, src/tests/architecture-contract.test.ts, docs/architecture/flue-architecture.md]; write [src/workflows/research.ts, src/tests/coding-worker.test.ts, docs/architecture/flue-architecture.md, runtime:evidence/repair-flue-v2-verification-regressions/]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `120` minute(s); All four failed contracts pass with no unrelated source changes and the repair milestone is committed and pushed.
+- Side effects: `reversible` — Repairs three tracked files and writes local verification evidence.
+- Rollback: Revert the bounded repair commit and restore the prior three tracked files.
+- Approval required: `false`
+- Acceptance:
+  - `research-contract-restored` (test): The research workflow prompt preserves explicit providerFailures reporting and tells the researcher to omit unspecified budget controls so depth defaults remain authoritative. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/research.json`
+  - `project-scope-test-corrected` (test): The coding-worker ownership test invokes project-scoped tools with project-root-relative paths while continuing to prove that repository execution is available only through the coding-worker lead. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/coding-worker.json`
+  - `research-ownership-explicit` (test): The current Flue architecture contract explicitly states that the orchestrator must not directly call web search and the architecture contract test passes. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/documentation.json`
+  - `repair-verification-green` (test): Focused tests, typecheck, documentation checks, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/verification.json`
 
 ## Assumptions
 
