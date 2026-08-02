@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import { createServer as createHttpServer } from 'node:http';
 import {
   chmodSync,
   cpSync,
@@ -19,6 +18,7 @@ import { parseEnv } from 'node:util';
 import { findExternalDependencyLinks } from './portable-node-modules.mjs';
 import { acquireProductArtifactLock } from './product-artifact-lock.mjs';
 import { createSanitizedRuntimeEnvironment } from './runtime-configuration-files.mjs';
+import { startDeterministicChatProvider } from './deterministic-chat-provider.mjs';
 
 const sourceProjectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourceRuntimeRoot = join(sourceProjectRoot, '.gorombo');
@@ -463,66 +463,6 @@ async function runFreshStartup(env, label) {
   }
   assertOutputIncludes(stdout, '\nSIM-ONE Alpha\nSIM-ONE Alpha | session:', `${label} did not use the product-only header or preserve the status bar`);
   return { ...result, sessionId: sessionMatch[1] };
-}
-
-async function startDeterministicChatProvider() {
-  let requestCount = 0;
-  const server = createHttpServer(async (request, response) => {
-    for await (const _chunk of request) {
-      // Drain the request before returning the deterministic SSE response.
-    }
-    if (request.method !== 'POST' || request.url !== '/v1/chat/completions') {
-      response.writeHead(404, { 'content-length': '0' });
-      response.end();
-      return;
-    }
-    requestCount += 1;
-
-    const completionId = `chatcmpl-ratatui-${Date.now()}`;
-    const events = [
-      {
-        id: completionId,
-        object: 'chat.completion.chunk',
-        model: 'kimi-k2.6',
-        choices: [
-          {
-            index: 0,
-            delta: { role: 'assistant', content: 'Hello from SIM-ONE Alpha.' },
-            finish_reason: null,
-          },
-        ],
-      },
-      {
-        id: completionId,
-        object: 'chat.completion.chunk',
-        model: 'kimi-k2.6',
-        choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
-      },
-    ];
-    response.writeHead(200, {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache',
-      connection: 'close',
-    });
-    response.end(`${events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')}data: [DONE]\n\n`);
-  });
-  await new Promise((resolvePromise, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolvePromise);
-  });
-  const address = server.address();
-  if (!address || typeof address === 'string') {
-    server.close();
-    throw new Error('Deterministic chat provider did not bind a TCP port.');
-  }
-  return {
-    baseUrl: `http://127.0.0.1:${address.port}/v1`,
-    requestCount: () => requestCount,
-    close: () =>
-      new Promise((resolvePromise, reject) => {
-        server.close((error) => (error ? reject(error) : resolvePromise()));
-      }),
-  };
 }
 
 async function runMissingSessionFallback(env, selector) {

@@ -12,8 +12,10 @@ if (!existsSync(configPath)) {
   throw new Error(`${configPath} does not exist. Build after creating sim-one.config.`);
 }
 const configValues = parseEnv(readFileSync(configPath, 'utf8'));
-const requestSecret = configValues.API_SECRET || 'unconfigured-api-secret';
-if (liveChat && !configValues.API_SECRET) {
+const apiSecret = configValues.API_SECRET?.trim() || '';
+const requestSecret = apiSecret || 'unconfigured-api-secret';
+const unauthenticatedStatus = apiSecret ? 401 : 503;
+if (liveChat && !apiSecret) {
   throw new Error('API_SECRET is required in sim-one.config for --live-chat.');
 }
 
@@ -49,20 +51,25 @@ try {
       headers: { ...externalHeaders, 'content-type': 'application/json' },
       body: JSON.stringify({ text: 'auth check' }),
     },
-    401,
+    unauthenticatedStatus,
     'chat event ingress without secret',
   );
   await expectStatus(
-    `${baseUrl}/workflows/not-real`,
+    `${baseUrl}/agents/orchestrator/not-real`,
     {
       method: 'POST',
       headers: { ...externalHeaders, 'content-type': 'application/json' },
       body: JSON.stringify({ text: 'auth check' }),
     },
-    401,
-    'workflow route without secret',
+    unauthenticatedStatus,
+    'agent route without secret',
   );
-  await expectStatus(`${baseUrl}/runs/not-real`, { method: 'GET', headers: externalHeaders }, 401, 'run inspection without secret');
+  await expectStatus(
+    `${baseUrl}/api/telemetry/executions/not-real`,
+    { method: 'GET', headers: externalHeaders },
+    unauthenticatedStatus,
+    'telemetry execution inspection without secret',
+  );
 
   if (liveChat) {
     const agentResult = await expectJsonStatus(
