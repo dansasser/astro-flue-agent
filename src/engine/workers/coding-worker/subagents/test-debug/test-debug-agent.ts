@@ -1,9 +1,9 @@
-import type { AgentProfile, ToolDefinition } from '@flue/runtime';
+import type { SubagentDefinition, ToolDefinition } from '@flue/runtime';
 import { createCodingInternalSubagent } from '../../../../../engine/workers/coding-worker/subagents/profile-factory.js';
 
 export const codingTestDebugSubagentName = 'coding-worker-test-debug';
 
-export function createCodingTestDebugSubagent(model?: string, tools?: ToolDefinition[]): AgentProfile {
+export function createCodingTestDebugSubagent(model?: string, tools?: ToolDefinition[]): SubagentDefinition {
   return createCodingInternalSubagent({
     kind: 'test-debug',
     name: codingTestDebugSubagentName,

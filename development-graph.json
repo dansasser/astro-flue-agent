@@ -9376,7 +9376,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 65,
+  "graph_version": 66,
   "nodes": [
     {
       "acceptance": [
@@ -19209,6 +19209,12 @@
           "kind": "test"
         },
         {
+          "criterion": "The explicit application router imports and mounts the named orchestrator agent function required by Flue 2.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/routing.json",
+          "id": "agent-router-contract",
+          "kind": "test"
+        },
+        {
           "criterion": "The orchestrator exposes only lead workers; worker-internal subagents remain worker-owned; runtime-added worker definitions have one validated Flue 2 adapter.",
           "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/workers.json",
           "id": "worker-ownership-preserved",
@@ -19221,23 +19227,23 @@
           "kind": "test"
         },
         {
-          "criterion": "Focused orchestrator, worker, delegation, workspace, and type checks pass.",
+          "criterion": "Focused orchestrator, worker, delegation, workspace, routing, and type checks pass; compiler diagnostics owned by the following capability stack are recorded exactly as handoff evidence.",
           "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/verification.json",
           "id": "agents-focused-verification",
           "kind": "test"
         }
       ],
       "execution": {
-        "completion_condition": "All built-in agent and worker contracts compile and focused tests pass below the file cap.",
+        "completion_condition": "All focused built-in agent, router, and worker contracts pass, the exact downstream capability compiler boundary is recorded, and the changed-file count is below 100.",
         "max_attempts": 3,
         "timeout_minutes": 300
       },
       "executor": {
-        "instructions": "Convert only agents and worker composition. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries.",
+        "instructions": "Convert only agents, worker composition, and the explicit named-agent router import. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries. Record exact beta tool diagnostics for the following capability stack instead of adding compatibility shims.",
         "kind": "agent",
         "name": "SIM-ONE Flue agent migrator"
       },
-      "goal": "Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership.",
+      "goal": "Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, explicit sandbox ownership, and the named application router binding.",
       "id": "migrate-flue-v2-agents-workers",
       "inputs": [
         {
@@ -19259,10 +19265,12 @@
           "https://flueframework.com/docs/guide/agents/",
           "https://flueframework.com/docs/guide/agent-hooks/",
           "https://flueframework.com/docs/guide/subagents/",
-          "https://flueframework.com/docs/guide/sandboxes/"
+          "https://flueframework.com/docs/guide/sandboxes/",
+          "https://flueframework.com/docs/guide/routing/"
         ],
         "read": [
           "artifact:flue-v2-foundation-change",
+          "src/app.ts",
           "src/agents/",
           "src/engine/workers/",
           "src/workspace/",
@@ -19272,6 +19280,7 @@
           "docs/architecture/flue-v2-migration.md"
         ],
         "write": [
+          "src/app.ts",
           "src/agents/",
           "src/engine/workers/",
           "src/workspace-loader.ts",
@@ -19279,13 +19288,14 @@
         ]
       },
       "resources": [
+        "src/app.ts",
         "src/agents/",
         "src/engine/workers/",
         "src/workspace-loader.ts"
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Migrates built-in agent and worker composition.",
+        "description": "Migrates built-in agent and worker composition plus the named application router binding.",
         "level": "reversible",
         "rollback": "Restore milestone files from the prior stacked commit."
       },
@@ -19961,7 +19971,7 @@
     }
   ],
   "project": {
-    "context_version": "sim-one-alpha-flue-v2-stacked-verification-2026-08-01",
+    "context_version": "sim-one-alpha-flue-v2-agents-router-scope-2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

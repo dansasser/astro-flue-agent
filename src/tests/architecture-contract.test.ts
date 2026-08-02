@@ -3,10 +3,13 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import orchestratorAgent from '../agents/orchestrator.js';
-import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
-import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
-import { resolveCodingWorkerWorkspaceRoot as resolveCodingWorkerWorkspaceRootFromOrchestrator } from '../agents/orchestrator.js';
+import {
+  createOrchestratorComposition,
+  resolveCodingWorkerWorkspaceRoot as resolveCodingWorkerWorkspaceRootFromOrchestrator,
+} from '../agents/orchestrator.js';
+import { createCodingWorkerComposition } from '../engine/workers/coding-worker/coding-worker.js';
+import { getCodingInternalSubagentComposition } from '../engine/workers/coding-worker/subagents/profile-factory.js';
+import { createResearcherComposition } from '../engine/workers/researcher/researcher.js';
 
 test('root and architecture docs preserve the Flue component contract', () => {
   const agents = readText('AGENTS.md');
@@ -26,7 +29,7 @@ test('app.ts stays a Flue app shell and does not bypass agents or cards', () => 
   const chatEventsRoute = readText('src/api/routes/chat-events.ts');
   const apiSecretMiddleware = readText('src/api/middleware/api-secret.ts');
 
-  assert.match(app, /app\.route\('\/', flue\(\)\)/);
+  assert.match(app, /app\.route\('\/agents\/orchestrator', createAgentRouter\(Orchestrator\)\)/);
   assert.match(app, /models\/runtime\.js/);
   assert.match(app, /registerChatEventRoutes\(app\)/);
   assert.match(app, /app\.use\('\/agents\/\*', requireApiSecret\)/);
@@ -70,12 +73,8 @@ test('low-level web retrieval workflows are internal machinery, not public route
   assert.doesNotMatch(readText('src/workflows/web-research.ts'), /export const route/);
 });
 
-test('Flue orchestrator routes research to the researcher instead of owning web tools', async () => {
-  const config = await orchestratorAgent.initialize({
-    id: 'architecture-contract',
-    env: createModelEnv(),
-    payload: undefined,
-  });
+test('Flue orchestrator routes research to the researcher instead of owning web tools', () => {
+  const config = createOrchestratorComposition(createModelEnv());
 
   assert.equal(config.subagents?.some((agent) => agent.name === 'researcher'), true);
   assert.equal(config.subagents?.some((agent) => agent.name === 'coding-worker'), true);
@@ -126,36 +125,29 @@ test('Flue orchestrator routes research to the researcher instead of owning web 
   assert.match(config.instructions ?? '', /dedicated approval-gated runtime configuration update/i);
 });
 
-test('Flue orchestrator defaults coding-worker workspace to the canonical runtime root', async () => {
+test('Flue orchestrator defaults coding-worker workspace to the canonical runtime root', () => {
   const { GOROMBO_WORKSPACE_ROOT: _workspaceRoot, ...envWithoutWorkspaceRoot } = createModelEnv();
 
   const defaultRoot = resolveCodingWorkerWorkspaceRootFromOrchestrator(envWithoutWorkspaceRoot);
   assert.ok(defaultRoot.endsWith('.gorombo/workspace'), `expected root ending in .gorombo/workspace, got ${defaultRoot}`);
 
-  const config = await orchestratorAgent.initialize({
-    id: 'architecture-contract-default-workspace-root',
-    env: envWithoutWorkspaceRoot,
-    payload: undefined,
-  });
+  const config = createOrchestratorComposition(envWithoutWorkspaceRoot);
 
   const codingWorker = config.subagents?.find((agent) => agent.name === 'coding-worker');
   assert.ok(codingWorker);
 
-  const repoTool = codingWorker.tools?.find((tool) => tool.name === 'coding_repo_apply_patch');
+  const worker = createCodingWorkerComposition({ workspaceRoot: defaultRoot });
+  const repoTool = worker.tools.find((tool) => tool.name === 'coding_repo_apply_patch');
   assert.ok(repoTool);
 });
 
-test('Flue orchestrator replaces virtual sandbox tools with delegation-only tools', async () => {
+test('Flue orchestrator replaces virtual sandbox tools with delegation-only tools', () => {
   const runtimeRoot = join(mkdtempSync(join(tmpdir(), 'orchestrator-sandbox-')), '.gorombo');
   try {
-    const config = await orchestratorAgent.initialize({
-      id: 'architecture-contract-orchestrator-sandbox',
-      env: {
-        ...createModelEnv(),
-        GOROMBO_RUNTIME_ROOT: runtimeRoot,
-        GOROMBO_WORKSPACE_ROOT: 'workspace',
-      },
-      payload: undefined,
+    const config = createOrchestratorComposition({
+      ...createModelEnv(),
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+      GOROMBO_WORKSPACE_ROOT: 'workspace',
     });
 
     assert.ok(config.sandbox);
@@ -187,11 +179,11 @@ test('workspace instructions route durable artifacts through the Coding Worker',
   assert.match(codingWorkerTools, /sim-one-alpha\/workspace/);
 });
 
-test('coding worker owns its workspace-backed lead profile', async () => {
+test('coding worker owns its workspace-backed lead profile', () => {
   const workspaceRoot = mkdtempSync(join(tmpdir(), 'coding-worker-workspace-'));
   const approvalRoot = mkdtempSync(join(tmpdir(), 'coding-worker-approvals-'));
   try {
-    const subagent = await createCodingWorkerSubagent({ workspaceRoot, approvalRoot });
+    const subagent = createCodingWorkerComposition({ workspaceRoot, approvalRoot });
 
     assert.equal(subagent.name, 'coding-worker');
   assert.equal(subagent.model, undefined);
@@ -220,7 +212,7 @@ test('coding worker owns its workspace-backed lead profile', async () => {
   assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_status'), false);
   assert.equal(subagent.tools?.some((tool) => tool.name === 'github_auth_start'), false);
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-implementer')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-implementer')!).tools.some(
       (tool) => tool.name === 'coding_repo_apply_patch',
     ),
     true,
@@ -231,31 +223,31 @@ test('coding worker owns its workspace-backed lead profile', async () => {
   assert.match(subagent.instructions ?? '', /exact value explicitly supplied by the\s+user/i);
   assert.match(subagent.instructions ?? '', /does not bypass the approval record/i);
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-test-debug')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-test-debug')!).tools.some(
       (tool) => tool.name === 'coding_shell_run',
     ),
     true,
   );
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-github')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-github')!).tools.some(
       (tool) => tool.name === 'coding_github_verify_pr',
     ),
     true,
   );
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-github')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-github')!).tools.some(
       (tool) => tool.name === 'coding_github_update_pr',
     ),
     true,
   );
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-github')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-github')!).tools.some(
       (tool) => tool.name === 'github_auth_start',
     ),
     false,
   );
   assert.equal(
-    subagent.subagents?.find((agent) => agent.name === 'coding-worker-github')?.tools?.some(
+    getCodingInternalSubagentComposition(subagent.subagents.find((agent) => agent.name === 'coding-worker-github')!).tools.some(
       (tool) => tool.name === 'github_auth_status',
     ),
     false,
@@ -270,11 +262,11 @@ test('coding worker owns its workspace-backed lead profile', async () => {
 });
 
 
-test('coding worker lead loop is documented in profile instructions', async () => {
+test('coding worker lead loop is documented in profile instructions', () => {
   const workspaceRoot = mkdtempSync(join(tmpdir(), 'coding-worker-workspace-'));
   const approvalRoot = mkdtempSync(join(tmpdir(), 'coding-worker-approvals-'));
   try {
-    const subagent = await createCodingWorkerSubagent({ workspaceRoot, approvalRoot });
+    const subagent = createCodingWorkerComposition({ workspaceRoot, approvalRoot });
 
     assert.match(subagent.instructions ?? '', /Lead Loop Contract/);
     assert.match(subagent.instructions ?? '', /bounded, approval-gated, Flue-native tool-calling loop/);
@@ -316,12 +308,8 @@ test('coding worker progress events cover every defined loop checkpoint', async 
   }
 });
 
-test('orchestrator only exposes the coding-worker lead, not internal subagents', async () => {
-  const config = await orchestratorAgent.initialize({
-    id: 'architecture-contract-internal-subagents',
-    env: createModelEnv(),
-    payload: undefined,
-  });
+test('orchestrator only exposes the coding-worker lead, not internal subagents', () => {
+  const config = createOrchestratorComposition(createModelEnv());
 
   const exposedInternal = (config.subagents ?? [])
     .map((agent) => agent.name)
@@ -333,7 +321,7 @@ test('orchestrator only exposes the coding-worker lead, not internal subagents',
 });
 
 test('researcher owns the web research tool', () => {
-  const subagent = createResearcherSubagent('ollama-cloud/minimax-m3');
+  const subagent = createResearcherComposition('ollama-cloud/minimax-m3');
 
   assert.equal(subagent.tools?.some((tool) => tool.name === 'web_research'), true);
   assert.equal(subagent.tools?.some((tool) => tool.name === 'retrieve_context'), false);

@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: b0044df293bc2faee06b99a6443d8bdb8d04d344c3a66b5255c45ad668478648 -->
+<!-- development-graph-sha256: 76b5ebe5621655f3d09e82c047c992c21914a043e462686efdb337fc6a9e9bdb -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `65` |
+| Graph version | `66` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `sim-one-alpha-flue-v2-stacked-verification-2026-08-01` |
+| Context version | `sim-one-alpha-flue-v2-agents-router-scope-2026-08-01` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `b0044df293bc2faee06b99a6443d8bdb8d04d344c3a66b5255c45ad668478648` |
+| Canonical checksum | `76b5ebe5621655f3d09e82c047c992c21914a043e462686efdb337fc6a9e9bdb` |
 
 ## Flow
 
@@ -983,7 +983,7 @@ flowchart TD
 | `specify-task-lifecycle-architecture` | `work` | `planned` | agent: SIM-ONE architecture adapter | Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract. | artifact:task-lifecycle-architecture-spec |
 | `specify-flue-v2-migration` | `work` | `planned` | agent: SIM-ONE Flue migration architect | Translate the official Flue 2.0.1 migration contract and SIM-ONE current implementation into one implementation-ready, graph-bound migration specification. | artifact:flue-v2-migration-spec |
 | `migrate-flue-v2-foundation` | `work` | `planned` | agent: SIM-ONE Flue foundation migrator | Establish checklist items 1 through 3 and the provider foundation from item 9: coordinated package pins, Vite build/config, explicit routing, and Pi provider registration, with exact handoff diagnostics for dependent source conversions. | artifact:flue-v2-foundation-change |
-| `migrate-flue-v2-agents-workers` | `work` | `planned` | agent: SIM-ONE Flue agent migrator | Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership. | artifact:flue-v2-agents-workers-change |
+| `migrate-flue-v2-agents-workers` | `work` | `planned` | agent: SIM-ONE Flue agent migrator | Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, explicit sandbox ownership, and the named application router binding. | artifact:flue-v2-agents-workers-change |
 | `migrate-flue-v2-capabilities` | `work` | `planned` | agent: SIM-ONE Flue capability migrator | Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, and approval-preserving adapters. | artifact:flue-v2-capabilities-change |
 | `migrate-flue-v2-execution-persistence` | `work` | `planned` | agent: SIM-ONE Flue execution migrator | Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, and submission observability. | artifact:flue-v2-execution-persistence-change |
 | `migrate-flue-v2-connectors-clients` | `work` | `planned` | agent: SIM-ONE Flue client migrator | Migrate Telegram, Ratatui, CLI, and remaining clients to conversation-scoped Flue 2 identities, submissions, history, and update streams. | artifact:flue-v2-connectors-clients-change |
@@ -3202,21 +3202,22 @@ flowchart TD
 
 ### `migrate-flue-v2-agents-workers` — Migrate Flue 2 Agents And Workers
 
-- Goal: Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership.
-- Executor instructions: Convert only agents and worker composition. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries.
+- Goal: Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, explicit sandbox ownership, and the named application router binding.
+- Executor instructions: Convert only agents, worker composition, and the explicit named-agent router import. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries. Record exact beta tool diagnostics for the following capability stack instead of adding compatibility shims.
 - Inputs: artifact:flue-v2-foundation-change
-- Resources: src/agents/, src/engine/workers/, src/workspace-loader.ts
-- Permissions: read [artifact:flue-v2-foundation-change, src/agents/, src/engine/workers/, src/workspace/, src/workspace-loader.ts, src/engine/registries/, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/agents/, src/engine/workers/, src/workspace-loader.ts, src/tests/ files assigned exclusively to agent and worker migration]; external [https://flueframework.com/docs/guide/agents/, https://flueframework.com/docs/guide/agent-hooks/, https://flueframework.com/docs/guide/subagents/, https://flueframework.com/docs/guide/sandboxes/]; destructive `false`
-- Execution: max `3` attempt(s), `300` minute(s); All built-in agent and worker contracts compile and focused tests pass below the file cap.
-- Side effects: `reversible` — Migrates built-in agent and worker composition.
+- Resources: src/app.ts, src/agents/, src/engine/workers/, src/workspace-loader.ts
+- Permissions: read [artifact:flue-v2-foundation-change, src/app.ts, src/agents/, src/engine/workers/, src/workspace/, src/workspace-loader.ts, src/engine/registries/, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/app.ts, src/agents/, src/engine/workers/, src/workspace-loader.ts, src/tests/ files assigned exclusively to agent and worker migration]; external [https://flueframework.com/docs/guide/agents/, https://flueframework.com/docs/guide/agent-hooks/, https://flueframework.com/docs/guide/subagents/, https://flueframework.com/docs/guide/sandboxes/, https://flueframework.com/docs/guide/routing/]; destructive `false`
+- Execution: max `3` attempt(s), `300` minute(s); All focused built-in agent, router, and worker contracts pass, the exact downstream capability compiler boundary is recorded, and the changed-file count is below 100.
+- Side effects: `reversible` — Migrates built-in agent and worker composition plus the named application router binding.
 - Rollback: Restore milestone files from the prior stacked commit.
 - Approval required: `false`
 - Acceptance:
   - `agents-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/file-count.json`
   - `agent-function-contract` (test): Every built-in agent is a discovered exported capitalized synchronous function in a use-agent module with exactly one root useModel declaration and supported statics. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/agents.json`
+  - `agent-router-contract` (test): The explicit application router imports and mounts the named orchestrator agent function required by Flue 2. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/routing.json`
   - `worker-ownership-preserved` (test): The orchestrator exposes only lead workers; worker-internal subagents remain worker-owned; runtime-added worker definitions have one validated Flue 2 adapter. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/workers.json`
   - `sandbox-boundaries-preserved` (test): The orchestrator has no generic mutable filesystem surface and coding workers retain explicit runtime-root-scoped sandbox access. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/sandboxes.json`
-  - `agents-focused-verification` (test): Focused orchestrator, worker, delegation, workspace, and type checks pass. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/verification.json`
+  - `agents-focused-verification` (test): Focused orchestrator, worker, delegation, workspace, routing, and type checks pass; compiler diagnostics owned by the following capability stack are recorded exactly as handoff evidence. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/verification.json`
 
 ### `migrate-flue-v2-capabilities` — Migrate Flue 2 Tools Skills MCP And Registries
 

@@ -1,9 +1,14 @@
+'use agent';
+
 import {
-  createAgent,
-  defineAgentProfile,
-  type AgentProfile,
-  type AgentRouteHandler,
+  defineSubagent,
+  type AgentProps,
+  type SubagentDefinition,
+  type ToolDefinition,
+  useModel,
+  useTool,
 } from '@flue/runtime';
+import '../../../core/models/runtime.js';
 import { configureRuntimeModels } from '../../../core/models/index.js';
 import type { AgentModelCard } from '../../../core/models/types.js';
 import {
@@ -13,9 +18,9 @@ import {
 import { calculateContextBudget } from '../../../engine/session/context-budget.js';
 import { webResearchTool } from '../../../engine/tools/index.js';
 
-export const route: AgentRouteHandler = async (_c, next) => next();
-
 export const researcherAgentName = 'researcher';
+export const researcherDescription =
+  'source-backed research subagent that uses the retrieval workflow and Ollama Search.';
 
 export const researcherInstructions = [
   composeWorkspaceInstructions({
@@ -26,28 +31,57 @@ export const researcherInstructions = [
 ].join('\n\n');
 
 /**
- * Creates the reusable researcher Flue subagent profile used by the orchestrator and research workflow.
+ * Creates the reusable researcher Flue 2 delegate used by the orchestrator.
  */
-export function createResearcherSubagent(model?: string): AgentProfile {
-  return defineAgentProfile({
-    name: researcherAgentName,
-    description: 'source-backed research subagent that uses the retrieval workflow and Ollama Search.',
-    ...(model ? { model } : {}),
-    instructions: researcherInstructions,
-    tools: [webResearchTool],
+export function createResearcherSubagent(model?: string): SubagentDefinition {
+  const composition = createResearcherComposition(model);
+  return defineSubagent({
+    name: composition.name,
+    description: composition.description,
+    ...(composition.model ? { model: composition.model } : {}),
+    agent: function ResearcherDelegate() {
+      mountResearcherTools(composition.tools);
+      return composition.instructions;
+    },
   });
 }
 
-export default createAgent(({ env }) => {
-  const models = configureRuntimeModels(env);
-  const selectedModelCard = models.selectedModelCard;
+export interface ResearcherComposition {
+  name: string;
+  description: string;
+  model?: string;
+  instructions: string;
+  tools: ToolDefinition[];
+}
 
+export function createResearcherComposition(model?: string): ResearcherComposition {
   return {
-    profile: createResearcherSubagent(selectedModelCard.specifier),
-    model: selectedModelCard.specifier,
-    compaction: createResearchCompactionConfig(selectedModelCard),
+    name: researcherAgentName,
+    description: researcherDescription,
+    ...(model ? { model } : {}),
+    instructions: researcherInstructions,
+    tools: [webResearchTool],
   };
-});
+}
+
+export function Researcher(_props: AgentProps): string {
+  const models = configureRuntimeModels(process.env);
+  const selectedModelCard = models.selectedModelCard;
+  const composition = createResearcherComposition(selectedModelCard.specifier);
+
+  useModel(selectedModelCard.specifier, {
+    compaction: createResearchCompactionConfig(selectedModelCard),
+  });
+  mountResearcherTools(composition.tools);
+  return composition.instructions;
+}
+Researcher.agentName = 'researcher';
+
+function mountResearcherTools(tools: ToolDefinition[]): void {
+  for (const tool of tools) {
+    useTool(tool);
+  }
+}
 
 /**
  * Creates the researcher compaction policy from the selected model card budget.

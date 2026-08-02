@@ -1,4 +1,9 @@
-import { defineAgentProfile, type AgentProfile } from '@flue/runtime';
+import {
+  defineSubagent,
+  type SubagentDefinition,
+  type ToolDefinition,
+  useTool,
+} from '@flue/runtime';
 import {
   composeWorkspaceInstructions,
   resolveWorkspaceDirectory,
@@ -14,6 +19,8 @@ import {
 } from '../../../engine/workers/capability-manager/capability-manager-tools.js';
 
 export const capabilityManagerAgentName = 'capability-manager';
+export const capabilityManagerDescription =
+  'Administers SIM-ONE runtime skills, tools, workers, and MCP connections through validated, approval-gated lifecycle operations.';
 
 export interface CapabilityManagerSubagentOptions {
   model?: string;
@@ -23,9 +30,35 @@ export interface CapabilityManagerSubagentOptions {
   protocolBundleLoader?: CapabilityProtocolBundleLoader;
 }
 
+export interface CapabilityManagerComposition {
+  name: string;
+  description: string;
+  model?: string;
+  instructions: string;
+  tools: ToolDefinition[];
+}
+
 export function createCapabilityManagerSubagent(
   options: CapabilityManagerSubagentOptions = {},
-): AgentProfile {
+): SubagentDefinition {
+  const composition = createCapabilityManagerComposition(options);
+
+  return defineSubagent({
+    name: composition.name,
+    description: composition.description,
+    ...(composition.model ? { model: composition.model } : {}),
+    agent: function CapabilityManagerDelegate() {
+      for (const tool of composition.tools) {
+        useTool(tool);
+      }
+      return composition.instructions;
+    },
+  });
+}
+
+export function createCapabilityManagerComposition(
+  options: CapabilityManagerSubagentOptions = {},
+): CapabilityManagerComposition {
   const env = options.env ?? process.env;
   const approvalService =
     options.approvalService ??
@@ -37,10 +70,9 @@ export function createCapabilityManagerSubagent(
     options.protocolBundleLoader ??
     createDefaultCapabilityProtocolBundleLoader(env);
 
-  return defineAgentProfile({
+  return {
     name: capabilityManagerAgentName,
-    description:
-      'Administers SIM-ONE runtime skills, tools, workers, and MCP connections through validated, approval-gated lifecycle operations.',
+    description: capabilityManagerDescription,
     ...(options.model ? { model: options.model } : {}),
     instructions: [
       composeWorkspaceInstructions({
@@ -61,7 +93,7 @@ Return the lifecycle result, including validation evidence, activation state, pr
       serviceFactory,
       protocolBundleLoader,
     }),
-  });
+  };
 }
 
 function toStringEnvironment(
