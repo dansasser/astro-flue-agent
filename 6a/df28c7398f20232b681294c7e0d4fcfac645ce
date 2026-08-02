@@ -1,0 +1,161 @@
+src/engine/session/session-transcript.ts
+  s_a81fff26d52223::t_e1bb3778ec6fa0 6,10-15,54,56-57,66,68,88-93,95-105,108-109,112,118,122,129-145,148-160,163-164,166,169,171-191,195-197,199-207,209,212-222,224-225,229-234,238-251,253-259,264,267,269-287,290-302,304,308-319,321-322,325,328-329,331-332,334-341,345-347,349-350,369-371,373-374,376,379-383,386-389,393-399,403-405,408-409
+src/engine/schedules/schedule-store.ts
+  s_a81fff26d52223::t_3728a747241368 17-19
+  s_a81fff26d52223::t_0ca9d168251eb6 551
+  s_a81fff26d52223::t_4123d64c596963 99,471,479
+src/core/telemetry/flue-telemetry.ts
+  s_a81fff26d52223::t_1c894da186e094 7-9,21,24-27,39,66,74-75,82,96-98,103-104,111,117-139,148-151,165-168,171,173,179-180,184-187,189-191,193-199,206,219-221,239-242,246,262,266,284-286
+  s_a81fff26d52223::t_1c95e4337d5e04 287-288
+src/tests/coding-schedule-tools.test.ts
+  s_a81fff26d52223::t_4b11a918c87ac2 27,29,31,122
+  s_a81fff26d52223::t_8613dcb3839dea 38
+src/tests/http-endpoints.test.ts
+  s_a81fff26d52223::t_72d68f106f945f 297,324
+  s_a81fff26d52223::t_f194ff09d15e18 947,954-955,963-964,974,977,998,1004,1010-1011,1117-1146
+  s_a81fff26d52223::t_6b13bac9938ad6 3,16,243,246-248,250-265,298-300,322-323,342-355,405-406,409-411,413-417,419-422,424,426-431,470-472
+  s_a81fff26d52223::t_2c6b7674e84cf9 1147
+doc/decisions/d12-flue-v2-persistence-and-compaction.md
+  s_a81fff26d52223::t_01fe91d57de597 89-90
+  s_a81fff26d52223::t_ff26a1253f7d59 1-85,87
+  s_a81fff26d52223::t_9851e58354af33 86,88
+src/engine/session/flue-session-store.ts
+  s_a81fff26d52223::t_260708a7c3104f 1,9,17
+  s_a81fff26d52223::t_507827acd1a7c3 14
+src/api/routes/chat-sessions.ts
+  s_a81fff26d52223::t_dec85f2e6d6db4 21-25,37-41,153-162,170-171,192-215
+  s_a81fff26d52223::t_c04a52fb6eb2fc 216-217
+src/channels/telegram.ts
+  s_a81fff26d52223::t_a9bd156becd4b7 5,236,244,246-247,249-251,255
+src/tests/session-budget.test.ts
+  s_a81fff26d52223::t_6e8919c866d3ea 8,12,14,34-45,47-48,59,63,67,70,73,75-79,82-86,90-96,99,102
+src/engine/session/session-persistence.ts
+  s_a81fff26d52223::t_9fe3e434bb8c92 2,20-21,28-29,34-39,50-54,71,75-76
+src/engine/session/session-database.ts
+  s_a81fff26d52223::t_10d3b478e6e892 578-579,597-598,622-623,653,674,1155-1156,1284-1290
+  s_a81fff26d52223::t_260708a7c3104f 12,190,234,1334
+  s_a81fff26d52223::t_989ee9fe567fcc 14,189,233,1331,1618
+  s_a81fff26d52223::t_ff6844ce6fc38d 1860-1863,1986-1987
+  s_a81fff26d52223::t_5a071480f53d07 15-16,24,115,1824,1941
+  s_a81fff26d52223::t_7221ceb39fbab2 1113-1125,1811-1822,1934-1940
+  s_a81fff26d52223::t_3ca579af8ad2c8 342-343,400,404-503
+  s_a81fff26d52223::t_8e64b636b826c0 102-103,108-114
+  s_a81fff26d52223::t_20a4289e2fa9ad 17-23,1641,1673
+  s_a81fff26d52223::t_1d539470b1821c 13
+  s_a81fff26d52223::t_f83bcf58627155 116
+  s_a81fff26d52223::t_651ba9b97cf227 504
+  s_a81fff26d52223::t_daff8dc172fa1f 1823
+  s_a81fff26d52223::t_dea87fcf19018f 1825
+  s_a81fff26d52223::t_05b0f443b0e232 1942
+src/engine/schedules/schedule-manager.ts
+  s_a81fff26d52223::t_3728a747241368 279-280
+  s_a81fff26d52223::t_a08597d5a356f7 4-6,8-10,69
+  s_a81fff26d52223::t_0ca9d168251eb6 31,46,53,66,246
+  s_a81fff26d52223::t_c14aeae197be75 45,241,264-271,273,503
+  s_a81fff26d52223::t_7a38ba3578b6d1 504-518
+src/engine/session/session-budget.ts
+  s_a81fff26d52223::t_cc8c3f66458669 3-9,44-45,72-73,102-103,106-107,109,139,142-143,145-146,150-157
+src/tests/flue-internal-compat.test.ts
+  s_a81fff26d52223::t_1f55934c9cdc1e 4-8,10-14
+src/engine/workers/coding-worker/skills.ts
+  s_a81fff26d52223::t_7a8af5e3f2cd87 10,17,24,31,38,56-60
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_6be3f6acc3bda8 16-18,78,174,179-188,251-256
+  s_a81fff26d52223::t_a163ae235a05a5 257-258
+src/tests/chat-events-flue-v2.test.ts
+  s_a81fff26d52223::t_39ccbdf58e5dc1 1-37,39-42,44-90,92-134,137-139,142-163,166-192
+  s_a81fff26d52223::t_c646dc1853b9a0 135-136,140-141,164-165
+  s_a81fff26d52223::t_68d0845be8b2d3 43,91
+  s_a81fff26d52223::t_d5d9b501a7e41a 38
+src/api/routes/telemetry.ts
+  s_a81fff26d52223::t_194ad98358925f 2-3,9-11,14,20-21
+src/engine/workers/coding-worker/workflow/loop.ts
+  s_a81fff26d52223::t_c50387f9aa5cea 46-49,1056
+src/engine/schedules/schedule-dispatch.ts
+  s_a81fff26d52223::t_e072aed00f2d1d 1-6,9,11,13,20,23,31-54,56,58-59,62
+  s_a81fff26d52223::t_a08597d5a356f7 24
+specification-manifest.json
+  s_a81fff26d52223::t_c7dc6a5a192f1e 422-435
+  s_a81fff26d52223::t_1375a00c0b7c5f 4-5
+  s_a81fff26d52223::t_9d04f5c1e544aa 436
+src/tests/flue-session-store.test.ts
+  s_a81fff26d52223::t_1f55934c9cdc1e 2-3,7,10-16,20-26,29-30,34-38,41-43,46-59,61-62,64-69,71,86-88,90-91,93,95-96,98,103-104
+  s_a81fff26d52223::t_1c5fa6f70a12aa 44,70,72-73,75-76,78,81
+src/engine/schedules/boot.ts
+  s_a81fff26d52223::t_0ca9d168251eb6 10,49,91
+docs/architecture/flue-v2-migration.md
+  s_a81fff26d52223::t_ff26a1253f7d59 199-206
+src/tests/schedule-manager.test.ts
+  s_a81fff26d52223::t_0ca9d168251eb6 97
+  s_a81fff26d52223::t_c91434dcb5abf2 4,6-9,13,15,17-18,21,24-25,27-32,34,38-39,41-51,53,57,60-63,65,69-70,72-75,77,81-84,87-91,93-96,98-107,120,122-131,133,135,137,139-148,150-151
+  s_a81fff26d52223::t_6b13bac9938ad6 58,109,111-119
+src/tests/flue-telemetry.test.ts
+  s_a81fff26d52223::t_b983925f8e5ff0 6,9,11-19,22,25,27-28,31-35,37-38,41-57,60-66
+src/engine/workers/coding-worker/workflow/coordination.ts
+  s_a81fff26d52223::t_c50387f9aa5cea 14-18,54-58,69,83,97,111,125
+src/tests/schedules-routes.test.ts
+  s_a81fff26d52223::t_4b11a918c87ac2 49,51,53
+  s_a81fff26d52223::t_0ca9d168251eb6 5,45,60,198,214
+src/tests/schedules.test.ts
+  s_a81fff26d52223::t_0ca9d168251eb6 42,56,61,84
+  s_a81fff26d52223::t_4b11a918c87ac2 45,47,49,58,85,122,155
+  s_a81fff26d52223::t_3728a747241368 13,15,17-20
+  s_a81fff26d52223::t_df46243f6840cb 103,116,121,126
+src/tests/session-transcript.test.ts
+  s_a81fff26d52223::t_99a6331f4914c2 7,9-13,15,17-20,22-29,31,34-36,38-40,42-43,46-62,64-80,82-83,86-88,90-92,94-95,98-101,103,105-106,108-112,114-116,119,121,123,126-129,131,135-139,141-164
+  s_a81fff26d52223::t_6b13bac9938ad6 124
+src/engine/schedules/schedule-telemetry.ts
+  s_a81fff26d52223::t_4123d64c596963 45,178
+src/api/routes/chat-events.ts
+  s_a81fff26d52223::t_cd952dc0cc38f7 194,202
+  s_a81fff26d52223::t_b1633748d5e788 357-358,361-362,367-368,400-403,407-424,427,429-432,434-435,439-440,452-464,467-484,486-488,490,493-494
+  s_a81fff26d52223::t_7bd12e3c666eb7 13-14,31-34,37-42,46-48,198-201,214-226,228-248,250-274
+src/engine/session/durable-orchestrator-session.ts
+  s_a81fff26d52223::t_89f5f284ef194b 2-7,10-16,19-27,29,31-39,42-46
+  s_a81fff26d52223::t_a08597d5a356f7 30
+  s_a81fff26d52223::t_6be3f6acc3bda8 8
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_7a8af5e3f2cd87 257
+  s_a81fff26d52223::t_72d68f106f945f 36-37,46-47
+src/engine/session/direct-agent-session.ts
+  s_a81fff26d52223::t_6be3f6acc3bda8 3-8
+src/engine/schedules/schedule-types.ts
+  s_a81fff26d52223::t_4123d64c596963 11-13,36-37,166-167,174-175,216
+  s_a81fff26d52223::t_0ca9d168251eb6 43,206
+decisions.json
+  s_a81fff26d52223::t_01fe91d57de597 184-185
+  s_a81fff26d52223::t_ff26a1253f7d59 172-180,182,186
+  s_a81fff26d52223::t_9851e58354af33 181,183
+src/core/config/gorombo-config.ts
+  s_a81fff26d52223::t_20b77dcc780ce2 43,220,226
+src/engine/session/flue-conversation.ts
+  s_a81fff26d52223::t_2c666841aa61d3 1-135
+src/workflows/research.ts
+  s_a81fff26d52223::t_64fcc5aed46445 1-2,19-21,24-38,40-43,50-52,54,56,59-63
+src/tests/session-memory-vector.test.ts
+  s_a81fff26d52223::t_6e8919c866d3ea 1,8-10,12-27,29-30
+src/core/config/gorombo.config.json
+  s_a81fff26d52223::t_20b77dcc780ce2 8
+development-graph.json
+  s_a81fff26d52223::t_d063608dfb360b 9373-9468,9475,10374-10378,15847-15851,19607,19611,19618-19622,19648-19655,19664-19670,19679-19685,19761-19765,19877-19881,19977-19981,20143-20221,20225
+development-graph.md
+  s_a81fff26d52223::t_347d30c7f4b236 1,12,17,21,116,899-906,997,1002,1790-1797,1917,2690,3262-3266,3283,3302,3320,3352-3365
+src/tests/schedules-store.test.ts
+  s_a81fff26d52223::t_070159703e03a7 153,159,205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "6adf28c7398f20232b681294c7e0d4fcfac645ce",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
