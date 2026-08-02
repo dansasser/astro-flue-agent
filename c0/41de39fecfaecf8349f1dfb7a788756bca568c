@@ -1,0 +1,19 @@
+docs/architecture/flue-v2-migration.md
+  s_a81fff26d52223::t_c5dadd6bd4da7b 3-4,6-9,12-14,63,331-332
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "c041de39fecfaecf8349f1dfb7a788756bca568c",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
