@@ -362,10 +362,16 @@ function projectToolActivity(
 ): ChatTranscriptActivity {
   const failed = part.state === 'output-error';
   const completed = part.state === 'output-available';
+  const taskAgent = part.toolName === 'task'
+    && isRecord(part.input)
+    && typeof part.input.agent === 'string'
+    && part.input.agent.trim()
+    ? part.input.agent.trim()
+    : undefined;
   return {
     id: part.toolCallId,
-    kind: 'tool',
-    name: boundedText(part.toolName, MAX_ACTIVITY_NAME_CHARS),
+    kind: part.toolName === 'task' ? 'task' : 'tool',
+    name: boundedText(taskAgent ?? part.toolName, MAX_ACTIVITY_NAME_CHARS),
     status: failed ? 'failed' : completed ? 'completed' : 'running',
     ...('durationMs' in part && typeof part.durationMs === 'number'
       ? { durationMs: part.durationMs }

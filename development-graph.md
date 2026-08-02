@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: ab45f4931633e5211801c0eab444724d254e49d8e0ab8884c7d826017dcde4ef -->
+<!-- development-graph-sha256: 2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `70` |
+| Graph version | `72` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-execution-skill-validation-scope:2026-08-01` |
+| Context version | `flue-v2-connectors-clients-packaging-scope:2026-08-01` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `ab45f4931633e5211801c0eab444724d254e49d8e0ab8884c7d826017dcde4ef` |
+| Canonical checksum | `2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b` |
 
 ## Flow
 
@@ -3281,8 +3281,8 @@ flowchart TD
 - Goal: Migrate Telegram, Ratatui, CLI, and remaining clients to conversation-scoped Flue 2 identities, submissions, history, and update streams.
 - Executor instructions: Migrate connector and client contracts to conversation-scoped Flue 2 behavior while preserving product UX and connector session policy.
 - Inputs: artifact:flue-v2-execution-persistence-change, decision:d12-flue-v2-persistence-and-compaction
-- Resources: src/channels/, sim-one-cli/, tui/
-- Permissions: read [artifact:flue-v2-execution-persistence-change, src/channels/, src/api/routes/telegram-admin.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/channels/, src/api/routes/telegram-admin.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/ files assigned exclusively to connector and client migration]; external [https://flueframework.com/docs/guide/channels/, https://flueframework.com/docs/sdk/create-flue-client/, https://flueframework.com/docs/sdk/flue-client/, https://flueframework.com/docs/reference/streaming-protocol/]; destructive `false`
+- Resources: src/app.ts, src/channels/, src/api/routes/chat-client-facade, sim-one-cli/, tui/, product-packaging
+- Permissions: read [artifact:flue-v2-execution-persistence-change, src/app.ts, src/channels/, src/api/routes/chat-events.ts, src/api/routes/chat-sessions.ts, src/api/routes/telegram-admin.ts, src/engine/session/session-transcript.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/, docs/architecture/flue-v2-migration.md, package.json, vite.config.ts, scripts/test-ratatui-interactive.py, scripts/test-ratatui-visible-final.py]; write [src/app.ts, src/channels/, src/api/routes/chat-events.ts, src/api/routes/chat-sessions.ts, src/api/routes/telegram-admin.ts, src/engine/session/session-transcript.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/ files assigned exclusively to connector and client migration, package.json, vite.config.ts, scripts/test-ratatui-interactive.py, scripts/test-ratatui-visible-final.py]; external [https://flueframework.com/docs/guide/channels/, https://flueframework.com/docs/sdk/create-flue-client/, https://flueframework.com/docs/sdk/flue-client/, https://flueframework.com/docs/reference/streaming-protocol/]; destructive `false`
 - Execution: max `3` attempt(s), `420` minute(s); All connector and client tests pass below the file cap.
 - Side effects: `reversible` — Migrates connectors, CLI, and terminal clients.
 - Rollback: Restore milestone files and prior packaged binaries.

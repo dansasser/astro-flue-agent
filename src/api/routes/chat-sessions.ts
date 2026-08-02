@@ -236,13 +236,26 @@ function toLifecycleResponse(resolution: ChatSessionResolution): {
     created: boolean;
     title?: string;
   };
+  stream: {
+    instanceId: string;
+    url: string;
+    nextOffset: '-1';
+  };
 } {
+  const generation = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(
+    resolution.sessionId,
+  );
   return {
     session: {
       id: resolution.sessionId,
       surface: resolution.surface,
       created: resolution.created,
       ...(resolution.session.displayName ? { title: resolution.session.displayName } : {}),
+    },
+    stream: {
+      instanceId: generation.instanceId,
+      url: agentConversationUrl(generation.instanceId),
+      nextOffset: '-1',
     },
   };
 }

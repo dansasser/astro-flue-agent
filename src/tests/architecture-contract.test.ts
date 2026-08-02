@@ -30,6 +30,7 @@ test('root and architecture docs preserve the Flue component contract', () => {
 test('app.ts stays a Flue app shell and does not bypass agents or cards', () => {
   const app = readText('src/app.ts');
   const chatEventsRoute = readText('src/api/routes/chat-events.ts');
+  const flueConversation = readText('src/engine/session/flue-conversation.ts');
   const apiSecretMiddleware = readText('src/api/middleware/api-secret.ts');
 
   assert.match(app, /app\.route\('\/agents\/orchestrator', createAgentRouter\(Orchestrator\)\)/);
@@ -45,7 +46,8 @@ test('app.ts stays a Flue app shell and does not bypass agents or cards', () => 
   assert.doesNotMatch(app, /executionCtx/);
   assert.doesNotMatch(app, /createDefaultWebSearchProvider/);
   assert.match(chatEventsRoute, /\/api\/chat\/events/);
-  assert.match(chatEventsRoute, /\/agents\/orchestrator/);
+  assert.match(chatEventsRoute, /agentConversationUrl/);
+  assert.match(flueConversation, /\/agents\/orchestrator/);
   assert.match(chatEventsRoute, /dispatchOrchestrator/);
   assert.match(chatEventsRoute, /loadConversationSnapshot/);
   assert.doesNotMatch(chatEventsRoute, /app\.request\(\s*[`'"]\/workflows\//);

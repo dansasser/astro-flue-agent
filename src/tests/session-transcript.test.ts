@@ -32,6 +32,27 @@ test('Flue 2 snapshots project prompts, thinking, tools, final response, and set
   assert.equal(page.stream.nextOffset, '8');
 });
 
+test('Flue 2 task tools resume as named task activity instead of a generic tool', () => {
+  const value = snapshot('session-1', 'submission-1', 'Delegated answer');
+  value.messages[0]?.parts.splice(2, 0, {
+    type: 'dynamic-tool',
+    toolName: 'task',
+    toolCallId: 'submission-1-task',
+    state: 'output-available',
+    input: { agent: 'researcher' },
+    output: { ok: true },
+    durationMs: 1_200,
+  });
+  const page = projectSessionTranscript({
+    session: { id: 'session-1' },
+    prompts: [prompt('event-1', 'submission-1', 'Research it')],
+    snapshots: [value],
+  });
+  const task = page.exchanges[0]?.activities.find((activity) => activity.kind === 'task');
+  assert.equal(task?.name, 'researcher');
+  assert.equal(task?.durationMs, 1_200);
+});
+
 test('startup prompt stays hidden while its greeting remains visible', () => {
   const startup = prompt('startup', 'submission-startup', 'startup prompt');
   startup.event.context = { workflow: 'tui.startup-preflight' };

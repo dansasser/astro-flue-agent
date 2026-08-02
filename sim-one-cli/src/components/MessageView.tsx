@@ -1,11 +1,11 @@
 import { Box, Text } from 'ink';
 import React from 'react';
-import type { UIMessage, UIMessagePart } from '@flue/react';
+import type { FlueConversationMessage, FlueConversationPart } from '@flue/react';
 import { ToolCallView } from './ToolCallView.js';
 import { SubagentView } from './SubagentView.js';
 
 export interface MessageViewProps {
-  message: UIMessage;
+  message: FlueConversationMessage;
 }
 
 const ROLE_COLOR: Record<string, string> = {
@@ -20,9 +20,9 @@ const ROLE_LABEL: Record<string, string> = {
   system: 'system',
 };
 
-type DynamicToolPart = Extract<UIMessagePart, { type: 'dynamic-tool' }>;
+type DynamicToolPart = Extract<FlueConversationPart, { type: 'dynamic-tool' }>;
 
-function isToolPart(part: UIMessagePart): part is DynamicToolPart {
+function isToolPart(part: FlueConversationPart): part is DynamicToolPart {
   return part.type === 'dynamic-tool';
 }
 

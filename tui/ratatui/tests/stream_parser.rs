@@ -40,7 +40,7 @@ fn agent_stream_starts_strictly_after_the_supplied_snapshot_offset() {
 
     let handle = spawn_agent_stream(
         format!("http://127.0.0.1:{port}"),
-        "tui-snapshot".to_string(),
+        "/agents/orchestrator/opaque-instance".to_string(),
         "0000000000000000_0000000000000042".to_string(),
     );
     let request = rx
@@ -49,7 +49,7 @@ fn agent_stream_starts_strictly_after_the_supplied_snapshot_offset() {
     handle.cancel();
 
     assert!(request.starts_with(
-        "GET /agents/orchestrator/tui-snapshot?offset=0000000000000000_0000000000000042 HTTP/1.1"
+        "GET /agents/orchestrator/opaque-instance?view=updates&offset=0000000000000000_0000000000000042 HTTP/1.1"
     ));
 }
 
@@ -59,41 +59,39 @@ fn parses_catch_up_json_array_and_stream_headers() {
         "HTTP/1.1 200 OK\r\n",
         "Stream-Next-Offset: 0000000000000000_0000000000000002\r\n",
         "Stream-Up-To-Date: true\r\n",
-        "Stream-Closed: false\r\n",
         "\r\n",
-        r#"[{"type":"message_end","eventIndex":2,"timestamp":"2026-07-03T00:00:00Z"}]"#
+        r#"[{"type":"message-completed","conversationId":"conversation-1","messageId":"message-1","position":{"batch":2,"index":0},"timestamp":"2026-07-03T00:00:00Z"}]"#
     );
 
     let batch = parse_catch_up_response(response.as_bytes()).expect("catch-up should parse");
 
-    assert_eq!(batch.events.len(), 1);
-    assert_eq!(batch.events[0].event_type, "message_end");
-    assert_eq!(batch.events[0].event_index, Some(2));
+    assert_eq!(batch.chunks.len(), 1);
+    assert_eq!(batch.chunks[0].chunk_type, "message-completed");
+    assert_eq!(batch.chunks[0].position.expect("position").batch, 2);
     assert_eq!(
         batch.next_offset.as_deref(),
         Some("0000000000000000_0000000000000002")
     );
     assert!(batch.up_to_date);
-    assert!(!batch.stream_closed);
 }
 
 #[test]
 fn parses_sse_data_frame_with_event_array() {
     let frame = parse_sse_frame(
         "event: data\n\
-data: [{\"type\":\"thinking_delta\",\"eventIndex\":4},{\"type\":\"tool_start\"}]\n",
+data: [{\"type\":\"message-delta\",\"conversationId\":\"conversation-1\",\"messageId\":\"message-1\",\"kind\":\"reasoning\",\"delta\":\"plan\",\"position\":{\"batch\":4,\"index\":0}},{\"type\":\"tool-input\",\"conversationId\":\"conversation-1\",\"messageId\":\"message-1\",\"toolCallId\":\"tool-1\",\"toolName\":\"lookup\",\"input\":{},\"position\":{\"batch\":4,\"index\":1}}]\n",
     )
     .expect("sse frame should parse")
     .expect("data frame should produce output");
 
     match frame {
-        SseFrame::Events(events) => {
-            assert_eq!(events.len(), 2);
-            assert_eq!(events[0].event_type, "thinking_delta");
-            assert_eq!(events[0].event_index, Some(4));
-            assert_eq!(events[1].event_type, "tool_start");
+        SseFrame::Chunks(chunks) => {
+            assert_eq!(chunks.len(), 2);
+            assert_eq!(chunks[0].chunk_type, "message-delta");
+            assert_eq!(chunks[0].position.expect("position").batch, 4);
+            assert_eq!(chunks[1].chunk_type, "tool-input");
         }
-        other => panic!("expected events frame, got {other:?}"),
+        other => panic!("expected chunks frame, got {other:?}"),
     }
 }
 
@@ -101,7 +99,7 @@ data: [{\"type\":\"thinking_delta\",\"eventIndex\":4},{\"type\":\"tool_start\"}]
 fn parses_sse_control_frame() {
     let frame = parse_sse_frame(
         "event: control\n\
-data: {\"streamNextOffset\":\"0000000000000000_0000000000000005\",\"upToDate\":true,\"streamClosed\":false}\n",
+data: {\"streamNextOffset\":\"0000000000000000_0000000000000005\",\"upToDate\":true}\n",
     )
     .expect("control frame should parse")
     .expect("control frame should produce output");
@@ -113,7 +111,6 @@ data: {\"streamNextOffset\":\"0000000000000000_0000000000000005\",\"upToDate\":t
                 Some("0000000000000000_0000000000000005")
             );
             assert!(control.up_to_date);
-            assert!(!control.stream_closed);
         }
         other => panic!("expected control frame, got {other:?}"),
     }
@@ -138,20 +135,20 @@ fn parses_split_sse_frames_incrementally() {
         .expect("partial frame should parse")
         .is_empty());
     let frames = parser
-        .push_str("data: [{\"type\":\"text_delta\"}]\n\n")
+        .push_str("data: [{\"type\":\"message-delta\",\"conversationId\":\"conversation-1\",\"messageId\":\"message-1\",\"kind\":\"text\",\"delta\":\"hello\",\"position\":{\"batch\":1,\"index\":0}}]\n\n")
         .expect("completed frame should parse");
 
     assert_eq!(frames.len(), 1);
     match &frames[0] {
-        SseFrame::Events(events) => assert_eq!(events[0].event_type, "text_delta"),
-        other => panic!("expected events frame, got {other:?}"),
+        SseFrame::Chunks(chunks) => assert_eq!(chunks[0].chunk_type, "message-delta"),
+        other => panic!("expected chunks frame, got {other:?}"),
     }
 }
 
 #[test]
 fn parses_sse_frame_when_multibyte_utf8_is_split_across_reads() {
     let mut parser = SseParser::default();
-    let frame = "event: data\ndata: [{\"type\":\"text_delta\",\"text\":\"hello 👋\"}]\n\n";
+    let frame = "event: data\ndata: [{\"type\":\"message-delta\",\"conversationId\":\"conversation-1\",\"messageId\":\"message-1\",\"kind\":\"text\",\"delta\":\"hello 👋\",\"position\":{\"batch\":1,\"index\":0}}]\n\n";
     let bytes = frame.as_bytes();
     let split = bytes
         .windows(4)
@@ -168,17 +165,17 @@ fn parses_sse_frame_when_multibyte_utf8_is_split_across_reads() {
         .expect("completed UTF-8 frame should parse");
 
     match &frames[0] {
-        SseFrame::Events(events) => {
-            assert_eq!(events[0].event_type, "text_delta");
-            assert_eq!(events[0].value["text"], "hello 👋");
+        SseFrame::Chunks(chunks) => {
+            assert_eq!(chunks[0].chunk_type, "message-delta");
+            assert_eq!(chunks[0].value["delta"], "hello 👋");
         }
-        other => panic!("expected events frame, got {other:?}"),
+        other => panic!("expected chunks frame, got {other:?}"),
     }
 }
 
 #[test]
 fn parses_chunked_catch_up_body_with_non_ascii_text() {
-    let body = r#"[{"type":"message_end","eventIndex":2,"message":{"role":"assistant","content":"olá 👋"}}]"#;
+    let body = r#"[{"type":"message-delta","conversationId":"conversation-1","messageId":"message-1","kind":"text","delta":"olá 👋","position":{"batch":2,"index":0}}]"#;
     let split = body
         .as_bytes()
         .windows(4)
@@ -198,9 +195,9 @@ fn parses_chunked_catch_up_body_with_non_ascii_text() {
 
     let batch = parse_catch_up_response(&response).expect("chunked catch-up should parse");
 
-    assert_eq!(batch.events.len(), 1);
+    assert_eq!(batch.chunks.len(), 1);
     assert_eq!(
-        batch.events[0].value.pointer("/message/content"),
+        batch.chunks[0].value.get("delta"),
         Some(&serde_json::json!("olá 👋"))
     );
 }

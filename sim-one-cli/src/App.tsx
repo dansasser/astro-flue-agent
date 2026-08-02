@@ -1,6 +1,4 @@
-import { FlueProvider } from '@flue/react';
-import { createFlueClient } from '@flue/sdk';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { ChatLayout } from './components/ChatLayout.js';
 
 export interface AppProps {
@@ -9,14 +7,5 @@ export interface AppProps {
 }
 
 export function App({ baseUrl, session }: AppProps) {
-  const client = useMemo(
-    () => createFlueClient({ baseUrl }),
-    [baseUrl],
-  );
-
-  return (
-    <FlueProvider client={client}>
-      <ChatLayout baseUrl={baseUrl} session={session} decidedBy={session} />
-    </FlueProvider>
-  );
+  return <ChatLayout baseUrl={baseUrl} session={session} decidedBy={session} />;
 }

@@ -147,6 +147,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         sessionResolution,
         command: slashCommand,
         text: `Started new session ${sessionResolution.sessionId}.`,
+        stream: currentSessionStream(sessionResolution.sessionId),
         ...(slashCommand.args ? { sessionTitle: slashCommand.args } : {}),
       }));
     }
@@ -157,6 +158,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         sessionResolution,
         command: slashCommand,
         text: `Cleared conversation. Started new session ${sessionResolution.sessionId}.`,
+        stream: currentSessionStream(sessionResolution.sessionId),
         ...(slashCommand.args ? { sessionTitle: slashCommand.args } : {}),
       }));
     }
@@ -167,6 +169,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         sessionResolution,
         command: slashCommand,
         text: `Resumed session ${sessionResolution.sessionId}.`,
+        stream: currentSessionStream(sessionResolution.sessionId),
       }));
     }
 
@@ -176,6 +179,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         sessionResolution,
         command: slashCommand,
         text: `Current session ${sessionResolution.sessionId}.`,
+        stream: currentSessionStream(sessionResolution.sessionId),
       }));
     }
 
@@ -191,6 +195,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         command: slashCommand,
         text: `Renamed session ${sessionResolution.sessionId} to "${slashCommand.args}".`,
         sessionTitle: slashCommand.args,
+        stream: currentSessionStream(sessionResolution.sessionId),
       }));
     }
 
@@ -212,7 +217,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         command: slashCommand,
         text: `Compacted session ${sessionResolution.sessionId}.`,
         contextBudget: compacted.contextBudget,
-        streamUrl: compacted.streamUrl,
+        stream: compacted.stream,
       }));
     }
 
@@ -280,6 +285,11 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         uid: dispatchResult.receipt.uid,
       },
       streamUrl: delivery.streamUrl,
+      stream: {
+        instanceId: generation.instanceId,
+        url: delivery.streamUrl,
+        nextOffset: '-1',
+      },
       event: {
         id: event.id,
         connector: event.connector,
@@ -303,7 +313,7 @@ function createCommandResponse(input: {
   sessionResolution?: ChatSessionResolution;
   sessionTitle?: string;
   contextBudget?: DurableChatContextBudget;
-  streamUrl?: string;
+  stream?: ChatStreamReference;
 }): {
   result: {
     text: string;
@@ -323,7 +333,7 @@ function createCommandResponse(input: {
     title?: string;
   };
   contextUsage?: ContextUsageProjection;
-  streamUrl?: string;
+  stream?: ChatStreamReference;
 } {
   const sessionTitle = input.sessionTitle ?? input.sessionResolution?.session.displayName;
   return {
@@ -341,7 +351,7 @@ function createCommandResponse(input: {
     ...(input.contextBudget
       ? { contextUsage: projectContextUsage(input.contextBudget) }
       : {}),
-    ...(input.streamUrl ? { streamUrl: input.streamUrl } : {}),
+    ...(input.stream ? { stream: input.stream } : {}),
     ...(input.sessionResolution
       ? {
           session: {
@@ -352,6 +362,21 @@ function createCommandResponse(input: {
           },
         }
       : {}),
+  };
+}
+
+interface ChatStreamReference {
+  instanceId: string;
+  url: string;
+  nextOffset: '-1';
+}
+
+function currentSessionStream(sessionId: string): ChatStreamReference {
+  const generation = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(sessionId);
+  return {
+    instanceId: generation.instanceId,
+    url: agentConversationUrl(generation.instanceId),
+    nextOffset: '-1',
   };
 }
 
@@ -456,7 +481,7 @@ async function compactDurableChatSession(input: {
   headers: Headers;
   dispatchOrchestrator: OrchestratorDispatcher;
   loadConversationSnapshot: NonNullable<ChatEventRouteOptions['loadConversationSnapshot']>;
-}): Promise<{ contextBudget: DurableChatContextBudget; streamUrl: string }> {
+}): Promise<{ contextBudget: DurableChatContextBudget; stream: ChatStreamReference }> {
   const modelCard = configureRuntimeModels(input.env).selectedModelCard;
   const sessionId = input.sessionResolution.sessionId;
   const active = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(sessionId);
@@ -506,6 +531,10 @@ async function compactDurableChatSession(input: {
       prePromptEstimatedUsedTokens: contextBudget.estimatedUsedTokens,
       lastPromptEstimateTokens: contextBudget.estimatedPromptTokens,
     },
-    streamUrl: agentConversationUrl(generation.instanceId),
+    stream: {
+      instanceId: generation.instanceId,
+      url: agentConversationUrl(generation.instanceId),
+      nextOffset: '-1',
+    },
   };
 }

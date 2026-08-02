@@ -13,7 +13,7 @@ use crate::agent::{
     AgentContextUsage, AgentPromptOrigin, AgentReply, SessionLifecycleReply, SessionSummary,
 };
 use crate::diagnostics;
-use crate::flue::events::FlueEvent;
+use crate::flue::events::ConversationChunk;
 use crate::flue::stream::{spawn_agent_stream, AgentStreamHandle, AgentStreamUpdate};
 use crate::history::{
     load_chat_transcript, TranscriptExchange, TranscriptPage, TranscriptPageInfo,
@@ -63,11 +63,13 @@ fn empty_history_loader() -> HistoryLoader {
     Arc::new(|_, session_id, limit, _| {
         Ok(TranscriptPage {
             session: TranscriptSession {
-                id: session_id,
+                id: session_id.clone(),
                 title: None,
             },
             exchanges: Vec::new(),
             stream: TranscriptStreamCursor {
+                instance_id: session_id.clone(),
+                url: format!("/agents/orchestrator/{session_id}"),
                 next_offset: "-1".to_string(),
                 up_to_date: true,
             },
@@ -373,11 +375,12 @@ pub struct App {
     history_before: Option<String>,
     history_has_older: bool,
     stream_handle: Option<AgentStreamHandle>,
+    stream_url: String,
     stream_start_offset: String,
     stream_status: StreamStatus,
     last_stream_event: Option<String>,
-    legacy_submission_sequence: u64,
-    legacy_submission_id: Option<String>,
+    message_submissions: BTreeMap<String, String>,
+    tool_submissions: BTreeMap<String, String>,
     transcript_viewport_height: usize,
     transcript_viewport_width: usize,
     mouse_regions: MouseRegions,
@@ -704,11 +707,12 @@ impl App {
             history_before: None,
             history_has_older: false,
             stream_handle: None,
+            stream_url: String::new(),
             stream_start_offset: "-1".to_string(),
             stream_status: StreamStatus::NotAttached,
             last_stream_event: None,
-            legacy_submission_sequence: 0,
-            legacy_submission_id: None,
+            message_submissions: BTreeMap::new(),
+            tool_submissions: BTreeMap::new(),
             transcript_viewport_height: SCROLL_PAGE_LINES,
             transcript_viewport_width: 80,
             mouse_regions: MouseRegions::default(),
@@ -782,13 +786,13 @@ impl App {
     }
 
     pub fn start_stream(&mut self) {
-        if self.stream_handle.is_some() {
+        if self.stream_handle.is_some() || self.stream_url.is_empty() {
             return;
         }
         self.stream_status = StreamStatus::Connecting;
         self.stream_handle = Some(spawn_agent_stream(
             self.base_url.clone(),
-            self.session_id.clone(),
+            self.stream_url.clone(),
             self.stream_start_offset.clone(),
         ));
     }
@@ -886,12 +890,12 @@ impl App {
     pub fn handle_stream_update(&mut self, update: AgentStreamUpdate) {
         match update {
             AgentStreamUpdate::Connecting => self.stream_status = StreamStatus::Connecting,
-            AgentStreamUpdate::Events(events) => {
+            AgentStreamUpdate::Chunks(chunks) => {
                 self.stream_status = StreamStatus::Live;
-                if let Some(event) = events.last() {
-                    self.last_stream_event = Some(event.event_type.clone());
+                if let Some(chunk) = chunks.last() {
+                    self.last_stream_event = Some(chunk.chunk_type.clone());
                 }
-                let events = self.correlate_stream_events(events);
+                let chunks = self.correlate_stream_chunks(chunks);
                 let pending_submission = self.pending_response.as_ref().map(|pending| {
                     pending
                         .expected_submission_id
@@ -901,19 +905,20 @@ impl App {
                 });
                 let pending_has_final =
                     pending_submission.as_deref().is_some_and(|submission_id| {
-                        events.iter().any(|event| {
-                            event_submission_id(event) == Some(submission_id)
-                                && is_root_assistant_final(event)
+                        chunks.iter().any(|chunk| {
+                            chunk_submission_id(chunk) == Some(submission_id)
+                                && chunk.chunk_type == "message-completed"
                         })
                     });
                 let pending_has_text = pending_submission.as_deref().is_some_and(|submission_id| {
-                    events.iter().any(|event| {
-                        event_submission_id(event) == Some(submission_id)
-                            && event.event_type == "text_delta"
-                            && !event.is_nested()
+                    chunks.iter().any(|chunk| {
+                        chunk_submission_id(chunk) == Some(submission_id)
+                            && chunk.chunk_type == "message-delta"
+                            && chunk.value.get("kind").and_then(serde_json::Value::as_str)
+                                == Some("text")
                     })
                 });
-                self.transcript_document.apply_events(&events);
+                self.transcript_document.apply_chunks(&chunks);
                 self.rebuild_transcript_cache();
                 if pending_has_final {
                     self.agent_status = "finalizing".to_string();
@@ -1051,6 +1056,7 @@ impl App {
                 );
                 self.transcript_document.install_snapshot(page.exchanges);
                 self.rebuild_transcript_cache();
+                self.stream_url = page.stream.url;
                 self.stream_start_offset = page.stream.next_offset;
                 self.attach_startup_stream();
                 self.push_speaker_text("preflight", "all systems go");
@@ -1098,6 +1104,7 @@ impl App {
                 );
                 self.transcript_document.install_snapshot(page.exchanges);
                 self.rebuild_transcript_cache();
+                self.stream_url = page.stream.url;
                 self.stream_start_offset = page.stream.next_offset;
                 if self.pending_session_switch_attach_stream {
                     self.start_stream();
@@ -1151,6 +1158,7 @@ impl App {
                             self.after_transcript_changed();
                             return;
                         }
+                        self.adopt_stream_reference(&reply);
                         let session_id = reply.session_id.clone();
                         let explicit_session_title = matches!(
                             reply.command_name.as_deref(),
@@ -1459,6 +1467,10 @@ impl App {
 
     pub fn stream_start_offset(&self) -> &str {
         &self.stream_start_offset
+    }
+
+    pub fn stream_url(&self) -> &str {
+        &self.stream_url
     }
 
     pub fn max_scroll(&self) -> usize {
@@ -2358,6 +2370,34 @@ impl App {
         self.switch_session_with_announcement(session_id, true);
     }
 
+    fn adopt_stream_reference(&mut self, reply: &AgentReply) {
+        let Some(stream_url) = reply
+            .stream_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+        else {
+            return;
+        };
+        if self.stream_url == stream_url {
+            return;
+        }
+        let was_attached = self.stream_handle.take().is_some_and(|handle| {
+            handle.cancel();
+            true
+        });
+        self.stream_url = stream_url.to_string();
+        self.stream_start_offset = reply
+            .stream_offset
+            .clone()
+            .unwrap_or_else(|| "-1".to_string());
+        self.message_submissions.clear();
+        self.tool_submissions.clear();
+        if was_attached {
+            self.start_stream();
+        }
+    }
+
     fn switch_session_with_announcement(&mut self, session_id: String, announce: bool) {
         if self.session_id == session_id {
             return;
@@ -2374,9 +2414,11 @@ impl App {
         self.session_title = None;
         self.history_before = None;
         self.history_has_older = false;
+        self.stream_url.clear();
         self.stream_start_offset = "-1".to_string();
         self.last_stream_event = None;
-        self.legacy_submission_id = None;
+        self.message_submissions.clear();
+        self.tool_submissions.clear();
         self.context_usage = ContextUsageState::Unavailable;
         if had_stream {
             self.stream_status = StreamStatus::Connecting;
@@ -2416,13 +2458,14 @@ impl App {
         self.session_title = clean_session_title(reply.session_title.clone());
         self.history_before = None;
         self.history_has_older = false;
-        self.stream_start_offset = if command == "resume" {
-            "-1".to_string()
-        } else {
-            "now".to_string()
-        };
+        self.stream_url = reply.stream_url.clone().unwrap_or_default();
+        self.stream_start_offset = reply
+            .stream_offset
+            .clone()
+            .unwrap_or_else(|| "-1".to_string());
         self.last_stream_event = None;
-        self.legacy_submission_id = None;
+        self.message_submissions.clear();
+        self.tool_submissions.clear();
         self.context_usage = ContextUsageState::Unavailable;
         self.stream_status = StreamStatus::NotAttached;
         self.transcript_document = TranscriptDocument::default();
@@ -2456,7 +2499,6 @@ impl App {
         if session_id.is_empty() {
             return Err("Gateway returned an empty TUI session id.".to_string());
         }
-
         match self.startup_phase {
             StartupPhase::CreatingSession => {
                 if !reply.created {
@@ -2466,6 +2508,8 @@ impl App {
                     session_id,
                     reply.title,
                     format!("created fresh TUI session {session_id}"),
+                    reply.stream_url,
+                    reply.stream_offset,
                 );
                 diagnostics::session_lifecycle_completed("fresh", None, session_id);
             }
@@ -2481,6 +2525,8 @@ impl App {
                         format!(
                             "session {requested_session_selector} was not found; created fresh TUI session {session_id}"
                         ),
+                        reply.stream_url,
+                        reply.stream_offset,
                     );
                     diagnostics::session_lifecycle_completed(
                         "fresh_fallback",
@@ -2491,6 +2537,8 @@ impl App {
                 }
 
                 self.switch_session_with_announcement(session_id.to_string(), false);
+                self.stream_url = reply.stream_url;
+                self.stream_start_offset = reply.stream_offset;
                 self.session_title = clean_session_title(reply.title);
                 self.push_speaker_text("preflight", &format!("resumed TUI session {session_id}"));
                 self.start_history_load();
@@ -2515,10 +2563,13 @@ impl App {
         session_id: &str,
         session_title: Option<String>,
         announcement: String,
+        stream_url: String,
+        stream_offset: String,
     ) {
         self.switch_session_with_announcement(session_id.to_string(), false);
+        self.stream_url = stream_url;
+        self.stream_start_offset = stream_offset;
         self.session_title = clean_session_title(session_title);
-        self.stream_start_offset = "now".to_string();
         self.push_speaker_text("preflight", &announcement);
         self.attach_startup_stream();
         self.push_speaker_text("preflight", "all systems go");
@@ -2528,8 +2579,8 @@ impl App {
 
     fn attach_startup_stream(&mut self) {
         if self.startup_attach_stream {
-            diagnostics::stream_attach_started(if self.stream_start_offset == "now" {
-                "fresh_tail"
+            diagnostics::stream_attach_started(if self.stream_start_offset == "-1" {
+                "conversation_origin"
             } else {
                 "snapshot_tail"
             });
@@ -2658,42 +2709,52 @@ Use the workspace identity and user context already loaded for this agent. Greet
         self.rebuild_transcript_cache();
     }
 
-    fn correlate_stream_events(&mut self, events: Vec<FlueEvent>) -> Vec<FlueEvent> {
-        let mut correlated = Vec::with_capacity(events.len());
-        for mut event in events {
-            let mut submission_id = event_submission_id(&event).map(str::to_string);
-            if submission_id.is_none() {
-                let pending_submission = self.pending_response.as_ref().map(|pending| {
-                    pending
-                        .expected_submission_id
-                        .clone()
-                        .unwrap_or_else(|| pending.exchange_id.clone())
-                });
-                let fallback = pending_submission.unwrap_or_else(|| {
-                    if event.event_type == "turn_start" || self.legacy_submission_id.is_none() {
-                        self.legacy_submission_sequence =
-                            self.legacy_submission_sequence.saturating_add(1);
-                        self.legacy_submission_id =
-                            Some(format!("legacy:{}", self.legacy_submission_sequence));
-                    }
-                    self.legacy_submission_id
-                        .clone()
-                        .expect("legacy submission id is initialized")
-                });
-                if self.pending_response.is_some() {
-                    self.legacy_submission_id = Some(fallback.clone());
+    fn correlate_stream_chunks(
+        &mut self,
+        chunks: Vec<ConversationChunk>,
+    ) -> Vec<ConversationChunk> {
+        let mut correlated = Vec::with_capacity(chunks.len());
+        for mut chunk in chunks {
+            self.remember_reset_correlations(&chunk);
+            let mut submission_id = chunk.submission_id().map(str::to_string);
+            if chunk.chunk_type == "message-started" || chunk.chunk_type == "message-appended" {
+                if let (Some(message_id), Some(submission_id)) =
+                    (chunk.message_id(), submission_id.as_deref())
+                {
+                    self.message_submissions
+                        .insert(message_id.to_string(), submission_id.to_string());
                 }
-                event.value["submissionId"] = serde_json::Value::String(fallback.clone());
-                submission_id = Some(fallback);
             }
-
-            let submission_id =
-                submission_id.expect("stream events always have a correlated submission");
+            if submission_id.is_none() {
+                submission_id = chunk
+                    .message_id()
+                    .and_then(|message_id| self.message_submissions.get(message_id))
+                    .cloned();
+            }
+            if chunk.chunk_type == "tool-input" {
+                if let (Some(tool_call_id), Some(submission_id)) =
+                    (chunk.tool_call_id(), submission_id.as_deref())
+                {
+                    self.tool_submissions
+                        .insert(tool_call_id.to_string(), submission_id.to_string());
+                }
+            }
+            if submission_id.is_none() {
+                submission_id = chunk
+                    .tool_call_id()
+                    .and_then(|tool_call_id| self.tool_submissions.get(tool_call_id))
+                    .cloned();
+            }
+            let Some(submission_id) = submission_id else {
+                correlated.push(chunk);
+                continue;
+            };
+            chunk.value["submissionId"] = serde_json::Value::String(submission_id.clone());
             let should_bind_pending = self.pending_response.as_ref().is_some_and(|pending| {
                 pending.expected_submission_id.is_none()
                     && pending.exchange_id != submission_id
                     && !self.transcript_document.contains_submission(&submission_id)
-                    && is_submission_boundary_event(&event)
+                    && is_submission_boundary_chunk(&chunk)
             });
             if should_bind_pending {
                 let pending_exchange_id = self
@@ -2711,9 +2772,45 @@ Use the workspace identity and user context already loaded for this agent. Greet
                     }
                 }
             }
-            correlated.push(event);
+            correlated.push(chunk);
         }
         correlated
+    }
+
+    fn remember_reset_correlations(&mut self, chunk: &ConversationChunk) {
+        if chunk.chunk_type != "conversation-reset" {
+            return;
+        }
+        let Some(messages) = chunk
+            .value
+            .pointer("/snapshot/messages")
+            .and_then(serde_json::Value::as_array)
+        else {
+            return;
+        };
+        for message in messages {
+            let Some(message_id) = message.get("id").and_then(serde_json::Value::as_str) else {
+                continue;
+            };
+            let Some(submission_id) = message
+                .get("submissionId")
+                .and_then(serde_json::Value::as_str)
+            else {
+                continue;
+            };
+            self.message_submissions
+                .insert(message_id.to_string(), submission_id.to_string());
+            if let Some(parts) = message.get("parts").and_then(serde_json::Value::as_array) {
+                for part in parts {
+                    if let Some(tool_call_id) =
+                        part.get("toolCallId").and_then(serde_json::Value::as_str)
+                    {
+                        self.tool_submissions
+                            .insert(tool_call_id.to_string(), submission_id.to_string());
+                    }
+                }
+            }
+        }
     }
 
     fn shift_transcript_selection_lines(&mut self, inserted_lines: usize) {
@@ -2981,37 +3078,15 @@ fn transcript_row_kind_from_document(kind: TranscriptLineKind) -> TranscriptRowK
     }
 }
 
-fn event_submission_id(event: &FlueEvent) -> Option<&str> {
-    event
-        .value
-        .get("submissionId")
-        .and_then(serde_json::Value::as_str)
+fn chunk_submission_id(chunk: &ConversationChunk) -> Option<&str> {
+    chunk.submission_id()
 }
 
-fn is_submission_boundary_event(event: &FlueEvent) -> bool {
-    !event.is_nested()
-        && matches!(
-            event.event_type.as_str(),
-            "operation_start"
-                | "turn_start"
-                | "thinking_start"
-                | "thinking_delta"
-                | "text_delta"
-                | "message_end"
-                | "tool_start"
-                | "task_start"
-                | "log"
-        )
-}
-
-fn is_root_assistant_final(event: &FlueEvent) -> bool {
-    event.event_type == "message_end"
-        && !event.is_nested()
-        && event
-            .value
-            .pointer("/message/role")
-            .and_then(serde_json::Value::as_str)
-            == Some("assistant")
+fn is_submission_boundary_chunk(chunk: &ConversationChunk) -> bool {
+    matches!(
+        chunk.chunk_type.as_str(),
+        "message-started" | "message-delta" | "tool-input" | "submission-settled"
+    )
 }
 
 fn pending_transcript_line(pending: &PendingResponse, now: Instant) -> String {
@@ -3054,6 +3129,7 @@ fn agent_reply(text: impl Into<String>) -> AgentReply {
         text: text.into(),
         submission_id: None,
         stream_offset: None,
+        stream_url: None,
         session_id: None,
         session_title: None,
         command_name: None,

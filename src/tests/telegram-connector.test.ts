@@ -6,8 +6,13 @@ import {
   generatePairingCode,
   isMentioned,
 } from '../api/connectors/telegram/telegram-api.js';
-import { resolveTelegramApprovalPrincipal } from '../channels/telegram.js';
+import {
+  dispatchTelegramNormalizedMessage,
+  resolveTelegramApprovalPrincipal,
+  telegramDispatchIdempotencyKey,
+} from '../channels/telegram.js';
 import { goromboPersistenceRuntime } from '../db.js';
+import { resolveChatSession } from '../engine/session/session-routing.js';
 import app from '../app.js';
 
 let testCounter = 0;
@@ -26,6 +31,10 @@ function withApiSecret(secret: string): () => void {
       process.env.API_SECRET = previous;
     }
   };
+}
+
+function resolveChatSessionForTest(event: Parameters<typeof resolveChatSession>[0]['event']) {
+  return resolveChatSession({ event });
 }
 
 test('telegram text chunking respects Telegram 4096 limit', () => {
@@ -86,6 +95,68 @@ test('telegram approval principal is admin for configured admin ids', () => {
   assert.equal(resolveTelegramApprovalPrincipal('6653274440', ['6653274440']), 'admin');
   assert.equal(resolveTelegramApprovalPrincipal('999999', ['6653274440']), 'operator');
   assert.equal(resolveTelegramApprovalPrincipal('999999', []), 'operator');
+});
+
+test('telegram Flue dispatch idempotency is stable per update', () => {
+  assert.equal(telegramDispatchIdempotencyKey(42), 'telegram:update:42');
+  assert.equal(telegramDispatchIdempotencyKey(42), telegramDispatchIdempotencyKey(42));
+  assert.notEqual(telegramDispatchIdempotencyKey(42), telegramDispatchIdempotencyKey(43));
+});
+
+test('telegram admission uses the active product-session generation without awaiting settlement', async () => {
+  const suffix = uniqueId('generation');
+  const chatId = Date.now() + testCounter;
+  const event = {
+    id: `telegram-event-${suffix}`,
+    connector: 'telegram' as const,
+    kind: 'chat.message' as const,
+    text: 'continue after compaction',
+    receivedAt: new Date().toISOString(),
+    actor: { id: `user-${suffix}` },
+    conversation: { id: String(chatId) },
+  };
+  const session = resolveChatSessionForTest(event);
+  const active = goromboPersistenceRuntime.sessionDatabase.rotateRuntimeGeneration({
+    sessionId: session.sessionId,
+    expectedInstanceId: session.sessionId,
+    continuationSummary: 'Preserve the current Telegram task.',
+    compactionSubmissionId: `compact-${suffix}`,
+  });
+  const dispatches: Array<{ id?: string; message?: unknown; initialData?: unknown }> = [];
+  const background: Array<() => Promise<void>> = [];
+
+  const receipt = await dispatchTelegramNormalizedMessage({
+    event,
+    conversation: { type: 'chat', chatId },
+    updateId: 900,
+    messageId: 901,
+  }, {
+    dispatchAgent: (async (
+      _agent: never,
+      options: { id?: string; message?: unknown; initialData?: unknown },
+    ) => {
+      dispatches.push(options);
+      return {
+        submissionId: `submission-${suffix}`,
+        acceptedAt: new Date().toISOString(),
+        uid: `uid-${suffix}`,
+      };
+    }) as never,
+    settleAgent: () => new Promise(() => {}),
+    scheduleBackground: (task) => background.push(task),
+  });
+
+  assert.equal(receipt.submissionId, `submission-${suffix}`);
+  assert.equal(dispatches[0]?.id, active.instanceId);
+  assert.match(JSON.stringify(dispatches[0]?.message), /Continued Product Session Context/);
+  assert.match(JSON.stringify(dispatches[0]?.initialData), new RegExp(session.sessionId));
+  assert.equal(background.length, 1);
+  const recorded = goromboPersistenceRuntime.sessionDatabase.getSessionNormalizedMessageEvent({
+    sessionId: session.sessionId,
+    eventId: event.id,
+  });
+  assert.equal(recorded?.delivery.instanceId, active.instanceId);
+  assert.equal(recorded?.delivery.submissionId, receipt.submissionId);
 });
 
 test('telegram api client builds correct base url', () => {
@@ -232,6 +303,17 @@ test('telegram admin status route requires api secret', async () => {
   } finally {
     restore();
   }
+});
+
+test('telegram Flue 2 channel is mounted at its explicit webhook route', async () => {
+  const response = await app.request('/channels/telegram/webhook', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ update_id: 1 }),
+  });
+
+  assert.notEqual(response.status, 404);
+  assert.ok([401, 403].includes(response.status), `unexpected status ${response.status}`);
 });
 
 test('telegram settings CRUD works in session database', () => {

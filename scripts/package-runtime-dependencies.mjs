@@ -10,12 +10,13 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   findExternalDependencyLinks,
   removeExternalDependencyLinks,
 } from './portable-node-modules.mjs';
+import { resolvePnpmDeployCommand } from './pnpm-deploy-command.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePackagePath = join(projectRoot, 'package.json');
@@ -79,17 +80,13 @@ function runPnpmDeploy(target) {
     '--legacy',
     target,
   ];
-  const npmExecPath = process.env.npm_execpath;
-  const useCurrentPnpm =
-    typeof npmExecPath === 'string' &&
-    basename(npmExecPath).toLowerCase().includes('pnpm');
-  const command = useCurrentPnpm
-    ? process.execPath
-    : process.platform === 'win32'
-      ? 'pnpm.cmd'
-      : 'pnpm';
-  const commandArgs = useCurrentPnpm ? [npmExecPath, ...args] : args;
-  const result = spawnSync(command, commandArgs, {
+  const sourcePackage = JSON.parse(readFileSync(sourcePackagePath, 'utf8'));
+  const invocation = resolvePnpmDeployCommand({
+    args,
+    npmExecPath: process.env.npm_execpath,
+    packageManager: sourcePackage.packageManager,
+  });
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd: projectRoot,
     env: process.env,
     stdio: 'inherit',

@@ -1,13 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 
-use crate::flue::events::FlueEvent;
+use crate::flue::events::ConversationChunk;
 use crate::history::{
     TranscriptActivity, TranscriptActivityKind, TranscriptActivityStatus,
     TranscriptAssistantMessage, TranscriptExchange, TranscriptPrompt, TranscriptPromptVisibility,
 };
 
 const MAX_THINKING_PREVIEW_CHARS: usize = 500;
-const MAX_LOG_PREVIEW_CHARS: usize = 500;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TranscriptLineKind {
@@ -55,13 +54,11 @@ pub struct TranscriptDocument {
     blocks: Vec<TranscriptBlock>,
     snapshot_submissions: BTreeSet<String>,
     resumable_snapshot_submissions: BTreeSet<String>,
-    seen_events: BTreeSet<String>,
+    seen_chunks: BTreeSet<String>,
     streaming_text: BTreeMap<String, String>,
     pending_text: BTreeMap<String, String>,
     notice_sequence: u64,
     pending_sequence: u64,
-    fallback_sequence: BTreeMap<String, u64>,
-    active_fallbacks: BTreeMap<String, VecDeque<String>>,
 }
 
 impl TranscriptDocument {
@@ -236,221 +233,75 @@ impl TranscriptDocument {
             .map(|exchange| exchange.id.as_str())
     }
 
-    pub fn apply_events(&mut self, events: &[FlueEvent]) {
-        for event in events {
-            self.apply_event(event);
+    pub fn apply_chunks(&mut self, chunks: &[ConversationChunk]) {
+        for chunk in chunks {
+            self.apply_chunk(chunk);
         }
     }
 
-    pub fn apply_event(&mut self, event: &FlueEvent) {
-        if event.is_nested() {
+    pub fn apply_chunk(&mut self, chunk: &ConversationChunk) {
+        if let Some(identity) = stable_chunk_identity(chunk) {
+            if !self.seen_chunks.insert(identity) {
+                return;
+            }
+        }
+        if chunk.chunk_type == "conversation-reset" {
+            self.apply_conversation_reset(&chunk.value);
             return;
         }
-        let Some(submission_id) = event_submission_id(event) else {
+        let Some(submission_id) = chunk.submission_id().map(str::to_string) else {
             return;
         };
         if self.snapshot_submissions.contains(&submission_id) {
             return;
         }
-        if let Some(identity) = stable_event_identity(event, &submission_id) {
-            if !self.seen_events.insert(identity) {
-                return;
-            }
-        }
 
         let exchange_id = self.ensure_live_exchange(&submission_id);
-        let event_type = event.event_type.as_str();
-        match event_type {
-            "operation_start" | "operation" => {
-                let name = extract_name(&event.value, "operation");
-                let activity_id =
-                    self.activity_id(event, &submission_id, "operation", &name, event_type);
-                let terminal = event_type == "operation";
-                self.upsert_activity(
-                    &exchange_id,
-                    TranscriptActivity {
-                        id: activity_id,
-                        kind: TranscriptActivityKind::Operation,
-                        name,
-                        status: terminal_status(event, terminal),
-                        started_at: (!terminal).then(|| event.timestamp.clone()).flatten(),
-                        completed_at: terminal.then(|| event.timestamp.clone()).flatten(),
-                        duration_ms: terminal.then(|| event_duration_ms(event)).flatten(),
-                        preview: None,
-                        error: event_has_error(event).then(|| "Operation failed.".to_string()),
-                    },
-                );
-                if terminal {
-                    self.set_exchange_terminal_status(&exchange_id, event_has_error(event));
+        match chunk.chunk_type.as_str() {
+            "message-appended" => {
+                if let Some(message) = chunk.value.get("message") {
+                    self.apply_materialized_message(message);
                 }
             }
-            "thinking_start" | "thinking_delta" | "thinking_end" => {
-                let activity_id = format!(
-                    "thinking:{submission_id}:{}",
-                    event_turn_id(event).unwrap_or("current")
-                );
-                let current = self
-                    .activity(&exchange_id, &activity_id)
-                    .cloned()
-                    .unwrap_or(TranscriptActivity {
-                        id: activity_id.clone(),
-                        kind: TranscriptActivityKind::Thinking,
-                        name: "thinking".to_string(),
-                        status: TranscriptActivityStatus::Running,
-                        started_at: event.timestamp.clone(),
-                        completed_at: None,
-                        duration_ms: None,
-                        preview: None,
-                        error: None,
-                    });
-                let event_text = extract_event_text(event).unwrap_or_default();
-                let preview = match event_type {
-                    "thinking_delta" => bounded_text(
-                        &format!("{}{}", current.preview.unwrap_or_default(), event_text),
-                        MAX_THINKING_PREVIEW_CHARS,
-                    ),
-                    _ if !event_text.is_empty() => {
-                        bounded_text(&event_text, MAX_THINKING_PREVIEW_CHARS)
-                    }
-                    _ => current.preview.unwrap_or_default(),
-                };
-                self.upsert_activity(
-                    &exchange_id,
-                    TranscriptActivity {
-                        id: activity_id,
-                        kind: TranscriptActivityKind::Thinking,
-                        name: "thinking".to_string(),
-                        status: if event_type == "thinking_end" {
-                            TranscriptActivityStatus::Completed
-                        } else {
-                            TranscriptActivityStatus::Running
-                        },
-                        started_at: current.started_at.or_else(|| event.timestamp.clone()),
-                        completed_at: (event_type == "thinking_end")
-                            .then(|| event.timestamp.clone())
-                            .flatten(),
-                        duration_ms: (event_type == "thinking_end")
-                            .then(|| event_duration_ms(event))
-                            .flatten(),
-                        preview: (!preview.is_empty()).then_some(preview),
-                        error: None,
-                    },
-                );
+            "message-started" => self.upsert_activity(
+                &exchange_id,
+                operation_activity(
+                    &submission_id,
+                    TranscriptActivityStatus::Running,
+                    chunk.timestamp.clone(),
+                    None,
+                ),
+            ),
+            "message-delta" if chunk_kind(chunk) == Some("reasoning") => {
+                self.append_reasoning(&exchange_id, &submission_id, chunk);
             }
-            "tool_start" | "tool" => {
-                let name = extract_name(&event.value, "tool");
-                let activity_id =
-                    self.activity_id(event, &submission_id, "tool", &name, event_type);
-                let terminal = event_type == "tool";
-                self.upsert_activity(
-                    &exchange_id,
-                    TranscriptActivity {
-                        id: activity_id,
-                        kind: TranscriptActivityKind::Tool,
-                        name,
-                        status: terminal_status(event, terminal),
-                        started_at: (!terminal).then(|| event.timestamp.clone()).flatten(),
-                        completed_at: terminal.then(|| event.timestamp.clone()).flatten(),
-                        duration_ms: terminal.then(|| event_duration_ms(event)).flatten(),
-                        preview: None,
-                        error: (terminal && event_has_error(event))
-                            .then(|| "Tool failed.".to_string()),
-                    },
-                );
-                if terminal && event_has_error(event) {
-                    self.set_exchange_terminal_status(&exchange_id, true);
-                }
-            }
-            "task_start" | "task" => {
-                let name = extract_name(&event.value, "task");
-                let activity_id =
-                    self.activity_id(event, &submission_id, "task", &name, event_type);
-                let terminal = event_type == "task";
-                self.upsert_activity(
-                    &exchange_id,
-                    TranscriptActivity {
-                        id: activity_id,
-                        kind: TranscriptActivityKind::Task,
-                        name,
-                        status: terminal_status(event, terminal),
-                        started_at: (!terminal).then(|| event.timestamp.clone()).flatten(),
-                        completed_at: terminal.then(|| event.timestamp.clone()).flatten(),
-                        duration_ms: terminal.then(|| event_duration_ms(event)).flatten(),
-                        preview: None,
-                        error: (terminal && event_has_error(event))
-                            .then(|| "Task failed.".to_string()),
-                    },
-                );
-                if terminal && event_has_error(event) {
-                    self.set_exchange_terminal_status(&exchange_id, true);
-                }
-            }
-            "log" => {
-                let Some(text) = extract_event_text(event)
-                    .map(|text| bounded_text(&text, MAX_LOG_PREVIEW_CHARS))
-                    .filter(|text| !text.trim().is_empty())
-                else {
-                    return;
-                };
-                let id = format!(
-                    "log:{submission_id}:{}",
-                    event
-                        .event_index
-                        .map(|index| index.to_string())
-                        .unwrap_or_else(|| self.next_fallback_sequence(&submission_id).to_string())
-                );
-                self.upsert_activity(
-                    &exchange_id,
-                    TranscriptActivity {
-                        id,
-                        kind: TranscriptActivityKind::Log,
-                        name: "log".to_string(),
-                        status: if event_has_error(event) {
-                            TranscriptActivityStatus::Failed
-                        } else {
-                            TranscriptActivityStatus::Completed
-                        },
-                        started_at: None,
-                        completed_at: event.timestamp.clone(),
-                        duration_ms: event_duration_ms(event),
-                        preview: Some(text),
-                        error: event_has_error(event)
-                            .then(|| "Log event reported an error.".to_string()),
-                    },
-                );
-            }
-            "text_delta" => {
-                if let Some(text) = extract_event_text(event) {
+            "message-delta" if chunk_kind(chunk) == Some("text") => {
+                if let Some(delta) = chunk_delta(chunk) {
                     self.streaming_text
                         .entry(submission_id.clone())
                         .or_default()
-                        .push_str(&text);
+                        .push_str(delta);
                 }
             }
-            "message_end" => {
-                if extract_role(&event.value) != Some("assistant")
-                    || message_text(&event.value)
-                        .as_deref()
-                        .is_none_or(|text| text.trim().is_empty())
-                {
-                    return;
-                }
-                let text = message_text(&event.value).unwrap_or_default();
-                let turn = event_turn_id(event).unwrap_or("root");
-                let event_position = event
-                    .event_index
-                    .map(|index| index.to_string())
-                    .unwrap_or_else(|| self.next_fallback_sequence(&submission_id).to_string());
+            "tool-input" => self.start_tool_activity(&exchange_id, &submission_id, chunk),
+            "tool-output" | "tool-output-error" => {
+                self.complete_tool_activity(&exchange_id, &submission_id, chunk);
+            }
+            "message-completed" => {
+                self.complete_thinking_activities(&exchange_id, chunk.timestamp.clone());
+                let text = self
+                    .streaming_text
+                    .get(&submission_id)
+                    .cloned()
+                    .unwrap_or_default();
                 let _ = self.set_assistant(
                     &exchange_id,
-                    Some(format!("assistant:{submission_id}:{turn}:{event_position}")),
+                    chunk.message_id().map(|id| format!("assistant:{id}")),
                     &text,
-                    event.timestamp.clone(),
+                    chunk.timestamp.clone(),
                 );
             }
-            "turn" => {
-                self.set_exchange_terminal_status(&exchange_id, event_has_error(event));
-            }
+            "submission-settled" => self.apply_settlement(&exchange_id, chunk),
             _ => {}
         }
         let exchange_is_terminal = self.exchange(&exchange_id).is_some_and(|exchange| {
@@ -463,6 +314,358 @@ impl TranscriptDocument {
             self.resumable_snapshot_submissions.remove(&submission_id);
             self.snapshot_submissions.insert(submission_id);
         }
+    }
+
+    fn apply_conversation_reset(&mut self, value: &serde_json::Value) {
+        let Some(snapshot) = value.get("snapshot") else {
+            return;
+        };
+        if let Some(messages) = snapshot
+            .get("messages")
+            .and_then(serde_json::Value::as_array)
+        {
+            for message in messages {
+                self.apply_materialized_message(message);
+            }
+        }
+        if let Some(settlements) = snapshot
+            .get("settlements")
+            .and_then(serde_json::Value::as_array)
+        {
+            for settlement in settlements {
+                let Some(submission_id) = settlement
+                    .get("submissionId")
+                    .and_then(serde_json::Value::as_str)
+                else {
+                    continue;
+                };
+                let exchange_id = self.ensure_live_exchange(submission_id);
+                self.apply_settlement_value(&exchange_id, settlement, None);
+            }
+        }
+    }
+
+    fn apply_materialized_message(&mut self, message: &serde_json::Value) {
+        if message.get("display").and_then(serde_json::Value::as_str) == Some("diagnostic") {
+            self.apply_diagnostic_message(message);
+            return;
+        }
+        if message.get("role").and_then(serde_json::Value::as_str) != Some("assistant")
+            || message.get("purpose").and_then(serde_json::Value::as_str) != Some("assistant")
+            || message.get("display").and_then(serde_json::Value::as_str) == Some("hidden")
+        {
+            return;
+        }
+        let Some(submission_id) = message
+            .get("submissionId")
+            .and_then(serde_json::Value::as_str)
+        else {
+            return;
+        };
+        let exchange_id = self.ensure_live_exchange(submission_id);
+        let mut text = String::new();
+        if let Some(parts) = message.get("parts").and_then(serde_json::Value::as_array) {
+            for (index, part) in parts.iter().enumerate() {
+                match part.get("type").and_then(serde_json::Value::as_str) {
+                    Some("text") => append_materialized_text(&mut text, part),
+                    Some("reasoning") => {
+                        let preview = part
+                            .get("text")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or_default();
+                        self.upsert_activity(
+                            &exchange_id,
+                            TranscriptActivity {
+                                id: format!("thinking:{submission_id}:snapshot:{index}"),
+                                kind: TranscriptActivityKind::Thinking,
+                                name: "thinking".to_string(),
+                                status: part_state(part),
+                                started_at: None,
+                                completed_at: None,
+                                duration_ms: None,
+                                preview: (!preview.trim().is_empty())
+                                    .then(|| bounded_text(preview, MAX_THINKING_PREVIEW_CHARS)),
+                                error: None,
+                            },
+                        );
+                    }
+                    Some("dynamic-tool") => {
+                        self.apply_materialized_tool(&exchange_id, submission_id, part)
+                    }
+                    _ => {}
+                }
+            }
+        }
+        if !text.trim().is_empty() {
+            let _ = self.set_assistant(
+                &exchange_id,
+                message
+                    .get("id")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_string),
+                &text,
+                None,
+            );
+        }
+    }
+
+    fn apply_diagnostic_message(&mut self, message: &serde_json::Value) {
+        let Some(submission_id) = message
+            .get("submissionId")
+            .and_then(serde_json::Value::as_str)
+        else {
+            return;
+        };
+        let text = materialized_text(message);
+        if text.trim().is_empty() {
+            return;
+        }
+        let exchange_id = self.ensure_live_exchange(submission_id);
+        let message_id = message
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("diagnostic");
+        self.upsert_activity(
+            &exchange_id,
+            TranscriptActivity {
+                id: format!("log:{submission_id}:{message_id}"),
+                kind: TranscriptActivityKind::Log,
+                name: "diagnostic".to_string(),
+                status: TranscriptActivityStatus::Completed,
+                started_at: None,
+                completed_at: None,
+                duration_ms: None,
+                preview: Some(text),
+                error: None,
+            },
+        );
+    }
+
+    fn append_reasoning(
+        &mut self,
+        exchange_id: &str,
+        submission_id: &str,
+        chunk: &ConversationChunk,
+    ) {
+        let id = format!(
+            "thinking:{submission_id}:{}",
+            chunk.message_id().unwrap_or("current")
+        );
+        let current = self.activity(exchange_id, &id).cloned();
+        let preview = bounded_text(
+            &format!(
+                "{}{}",
+                current
+                    .as_ref()
+                    .and_then(|activity| activity.preview.as_deref())
+                    .unwrap_or_default(),
+                chunk_delta(chunk).unwrap_or_default(),
+            ),
+            MAX_THINKING_PREVIEW_CHARS,
+        );
+        self.upsert_activity(
+            exchange_id,
+            TranscriptActivity {
+                id,
+                kind: TranscriptActivityKind::Thinking,
+                name: "thinking".to_string(),
+                status: TranscriptActivityStatus::Running,
+                started_at: current
+                    .and_then(|activity| activity.started_at)
+                    .or_else(|| chunk.timestamp.clone()),
+                completed_at: None,
+                duration_ms: None,
+                preview: (!preview.is_empty()).then_some(preview),
+                error: None,
+            },
+        );
+    }
+
+    fn start_tool_activity(
+        &mut self,
+        exchange_id: &str,
+        submission_id: &str,
+        chunk: &ConversationChunk,
+    ) {
+        let name = chunk
+            .value
+            .get("toolName")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("tool");
+        let display_name = if name == "task" {
+            chunk
+                .value
+                .pointer("/input/agent")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(name)
+        } else {
+            name
+        };
+        let tool_call_id = chunk.tool_call_id().unwrap_or("unknown");
+        self.upsert_activity(
+            exchange_id,
+            TranscriptActivity {
+                id: format!("tool:{submission_id}:{tool_call_id}"),
+                kind: tool_activity_kind(name),
+                name: display_name.to_string(),
+                status: TranscriptActivityStatus::Running,
+                started_at: chunk.timestamp.clone(),
+                completed_at: None,
+                duration_ms: None,
+                preview: None,
+                error: None,
+            },
+        );
+    }
+
+    fn complete_tool_activity(
+        &mut self,
+        exchange_id: &str,
+        submission_id: &str,
+        chunk: &ConversationChunk,
+    ) {
+        let id = format!(
+            "tool:{submission_id}:{}",
+            chunk.tool_call_id().unwrap_or("unknown")
+        );
+        let current = self.activity(exchange_id, &id).cloned();
+        let failed = chunk.chunk_type == "tool-output-error";
+        self.upsert_activity(
+            exchange_id,
+            TranscriptActivity {
+                id,
+                kind: current
+                    .as_ref()
+                    .map(|activity| activity.kind)
+                    .unwrap_or(TranscriptActivityKind::Tool),
+                name: current
+                    .as_ref()
+                    .map(|activity| activity.name.clone())
+                    .unwrap_or_else(|| "tool".to_string()),
+                status: if failed {
+                    TranscriptActivityStatus::Failed
+                } else {
+                    TranscriptActivityStatus::Completed
+                },
+                started_at: current.and_then(|activity| activity.started_at),
+                completed_at: chunk.timestamp.clone(),
+                duration_ms: chunk
+                    .value
+                    .get("durationMs")
+                    .and_then(serde_json::Value::as_u64),
+                preview: None,
+                error: failed.then(|| {
+                    chunk
+                        .value
+                        .get("errorText")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("Tool failed.")
+                        .to_string()
+                }),
+            },
+        );
+    }
+
+    fn apply_materialized_tool(
+        &mut self,
+        exchange_id: &str,
+        submission_id: &str,
+        part: &serde_json::Value,
+    ) {
+        let name = part
+            .get("toolName")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("tool");
+        let tool_call_id = part
+            .get("toolCallId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        let state = part.get("state").and_then(serde_json::Value::as_str);
+        let failed = state == Some("output-error");
+        self.upsert_activity(
+            exchange_id,
+            TranscriptActivity {
+                id: format!("tool:{submission_id}:{tool_call_id}"),
+                kind: tool_activity_kind(name),
+                name: name.to_string(),
+                status: match state {
+                    Some("output-available") => TranscriptActivityStatus::Completed,
+                    Some("output-error") => TranscriptActivityStatus::Failed,
+                    _ => TranscriptActivityStatus::Running,
+                },
+                started_at: None,
+                completed_at: None,
+                duration_ms: part.get("durationMs").and_then(serde_json::Value::as_u64),
+                preview: None,
+                error: failed.then(|| {
+                    part.get("errorText")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("Tool failed.")
+                        .to_string()
+                }),
+            },
+        );
+    }
+
+    fn complete_thinking_activities(&mut self, exchange_id: &str, completed_at: Option<String>) {
+        let Some(index) = self.exchange_index.get(exchange_id).copied() else {
+            return;
+        };
+        for activity in &mut self.exchanges[index].activities {
+            if activity.kind == TranscriptActivityKind::Thinking
+                && activity.status == TranscriptActivityStatus::Running
+            {
+                activity.status = TranscriptActivityStatus::Completed;
+                activity.completed_at = completed_at.clone();
+            }
+        }
+    }
+
+    fn apply_settlement(&mut self, exchange_id: &str, chunk: &ConversationChunk) {
+        self.apply_settlement_value(exchange_id, &chunk.value, chunk.timestamp.clone());
+    }
+
+    fn apply_settlement_value(
+        &mut self,
+        exchange_id: &str,
+        value: &serde_json::Value,
+        completed_at: Option<String>,
+    ) {
+        let outcome = value
+            .get("outcome")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("failed");
+        let failed = outcome != "completed";
+        let submission_id = value
+            .get("submissionId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        self.upsert_activity(
+            exchange_id,
+            operation_activity(
+                submission_id,
+                if failed {
+                    TranscriptActivityStatus::Failed
+                } else {
+                    TranscriptActivityStatus::Completed
+                },
+                None,
+                failed.then(|| settlement_error_text(value)),
+            ),
+        );
+        if let Some(activity) = self
+            .exchanges
+            .get_mut(*self.exchange_index.get(exchange_id).unwrap())
+            .and_then(|exchange| {
+                exchange
+                    .activities
+                    .iter_mut()
+                    .find(|activity| activity.id == format!("operation:{submission_id}"))
+            })
+        {
+            activity.completed_at = completed_at;
+        }
+        self.set_exchange_terminal_status(exchange_id, failed);
     }
 
     pub fn lines(&self) -> Vec<TranscriptLine> {
@@ -706,63 +909,6 @@ impl TranscriptDocument {
             self.exchanges[index].status = TranscriptActivityStatus::Completed;
         }
     }
-
-    fn activity_id(
-        &mut self,
-        event: &FlueEvent,
-        submission_id: &str,
-        kind: &str,
-        name: &str,
-        event_type: &str,
-    ) -> String {
-        let stable = match kind {
-            "operation" => extract_string(&event.value, &["operationId"]),
-            "tool" => extract_string(&event.value, &["toolCallId", "callId"]),
-            "task" => extract_string(&event.value, &["taskId"]),
-            _ => None,
-        };
-        if let Some(stable) = stable {
-            return format!("{kind}:{submission_id}:{stable}");
-        }
-
-        let terminal = event_type == kind;
-        let active_key = format!("{submission_id}\0{kind}\0{name}");
-        if terminal {
-            if let Some(id) = self
-                .active_fallbacks
-                .get_mut(&active_key)
-                .and_then(VecDeque::pop_front)
-            {
-                if self
-                    .active_fallbacks
-                    .get(&active_key)
-                    .is_some_and(VecDeque::is_empty)
-                {
-                    self.active_fallbacks.remove(&active_key);
-                }
-                return id;
-            }
-        }
-
-        let sequence = self.next_fallback_sequence(submission_id);
-        let id = format!("{kind}:{submission_id}:fallback:{sequence}");
-        if !terminal {
-            self.active_fallbacks
-                .entry(active_key)
-                .or_default()
-                .push_back(id.clone());
-        }
-        id
-    }
-
-    fn next_fallback_sequence(&mut self, submission_id: &str) -> u64 {
-        let sequence = self
-            .fallback_sequence
-            .entry(submission_id.to_string())
-            .or_default();
-        *sequence = sequence.saturating_add(1);
-        *sequence
-    }
 }
 
 pub fn format_event_duration(duration_ms: u64) -> String {
@@ -852,9 +998,15 @@ fn format_activity(activity: &TranscriptActivity) -> (TranscriptLineKind, String
         .map(format_event_duration)
         .map(|duration| format!(" in {duration}"))
         .unwrap_or_default();
+    let error = activity
+        .error
+        .as_deref()
+        .filter(|error| !error.trim().is_empty())
+        .map(|error| format!(" - {}", error.trim()))
+        .unwrap_or_default();
     (
         kind,
-        format!("{prefix}: {} {status}{duration}", activity.name),
+        format!("{prefix}: {} {status}{duration}{error}", activity.name),
     )
 }
 
@@ -916,132 +1068,93 @@ fn notice_kind(speaker: &str) -> TranscriptLineKind {
     }
 }
 
-fn event_submission_id(event: &FlueEvent) -> Option<String> {
-    extract_string(&event.value, &["submissionId", "submission.id"])
-}
-
-fn event_turn_id(event: &FlueEvent) -> Option<&str> {
-    event
+fn stable_chunk_identity(chunk: &ConversationChunk) -> Option<String> {
+    let position = chunk.position?;
+    let conversation_id = chunk
         .value
-        .get("turnId")
-        .and_then(serde_json::Value::as_str)
+        .get("conversationId")
+        .and_then(serde_json::Value::as_str)?;
+    Some(format!(
+        "{conversation_id}:{}:{}",
+        position.batch, position.index
+    ))
 }
 
-fn event_duration_ms(event: &FlueEvent) -> Option<u64> {
-    event
-        .value
-        .get("durationMs")
-        .and_then(serde_json::Value::as_u64)
+fn chunk_kind(chunk: &ConversationChunk) -> Option<&str> {
+    chunk.value.get("kind").and_then(serde_json::Value::as_str)
 }
 
-fn event_has_error(event: &FlueEvent) -> bool {
-    if event
-        .value
-        .get("isError")
-        .and_then(serde_json::Value::as_bool)
-        == Some(true)
-    {
-        return true;
-    }
-    !matches!(
-        event.value.get("error"),
-        None | Some(serde_json::Value::Null) | Some(serde_json::Value::Bool(false))
-    )
+fn chunk_delta(chunk: &ConversationChunk) -> Option<&str> {
+    chunk.value.get("delta").and_then(serde_json::Value::as_str)
 }
 
-fn terminal_status(event: &FlueEvent, terminal: bool) -> TranscriptActivityStatus {
-    if !terminal {
-        TranscriptActivityStatus::Running
-    } else if event_has_error(event) {
-        TranscriptActivityStatus::Failed
+fn tool_activity_kind(name: &str) -> TranscriptActivityKind {
+    if name == "task" {
+        TranscriptActivityKind::Task
     } else {
-        TranscriptActivityStatus::Completed
+        TranscriptActivityKind::Tool
     }
 }
 
-fn stable_event_identity(event: &FlueEvent, submission_id: &str) -> Option<String> {
-    event.event_index.map(|index| {
-        format!(
-            "{submission_id}\0{index}\0{}\0{}",
-            event.event_type,
-            event.timestamp.as_deref().unwrap_or_default()
-        )
-    })
-}
-
-fn extract_role(value: &serde_json::Value) -> Option<&str> {
-    value
-        .pointer("/message/role")
-        .and_then(serde_json::Value::as_str)
-        .or_else(|| value.get("role").and_then(serde_json::Value::as_str))
-}
-
-fn message_text(value: &serde_json::Value) -> Option<String> {
-    let content = value
-        .pointer("/message/content")
-        .or_else(|| value.get("text"))?;
-    match content {
-        serde_json::Value::String(text) => Some(text.clone()),
-        serde_json::Value::Array(parts) => {
-            let text = parts
-                .iter()
-                .filter_map(|part| {
-                    (part.get("type").and_then(serde_json::Value::as_str) == Some("text"))
-                        .then(|| part.get("text").and_then(serde_json::Value::as_str))
-                        .flatten()
-                })
-                .collect::<String>();
-            (!text.is_empty()).then_some(text)
-        }
-        _ => None,
+fn operation_activity(
+    submission_id: &str,
+    status: TranscriptActivityStatus,
+    started_at: Option<String>,
+    error: Option<String>,
+) -> TranscriptActivity {
+    TranscriptActivity {
+        id: format!("operation:{submission_id}"),
+        kind: TranscriptActivityKind::Operation,
+        name: "operation".to_string(),
+        status,
+        started_at,
+        completed_at: None,
+        duration_ms: None,
+        preview: None,
+        error,
     }
 }
 
-fn extract_event_text(event: &FlueEvent) -> Option<String> {
-    for path in ["text", "delta", "content", "message", "summary"] {
-        if let Some(text) = event.value.get(path).and_then(serde_json::Value::as_str) {
-            return Some(text.to_string());
-        }
+fn append_materialized_text(output: &mut String, part: &serde_json::Value) {
+    let Some(text) = part.get("text").and_then(serde_json::Value::as_str) else {
+        return;
+    };
+    if !output.is_empty() {
+        output.push_str("\n\n");
     }
-    None
+    output.push_str(text);
 }
 
-fn extract_name(value: &serde_json::Value, fallback: &str) -> String {
-    extract_string(
-        value,
-        &[
-            "operationKind",
-            "operationName",
-            "toolName",
-            "taskName",
-            "name",
-        ],
-    )
-    .unwrap_or_else(|| fallback.to_string())
-}
-
-fn extract_string(value: &serde_json::Value, paths: &[&str]) -> Option<String> {
-    for path in paths {
-        let mut current = value;
-        let mut found = true;
-        for part in path.split('.') {
-            let Some(next) = current.get(part) else {
-                found = false;
-                break;
-            };
-            current = next;
-        }
-        if found {
-            if let Some(text) = current
-                .as_str()
-                .map(str::trim)
-                .filter(|text| !text.is_empty())
-            {
-                return Some(text.to_string());
+fn materialized_text(message: &serde_json::Value) -> String {
+    let mut output = String::new();
+    if let Some(parts) = message.get("parts").and_then(serde_json::Value::as_array) {
+        for part in parts {
+            if part.get("type").and_then(serde_json::Value::as_str) == Some("text") {
+                append_materialized_text(&mut output, part);
             }
         }
     }
-    None
+    output
+}
+
+fn part_state(part: &serde_json::Value) -> TranscriptActivityStatus {
+    if part.get("state").and_then(serde_json::Value::as_str) == Some("done") {
+        TranscriptActivityStatus::Completed
+    } else {
+        TranscriptActivityStatus::Running
+    }
+}
+
+fn settlement_error_text(value: &serde_json::Value) -> String {
+    value
+        .get("error")
+        .and_then(|error| {
+            error
+                .as_str()
+                .or_else(|| error.get("message").and_then(serde_json::Value::as_str))
+        })
+        .unwrap_or("Operation failed.")
+        .to_string()
 }
 
 fn bounded_text(value: &str, limit: usize) -> String {

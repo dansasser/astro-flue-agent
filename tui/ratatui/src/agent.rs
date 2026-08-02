@@ -24,6 +24,7 @@ pub struct AgentReply {
     pub text: String,
     pub submission_id: Option<String>,
     pub stream_offset: Option<String>,
+    pub stream_url: Option<String>,
     pub session_id: Option<String>,
     pub session_title: Option<String>,
     pub command_name: Option<String>,
@@ -50,6 +51,8 @@ pub struct SessionLifecycleReply {
     pub id: String,
     pub title: Option<String>,
     pub created: bool,
+    pub stream_url: String,
+    pub stream_offset: String,
 }
 
 pub fn create_chat_session(base_url: &str) -> Result<SessionLifecycleReply, String> {
@@ -239,10 +242,25 @@ fn parse_session_lifecycle_response(
         .map(str::trim)
         .filter(|title| !title.is_empty())
         .map(str::to_string);
+    let stream_metadata = json.get("stream").and_then(serde_json::Value::as_object);
+    let stream_url = stream_metadata
+        .and_then(|stream| stream.get("url"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|url| url.starts_with('/'))
+        .ok_or_else(|| {
+            "Gateway session lifecycle response did not contain a Flue stream URL.".to_string()
+        })?;
+    let stream_offset = stream_metadata
+        .and_then(|stream| stream.get("nextOffset"))
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("-1");
     Ok(SessionLifecycleReply {
         id: id.to_string(),
         title,
         created,
+        stream_url: stream_url.to_string(),
+        stream_offset: stream_offset.to_string(),
     })
 }
 
@@ -293,8 +311,15 @@ fn extract_agent_reply(value: &serde_json::Value) -> Option<AgentReply> {
                 .and_then(serde_json::Value::as_str)
         })
         .map(str::to_string);
-    let stream_offset = value
-        .get("offset")
+    let stream = value.get("stream").and_then(serde_json::Value::as_object);
+    let stream_offset = stream
+        .and_then(|stream| stream.get("nextOffset"))
+        .or_else(|| value.get("offset"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string);
+    let stream_url = stream
+        .and_then(|stream| stream.get("url"))
+        .or_else(|| value.get("streamUrl"))
         .and_then(serde_json::Value::as_str)
         .map(str::to_string);
     let session_title = value
@@ -319,6 +344,7 @@ fn extract_agent_reply(value: &serde_json::Value) -> Option<AgentReply> {
         text,
         submission_id,
         stream_offset,
+        stream_url,
         session_id,
         session_title,
         command_name,

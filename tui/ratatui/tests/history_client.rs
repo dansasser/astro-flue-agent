@@ -54,6 +54,8 @@ fn loads_the_typed_transcript_contract_with_optional_and_future_fields() {
             "status":"failed"
         }],
         "stream":{
+            "instanceId":"instance-history",
+            "url":"/agents/orchestrator/instance-history",
             "nextOffset":"0000000000000000_0000000000000034",
             "upToDate":true
         },
@@ -103,6 +105,8 @@ fn loads_the_typed_transcript_contract_with_optional_and_future_fields() {
     );
     assert_eq!(page.exchanges[1].status, TranscriptActivityStatus::Failed);
     assert_eq!(page.stream.next_offset, "0000000000000000_0000000000000034");
+    assert_eq!(page.stream.instance_id, "instance-history");
+    assert_eq!(page.stream.url, "/agents/orchestrator/instance-history");
     assert!(page.stream.up_to_date);
     assert_eq!(page.page.limit, 50);
     assert!(page.page.has_older);
@@ -128,7 +132,7 @@ fn accepts_missing_optional_fields() {
             "activities":[],
             "status":"running"
         }],
-        "stream":{"nextOffset":"-1","upToDate":true},
+        "stream":{"instanceId":"instance-minimal","url":"/agents/orchestrator/instance-minimal","nextOffset":"-1","upToDate":true},
         "page":{"limit":25,"hasOlder":false}
     }"#;
     let (base_url, _) = serve_once(200, body);
