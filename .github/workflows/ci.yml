@@ -166,24 +166,39 @@ jobs:
 
       - name: Verify Flue v2 foundation source
         if: github.head_ref == 'codex/flue-v2-01-foundation'
-        run: >-
-          pnpm exec tsx --test
-          src/tests/build-script-regressions.test.ts
-          src/tests/models.test.ts
+        run: |
+          pnpm exec esbuild \
+          src/tests/build-script-regressions.test.ts \
+          src/tests/models.test.ts \
+          --bundle --platform=node --format=esm --packages=external \
+          --outdir=.tmp/flue-v2-stack-tests
+          node --test \
+          .tmp/flue-v2-stack-tests/build-script-regressions.test.js \
+          .tmp/flue-v2-stack-tests/models.test.js
 
       - name: Verify Flue v2 agent and worker source
         if: github.head_ref == 'codex/flue-v2-02-agents-workers'
-        run: >-
-          pnpm exec tsx --test
-          src/tests/flue-v2-agents.test.ts
-          src/tests/flue-v2-subagent-composition.test.ts
+        run: |
+          pnpm exec esbuild \
+          src/tests/flue-v2-agents.test.ts \
+          src/tests/flue-v2-subagent-composition.test.ts \
+          --bundle --platform=node --format=esm --packages=external \
+          --outdir=.tmp/flue-v2-stack-tests
+          node --test \
+          .tmp/flue-v2-stack-tests/flue-v2-agents.test.js \
+          .tmp/flue-v2-stack-tests/flue-v2-subagent-composition.test.js
 
       - name: Verify Flue v2 capability source
         if: github.head_ref == 'codex/flue-v2-03-capabilities'
-        run: >-
-          pnpm exec tsx --test
-          src/tests/flue-v2-capabilities.test.ts
-          src/tests/runtime-capability-snapshot.test.ts
+        run: |
+          pnpm exec esbuild \
+          src/tests/flue-v2-capabilities.test.ts \
+          src/tests/runtime-capability-snapshot.test.ts \
+          --bundle --platform=node --format=esm --packages=external \
+          --outdir=.tmp/flue-v2-stack-tests
+          node --test \
+          .tmp/flue-v2-stack-tests/flue-v2-capabilities.test.js \
+          .tmp/flue-v2-stack-tests/runtime-capability-snapshot.test.js
 
       - name: Typecheck compiler-coherent slices
         if: steps.stack-boundary.outputs.verification == 'typecheck'
