@@ -115,6 +115,27 @@ export async function connectCodingWorkerGithubMcp(
   };
 }
 
+export async function prepareCodingWorkerGithubMcp(
+  options: CodingWorkerGithubMcpOptions = {},
+): Promise<CodingWorkerGithubMcp> {
+  try {
+    const integration = await connectCodingWorkerGithubMcp(options);
+    if (integration.client) {
+      return integration;
+    }
+    return {
+      ...integration,
+      unavailableReason: 'GitHub MCP connection is unavailable because no GitHub PAT is configured.',
+    };
+  } catch {
+    return {
+      readTools: [],
+      unavailableReason: 'GitHub MCP connection failed during runtime startup.',
+      async close() {},
+    };
+  }
+}
+
 export class McpGitHubClient implements GitHubClient {
   constructor(
     private readonly tools: ReadonlyMap<string, ToolDefinition>,

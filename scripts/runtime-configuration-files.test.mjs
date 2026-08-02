@@ -257,3 +257,10 @@ test('script sanitization covers every documented compatibility alias', () => {
     ],
   );
 });
+
+test('HTTP smoke treats a whitespace-only API secret as unconfigured', () => {
+  const smokeSource = readFileSync('scripts/smoke-http-endpoints.mjs', 'utf8');
+  assert.match(smokeSource, /configValues\.API_SECRET\?\.trim\(\) \|\| ''/);
+  assert.match(smokeSource, /const unauthenticatedStatus = apiSecret \? 401 : 503/);
+  assert.match(smokeSource, /if \(liveChat && !apiSecret\)/);
+});

@@ -22,7 +22,7 @@ test('chat facade dispatches and reads one exact Flue 2 submission', async () =>
       session?: { id?: string };
       contextUsage?: { available?: boolean; usedTokens?: number };
       event?: { id?: string };
-      stream?: { instanceId?: string; url?: string };
+      stream?: { instanceId?: string; url?: string; nextOffset?: string };
     };
     fixture.eventIds.push(body.event?.id ?? '');
     fixture.sessionId = body.session?.id;
@@ -35,7 +35,11 @@ test('chat facade dispatches and reads one exact Flue 2 submission', async () =>
     assert.equal(body.contextUsage?.available, true);
     assert.equal(body.contextUsage?.usedTokens, 600);
     assert.equal(body.stream?.instanceId, body.session?.id);
-    assert.equal(body.stream?.url, `/agents/orchestrator/${body.session?.id}`);
+    assert.equal(
+      body.stream?.url,
+      `/agents/orchestrator/${encodeURIComponent(body.session?.id ?? '')}`,
+    );
+    assert.equal(body.stream?.nextOffset, '-1');
 
     const stored = goromboPersistenceRuntime.sessionDatabase
       .listNormalizedMessageEventsForSession({ sessionId: body.session?.id ?? '' })[0];
@@ -101,6 +105,19 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
       `/agents/orchestrator/${encodeURIComponent(generations[1]!.instanceId)}`,
     );
     assert.equal(compactedBody.stream?.nextOffset, '-1');
+
+    fixture.loadedInstanceIds.splice(0);
+    const continued = await fixture.post({
+      connector: 'tui',
+      text: 'Continue after compaction.',
+      actorId: fixture.actorId,
+      conversationId: fixture.conversationId,
+      session: fixture.sessionId,
+    });
+    const continuedBody = await continued.json() as { event?: { id?: string } };
+    fixture.eventIds.push(continuedBody.event?.id ?? '');
+    assert.equal(continued.status, 200);
+    assert.deepEqual(fixture.loadedInstanceIds, [generations[1]?.instanceId]);
   } finally {
     fixture.cleanup();
   }
@@ -112,6 +129,7 @@ function createFixture() {
   const conversationId = `flue-v2-conversation-${suffix}`;
   const eventIds: string[] = [];
   const dispatches: Array<{ instanceId: string; message: DeliveredMessageInput }> = [];
+  const loadedInstanceIds: string[] = [];
   let dispatchCount = 0;
   let sessionId: string | undefined;
   const app = new Hono();
@@ -136,7 +154,10 @@ function createFixture() {
         },
       };
     },
-    loadConversationSnapshot: async ({ instanceId }) => snapshot(instanceId, dispatchCount),
+    loadConversationSnapshot: async ({ instanceId }) => {
+      loadedInstanceIds.push(instanceId);
+      return snapshot(instanceId, dispatchCount);
+    },
   });
 
   const previous = {
@@ -155,6 +176,7 @@ function createFixture() {
     conversationId,
     eventIds,
     dispatches,
+    loadedInstanceIds,
     get sessionId() { return sessionId; },
     set sessionId(value: string | undefined) { sessionId = value; },
     post(body: Record<string, unknown>) {

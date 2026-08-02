@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as v from 'valibot';
 import { createOrchestratorComposition } from '../agents/orchestrator.js';
+import { createEmptyRuntimeCapabilitySnapshot } from '../engine/capabilities/runtime-capability-snapshot.js';
 import { CodingFileEditSchema, CodingImplementerResultSchema } from '../core/schemas/coding-worker.js';
 import { evaluateCodingApproval, createCodingApprovalRequest } from '../engine/workers/coding-worker/approvals/approval-policy.js';
 import {
@@ -68,7 +69,7 @@ import { runCodingWorkerLoop, createInitialLoopState, createLoopCheckpoint } fro
 import { assertCodingWorkerCanComplete } from '../engine/workers/coding-worker/workflow/result-schema.js';
 import type { CodingSubagentKind, CodingSubagentRunResult, CodingWorkerTaskRequest } from '../engine/workers/coding-worker/types.js';
 import type { CodingTaskSubagentRequest } from '../engine/workers/coding-worker/workflow/coding-task.js';
-import type { ToolDefinition } from '@flue/runtime';
+import { defineTool, type ToolDefinition } from '@flue/runtime';
 
 test('coding worker internal subagents are worker-local profiles with distinct context identities', () => {
   const subagents = createCodingWorkerInternalSubagents({ model: 'ollama-cloud/minimax-m3' });
@@ -949,6 +950,32 @@ test('coding worker remains available when optional GitHub MCP connection fails'
   }
 });
 
+test('coding worker mounts a prepared GitHub MCP integration', () => {
+  const project = createWorkspaceProject();
+  const readTool = defineTool({
+    name: 'mcp__github__issue_read',
+    description: 'Read a GitHub issue.',
+    run: async () => '{}',
+  });
+
+  try {
+    const composition = createCodingWorkerComposition({
+      repoPath: project.repoPath,
+      githubMcp: {
+        readTools: [readTool],
+        async close() {},
+      },
+    });
+
+    assert.equal(
+      composition.tools.some((tool) => tool.name === 'mcp__github__issue_read'),
+      true,
+    );
+  } finally {
+    rmrf(project.workspaceRoot);
+  }
+});
+
 test('GitHub tools read extended PR context and gate PR updates through approval service', async () => {
   const approvalService = createInMemoryCodingApprovalService();
   let updateCount = 0;
@@ -1794,11 +1821,14 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
   writeExecutableProjectFiles(project.repoPath);
 
   try {
-    const config = createOrchestratorComposition({
-      ...createModelEnv(),
-      GOROMBO_RUNTIME_ROOT: runtimeRoot,
-      GOROMBO_WORKSPACE_ROOT: 'workspace',
-    });
+    const config = createOrchestratorComposition(
+      {
+        ...createModelEnv(),
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
+      },
+      createEmptyRuntimeCapabilitySnapshot(),
+    );
 
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_apply_patch'), false);
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_shell_run'), false);
@@ -1813,11 +1843,11 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
     const shell = getTool(codingWorker.tools, 'coding_shell_run');
 
     await runTool(patch, {
-      path: `${project.projectRelativePath}/index.js`,
+      path: 'index.js',
       edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
     });
     const output = JSON.parse(
-      await runTool(shell, { command: 'node test.js', cwd: project.projectRelativePath }),
+      await runTool(shell, { command: 'node test.js' }),
     ) as { exitCode: number };
 
     assert.equal(output.exitCode, 0);
