@@ -150,13 +150,13 @@ test('ScheduleStore run history: start -> admit -> terminal updates schedule + r
     const run = store.recordRunStart(sched.id, 'run-001');
     assert.equal(run.status, 'queued');
     assert.equal(run.instanceId, `schedule:${sched.id}:run-001`);
-    assert.equal(run.dispatchId, null);
+    assert.equal(run.submissionId, null);
     assert.equal(run.attempt, 0);
 
     store.recordRunAdmitted('run-001', 'dispatch-abc', new Date().toISOString());
     const admitted = store.getRun('run-001');
     assert.equal(admitted?.status, 'admitted');
-    assert.equal(admitted?.dispatchId, 'dispatch-abc');
+    assert.equal(admitted?.submissionId, 'dispatch-abc');
     assert.ok(admitted?.admittedAt !== null, 'admittedAt set');
 
     const nextFire = Date.now() + 3_600_000;
@@ -202,7 +202,7 @@ test('ScheduleStore recordRunRetry advances attempt and resets admission fields'
     const after = store.getRun('run-retry');
     assert.equal(after?.attempt, 1, 'attempt incremented');
     assert.equal(after?.status, 'queued', 'status reset to queued');
-    assert.equal(after?.dispatchId, null, 'dispatchId cleared');
+    assert.equal(after?.submissionId, null, 'submissionId cleared');
     assert.equal(after?.admittedAt, null, 'admittedAt cleared');
     assert.equal(after?.instanceId, `schedule:${sched.id}:run-retry`);
   } finally {

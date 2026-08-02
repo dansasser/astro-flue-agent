@@ -8,11 +8,9 @@
  *
  * Dispatch is ADMISSION-ONLY (verified five ways 2026-06-22; see
  * memory `flue-dispatch-contract`). `dispatch(...)` returns a `DispatchReceipt`
- * with only `{ dispatchId, acceptedAt }` — it is not a workflow runId and the
- * agent turn runs asynchronously in the agent's durable queue. The terminal
- * status is observed in-process via `observe()` filtered by `dispatchId`. These
- * types encode that contract: a run row tracks `instanceId` + `dispatchId`
- * (admission), not a fictional `agentRunId`.
+ * with `{ submissionId, acceptedAt, uid }`; the exact durable reply is read
+ * through the same instance handle. A run row tracks `instanceId` plus the
+ * admitted `submissionId`, not a workflow run id.
  *
  * See `/opt/ai/plans/schedules/plan.md` (§4 schedule kinds, §6 schema, §7 flow).
  */
@@ -35,14 +33,14 @@ export type ScheduleTargetAgent = 'orchestrator' | 'coding-worker';
  *               the agent turn now runs async in the agent's durable queue).
  * `running`   — terminal observation in flight (reserved; `admitted` and
  *               `running` are often interchangeable in v1).
- * `ok`        — a terminal turn-success event was observed via observe().
- * `error`     — a terminal turn-error event was observed (non-retryable, or
+ * `ok`        — the admitted submission's durable reply settled successfully.
+ * `error`     — the admitted submission settled failed (non-retryable, or
  *               retries exhausted).
  * `skipped`   — permanent failure (validation/provider-unavailable) or
  *               provider-preflight down; NOT retried.
  * `timeout`   — observation did not reach terminal before the shutdown grace
  *               window closed.
- * `lost`      — run orphaned (process died mid-observe) and not reconciled.
+ * `lost`      — run orphaned (process died before settlement) and not reconciled.
  */
 export type ScheduleRunStatus =
   | 'queued'
@@ -165,17 +163,16 @@ export interface ScheduleRecord {
  * inspection, and retention cleanup.
  *
  * NOTE: there is no `agentRunId`. Flue `dispatch(...)` to an agent does not
- * produce a workflow run id; it returns a `dispatchId` that correlates one
- * accepted delivery. The terminal status is observed via the Flue event
- * stream, not returned by dispatch.
+ * produce a workflow run id; it returns a `submissionId` that correlates one
+ * accepted delivery and its durable settlement.
  */
 export interface ScheduleRunRecord {
   runId: string;
   scheduleId: string;
   /** Agent instance id passed to dispatch (unique per fire, e.g. `schedule:<scheduleId>:<runId>`). */
   instanceId: string;
-  /** Flue `DispatchReceipt.dispatchId` (correlates one accepted delivery; NOT a workflow runId). */
-  dispatchId: string | null;
+  /** Flue `DispatchReceipt.submissionId` for this accepted delivery. */
+  submissionId: string | null;
   status: ScheduleRunStatus;
   error: string | null;
   attempt: number;
@@ -206,7 +203,7 @@ export function scheduleInstanceId(scheduleId: string, runId: string): string {
   return `schedule:${scheduleId}:${runId}`;
 }
 
-/** Classify an observed terminal error into transient (retry) vs permanent (skip). */
+/** Classify a settled terminal error into transient (retry) vs permanent (skip). */
 export function isTransientScheduleError(
   category: ScheduleTransientErrorCategory | SchedulePermanentErrorCategory | string,
 ): category is ScheduleTransientErrorCategory {

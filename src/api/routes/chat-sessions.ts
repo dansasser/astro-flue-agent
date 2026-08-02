@@ -18,6 +18,11 @@ import {
   loadSessionTranscriptPage,
   TranscriptCursorError,
 } from '../../engine/session/session-transcript.js';
+import {
+  isFlueConversationSnapshot,
+  type FlueConversationSnapshot,
+} from '../../engine/session/flue-conversation.js';
+import { runtimeEnvForRequest } from '../middleware/api-secret.js';
 
 const NonEmptyStringSchema = v.pipe(v.string(), v.trim(), v.minLength(1));
 const TuiSessionIdentitySchema = v.object({
@@ -29,6 +34,11 @@ const TuiSessionIdentitySchema = v.object({
 
 export interface ChatSessionRouteOptions {
   loadTranscript?: typeof loadSessionTranscriptPage;
+  loadConversationSnapshot?: (input: {
+    instanceId: string;
+    headers: Headers;
+    env: Record<string, unknown>;
+  }) => Promise<FlueConversationSnapshot | null>;
 }
 
 export function registerChatSessionRoutes(
@@ -140,7 +150,16 @@ export function registerChatSessionRoutes(
       if (resolution.sessionId !== requestedSessionId) {
         return c.json({ error: `Session ${requestedSessionId} does not exist.` }, 404);
       }
-      const eventStreamStore = await goromboPersistenceRuntime.getEventStreamStore();
+      const generations = goromboPersistenceRuntime.sessionDatabase.listRuntimeGenerations(
+        resolution.sessionId,
+      );
+      const headers = new Headers(c.req.raw.headers);
+      const env = runtimeEnvForRequest(c.env as Record<string, unknown> | undefined);
+      const snapshotLoader = options.loadConversationSnapshot
+        ?? ((input) => loadAgentConversationSnapshot(app, input));
+      const snapshots = (await Promise.all(generations.map((generation) =>
+        snapshotLoader({ instanceId: generation.instanceId, headers, env }))))
+        .filter((snapshot): snapshot is FlueConversationSnapshot => snapshot !== null);
       const loadTranscript = options.loadTranscript ?? loadSessionTranscriptPage;
       return c.json(await loadTranscript({
         session: {
@@ -148,7 +167,8 @@ export function registerChatSessionRoutes(
           ...(resolution.session.displayName ? { title: resolution.session.displayName } : {}),
         },
         sessionDatabase: goromboPersistenceRuntime.sessionDatabase,
-        eventStreamStore,
+        snapshots,
+        generations,
         limit,
         ...(before ? { before } : {}),
       }));
@@ -167,6 +187,32 @@ export function registerChatSessionRoutes(
       return c.json({ error: 'Session history is not available.' }, 500);
     }
   });
+}
+
+async function loadAgentConversationSnapshot(
+  app: Hono,
+  input: {
+    instanceId: string;
+    headers: Headers;
+    env: Record<string, unknown>;
+  },
+): Promise<FlueConversationSnapshot | null> {
+  const response = await app.request(
+    `/agents/orchestrator/${encodeURIComponent(input.instanceId)}?view=history`,
+    { method: 'GET', headers: input.headers },
+    input.env,
+  );
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Flue conversation history returned HTTP ${response.status}.`);
+  }
+  const body = await response.json() as unknown;
+  if (!isFlueConversationSnapshot(body)) {
+    throw new Error('Flue conversation history returned an invalid snapshot.');
+  }
+  return body;
 }
 
 async function readIdentityPayload(request: { json(): Promise<unknown> }): Promise<ChatSessionIdentity | null> {

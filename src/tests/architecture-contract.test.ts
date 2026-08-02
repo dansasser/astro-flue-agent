@@ -33,8 +33,8 @@ test('app.ts stays a Flue app shell and does not bypass agents or cards', () => 
   assert.match(app, /models\/runtime\.js/);
   assert.match(app, /registerChatEventRoutes\(app\)/);
   assert.match(app, /app\.use\('\/agents\/\*', requireApiSecret\)/);
-  assert.match(app, /app\.use\('\/workflows\/\*', requireApiSecret\)/);
-  assert.match(app, /app\.use\('\/runs\/\*', requireApiSecret\)/);
+  assert.doesNotMatch(app, /app\.use\('\/workflows\/\*'/);
+  assert.doesNotMatch(app, /app\.use\('\/runs\/\*'/);
   assert.doesNotMatch(app, /createDefaultOrchestrator/);
   assert.doesNotMatch(app, /configureModelProviders/);
   assert.doesNotMatch(app, /process\.env/);
@@ -43,6 +43,8 @@ test('app.ts stays a Flue app shell and does not bypass agents or cards', () => 
   assert.doesNotMatch(app, /createDefaultWebSearchProvider/);
   assert.match(chatEventsRoute, /\/api\/chat\/events/);
   assert.match(chatEventsRoute, /\/agents\/orchestrator/);
+  assert.match(chatEventsRoute, /dispatchOrchestrator/);
+  assert.match(chatEventsRoute, /loadConversationSnapshot/);
   assert.doesNotMatch(chatEventsRoute, /app\.request\(\s*[`'"]\/workflows\//);
   assert.doesNotMatch(chatEventsRoute, /executionCtx/);
   assert.match(apiSecretMiddleware, /API_SECRET/);
@@ -252,7 +254,7 @@ test('coding worker owns its workspace-backed lead profile', () => {
     ),
     false,
   );
-  assert.equal(subagent.skills?.some((skill) => skill.name === 'coding-worker.code-change-loop'), true);
+  assert.equal(subagent.skills?.some((skill) => skill.name === 'coding-worker-code-change-loop'), true);
   assert.equal(existsSync('src/workflows/coding-task.ts'), false);
   assert.equal(existsSync('src/agents/coding-worker.ts'), false);
   } finally {

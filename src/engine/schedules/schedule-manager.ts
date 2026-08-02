@@ -1,24 +1,13 @@
 /**
  * ScheduleManager — the in-process cron runtime singleton (plan §5, §7).
  *
- * Owns: the ScheduleStore (SQLite), the in-memory Croner mirror, one Flue
- * `observe()` subscription that routes agent events to in-flight runs, the
- * concurrency gate, the retry/backoff scheduler, provider-preflight (stub in
- * v1), and graceful shutdown drain.
+ * Owns: the ScheduleStore (SQLite), the in-memory Croner mirror, the
+ * concurrency gate, exact-submission settlement, retry/backoff scheduling,
+ * provider preflight, and graceful shutdown drain.
  *
- * Dispatch is ADMISSION-ONLY (see `schedule-dispatch.ts` + memory
- * `flue-dispatch-contract`): the fire callback dispatches to the orchestrator,
- * records the `DispatchReceipt`, then OBSERVES the agent turn to terminal via
- * `observe()` filtered by `instanceId`. The terminal signal is `agent_end`
- * (with preceding `turn` events' `isError` used for ok/error classification).
- *
- * Observation assumption (to be validated by the three-surface integration test
- * in task #12): dispatched agent activity events carry `instanceId` on every
- * event and terminate with an `agent_end` event, per the FlueEvent type contract
- * (`FlueEventInput.instanceId?` is on every event; `agent_end` is the agent
- * operation boundary). If that assumption fails in practice, the integration
- * test will catch it and the terminal-detection rule is adjusted — we do not
- * guess silently.
+ * Dispatch admission and completion remain separate: the fire callback records
+ * the `DispatchReceipt`, then awaits `handle.read(receipt)` for that exact
+ * submission. Admission alone never marks a scheduled run complete.
  *
  * Croner pattern handling: `cron` -> cron expr; `every` -> converted to a cron
  * expr (Croner 10.x rejects interval strings like "20m", verified empirically);
@@ -26,7 +15,6 @@
  */
 
 import { Cron } from 'croner';
-import { observe, type FlueEvent } from '@flue/runtime';
 import { ulid } from '../../engine/memory/ulid.js';
 import { backoffForAttempt, type SchedulesConfig } from '../../engine/schedules/schedule-config.js';
 import { dispatchSchedule } from '../../engine/schedules/schedule-dispatch.js';
@@ -40,22 +28,9 @@ import {
 } from '../../engine/schedules/schedule-types.js';
 
 /** Observation timeout per fire (ms). Generous default; configurable later. */
-const DEFAULT_OBSERVE_TIMEOUT_MS = 10 * 60_000; // 10 minutes
-
-const TERMINAL_TURN_EVENT = 'agent_end' as const;
+const DEFAULT_SETTLEMENT_TIMEOUT_MS = 10 * 60_000; // 10 minutes
 
 const INTERVAL_PATTERN = /^(\d+)\s*(s|m|h|d)$/i;
-
-interface PendingObservation {
-  runId: string;
-  scheduleId: string;
-  instanceId: string;
-  attempt: number;
-  hadError: boolean;
-  errorMessage: string | null;
-  resolve: (outcome: ObservationOutcome) => void;
-  timer: ReturnType<typeof setTimeout>;
-}
 
 interface ObservationOutcome {
   status: 'ok' | 'error' | 'timeout';
@@ -67,25 +42,20 @@ export interface ScheduleManagerOptions {
   config: SchedulesConfig;
   /** Injectable for tests; defaults to real dispatchSchedule. */
   dispatch?: typeof dispatchSchedule;
-  /** Injectable for tests; defaults to real observe(). */
-  observeFn?: typeof observe;
-  /** Injectable observe timeout (ms). */
-  observeTimeoutMs?: number;
+  /** Injectable settlement timeout (ms). */
+  settlementTimeoutMs?: number;
 }
 
 export class ScheduleManager {
   readonly store: ScheduleStore;
   readonly config: SchedulesConfig;
   private readonly dispatchImpl: typeof dispatchSchedule;
-  private readonly observeImpl: typeof observe;
-  private readonly observeTimeoutMs: number;
+  private readonly settlementTimeoutMs: number;
 
   private readonly cronJobs = new Map<string, Cron>(); // scheduleId -> Cron
-  private readonly pending = new Map<string, PendingObservation>(); // instanceId -> pending
   private readonly retryTimers = new Map<string, Set<ReturnType<typeof setTimeout>>>(); // scheduleId -> pending retry timers
   private readonly fireQueue: Array<() => void> = [];
   private inFlight = 0;
-  private unsubscribeObserve?: () => void;
   private started = false;
   private shuttingDown = false;
 
@@ -93,11 +63,10 @@ export class ScheduleManager {
     this.config = options.config;
     this.store = options.store ?? new ScheduleStore(options.config.databasePath);
     this.dispatchImpl = options.dispatch ?? dispatchSchedule;
-    this.observeImpl = options.observeFn ?? observe;
-    this.observeTimeoutMs = options.observeTimeoutMs ?? DEFAULT_OBSERVE_TIMEOUT_MS;
+    this.settlementTimeoutMs = options.settlementTimeoutMs ?? DEFAULT_SETTLEMENT_TIMEOUT_MS;
   }
 
-  /** Boot: schema + cleanup + observe subscription + rehydrate enabled schedules. */
+  /** Boot: schema + cleanup + rehydrate enabled schedules. */
   start(): void {
     if (this.started) {
       return;
@@ -105,9 +74,6 @@ export class ScheduleManager {
     this.started = true;
     this.store.migrate();
     this.store.cleanup(this.config.runLog.keepRuns, this.config.sessionRetentionMs);
-
-    // One in-process event subscription for all agent activity. Route by instanceId.
-    this.unsubscribeObserve = this.observeImpl((event) => this.handleEvent(event));
 
     for (const record of this.store.listEnabled()) {
       this.syncCron(record);
@@ -129,16 +95,6 @@ export class ScheduleManager {
       }
     }
     this.retryTimers.clear();
-    this.unsubscribeObserve?.();
-    this.unsubscribeObserve = undefined;
-    // Terminal any still-pending observations as 'timeout' (the underlying Flue
-    // submissions are aborted at turn boundary by Flue's graceful-shutdown path
-    // and left reclaimable — see durable-execution doc).
-    for (const pending of this.pending.values()) {
-      clearTimeout(pending.timer);
-      pending.resolve({ status: 'timeout', error: 'shutdown drain' });
-    }
-    this.pending.clear();
     this.started = false;
   }
 
@@ -245,16 +201,6 @@ export class ScheduleManager {
     }
   }
 
-  /** Cancel a pending observation (clear timer + remove + resolve) — used when dispatch admission fails. */
-  private cancelObservation(instanceId: string): void {
-    const pending = this.pending.get(instanceId);
-    if (pending) {
-      clearTimeout(pending.timer);
-      this.pending.delete(instanceId);
-      pending.resolve({ status: 'timeout', error: 'cancelled' });
-    }
-  }
-
   /** Track a pending retry backoff timer so it can be cancelled on delete/pause/shutdown. */
   private addRetryTimer(scheduleId: string, timer: ReturnType<typeof setTimeout>): void {
     let set = this.retryTimers.get(scheduleId);
@@ -292,15 +238,12 @@ export class ScheduleManager {
   ): Promise<void> {
     const scheduledAt = new Date().toISOString();
 
-    // Register the observation BEFORE dispatch so agent_end emitted by a
-    // fast-completing turn is captured, not dropped (race fix).
-    const outcomePromise = this.observeUntilTerminal(runId, record.id, instanceId, attempt);
-
-    let receipt: { dispatchId: string; acceptedAt: string };
+    let receipt: Awaited<ReturnType<typeof dispatchSchedule>>;
     try {
       receipt = await this.dispatchImpl({
         instanceId,
         targetAgent: record.targetAgent,
+        signal: AbortSignal.timeout(this.settlementTimeoutMs),
         input: {
           prompt: record.prompt,
           scheduledAt,
@@ -311,10 +254,6 @@ export class ScheduleManager {
         },
       });
     } catch (error) {
-      // Dispatch admission failed -> terminal error (no retry; this is a
-      // dispatch infra failure, not a transient model error). Cancel the
-      // observation we registered so it does not linger and time out later.
-      this.cancelObservation(instanceId);
       const reason = errorMessage(error);
       this.store.recordRunTerminal(runId, 'error', { error: reason, firedAtMs: startedAtMs, nextFireAt: this.nextFireFor(record.id) });
       this.emitEvent('schedule.error', { scheduleId: record.id, runId, instanceId, attempt, reason });
@@ -322,17 +261,23 @@ export class ScheduleManager {
       return;
     }
 
-    this.store.recordRunAdmitted(runId, receipt.dispatchId, receipt.acceptedAt);
-    this.emitEvent('schedule.dispatched', { scheduleId: record.id, runId, instanceId, dispatchId: receipt.dispatchId, attempt });
+    this.store.recordRunAdmitted(runId, receipt.submissionId, receipt.acceptedAt);
+    this.emitEvent('schedule.dispatched', {
+      scheduleId: record.id,
+      runId,
+      instanceId,
+      submissionId: receipt.submissionId,
+      attempt,
+    });
 
-    const outcome = await outcomePromise;
+    const outcome = await settleScheduleDispatch(receipt.settlement);
     if (outcome.status === 'ok') {
       this.store.recordRunTerminal(runId, 'ok', { firedAtMs: startedAtMs, nextFireAt: this.nextFireFor(record.id) });
       this.emitEvent('schedule.completed', { scheduleId: record.id, runId, instanceId, attempt });
       this.maybeAutoDelete(record);
     } else if (outcome.status === 'timeout') {
-      this.store.recordRunTerminal(runId, 'timeout', { error: outcome.error ?? 'observe timeout', firedAtMs: startedAtMs, nextFireAt: this.nextFireFor(record.id) });
-      this.emitEvent('schedule.error', { scheduleId: record.id, runId, instanceId, attempt, reason: outcome.error ?? 'observe timeout' });
+      this.store.recordRunTerminal(runId, 'timeout', { error: outcome.error ?? 'settlement timeout', firedAtMs: startedAtMs, nextFireAt: this.nextFireFor(record.id) });
+      this.emitEvent('schedule.error', { scheduleId: record.id, runId, instanceId, attempt, reason: outcome.error ?? 'settlement timeout' });
       this.maybeAutoDelete(record);
     } else {
       const category = classifyError(outcome.error);
@@ -429,61 +374,6 @@ export class ScheduleManager {
       await this.runAttempt(record, runId, instanceId, attempt, startedAtMs);
     } finally {
       this.releaseConcurrency();
-    }
-  }
-
-  /** Subscribe a pending observation and await terminal (agent_end) or timeout. */
-  private observeUntilTerminal(
-    runId: string,
-    scheduleId: string,
-    instanceId: string,
-    attempt: number,
-  ): Promise<ObservationOutcome> {
-    return new Promise<ObservationOutcome>((resolve) => {
-      const timer = setTimeout(() => {
-        if (this.pending.has(instanceId)) {
-          this.pending.delete(instanceId);
-        }
-        resolve({ status: 'timeout', error: 'observe timeout' });
-      }, this.observeTimeoutMs);
-
-      this.pending.set(instanceId, {
-        runId,
-        scheduleId,
-        instanceId,
-        attempt,
-        hadError: false,
-        errorMessage: null,
-        resolve: (outcome) => {
-          clearTimeout(timer);
-          this.pending.delete(instanceId);
-          resolve(outcome);
-        },
-        timer,
-      });
-    });
-  }
-
-  /** The observe() subscriber: route events by instanceId, detect terminal. */
-  private handleEvent(event: FlueEvent): void {
-    const instanceId = (event as { instanceId?: string }).instanceId;
-    if (!instanceId) {
-      return;
-    }
-    const pending = this.pending.get(instanceId);
-    if (!pending) {
-      return;
-    }
-    if (event.type === 'turn' && (event as { isError?: boolean }).isError) {
-      pending.hadError = true;
-      pending.errorMessage = errorMessage((event as { error?: unknown }).error) ?? 'turn error';
-      return;
-    }
-    if (event.type === TERMINAL_TURN_EVENT) {
-      pending.resolve({
-        status: pending.hadError ? 'error' : 'ok',
-        error: pending.errorMessage,
-      });
     }
   }
 
@@ -609,5 +499,20 @@ function errorMessage(value: unknown): string {
     return JSON.stringify(value);
   } catch {
     return String(value);
+  }
+}
+
+async function settleScheduleDispatch(
+  settlement: Awaited<ReturnType<typeof dispatchSchedule>>['settlement'],
+): Promise<ObservationOutcome> {
+  try {
+    await settlement;
+    return { status: 'ok', error: null };
+  } catch (error) {
+    const name = error instanceof Error ? error.name : '';
+    if (name === 'TimeoutError' || name === 'AbortError') {
+      return { status: 'timeout', error: 'settlement timeout' };
+    }
+    return { status: 'error', error: errorMessage(error) };
   }
 }

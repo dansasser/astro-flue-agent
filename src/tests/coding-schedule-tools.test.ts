@@ -8,7 +8,6 @@ import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
-import type { FlueEvent } from '@flue/runtime';
 
 import { resolveScheduleConfig } from '../engine/schedules/schedule-config.js';
 import type { DispatchScheduleArgs, ScheduleDispatchResult } from '../engine/schedules/schedule-dispatch.js';
@@ -24,19 +23,19 @@ function tempDbPath(): string {
 
 function makeManager(path: string): ScheduleManager {
   const store = new ScheduleStore(path);
-  const fakeObserve = (): (() => void) => () => {};
   const fakeDispatch = async (args: DispatchScheduleArgs): Promise<ScheduleDispatchResult> => ({
-    dispatchId: 'd-' + args.instanceId,
+    submissionId: 'd-' + args.instanceId,
     acceptedAt: new Date().toISOString(),
+    uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
+    settlement: Promise.resolve({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
   });
   const config = resolveScheduleConfig({}, {});
   const manager = new ScheduleManager({
     store,
     config,
     dispatch: fakeDispatch,
-    observeFn: fakeObserve as never,
-    observeTimeoutMs: 1000,
+    settlementTimeoutMs: 1000,
   });
   manager.start();
   return manager;

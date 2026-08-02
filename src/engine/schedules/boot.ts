@@ -7,7 +7,7 @@
  *   2. skips entirely if disabled (or `GOROMBO_SKIP_SCHEDULES=1`);
  *   3. installs schedule telemetry (wires the manager's progress emitter);
  *   4. constructs + starts the ScheduleManager singleton (schema, cleanup,
- *      observe subscription, rehydrate enabled schedules);
+ *      exact-submission settlement, rehydrate enabled schedules);
  *   5. registers SIGTERM/SIGINT drain.
  *
  * A failure to start the schedules subsystem MUST NOT crash the app — it is
@@ -46,7 +46,7 @@ function start(): void {
   }
 
   // In test mode, do not start the real manager (opening a real schedules DB /
-  // subscribing observe would interfere with the test suite). Tests that need
+  // starting Croner jobs would interfere with the test suite. Tests that need
   // a manager construct one directly with injected fakes. Mirrors the
   // GOROMBO_TEST_MODE guard in src/session/session-persistence.ts.
   if (process.env.GOROMBO_TEST_MODE === '1' || process.env.NODE_ENV === 'test') {
