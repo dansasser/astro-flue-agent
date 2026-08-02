@@ -100,8 +100,12 @@ export interface OrchestratorComposition {
 
 export function createOrchestratorComposition(
   env: Record<string, unknown> = process.env,
-  runtimeCapabilities: RuntimeCapabilitySnapshot = runtimeCapabilitySnapshot,
+  runtimeCapabilities?: RuntimeCapabilitySnapshot,
 ): OrchestratorComposition {
+  const resolvedRuntimeCapabilities = resolveRuntimeCapabilitySnapshot(
+    env,
+    runtimeCapabilities,
+  );
   const models = configureRuntimeModels(env);
   const selectedModelCard = models.selectedModelCard;
   const runtimeRoot = resolveGoromboRuntimeRoot({ env });
@@ -147,8 +151,8 @@ export function createOrchestratorComposition(
     model: selectedModelCard.specifier,
     compaction: createFlueCompactionConfig(selectedModelCard),
     instructions: orchestratorInstructions,
-    skills: [greetingPreflight, ...runtimeCapabilities.skills],
-    tools: [...tools, ...runtimeCapabilities.tools],
+    skills: [greetingPreflight, ...resolvedRuntimeCapabilities.skills],
+    tools: [...tools, ...resolvedRuntimeCapabilities.tools],
     subagents: [
       createCapabilityManagerSubagent({ env }),
       createCodingWorkerSubagent({
@@ -158,15 +162,30 @@ export function createOrchestratorComposition(
         githubMcp: runtimeCodingWorkerGithubMcp,
       }),
       createResearcherSubagent(),
-      ...runtimeCapabilities.subagents,
+      ...resolvedRuntimeCapabilities.subagents,
     ],
     mcpConnections: [
       ...getBuiltinMcpConnections(),
-      ...runtimeCapabilities.mcpConnections,
+      ...resolvedRuntimeCapabilities.mcpConnections,
     ],
     cwd: runtimePaths.packagedServer,
     sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
   };
+}
+
+function resolveRuntimeCapabilitySnapshot(
+  env: Record<string, unknown>,
+  runtimeCapabilities: RuntimeCapabilitySnapshot | undefined,
+): RuntimeCapabilitySnapshot {
+  if (runtimeCapabilities) {
+    return runtimeCapabilities;
+  }
+  if (env === process.env) {
+    return runtimeCapabilitySnapshot;
+  }
+  throw new Error(
+    'A capability snapshot loaded from the same environment is required for a custom orchestrator runtime.',
+  );
 }
 
 export function Orchestrator(_props: AgentProps): string {

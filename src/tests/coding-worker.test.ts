@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as v from 'valibot';
 import { createOrchestratorComposition } from '../agents/orchestrator.js';
+import { createEmptyRuntimeCapabilitySnapshot } from '../engine/capabilities/runtime-capability-snapshot.js';
 import { CodingFileEditSchema, CodingImplementerResultSchema } from '../core/schemas/coding-worker.js';
 import { evaluateCodingApproval, createCodingApprovalRequest } from '../engine/workers/coding-worker/approvals/approval-policy.js';
 import {
@@ -1821,11 +1822,14 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
   writeExecutableProjectFiles(project.repoPath);
 
   try {
-    const config = createOrchestratorComposition({
-      ...createModelEnv(),
-      GOROMBO_RUNTIME_ROOT: runtimeRoot,
-      GOROMBO_WORKSPACE_ROOT: 'workspace',
-    });
+    const config = createOrchestratorComposition(
+      {
+        ...createModelEnv(),
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
+      },
+      createEmptyRuntimeCapabilitySnapshot(),
+    );
 
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_apply_patch'), false);
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_shell_run'), false);
