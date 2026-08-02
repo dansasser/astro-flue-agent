@@ -12,9 +12,10 @@ if (!existsSync(configPath)) {
   throw new Error(`${configPath} does not exist. Build after creating sim-one.config.`);
 }
 const configValues = parseEnv(readFileSync(configPath, 'utf8'));
-const requestSecret = configValues.API_SECRET || 'unconfigured-api-secret';
-const unauthenticatedStatus = configValues.API_SECRET ? 401 : 503;
-if (liveChat && !configValues.API_SECRET) {
+const apiSecret = configValues.API_SECRET?.trim() || '';
+const requestSecret = apiSecret || 'unconfigured-api-secret';
+const unauthenticatedStatus = apiSecret ? 401 : 503;
+if (liveChat && !apiSecret) {
   throw new Error('API_SECRET is required in sim-one.config for --live-chat.');
 }
 
