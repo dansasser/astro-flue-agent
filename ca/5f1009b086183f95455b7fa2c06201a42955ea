@@ -1,0 +1,23 @@
+docs/reference/http-api.md
+  s_a81fff26d52223::t_b7dc94700513e7 208-212
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_b7dc94700513e7 97-99
+docs/architecture/execution-workflows.md
+  s_a81fff26d52223::t_b7dc94700513e7 14,44-46,51-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "ca5f1009b086183f95455b7fa2c06201a42955ea",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
