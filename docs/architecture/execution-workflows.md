@@ -11,7 +11,7 @@ create framework workflow-run records.
 ## Execution Envelope
 
 ```text
-Connector, TUI, Web API, or schedule
+TUI, Web API, or schedule
 -> authentication and request validation
 -> trusted normalized event or schedule signal
 -> product-session or schedule-run resolution
@@ -41,15 +41,18 @@ User message
 -> connector normalization
 -> persist trusted event and resolve product session
 -> dispatchOrchestratorMessage()
--> init(Orchestrator, { id: activeGeneration })
--> handle.dispatch(...)
--> handle.read(receipt)
+   -> init(Orchestrator, { id: activeGeneration })
+   -> handle.dispatch(...)
+   -> handle.read(receipt)
 -> persist delivery correlation and project transcript
 -> connector response
 ```
 
-The TUI, Telegram, and Web/API surfaces converge on the same orchestrator
-handle after connector-specific authentication and session policy.
+The TUI and Web/API surfaces converge on this product-session dispatcher after
+connector-specific authentication and session policy. Telegram currently uses
+Flue channel admission with a channel-derived agent instance ID; it persists
+the normalized event but does not use the product session's active generation,
+await settlement, or project the product-session transcript in this path.
 
 ## Research
 
