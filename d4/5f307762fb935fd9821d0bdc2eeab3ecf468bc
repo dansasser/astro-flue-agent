@@ -1,0 +1,30 @@
+scripts/test-tui-e2e.mjs
+  s_a81fff26d52223::t_c9e4533f300c87 7,53,67-70,76-78,123-126,135-137
+  s_a81fff26d52223::t_94207bc9c5609e 6,93,95-106,113
+specification-manifest.json
+  s_a81fff26d52223::t_5727f06c0fd020 4-5
+development-graph.json
+  s_a81fff26d52223::t_92bd32183c069c 9553-9588,9595,20242-20246,20267-20268,20575-20671,20675
+development-graph.md
+  s_a81fff26d52223::t_c1d52f69715aa4 1,12,17,21,119,917-919,1018,1821-1823,3363,3365,3425-3440
+package.json
+  s_a81fff26d52223::t_3c53a77f2c67be 109
+pnpm-lock.yaml
+  s_a81fff26d52223::t_ca0ba6a9dbe194 90-92,844
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d45f307762fb935fd9821d0bdc2eeab3ecf468bc",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
