@@ -86,3 +86,15 @@ test('orchestrator restores authorized runtime capability mounts', () => {
   assert.match(source, /useSubagent\(/);
   assert.match(source, /useMcpConnection\(/);
 });
+
+test('Astro Docs MCP is owned by the researcher instead of the orchestrator', () => {
+  const orchestrator = readFileSync('src/agents/orchestrator.ts', 'utf8');
+  const researcher = readFileSync(
+    'src/engine/workers/researcher/researcher.ts',
+    'utf8',
+  );
+
+  assert.doesNotMatch(orchestrator, /getBuiltinMcpConnections|astro-docs/);
+  assert.match(researcher, /astroDocsMcpConnection/);
+  assert.match(researcher, /useMcpConnection\(/);
+});

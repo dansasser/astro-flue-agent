@@ -1,6 +1,5 @@
 import {
   defineMcpConnection,
-  type McpConnectionDefinition,
 } from '@flue/runtime';
 
 export const BUILTIN_MCP_ASTRO_DOCS_ID = 'astro-docs';
@@ -13,10 +12,6 @@ export const astroDocsMcpConnection = defineMcpConnection({
   timeoutMs: 10_000,
   optional: true,
 });
-
-export function getBuiltinMcpConnections(): McpConnectionDefinition[] {
-  return [astroDocsMcpConnection];
-}
 
 export function getBuiltinMcpIds(): string[] {
   return [BUILTIN_MCP_ASTRO_DOCS_ID];

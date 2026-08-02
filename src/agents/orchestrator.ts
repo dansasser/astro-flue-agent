@@ -70,7 +70,6 @@ import {
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import greetingPreflight from '../skills/greeting-preflight/SKILL.md';
-import { getBuiltinMcpConnections } from '../engine/capabilities/builtin-mcp.js';
 import {
   loadRuntimeCapabilitySnapshot,
   type RuntimeCapabilitySnapshot,
@@ -174,10 +173,7 @@ export function createOrchestratorComposition(
     skills: [greetingPreflight, ...resolvedRuntimeCapabilities.skills],
     tools: [...tools, ...runtimeTools],
     subagents: [...subagents, ...runtimeSubagents],
-    mcpConnections: [
-      ...getBuiltinMcpConnections(),
-      ...resolvedRuntimeCapabilities.mcpConnections,
-    ],
+    mcpConnections: resolvedRuntimeCapabilities.mcpConnections,
     cwd: runtimePaths.packagedServer,
     sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
   };
@@ -302,7 +298,6 @@ The following capabilities are actually attached to this main agent at runtime:
 - Tool: \`list_image_artifacts\`
 - Tool: \`schedule_create\` / \`schedule_pause\` / \`schedule_resume\` / \`schedule_update\` / \`schedule_delete\` / \`schedule_list\` / \`schedule_get\` / \`schedule_run_now\` / \`schedule_runs\` (scheduled/recurring/one-shot agent turns; ownerScope is derived from the trusted eventId and enforced on every non-create op)
 - Tool: \`telegram_reply\` (when TELEGRAM_BOT_TOKEN is configured)
-- MCP: \`astro-docs\` (built-in — search Astro framework documentation via \`mcp__astro-docs__search_astro_docs\`)
 - Subagent: \`researcher\`
 - Subagent: \`coding-worker\` (repository inspection/editing, shell/test/debug, code review, repository lifecycle, approval-gated git operations, and GitHub work)
 - Subagent: \`capability-manager\` (validated, approval-gated runtime skill, tool, worker, and MCP lifecycle administration)
