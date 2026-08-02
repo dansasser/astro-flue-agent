@@ -88,5 +88,10 @@ test('coding worker owns its nested delegates and host sandbox', () => {
   assert.match(source, /useSubagent\(/);
   assert.match(source, /useSandbox\(local\(/);
   assert.match(source, /resolveCodingWorkerWorkspaceRoot\(process\.env\)/);
+  assert.match(source, /runtimeCodingWorkerGithubMcp = await prepareCodingWorkerGithubMcp/);
+  assert.match(source, /githubMcp: runtimeCodingWorkerGithubMcp/);
   assert.doesNotMatch(source, /export async function createCodingWorkerSubagent/);
+
+  const orchestratorSource = readFileSync('src/agents/orchestrator.ts', 'utf8');
+  assert.match(orchestratorSource, /githubMcp: runtimeCodingWorkerGithubMcp/);
 });

@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as v from 'valibot';
 import { createOrchestratorComposition } from '../agents/orchestrator.js';
+import { createEmptyRuntimeCapabilitySnapshot } from '../engine/capabilities/runtime-capability-snapshot.js';
 import { CodingFileEditSchema, CodingImplementerResultSchema } from '../core/schemas/coding-worker.js';
 import { evaluateCodingApproval, createCodingApprovalRequest } from '../engine/workers/coding-worker/approvals/approval-policy.js';
 import {
@@ -949,6 +950,33 @@ test('coding worker remains available when optional GitHub MCP connection fails'
   }
 });
 
+test('coding worker mounts a prepared GitHub MCP integration', () => {
+  const project = createWorkspaceProject();
+  const readTool = {
+    name: 'mcp__github__issue_read',
+    description: 'Read a GitHub issue.',
+    inputSchema: {},
+    execute: async () => '{}',
+  } as ToolDefinition;
+
+  try {
+    const composition = createCodingWorkerComposition({
+      repoPath: project.repoPath,
+      githubMcp: {
+        readTools: [readTool],
+        async close() {},
+      },
+    });
+
+    assert.equal(
+      composition.tools.some((tool) => tool.name === 'mcp__github__issue_read'),
+      true,
+    );
+  } finally {
+    rmrf(project.workspaceRoot);
+  }
+});
+
 test('GitHub tools read extended PR context and gate PR updates through approval service', async () => {
   const approvalService = createInMemoryCodingApprovalService();
   let updateCount = 0;
@@ -1794,11 +1822,14 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
   writeExecutableProjectFiles(project.repoPath);
 
   try {
-    const config = createOrchestratorComposition({
-      ...createModelEnv(),
-      GOROMBO_RUNTIME_ROOT: runtimeRoot,
-      GOROMBO_WORKSPACE_ROOT: 'workspace',
-    });
+    const config = createOrchestratorComposition(
+      {
+        ...createModelEnv(),
+        GOROMBO_RUNTIME_ROOT: runtimeRoot,
+        GOROMBO_WORKSPACE_ROOT: 'workspace',
+      },
+      createEmptyRuntimeCapabilitySnapshot(),
+    );
 
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_apply_patch'), false);
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_shell_run'), false);

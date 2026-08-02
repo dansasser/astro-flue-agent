@@ -101,9 +101,13 @@ test('application mounts the orchestrator with the explicit Flue 2 router', () =
     'registerApprovalRoutes(app)',
     'registerTelegramAdminRoutes(app)',
   ]) {
-    assert.match(appSource, new RegExp(preservedRoute.replace(/[()]/g, '\\$&')));
+    assert.match(appSource, new RegExp(escapeRegExp(preservedRoute)));
   }
 });
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 test('custom model providers use Pi provider objects and Flue setProvider', () => {
   const providerPaths = [

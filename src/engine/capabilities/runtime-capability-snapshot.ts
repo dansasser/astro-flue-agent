@@ -22,12 +22,24 @@ export interface RuntimeCapabilitySnapshot {
 export async function loadRuntimeCapabilitySnapshot(
   env: Record<string, unknown> = process.env,
 ): Promise<RuntimeCapabilitySnapshot> {
-  const store = createCapabilityStore({ env });
   let records;
   try {
-    records = loadPromotedUserCapabilities({ store, env });
-  } finally {
-    store.close();
+    const store = createCapabilityStore({ env });
+    try {
+      records = loadPromotedUserCapabilities({ store, env });
+    } finally {
+      store.close();
+    }
+  } catch (error) {
+    const failure = {
+      kind: 'registry',
+      id: 'capability-store',
+      error: error instanceof Error ? error.message : String(error),
+    };
+    console.error(
+      `[capabilities] Failed to load ${failure.kind} ${failure.id}: ${failure.error}`,
+    );
+    return createEmptyRuntimeCapabilitySnapshot([failure]);
   }
 
   const [toolResult, workerResult] = await Promise.all([
@@ -55,6 +67,18 @@ export async function loadRuntimeCapabilitySnapshot(
     tools: toolResult.tools,
     subagents: workerResult.subagents,
     mcpConnections: mcpResult.connections,
+    failures,
+  };
+}
+
+export function createEmptyRuntimeCapabilitySnapshot(
+  failures: RuntimeCapabilitySnapshot['failures'] = [],
+): RuntimeCapabilitySnapshot {
+  return {
+    skills: [],
+    tools: [],
+    subagents: [],
+    mcpConnections: [],
     failures,
   };
 }
