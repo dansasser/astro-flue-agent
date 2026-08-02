@@ -1,0 +1,95 @@
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_69488905427a9e 74-77,112,114-117,162-163,170,173,177,184-198,307-314,317,319
+docs/architecture/execution-workflows.md
+  s_a81fff26d52223::t_580d8d7ca6beb1 14,44-46,51-55
+docs/architecture/gorombo-flue-map.md
+  s_a81fff26d52223::t_a8f64c79dac303 97-99
+docs/reference/http-api.md
+  s_a81fff26d52223::t_aea5a52ab3b9f0 208-212
+package.json
+  s_a81fff26d52223::t_27b55e01379c53 14,37
+scripts/deterministic-chat-provider.mjs
+  s_a81fff26d52223::t_903055e231d486 6-15,17-48
+scripts/deterministic-chat-provider.test.mjs
+  s_a81fff26d52223::t_396fd6de18b988 1-41
+scripts/package-runtime-dependencies.mjs
+  s_a81fff26d52223::t_c820907018ca4e 13,19,83-89
+scripts/pnpm-deploy-command.mjs
+  s_a81fff26d52223::t_bbab62d78fd19b 1-42
+scripts/pnpm-deploy-command.test.mjs
+  s_a81fff26d52223::t_bc7802e1f95581 1-39
+scripts/runtime-configuration-files.test.mjs
+  s_a81fff26d52223::t_3faa8741e6c425 260-266
+scripts/smoke-http-endpoints.mjs
+  s_a81fff26d52223::t_e5d923c17734ce 15-18
+sim-one-cli/src/components/ChatLayout.tsx
+  s_a81fff26d52223::t_97d6c14b86c7dc 23-26,60,78
+sim-one-cli/src/components/MessageList.tsx
+  s_a81fff26d52223::t_893890d521f50c 13
+src/api/routes/chat-events.ts
+  s_a81fff26d52223::t_a53492ef794dcf 32,200,215-216,273,392-414,419,456,479,489-491,495-502,504-507
+src/api/routes/chat-sessions.ts
+  s_a81fff26d52223::t_68cf8dbc26e5e8 22,280
+src/core/models/providers/ollama-local/provider.ts
+  s_a81fff26d52223::t_54ec751e529f43 6,21,40
+src/engine/capabilities/runtime-capability-snapshot.ts
+  s_a81fff26d52223::t_f3ea7655496d14 27-42,73-84
+src/engine/session/flue-conversation.ts
+  s_a81fff26d52223::t_5b779e06cf78e5 3-6
+src/engine/session/session-budget.ts
+  s_a81fff26d52223::t_10c232d4d5052a 46,111-112,114,130
+src/engine/session/session-database.ts
+  s_a81fff26d52223::t_3a4f861049e00a 13-16,237-274
+src/engine/session/session-transcript.ts
+  s_a81fff26d52223::t_d97296b8e22b28 11,101,107,129,172,186,239-243
+src/engine/workers/coding-worker/coding-worker.ts
+  s_a81fff26d52223::t_41063bbd48f9b3 30-33,58-61,291
+src/engine/workers/coding-worker/github/github-mcp.ts
+  s_a81fff26d52223::t_db4e7ec0251d37 118-138
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_7c39294cd6495c 7,11,32,48-49,83-86,137-161,168-171,184-191,352-355
+src/tests/build-script-regressions.test.ts
+  s_a81fff26d52223::t_2b20b023bb5fe5 104,108-111
+src/tests/chat-events-flue-v2.test.ts
+  s_a81fff26d52223::t_69883642452cab 25,38-42,108-120,132,157-160,179
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_36ff93f74ee5cd 18,72,953-978,1824-1831
+src/tests/flue-v2-agents.test.ts
+  s_a81fff26d52223::t_9f80dcfdf589bd 91-92,94-96
+src/tests/github-mcp.test.ts
+  s_a81fff26d52223::t_70cc0c2c0efde0 14,104-119
+src/tests/models.test.ts
+  s_a81fff26d52223::t_ec4ee8b7b3b93c 252,260-261
+src/tests/runtime-capability-snapshot.test.ts
+  s_a81fff26d52223::t_ade8d8f09f210f 8-11,90-106
+src/tests/session-budget.test.ts
+  s_a81fff26d52223::t_0bd9f4703b271c 47-60
+src/tests/session-memory-vector.test.ts
+  s_a81fff26d52223::t_c5767e0d545b44 33-63
+src/tests/session-transcript.test.ts
+  s_a81fff26d52223::t_4b38e823e4f56e 6,141-167
+tui/ratatui/src/app.rs
+  s_a81fff26d52223::t_9561fa44819803 1472-1475,2511-2512,2528-2529,2540-2541,2566-2567,2570-2571
+tui/ratatui/src/transcript.rs
+  s_a81fff26d52223::t_df31f10a2eea63 1072-1080
+tui/ratatui/tests/app_state.rs
+  s_a81fff26d52223::t_c0d87839ea9f05 689
+tui/ratatui/tests/event_reducer.rs
+  s_a81fff26d52223::t_77334537a1d99d 136-161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "89d69965309c086e6c11d66e0976f7e5ba06399b",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
