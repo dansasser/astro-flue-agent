@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 680028fa55138d9cfd8c65490141eeb1fb636c5e26d156f9e2dc3ef6e72adf87 -->
+<!-- development-graph-sha256: bde6afe4ee25031670443a9349e41d8af806a4f4125614aa49513341dac67e2e -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `79` |
+| Graph version | `80` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-pr86-review-repair-2026-08-02` |
+| Context version | `flue-v2-foundation-ownership-serialization:2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `680028fa55138d9cfd8c65490141eeb1fb636c5e26d156f9e2dc3ef6e72adf87` |
+| Canonical checksum | `bde6afe4ee25031670443a9349e41d8af806a4f4125614aa49513341dac67e2e` |
 
 ## Flow
 
@@ -926,6 +926,8 @@ flowchart TD
     n_verify_flue_v2_production_migration -- "consumes" --> n_deliver_flue_v2_stacked_pull_requests
     n_repair_flue_v2_verification_regressions -- "requires" --> n_repair_flue_v2_telegram_connector_flow
     n_repair_flue_v2_tui_e2e_harness -- "requires" --> n_repair_flue_v2_telegram_connector_flow
+    n_implement_core_contracts -. "conflicts" .-> n_migrate_flue_v2_foundation
+    n_implement_agent_runtime -. "conflicts" .-> n_migrate_flue_v2_foundation
 ```
 
 ## Nodes
@@ -1839,6 +1841,8 @@ flowchart TD
 | `verify-flue-v2-production-migration-to-deliver-flue-v2-stacked-pull-requests-consumes` | `verify-flue-v2-production-migration` | `consumes` | `deliver-flue-v2-stacked-pull-requests` | The complete Flue 2 production migration remains verified before GitHub stack publication begins. | artifact:flue-v2-production-verification | — |
 | `repair-flue-v2-verification-regressions-to-repair-flue-v2-telegram-connector-flow-requires` | `repair-flue-v2-verification-regressions` | `requires` | `repair-flue-v2-telegram-connector-flow` | Verification-regression documentation writes finish before the Telegram repair begins so their shared documentation scope cannot overlap. | — | — |
 | `repair-flue-v2-tui-e2e-harness-to-repair-flue-v2-telegram-connector-flow-requires` | `repair-flue-v2-tui-e2e-harness` | `requires` | `repair-flue-v2-telegram-connector-flow` | The TUI harness package-manifest writes finish before the Telegram repair begins so package.json and pnpm-lock.yaml cannot be changed concurrently. | — | — |
+| `implement-core-contracts-conflicts-migrate-flue-v2-foundation` | `implement-core-contracts` | `conflicts` | `migrate-flue-v2-foundation` | Both nodes can write src/app.ts and core model contracts, so they require exclusive mutation ownership. | — | — |
+| `implement-agent-runtime-conflicts-migrate-flue-v2-foundation` | `implement-agent-runtime` | `conflicts` | `migrate-flue-v2-foundation` | Both nodes can write src/core/models and the assigned model-contract tests, so they require exclusive mutation ownership. | — | — |
 
 ## Node contracts
 

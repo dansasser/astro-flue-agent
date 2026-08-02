@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { escapeRegExp } from './test-utils.js';
 
 test('SKILL.md loader accepts CRLF frontmatter', () => {
   const script = [
@@ -58,6 +59,7 @@ test('Flue 2 foundation uses coordinated package pins and Vite build commands', 
     scripts: Record<string, string>;
     dependencies: Record<string, string>;
     devDependencies: Record<string, string>;
+    engines: { node: string };
   };
 
   assert.equal(packageJson.dependencies['@flue/runtime'], '2.0.1');
@@ -67,6 +69,7 @@ test('Flue 2 foundation uses coordinated package pins and Vite build commands', 
   assert.equal(packageJson.dependencies['@earendil-works/pi-ai'], '0.83.0');
   assert.equal(packageJson.dependencies['just-bash'], '3.2.0');
   assert.equal(packageJson.devDependencies.vite, '8.2.0');
+  assert.equal(packageJson.engines.node, '>=22.18.0');
   assert.match(packageJson.scripts.build, /^vite build/);
   assert.equal(packageJson.scripts.dev, 'vite dev');
 
@@ -104,10 +107,6 @@ test('application mounts the orchestrator with the explicit Flue 2 router', () =
     assert.match(appSource, new RegExp(escapeRegExp(preservedRoute)));
   }
 });
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 test('custom model providers use Pi provider objects and Flue setProvider', () => {
   const providerPaths = [

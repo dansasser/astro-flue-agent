@@ -9666,13 +9666,33 @@
       "max_traversals": null,
       "to": "repair-flue-v2-telegram-connector-flow",
       "type": "requires"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both nodes can write src/app.ts and core model contracts, so they require exclusive mutation ownership.",
+      "exit_condition": null,
+      "from": "implement-core-contracts",
+      "id": "implement-core-contracts-conflicts-migrate-flue-v2-foundation",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "conflicts"
+    },
+    {
+      "artifacts": [],
+      "condition": "Both nodes can write src/core/models and the assigned model-contract tests, so they require exclusive mutation ownership.",
+      "exit_condition": null,
+      "from": "implement-agent-runtime",
+      "id": "implement-agent-runtime-conflicts-migrate-flue-v2-foundation",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "conflicts"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 79,
+  "graph_version": 80,
   "nodes": [
     {
       "acceptance": [
@@ -20986,7 +21006,7 @@
     }
   ],
   "project": {
-    "context_version": "flue-v2-pr86-review-repair-2026-08-02",
+    "context_version": "flue-v2-foundation-ownership-serialization:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",
