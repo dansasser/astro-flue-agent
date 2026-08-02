@@ -110,6 +110,8 @@ class GatewayHandler(BaseHTTPRequestHandler):
                         }
                     ],
                     "stream": {
+                        "instanceId": "tui-visible-final-smoke",
+                        "url": "/agents/orchestrator/tui-visible-final-smoke",
                         "nextOffset": HISTORY_OFFSET,
                         "upToDate": True,
                     },
@@ -134,6 +136,12 @@ class GatewayHandler(BaseHTTPRequestHandler):
 
         offset = query.get("offset", ["-1"])[0]
         offset = offset.replace("\r", "").replace("\n", "")
+        if query.get("view") != ["updates"]:
+            self.send_response(400)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
         if query.get("live") == ["sse"]:
             global LIVE_CONNECTION_COUNT
             with STATE_LOCK:
@@ -151,32 +159,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 self.write_sse_control(IN_FLIGHT_OFFSET)
                 LIVE_DELTA_SENT.set()
             else:
-                self.write_sse_data(
-                    [
-                        *live_in_flight_events(),
-                        {
-                            "type": "message_end",
-                            "submissionId": NEW_SUBMISSION,
-                            "eventIndex": 3,
-                            "timestamp": "2026-07-23T16:01:01.000Z",
-                            "session": "default",
-                            "message": {
-                                "role": "assistant",
-                                "content": [{"type": "text", "text": FINAL_TEXT}],
-                            },
-                        },
-                        {
-                            "type": "operation",
-                            "submissionId": NEW_SUBMISSION,
-                            "operationId": "race-operation",
-                            "operationKind": "prompt",
-                            "eventIndex": 4,
-                            "durationMs": 1_500,
-                            "isError": False,
-                            "timestamp": "2026-07-23T16:01:01.100Z",
-                        },
-                    ]
-                )
+                self.write_sse_data([*live_in_flight_events(), *live_final_events()])
                 self.write_sse_control(FINAL_OFFSET)
                 SSE_SENT.set()
                 RELEASE_HTTP.wait(5)
@@ -187,24 +170,13 @@ class GatewayHandler(BaseHTTPRequestHandler):
         if offset == HISTORY_OFFSET:
             if not PROMPT_RECEIVED.wait(5):
                 return
-            events = [
-                {
-                    "type": "message_end",
-                    "submissionId": OLD_SUBMISSION,
-                    "eventIndex": 99,
-                    "timestamp": "2026-07-23T16:00:01.500Z",
-                    "session": "default",
-                    "message": {
-                        "role": "assistant",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": STALE_HISTORY_FINAL_MARKER.decode(),
-                            }
-                        ],
-                    },
-                }
-            ]
+            events = [message_appended_chunk(
+                OLD_SUBMISSION,
+                "history-assistant",
+                STALE_HISTORY_FINAL_MARKER.decode(),
+                11,
+                0,
+            )]
             next_offset = STALE_REPLAY_OFFSET
         elif offset == IN_FLIGHT_OFFSET:
             events = live_in_flight_events()
@@ -235,7 +207,12 @@ class GatewayHandler(BaseHTTPRequestHandler):
                         "id": "tui-visible-final-smoke",
                         "surface": "tui",
                         "created": False,
-                    }
+                    },
+                    "stream": {
+                        "instanceId": "tui-visible-final-smoke",
+                        "url": "/agents/orchestrator/tui-visible-final-smoke",
+                        "nextOffset": HISTORY_OFFSET,
+                    },
                 }
             ).encode()
             self.send_response(200)
@@ -256,7 +233,11 @@ class GatewayHandler(BaseHTTPRequestHandler):
             {
                 "result": {"text": FINAL_TEXT},
                 "submissionId": NEW_SUBMISSION,
-                "offset": FINAL_OFFSET,
+                "stream": {
+                    "instanceId": "tui-visible-final-smoke",
+                    "url": "/agents/orchestrator/tui-visible-final-smoke",
+                    "nextOffset": FINAL_OFFSET,
+                },
             }
         ).encode()
         self.send_response(200)
@@ -278,7 +259,6 @@ class GatewayHandler(BaseHTTPRequestHandler):
         control = {
             "streamNextOffset": offset,
             "upToDate": True,
-            "streamClosed": False,
         }
         self.wfile.write(
             f"event: control\ndata: {json.dumps(control)}\n\n".encode()
@@ -289,31 +269,74 @@ class GatewayHandler(BaseHTTPRequestHandler):
 def live_in_flight_events():
     return [
         {
-            "type": "operation_start",
+            "type": "message-started",
+            "conversationId": "conv_visible_final_smoke",
             "submissionId": NEW_SUBMISSION,
-            "operationId": "race-operation",
-            "operationKind": "prompt",
-            "eventIndex": 0,
+            "messageId": "race-assistant",
             "timestamp": "2026-07-23T16:01:00.100Z",
+            "position": {"batch": 12, "index": 0},
         },
         {
-            "type": "text_delta",
-            "submissionId": NEW_SUBMISSION,
-            "eventIndex": 1,
-            "timestamp": "2026-07-23T16:01:00.200Z",
-            "session": "default",
-            "text": LIVE_MARKER.decode(),
+            "type": "message-delta",
+            "conversationId": "conv_visible_final_smoke",
+            "messageId": "race-assistant",
+            "kind": "text",
+            "delta": LIVE_MARKER.decode(),
+            "position": {"batch": 13, "index": 0},
+        },
+        message_appended_chunk(
+            NEW_SUBMISSION,
+            "hidden-child-output",
+            CHILD_MARKER.decode(),
+            13,
+            1,
+            display="hidden",
+        ),
+    ]
+
+
+def live_final_events():
+    return [
+        {
+            "type": "message-delta",
+            "conversationId": "conv_visible_final_smoke",
+            "messageId": "race-assistant",
+            "kind": "text",
+            "delta": FINAL_TEXT,
+            "position": {"batch": 14, "index": 0},
         },
         {
-            "type": "text_delta",
+            "type": "message-completed",
+            "conversationId": "conv_visible_final_smoke",
+            "messageId": "race-assistant",
+            "timestamp": "2026-07-23T16:01:01.000Z",
+            "position": {"batch": 15, "index": 0},
+        },
+        {
+            "type": "submission-settled",
+            "conversationId": "conv_visible_final_smoke",
             "submissionId": NEW_SUBMISSION,
-            "eventIndex": 2,
-            "timestamp": "2026-07-23T16:01:00.300Z",
-            "session": "task:default:worker-1",
-            "parentSession": "default",
-            "text": CHILD_MARKER.decode(),
+            "outcome": "completed",
+            "timestamp": "2026-07-23T16:01:01.100Z",
+            "position": {"batch": 16, "index": 0},
         },
     ]
+
+
+def message_appended_chunk(submission_id, message_id, text, batch, index, display="visible"):
+    return {
+        "type": "message-appended",
+        "conversationId": "conv_visible_final_smoke",
+        "message": {
+            "id": message_id,
+            "role": "assistant",
+            "purpose": "assistant",
+            "display": display,
+            "submissionId": submission_id,
+            "parts": [{"type": "text", "text": text, "state": "done"}],
+        },
+        "position": {"batch": batch, "index": index},
+    }
 
 
 def read_until(master_fd, marker, timeout):

@@ -1,46 +1,79 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct StreamPosition {
+    pub batch: u64,
+    pub index: u64,
+}
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct FlueEvent {
-    pub event_type: String,
-    pub event_index: Option<u64>,
+pub struct ConversationChunk {
+    pub chunk_type: String,
+    pub position: Option<StreamPosition>,
     pub timestamp: Option<String>,
     pub value: serde_json::Value,
 }
 
-impl FlueEvent {
+impl ConversationChunk {
     pub fn from_value(value: serde_json::Value) -> Self {
-        let event_type = value
+        let chunk_type = value
             .get("type")
-            .and_then(|event_type| event_type.as_str())
+            .and_then(serde_json::Value::as_str)
             .unwrap_or("unknown")
             .to_string();
-        let event_index = value.get("eventIndex").and_then(|index| index.as_u64());
+        let position = value
+            .get("position")
+            .and_then(serde_json::Value::as_object)
+            .and_then(|position| {
+                Some(StreamPosition {
+                    batch: position.get("batch")?.as_u64()?,
+                    index: position.get("index")?.as_u64()?,
+                })
+            });
         let timestamp = value
             .get("timestamp")
-            .and_then(|timestamp| timestamp.as_str())
+            .and_then(serde_json::Value::as_str)
             .map(str::to_string);
 
         Self {
-            event_type,
-            event_index,
+            chunk_type,
+            position,
             timestamp,
             value,
         }
     }
 
-    pub fn is_nested(&self) -> bool {
+    pub fn submission_id(&self) -> Option<&str> {
         self.value
-            .get("parentSession")
-            .and_then(|parent| parent.as_str())
-            .is_some()
+            .get("submissionId")
+            .and_then(serde_json::Value::as_str)
+            .or_else(|| {
+                self.value
+                    .pointer("/message/submissionId")
+                    .and_then(serde_json::Value::as_str)
+            })
+    }
+
+    pub fn message_id(&self) -> Option<&str> {
+        self.value
+            .get("messageId")
+            .and_then(serde_json::Value::as_str)
+            .or_else(|| {
+                self.value
+                    .pointer("/message/id")
+                    .and_then(serde_json::Value::as_str)
+            })
+    }
+
+    pub fn tool_call_id(&self) -> Option<&str> {
+        self.value
+            .get("toolCallId")
+            .and_then(serde_json::Value::as_str)
     }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct StreamControl {
     pub stream_next_offset: Option<String>,
-    pub stream_cursor: Option<String>,
     pub up_to_date: bool,
-    pub stream_closed: bool,
 }
 
 impl StreamControl {
@@ -48,19 +81,11 @@ impl StreamControl {
         Self {
             stream_next_offset: value
                 .get("streamNextOffset")
-                .and_then(|offset| offset.as_str())
-                .map(str::to_string),
-            stream_cursor: value
-                .get("streamCursor")
-                .and_then(|cursor| cursor.as_str())
+                .and_then(serde_json::Value::as_str)
                 .map(str::to_string),
             up_to_date: value
                 .get("upToDate")
-                .and_then(|up_to_date| up_to_date.as_bool())
-                .unwrap_or(false),
-            stream_closed: value
-                .get("streamClosed")
-                .and_then(|stream_closed| stream_closed.as_bool())
+                .and_then(serde_json::Value::as_bool)
                 .unwrap_or(false),
         }
     }

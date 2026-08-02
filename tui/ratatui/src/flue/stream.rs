@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use super::events::{FlueEvent, StreamControl};
+use super::events::{ConversationChunk, StreamControl};
 use crate::http::{
     connect_tcp, decode_http_body, has_chunked_encoding, header_value, parse_status_code,
     read_http_head, write_http_request, ChunkedBodyDecoder, HttpEndpoint,
@@ -39,7 +39,7 @@ impl Drop for AgentStreamHandle {
 #[derive(Debug, Clone, PartialEq)]
 pub enum AgentStreamUpdate {
     Connecting,
-    Events(Vec<FlueEvent>),
+    Chunks(Vec<ConversationChunk>),
     Control(StreamControl),
     Idle,
     Reconnecting(String),
@@ -48,10 +48,9 @@ pub enum AgentStreamUpdate {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CatchUpBatch {
-    pub events: Vec<FlueEvent>,
+    pub chunks: Vec<ConversationChunk>,
     pub next_offset: Option<String>,
     pub up_to_date: bool,
-    pub stream_closed: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,7 +78,7 @@ impl fmt::Display for StreamError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SseFrame {
-    Events(Vec<FlueEvent>),
+    Chunks(Vec<ConversationChunk>),
     Control(StreamControl),
     Unknown { event: String, data: String },
 }
@@ -113,7 +112,7 @@ impl SseParser {
 
 pub fn spawn_agent_stream(
     base_url: String,
-    session_id: String,
+    stream_url: String,
     initial_offset: String,
 ) -> AgentStreamHandle {
     let (tx, receiver) = mpsc::channel();
@@ -121,7 +120,7 @@ pub fn spawn_agent_stream(
     let thread_cancel = Arc::clone(&cancel);
 
     thread::spawn(move || {
-        run_agent_stream(base_url, session_id, initial_offset, tx, thread_cancel);
+        run_agent_stream(base_url, stream_url, initial_offset, tx, thread_cancel);
     });
 
     AgentStreamHandle { receiver, cancel }
@@ -129,7 +128,7 @@ pub fn spawn_agent_stream(
 
 fn run_agent_stream(
     base_url: String,
-    session_id: String,
+    stream_url: String,
     initial_offset: String,
     tx: Sender<AgentStreamUpdate>,
     cancel: Arc<AtomicBool>,
@@ -139,15 +138,13 @@ fn run_agent_stream(
     while !cancel.load(Ordering::Relaxed) {
         let _ = tx.send(AgentStreamUpdate::Connecting);
 
-        match read_catch_up_events(&base_url, &session_id, &offset) {
+        match read_catch_up_events(&base_url, &stream_url, &offset) {
             Ok(batch) => {
-                if !batch.events.is_empty() {
-                    let _ = tx.send(AgentStreamUpdate::Events(batch.events));
+                if !batch.chunks.is_empty() {
+                    let _ = tx.send(AgentStreamUpdate::Chunks(batch.chunks));
                 }
                 if let Some(next_offset) = batch.next_offset {
                     offset = next_offset;
-                } else if offset == "-1" {
-                    offset = "now".to_string();
                 }
                 if batch.up_to_date {
                     let _ = tx.send(AgentStreamUpdate::Idle);
@@ -169,7 +166,7 @@ fn run_agent_stream(
             break;
         }
 
-        match read_sse_events(&base_url, &session_id, &offset, &tx, &cancel) {
+        match read_sse_events(&base_url, &stream_url, &offset, &tx, &cancel) {
             Ok(Some(next_offset)) => {
                 offset = next_offset;
             }
@@ -192,32 +189,24 @@ fn sleep_or_cancel(cancel: &Arc<AtomicBool>, duration: Duration) {
 
 pub fn read_catch_up_events(
     base_url: &str,
-    session_id: &str,
+    stream_url: &str,
     offset: &str,
 ) -> Result<CatchUpBatch, StreamError> {
     let endpoint = HttpEndpoint::parse(base_url).map_err(StreamError::message)?;
-    let path = format!(
-        "/agents/orchestrator/{}?offset={}",
-        percent_encode_path_segment(session_id),
-        percent_encode_query_value(offset)
-    );
+    let path = updates_path(stream_url, offset, None).map_err(StreamError::message)?;
     let response = send_http_request(&endpoint, &path, true).map_err(StreamError::message)?;
     parse_catch_up_response(&response)
 }
 
 fn read_sse_events(
     base_url: &str,
-    session_id: &str,
+    stream_url: &str,
     offset: &str,
     tx: &Sender<AgentStreamUpdate>,
     cancel: &Arc<AtomicBool>,
 ) -> Result<Option<String>, StreamError> {
     let endpoint = HttpEndpoint::parse(base_url).map_err(StreamError::message)?;
-    let path = format!(
-        "/agents/orchestrator/{}?offset={}&live=sse",
-        percent_encode_path_segment(session_id),
-        percent_encode_query_value(offset)
-    );
+    let path = updates_path(stream_url, offset, Some("sse")).map_err(StreamError::message)?;
     let mut stream = open_http_stream(&endpoint, &path, false).map_err(StreamError::message)?;
     let (head, initial_body) =
         read_http_head(&mut stream, "Flue stream").map_err(StreamError::message)?;
@@ -308,8 +297,8 @@ fn apply_sse_frames(
 ) {
     for frame in frames {
         match frame {
-            SseFrame::Events(events) => {
-                let _ = tx.send(AgentStreamUpdate::Events(events));
+            SseFrame::Chunks(chunks) => {
+                let _ = tx.send(AgentStreamUpdate::Chunks(chunks));
             }
             SseFrame::Control(control) => {
                 if let Some(offset) = &control.stream_next_offset {
@@ -350,12 +339,12 @@ pub fn parse_catch_up_response(response: &[u8]) -> Result<CatchUpBatch, StreamEr
         StreamError::message(format!("Flue catch-up response had invalid JSON: {error}"))
     })?;
     Ok(CatchUpBatch {
-        events: values.into_iter().map(FlueEvent::from_value).collect(),
+        chunks: values
+            .into_iter()
+            .map(ConversationChunk::from_value)
+            .collect(),
         next_offset: header_value(&head, "stream-next-offset").map(str::to_string),
         up_to_date: header_value(&head, "stream-up-to-date")
-            .map(|value| value.eq_ignore_ascii_case("true"))
-            .unwrap_or(false),
-        stream_closed: header_value(&head, "stream-closed")
             .map(|value| value.eq_ignore_ascii_case("true"))
             .unwrap_or(false),
     })
@@ -391,8 +380,11 @@ pub fn parse_sse_frame(raw: &str) -> Result<Option<SseFrame>, String> {
         "data" => {
             let values: Vec<serde_json::Value> = serde_json::from_str(&data)
                 .map_err(|error| format!("Flue SSE data frame had invalid JSON: {error}"))?;
-            Ok(Some(SseFrame::Events(
-                values.into_iter().map(FlueEvent::from_value).collect(),
+            Ok(Some(SseFrame::Chunks(
+                values
+                    .into_iter()
+                    .map(ConversationChunk::from_value)
+                    .collect(),
             )))
         }
         "control" => {
@@ -466,12 +458,25 @@ fn find_sse_delimiter(value: &[u8]) -> Option<(usize, usize)> {
     .min_by_key(|(index, _)| *index)
 }
 
-fn percent_encode_path_segment(value: &str) -> String {
+fn percent_encode_query_value(value: &str) -> String {
     percent_encode(value)
 }
 
-fn percent_encode_query_value(value: &str) -> String {
-    percent_encode(value)
+fn updates_path(stream_url: &str, offset: &str, live: Option<&str>) -> Result<String, String> {
+    let stream_url = stream_url.trim();
+    if !stream_url.starts_with('/') || stream_url.contains(['\r', '\n']) {
+        return Err("Flue stream URL must be an absolute application path.".to_string());
+    }
+    let stream_url = stream_url.split('?').next().unwrap_or(stream_url);
+    let mut path = format!(
+        "{stream_url}?view=updates&offset={}",
+        percent_encode_query_value(offset)
+    );
+    if let Some(live) = live {
+        path.push_str("&live=");
+        path.push_str(live);
+    }
+    Ok(path)
 }
 
 fn percent_encode(value: &str) -> String {

@@ -23,6 +23,7 @@ fn backslash_enter_remains_multiline_when_terminal_reports_enter_repeat() {
                 text: format!("done: {prompt}"),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,

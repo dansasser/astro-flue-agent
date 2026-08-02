@@ -123,9 +123,7 @@ fn resolve_server_path_with_root(
         return resolve_runtime_path(runtime_root, Path::new(&path));
     }
 
-    Ok(runtime_root
-        .join("sim-one-alpha")
-        .join("server.mjs"))
+    Ok(runtime_root.join("sim-one-alpha").join("server.mjs"))
 }
 
 pub fn read_gateway_port_from_config(path: &Path) -> Option<u16> {

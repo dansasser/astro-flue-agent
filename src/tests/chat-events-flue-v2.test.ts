@@ -22,6 +22,7 @@ test('chat facade dispatches and reads one exact Flue 2 submission', async () =>
       session?: { id?: string };
       contextUsage?: { available?: boolean; usedTokens?: number };
       event?: { id?: string };
+      stream?: { instanceId?: string; url?: string };
     };
     fixture.eventIds.push(body.event?.id ?? '');
     fixture.sessionId = body.session?.id;
@@ -33,6 +34,8 @@ test('chat facade dispatches and reads one exact Flue 2 submission', async () =>
     assert.match(JSON.stringify(fixture.dispatches[0]?.message), /Hello from the Flue 2 facade/);
     assert.equal(body.contextUsage?.available, true);
     assert.equal(body.contextUsage?.usedTokens, 600);
+    assert.equal(body.stream?.instanceId, body.session?.id);
+    assert.equal(body.stream?.url, `/agents/orchestrator/${body.session?.id}`);
 
     const stored = goromboPersistenceRuntime.sessionDatabase
       .listNormalizedMessageEventsForSession({ sessionId: body.session?.id ?? '' })[0];
@@ -73,6 +76,7 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
       result?: { command?: { name?: string }; contextBudget?: { compactedBeforePrompt?: boolean } };
       session?: { id?: string };
       event?: { id?: string };
+      stream?: { instanceId?: string; url?: string; nextOffset?: string };
     };
     fixture.eventIds.push(compactedBody.event?.id ?? '');
 
@@ -91,6 +95,12 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
     assert.equal(generations[1]?.compactionSubmissionId, 'submission-2');
     assert.equal(generations[1]?.continuationSummary, 'Continuation summary');
     assert.notEqual(generations[1]?.instanceId, fixture.sessionId);
+    assert.equal(compactedBody.stream?.instanceId, generations[1]?.instanceId);
+    assert.equal(
+      compactedBody.stream?.url,
+      `/agents/orchestrator/${encodeURIComponent(generations[1]!.instanceId)}`,
+    );
+    assert.equal(compactedBody.stream?.nextOffset, '-1');
   } finally {
     fixture.cleanup();
   }

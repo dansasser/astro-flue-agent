@@ -13,6 +13,7 @@ import { registerSchedulesRoutes } from './api/routes/schedules.js';
 import { registerTelemetryRoutes } from './api/routes/telemetry.js';
 import { registerTelegramAdminRoutes } from './api/routes/telegram-admin.js';
 import { registerFlueTelemetryObserver } from './core/telemetry/flue-telemetry.js';
+import { channel as telegramChannel } from './channels/telegram.js';
 
 registerFlueTelemetryObserver();
 
@@ -30,5 +31,6 @@ registerTelemetryRoutes(app);
 registerApprovalRoutes(app);
 registerTelegramAdminRoutes(app);
 app.route('/agents/orchestrator', createAgentRouter(Orchestrator));
+app.route('/channels/telegram', telegramChannel.route());
 
 export default app;

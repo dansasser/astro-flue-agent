@@ -18,9 +18,9 @@ pub fn init() {
         .as_deref()
         .map(|root| root.join("sim-one.config"));
     let override_path = match canonical_config.as_deref() {
-        Some(config_path) if config_path.exists() => runtime_root
-            .as_deref()
-            .and_then(configured_tui_log_path),
+        Some(config_path) if config_path.exists() => {
+            runtime_root.as_deref().and_then(configured_tui_log_path)
+        }
         _ => std::env::var_os("SIM_ONE_TUI_LOG_PATH").map(PathBuf::from),
     };
     let executable = std::env::current_exe().ok();
@@ -405,10 +405,7 @@ mod tests {
 
     use serde_json::json;
 
-    use super::{
-        configured_tui_log_path, resolve_log_path, selector_kind,
-        DiagnosticWriter,
-    };
+    use super::{configured_tui_log_path, resolve_log_path, selector_kind, DiagnosticWriter};
 
     #[test]
     fn canonical_configuration_owns_the_tui_diagnostics_path() {

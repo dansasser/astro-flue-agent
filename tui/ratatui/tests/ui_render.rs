@@ -10,9 +10,11 @@ use ratatui::symbols::scrollbar;
 use ratatui::Terminal;
 use sim_one_ratatui_tui::agent::{AgentReply, SessionLifecycleReply};
 use sim_one_ratatui_tui::app::{App, AppEvent};
-use sim_one_ratatui_tui::flue::events::FlueEvent;
 use sim_one_ratatui_tui::flue::stream::AgentStreamUpdate;
 use sim_one_ratatui_tui::ui::render;
+
+mod support;
+use support::chunk;
 
 #[test]
 fn renders_static_shell_with_transcript_status_and_prompt() {
@@ -462,13 +464,11 @@ fn transcript_scrollbar_click_and_drag_cover_full_scroll_range() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..30 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":9_000 + index,
-                "text":format!("scrollbar row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":9_000 + index,
+            "text":format!("scrollbar row {index}")
+        }))]));
     }
     app.jump_to_tail();
     terminal
@@ -539,6 +539,7 @@ fn renamed_session_title_is_rendered_in_header_without_changing_status_bar() {
                 text: "Renamed session tui-existing-1 to \"Release Work\".".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-existing-1".to_string()),
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("rename".to_string()),
@@ -576,6 +577,7 @@ fn lifecycle_startup_rows_and_resumed_title_are_rendered() {
                 text: "Hello Daniel. All systems are go.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-fresh-1".to_string()),
                 session_title: None,
                 command_name: None,
@@ -588,6 +590,8 @@ fn lifecycle_startup_rows_and_resumed_title_are_rendered() {
                 id: "tui-fresh-1".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _| panic!("fresh startup must not resume")),
@@ -618,6 +622,8 @@ fn lifecycle_startup_rows_and_resumed_title_are_rendered() {
                 id: session_id,
                 title: Some("Release Work".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
     );
@@ -645,13 +651,11 @@ fn transcript_header_does_not_change_with_scroll_position() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::with_session("tui-existing-1", "test gateway", "http://127.0.0.1:3940");
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":900 + index,
-                "text":format!("header scroll row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":900 + index,
+            "text":format!("header scroll row {index}")
+        }))]));
     }
 
     terminal
@@ -878,21 +882,17 @@ fn growing_prompt_keeps_transcript_tail_above_prompt_panel() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":300 + index,
-                "text":format!("history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":300 + index,
+            "text":format!("history row {index}")
+        }))]));
     }
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":999,
-            "text":"visible-tail-marker"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":999,
+        "text":"visible-tail-marker"
+    }))]));
     app.jump_to_tail();
 
     terminal
@@ -987,6 +987,7 @@ fn retry_completion_renders_final_response_at_live_tail() {
                 text: "retry completed and the final response is visible at TAIL_OK".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1001,25 +1002,26 @@ fn retry_completion_renders_final_response_at_live_tail() {
         .draw(|frame| render(frame, &mut app))
         .expect("pending retry prompt should render");
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn",
-            "eventIndex":10,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "batch":10,
             "isError":true,
             "error":"Request timed out."
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"log",
-            "eventIndex":11,
-            "message":"[flue:model-retry] Retrying transient model error"
+        chunk(serde_json::json!({
+            "type":"message-appended",
+            "submissionId":"fixture-submission",
+            "batch":11,
+            "text":"[flue:model-retry] Retrying transient model error"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn_start",
-            "eventIndex":12
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "batch":12
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool",
-            "eventIndex":13,
+        chunk(serde_json::json!({
+            "type":"tool-output",
+            "batch":13,
             "toolCallId":"protocol-retry",
             "toolName":"load_protocols",
             "isError":false
@@ -1063,6 +1065,7 @@ fn flue_final_message_is_visible_before_http_request_settles() {
                 text: "FINAL_VISIBLE_MARKER".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1073,31 +1076,29 @@ fn flue_final_message_is_visible_before_http_request_settles() {
     );
 
     for index in 0..24 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":100 + index,
-                "text":format!("history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":100 + index,
+            "text":format!("history row {index}")
+        }))]));
     }
     app.handle_event(AppEvent::Text("show the final response".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"message_end",
-            "eventIndex":200,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":200,
             "role":"assistant",
             "text":"FINAL_VISIBLE_MARKER"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn",
-            "eventIndex":201,
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "batch":201,
             "isError":false
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation",
-            "eventIndex":202,
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "batch":202,
             "name":"operation",
             "isError":false
         })),
@@ -1142,6 +1143,7 @@ fn live_assistant_stream_is_dimmed_until_final_message_replaces_it() {
                 text: "Live **answer** finalized.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1152,17 +1154,17 @@ fn live_assistant_stream_is_dimmed_until_final_message_replaces_it() {
     );
     app.handle_event(AppEvent::Text("stream the answer".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
-            "eventIndex":5,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
+            "batch":5,
             "timestamp":"2026-07-11T18:37:02Z",
             "session":"default",
             "text":"Live **answer** "
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
-            "eventIndex":6,
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
+            "batch":6,
             "timestamp":"2026-07-11T18:37:03Z",
             "session":"default",
             "text":"streaming."
@@ -1202,10 +1204,10 @@ fn live_assistant_stream_is_dimmed_until_final_message_replaces_it() {
         .add_modifier
         .contains(Modifier::BOLD));
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
         serde_json::json!({
-            "type":"message_end",
-            "eventIndex":21,
+            "type":"message-appended",
+            "batch":21,
             "timestamp":"2026-07-11T18:37:09Z",
             "session":"default",
             "message":{"role":"assistant","content":[{"type":"text","text":"Live **answer** finalized."}]}
@@ -1249,13 +1251,11 @@ fn render_preserves_manual_scrollback_after_transcript_growth() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":500 + index,
-                "text":format!("history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":500 + index,
+            "text":format!("history row {index}")
+        }))]));
     }
     terminal
         .draw(|frame| render(frame, &mut app))
@@ -1263,13 +1263,11 @@ fn render_preserves_manual_scrollback_after_transcript_growth() {
     app.scroll_page_up();
     let scrollback_position = app.transcript_scroll();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":999,
-            "text":"new tail content that must not snap manual scrollback"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":999,
+        "text":"new tail content that must not snap manual scrollback"
+    }))]));
     terminal
         .draw(|frame| render(frame, &mut app))
         .expect("manual scrollback should render without snapping");
@@ -1335,15 +1333,15 @@ fn renders_thinking_and_tool_activity_rows() {
     let backend = TestBackend::new(120, 28);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "batch":10,
             "text":"checking protocol"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool_start",
-            "eventIndex":11,
+        chunk(serde_json::json!({
+            "type":"tool-input",
+            "batch":11,
             "toolCallId":"cap",
             "toolName":"list_capabilities"
         })),
@@ -1398,37 +1396,38 @@ fn semantic_transcript_prefixes_are_bold_and_color_coded() {
     app.handle_event(AppEvent::Text("format this response".to_string()));
     app.handle_event(AppEvent::Submit);
     wait_for_agent(&mut app);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":100,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "batch":100,
             "text":"checking styles"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool_start",
-            "eventIndex":101,
+        chunk(serde_json::json!({
+            "type":"tool-input",
+            "batch":101,
             "toolCallId":"format-tool",
             "toolName":"formatter"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"task_start",
-            "eventIndex":102,
-            "taskId":"format-task",
-            "taskName":"reviewer"
+        chunk(serde_json::json!({
+            "type":"tool-input",
+            "batch":102,
+            "toolCallId":"format-task",
+            "toolName":"task",
+            "input":{"agent":"reviewer"}
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation_start",
-            "eventIndex":103,
-            "name":"render"
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "batch":103,
+            "submissionId":"render-submission"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"log",
-            "eventIndex":104,
+        chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":104,
             "text":"frame ready"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn_start",
-            "eventIndex":105
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "batch":105
         })),
     ]));
 
@@ -1459,7 +1458,7 @@ fn semantic_transcript_prefixes_are_bold_and_color_coded() {
     assert_prefix_style(&terminal, "task: reviewer running", "task:", Color::Magenta);
     assert_prefix_style(
         &terminal,
-        "operation: render running",
+        "operation: operation running",
         "operation:",
         Color::Yellow,
     );
@@ -1480,6 +1479,7 @@ fn semantic_prefix_formatting_preserves_body_and_continuation_styles() {
                 text: "alpha bravo charlie delta echo".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1543,6 +1543,7 @@ fn assistant_markdown_renders_inline_styles_without_source_markers() {
                 text: "Plain **bold** *italic* `code` [docs](https://example.com)".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1622,6 +1623,7 @@ fn assistant_markdown_renders_blocks_and_preserves_word_wrapping() {
                     .to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -1698,30 +1700,42 @@ fn failed_activity_prefixes_keep_their_labels_and_use_error_color() {
     let backend = TestBackend::new(100, 20);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool",
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"tool-input",
             "submissionId":"failed-activity",
-            "eventIndex":1,
+            "batch":1,
             "toolCallId":"tool-1",
-            "toolName":"formatter",
-            "isError":true
+            "toolName":"formatter"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"task",
+        chunk(serde_json::json!({
+            "type":"tool-output-error",
             "submissionId":"failed-activity",
-            "eventIndex":2,
-            "taskId":"task-1",
-            "taskName":"reviewer",
-            "isError":true
+            "batch":2,
+            "toolCallId":"tool-1",
+            "errorText":"format failed"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation",
+        chunk(serde_json::json!({
+            "type":"tool-input",
             "submissionId":"failed-activity",
-            "eventIndex":3,
-            "operationId":"root",
-            "operationKind":"orchestrate",
-            "isError":true
+            "batch":3,
+            "toolCallId":"task-1",
+            "toolName":"task",
+            "input":{"agent":"reviewer"}
+        })),
+        chunk(serde_json::json!({
+            "type":"tool-output-error",
+            "submissionId":"failed-activity",
+            "batch":4,
+            "toolCallId":"task-1",
+            "errorText":"review failed"
+        })),
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "submissionId":"failed-activity",
+            "batch":5,
+            "outcome":"failed",
+            "error":{"message":"orchestration failed"}
         })),
     ]));
 
@@ -1738,7 +1752,7 @@ fn failed_activity_prefixes_keep_their_labels_and_use_error_color() {
     assert_prefix_style(&terminal, "task: reviewer failed", "task:", Color::LightRed);
     assert_prefix_style(
         &terminal,
-        "operation: orchestrate failed",
+        "operation: operation failed",
         "operation:",
         Color::LightRed,
     );
@@ -1749,10 +1763,10 @@ fn narrow_transcript_tail_reaches_wrapped_bottom_row() {
     let backend = TestBackend::new(24, 10);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
         serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
+            "type":"message-delta","kind":"reasoning",
+            "batch":10,
             "text":"alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa bottom-marker"
         }),
     )]));
@@ -1778,21 +1792,17 @@ fn small_transcript_tail_reaches_bottom_after_many_wrapped_lines() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..30 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":100 + index,
-                "text":format!("row {index} alpha bravo charlie delta echo foxtrot")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":100 + index,
+            "text":format!("row {index} alpha bravo charlie delta echo foxtrot")
+        }))]));
     }
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":999,
-            "text":"tail-ok"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":999,
+        "text":"tail-ok"
+    }))]));
     app.jump_to_tail();
 
     terminal
@@ -1815,13 +1825,11 @@ fn transcript_scrollbar_thumb_reaches_bottom_at_tail() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":200 + index,
-                "text":format!("row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":200 + index,
+            "text":format!("row {index}")
+        }))]));
     }
     app.jump_to_tail();
 
@@ -1856,13 +1864,11 @@ fn transcript_mouse_drag_highlights_and_copies_logical_text_across_wraps() {
     let backend = TestBackend::new(50, 16);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":450,
-            "text":"alpha bravo charlie delta echo foxtrot golf hotel india juliet"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":450,
+        "text":"alpha bravo charlie delta echo foxtrot golf hotel india juliet"
+    }))]));
 
     terminal
         .draw(|frame| render(frame, &mut app))
@@ -1923,13 +1929,11 @@ fn transcript_mouse_selection_copies_an_emoji_grapheme_as_one_cell() {
     let backend = TestBackend::new(50, 16);
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":451,
-            "text":"before 👩‍💻 after"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":451,
+        "text":"before 👩‍💻 after"
+    }))]));
 
     terminal
         .draw(|frame| render(frame, &mut app))
@@ -1961,6 +1965,7 @@ fn transcript_reverse_drag_copies_rendered_markdown_text_without_markers() {
                 text: "Use **bold words** and `code sample` for this test.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,
@@ -2004,13 +2009,11 @@ fn mouse_wheel_routes_by_pane_without_changing_keyboard_scroll_behavior() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..30 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":500 + index,
-                "text":format!("mouse routing row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":500 + index,
+            "text":format!("mouse routing row {index}")
+        }))]));
     }
     app.jump_to_tail();
     terminal
@@ -2041,21 +2044,17 @@ fn live_tail_renders_final_content_above_blank_margin_row() {
     let mut terminal = Terminal::new(backend).expect("test backend should initialize");
     let mut app = App::new_for_test();
     for index in 0..8 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":700 + index,
-                "text":format!("history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":700 + index,
+            "text":format!("history row {index}")
+        }))]));
     }
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":799,
-            "text":"TAIL_MARGIN_MARKER"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":799,
+        "text":"TAIL_MARGIN_MARKER"
+    }))]));
     app.jump_to_tail();
 
     terminal
@@ -2113,6 +2112,7 @@ fn streamed_final_remains_visible_across_terminal_and_prompt_sizes() {
                     text: "TAIL_OK".to_string(),
                     submission_id: None,
                     stream_offset: None,
+                stream_url: None,
                     session_id: None,
                     session_title: None,
                     command_name: None,
@@ -2122,20 +2122,20 @@ fn streamed_final_remains_visible_across_terminal_and_prompt_sizes() {
             }),
         );
         for index in 0..30 {
-            app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
+            app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
                 serde_json::json!({
-                    "type":"log",
-                    "eventIndex":900 + index,
+                    "type":"message-appended",
+                    "batch":900 + index,
                     "text":format!("history row {index}")
                 }),
             )]));
         }
         app.handle_event(AppEvent::Text("show the final response".to_string()));
         app.handle_event(AppEvent::Submit);
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
             serde_json::json!({
-                "type":"message_end",
-                "eventIndex":999,
+                "type":"message-appended",
+                "batch":999,
                 "message":{"role":"assistant","content":"TAIL_OK"}
             }),
         )]));
@@ -2174,6 +2174,7 @@ fn app_with_pending_response() -> App {
                 text: format!("done: {prompt}"),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: None,
                 session_title: None,
                 command_name: None,

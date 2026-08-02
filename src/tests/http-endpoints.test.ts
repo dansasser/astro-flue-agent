@@ -168,6 +168,8 @@ test('chat transcript route validates canonical session ownership and pagination
           status: 'completed' as const,
         }],
         stream: {
+          instanceId: input.generations.at(-1)?.instanceId ?? input.session.id,
+          url: `/agents/orchestrator/${encodeURIComponent(input.generations.at(-1)?.instanceId ?? input.session.id)}`,
           nextOffset: '0000000000000000_0000000000000042',
           upToDate: true,
         },
@@ -196,13 +198,15 @@ test('chat transcript route validates canonical session ownership and pagination
       const body = await response.json() as {
         session?: { id?: string; title?: string };
         exchanges?: Array<{ prompt?: { text?: string }; assistant?: { text?: string } }>;
-        stream?: { nextOffset?: string };
+        stream?: { instanceId?: string; url?: string; nextOffset?: string };
       };
       assert.equal(body.session?.id, created.sessionId);
       assert.equal(body.session?.title, 'Transcript Test');
       assert.equal(body.exchanges?.[0]?.prompt?.text, 'Historical prompt');
       assert.equal(body.exchanges?.[0]?.assistant?.text, 'Historical response');
       assert.equal(body.stream?.nextOffset, '0000000000000000_0000000000000042');
+      assert.equal(body.stream?.instanceId, created.sessionId);
+      assert.equal(body.stream?.url, `/agents/orchestrator/${encodeURIComponent(created.sessionId)}`);
       assert.deepEqual(calls, [{ sessionId: created.sessionId, limit: 25 }]);
 
       const wrongActor = new URLSearchParams(query);

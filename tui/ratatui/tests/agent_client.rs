@@ -218,7 +218,7 @@ fn creates_fresh_tui_session_through_lifecycle_endpoint() {
         let request = read_http_request(&mut stream);
         tx.send(request).expect("request should be reported");
 
-        let body = r#"{"session":{"id":"tui-123","surface":"tui","created":true}}"#;
+        let body = r#"{"session":{"id":"tui-123","surface":"tui","created":true},"stream":{"instanceId":"instance-123","url":"/agents/orchestrator/instance-123","nextOffset":"-1"}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -234,6 +234,8 @@ fn creates_fresh_tui_session_through_lifecycle_endpoint() {
     assert_eq!(response.id, "tui-123");
     assert_eq!(response.title, None);
     assert!(response.created);
+    assert_eq!(response.stream_url, "/agents/orchestrator/instance-123");
+    assert_eq!(response.stream_offset, "-1");
     let request = rx.recv().expect("request should be captured");
     assert!(request.starts_with("POST /api/chat/sessions HTTP/1.1"));
     let body = request_body_json(&request);
@@ -262,7 +264,7 @@ fn resumes_owned_tui_session_and_preserves_utf8_title() {
         let request = read_http_request(&mut stream);
         tx.send(request).expect("request should be reported");
 
-        let body = r#"{"session":{"id":"tui/owned session","surface":"tui","created":false,"title":"Renamed café 👋"}}"#;
+        let body = r#"{"session":{"id":"tui/owned session","surface":"tui","created":false,"title":"Renamed café 👋"},"stream":{"instanceId":"instance-owned","url":"/agents/orchestrator/instance-owned","nextOffset":"0000000000000002_0000000000000000"}}"#;
         write!(
             stream,
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -278,6 +280,8 @@ fn resumes_owned_tui_session_and_preserves_utf8_title() {
     assert_eq!(response.id, "tui/owned session");
     assert_eq!(response.title.as_deref(), Some("Renamed café 👋"));
     assert!(!response.created);
+    assert_eq!(response.stream_url, "/agents/orchestrator/instance-owned");
+    assert_eq!(response.stream_offset, "0000000000000002_0000000000000000");
     let request = rx.recv().expect("request should be captured");
     assert!(request.starts_with("POST /api/chat/sessions/tui%2Fowned%20session/resume HTTP/1.1"));
     assert_eq!(
@@ -365,8 +369,7 @@ fn decodes_chunked_lifecycle_response_before_utf8_conversion() {
     thread::spawn(move || {
         let (mut stream, _) = listener.accept().expect("client should connect");
         let _ = read_http_request(&mut stream);
-        let body =
-            r#"{"session":{"id":"tui-unicode","surface":"tui","created":true,"title":"Hello 👋"}}"#;
+        let body = r#"{"session":{"id":"tui-unicode","surface":"tui","created":true,"title":"Hello 👋"},"stream":{"instanceId":"instance-unicode","url":"/agents/orchestrator/instance-unicode","nextOffset":"-1"}}"#;
         let split = body
             .as_bytes()
             .windows(4)
@@ -394,6 +397,7 @@ fn decodes_chunked_lifecycle_response_before_utf8_conversion() {
         .expect("chunked lifecycle response should parse");
     assert_eq!(response.id, "tui-unicode");
     assert_eq!(response.title.as_deref(), Some("Hello 👋"));
+    assert_eq!(response.stream_url, "/agents/orchestrator/instance-unicode");
 }
 
 #[test]

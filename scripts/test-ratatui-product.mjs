@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createServer as createHttpServer } from 'node:http';
 import {
   chmodSync,
   cpSync,
@@ -104,7 +105,7 @@ const simOnePath = join(runtimeRoot, 'sim-one-cli', simOneBinaryName);
 const cliModulePath = join(runtimeRoot, 'sim-one-cli', 'cli.js');
 const codingWorkspaceRoot = join(runtimeRoot, 'workspace');
 const sessionDatabasePath = join(runtimeRoot, 'db', 'sessions.sqlite');
-const flueDatabasePath = join(runtimeRoot, 'db', 'flue.sqlite');
+const flueV2DatabasePath = join(runtimeRoot, 'db', 'flue-v2.sqlite');
 const tuiDiagnosticsPath = join(runtimeRoot, 'logs', 'sim-one-ratatui.jsonl');
 const configPath = join(runtimeRoot, 'gorombo.config.json');
 const environmentConfigPath = join(runtimeRoot, 'sim-one.config');
@@ -113,6 +114,7 @@ const environmentExamplePath = join(runtimeRoot, 'sim-one.config.example');
 let stdout = '';
 let stderr = '';
 let child;
+let deterministicChatProvider;
 
 try {
   mkdirSync(runtimeRoot, { recursive: true });
@@ -130,6 +132,12 @@ try {
     { force: true },
   );
   cpSync(sourceEnvironmentConfigPath, environmentConfigPath, { force: true });
+  const productEnvironmentConfig = readFileSync(environmentConfigPath, 'utf8')
+    .replace(
+      /^SIM_ONE_TUI_LOG_PATH=.*$/m,
+      'SIM_ONE_TUI_LOG_PATH=logs/sim-one-ratatui.jsonl',
+    );
+  writeFileSync(environmentConfigPath, productEnvironmentConfig);
   chmodSync(environmentConfigPath, 0o600);
   cpSync(sourceEnvironmentExamplePath, environmentExamplePath, { force: true });
   for (const packagedPath of [serverPath, tuiPath, simOnePath, cliModulePath]) {
@@ -150,11 +158,21 @@ try {
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   const testModelCard = process.env.SIM_ONE_TEST_MODEL_CARD?.trim();
   if (testModelCard) {
-    config.models = { ...config.models, primary: testModelCard };
+    const previousPrimary = config.models?.primary;
+    config.models = {
+      ...config.models,
+      primary: testModelCard,
+      ...(config.models?.backup === testModelCard &&
+      previousPrimary &&
+      previousPrimary !== testModelCard
+        ? { backup: previousPrimary }
+        : {}),
+    };
   }
   config.gateway = { ...(config.gateway ?? {}), port };
   config.storage = {
     ...(config.storage ?? {}),
+    flueV2DatabasePath: 'db/flue-v2.sqlite',
     flueDatabasePath: 'db/flue.sqlite',
     sessionDatabasePath: 'db/sessions.sqlite',
     vectorStorePath: 'vector',
@@ -200,7 +218,19 @@ try {
   });
   await assertVisibleFinalBeforeHttpSettlement(childEnv);
 
+  if (productSmokeTestMode && testModelCard === 'kimi-k2-6-runpod') {
+    deterministicChatProvider = await startDeterministicChatProvider();
+    childEnv.RUNPOD_CHAT_BASE_URL = deterministicChatProvider.baseUrl;
+  }
   const firstStartup = await runFreshStartup(childEnv, 'default launch 1');
+  if (
+    deterministicChatProvider &&
+    deterministicChatProvider.requestCount() === 0
+  ) {
+    throw new Error(
+      'packaged gateway did not use the deterministic test-mode chat provider',
+    );
+  }
   const firstSessionId = firstStartup.sessionId;
   const secondStartup = await runFreshStartup(childEnv, 'default launch 2');
   const secondSessionId = secondStartup.sessionId;
@@ -291,7 +321,7 @@ try {
 
   seedTranscriptFixture(
     sessionDatabasePath,
-    flueDatabasePath,
+    flueV2DatabasePath,
     firstSessionId,
   );
   const eventsBeforeExplicitResume = countNormalizedEventsForSession(
@@ -368,7 +398,7 @@ try {
   }
   for (const requiredPath of [
     sessionDatabasePath,
-    flueDatabasePath,
+    flueV2DatabasePath,
     join(runtimeRoot, 'db', 'capabilities.sqlite'),
     tuiDiagnosticsPath,
     codingWorkspaceRoot,
@@ -385,6 +415,9 @@ try {
       child.kill('SIGKILL');
     }
   } finally {
+    if (deterministicChatProvider) {
+      await deterministicChatProvider.close();
+    }
     rmSync(productFixtureRoot, { recursive: true, force: true });
     rmSync(launchDirectory, { recursive: true, force: true });
     await releaseArtifactLock();
@@ -430,6 +463,66 @@ async function runFreshStartup(env, label) {
   }
   assertOutputIncludes(stdout, '\nSIM-ONE Alpha\nSIM-ONE Alpha | session:', `${label} did not use the product-only header or preserve the status bar`);
   return { ...result, sessionId: sessionMatch[1] };
+}
+
+async function startDeterministicChatProvider() {
+  let requestCount = 0;
+  const server = createHttpServer(async (request, response) => {
+    for await (const _chunk of request) {
+      // Drain the request before returning the deterministic SSE response.
+    }
+    if (request.method !== 'POST' || request.url !== '/v1/chat/completions') {
+      response.writeHead(404, { 'content-length': '0' });
+      response.end();
+      return;
+    }
+    requestCount += 1;
+
+    const completionId = `chatcmpl-ratatui-${Date.now()}`;
+    const events = [
+      {
+        id: completionId,
+        object: 'chat.completion.chunk',
+        model: 'kimi-k2.6',
+        choices: [
+          {
+            index: 0,
+            delta: { role: 'assistant', content: 'Hello from SIM-ONE Alpha.' },
+            finish_reason: null,
+          },
+        ],
+      },
+      {
+        id: completionId,
+        object: 'chat.completion.chunk',
+        model: 'kimi-k2.6',
+        choices: [{ index: 0, delta: {}, finish_reason: 'stop' }],
+      },
+    ];
+    response.writeHead(200, {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'close',
+    });
+    response.end(`${events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('')}data: [DONE]\n\n`);
+  });
+  await new Promise((resolvePromise, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolvePromise);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    server.close();
+    throw new Error('Deterministic chat provider did not bind a TCP port.');
+  }
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}/v1`,
+    requestCount: () => requestCount,
+    close: () =>
+      new Promise((resolvePromise, reject) => {
+        server.close((error) => (error ? reject(error) : resolvePromise()));
+      }),
+  };
 }
 
 async function runMissingSessionFallback(env, selector) {
@@ -523,165 +616,235 @@ function countNormalizedEventsForSession(databasePath, sessionId) {
   }
 }
 
-function seedTranscriptFixture(sessionDatabasePath, flueDatabasePath, sessionId) {
+function seedTranscriptFixture(sessionDatabasePath, flueV2DatabasePath, sessionId) {
   const sessionDatabase = new DatabaseSync(sessionDatabasePath);
-  const flueDatabase = new DatabaseSync(flueDatabasePath);
-  const streamPath = `agents/orchestrator/${sessionId}`;
+  const generation = sessionDatabase
+    .prepare(
+      `SELECT instance_id AS instanceId
+       FROM chat_session_generations
+       WHERE session_id = ?
+       ORDER BY generation DESC
+       LIMIT 1`,
+    )
+    .get(sessionId);
+  if (!generation?.instanceId) {
+    sessionDatabase.close();
+    throw new Error(`packaged transcript fixture could not resolve the active runtime generation for ${sessionId}`);
+  }
+
+  const previousInstanceId = String(generation.instanceId);
+  const instanceId = `${sessionId}-packaged-fixture`;
+  const flueDatabase = new DatabaseSync(flueV2DatabasePath);
+  const streamPath = `agents/orchestrator/${instanceId}`;
   const greetingSubmission = 'packaged-greeting-submission';
   const userSubmission = 'packaged-user-submission';
   const now = '2026-07-23T15:00:00.000Z';
-  const events = [
-    {
-      type: 'operation_start',
-      operationId: 'packaged-greeting-operation',
-      operationKind: 'startup',
+  const conversationId = 'conv_packaged_resume_fixture';
+  const usage = {
+    input: 1,
+    output: 1,
+    cacheRead: 0,
+    cacheWrite: 0,
+    totalTokens: 2,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+  };
+  const modelInfo = {
+    api: 'openai-responses',
+    provider: 'openai',
+    model: 'packaged-fixture',
+  };
+  const record = (id, type, timestamp, value = {}) => ({
+    v: 1,
+    id: `record_${id}`,
+    type,
+    conversationId,
+    harness: 'default',
+    session: 'default',
+    timestamp,
+    ...value,
+  });
+  const greetingPromptId = 'entry_packaged_startup_prompt';
+  const greetingMessageId = 'entry_packaged_greeting';
+  const userPromptId = 'entry_packaged_user_prompt';
+  const toolMessageId = 'entry_packaged_tool_step';
+  const finalMessageId = 'entry_packaged_final';
+  const repositoryCallId = 'call_packaged_repository_status';
+  const taskCallId = 'call_packaged_task';
+  const batches = [
+    [record('conversation_created', 'conversation_created', now, {
+      affinityKey: 'aff_packaged_resume_fixture',
+      createdAt: now,
+      kind: 'root',
+      uid: 'uid_packaged_resume_fixture',
+    })],
+    [record('greeting_prompt', 'user_message', now, {
       submissionId: greetingSubmission,
-      eventIndex: 0,
-      timestamp: '2026-07-23T15:00:00.100Z',
-    },
-    {
-      type: 'message_end',
-      message: {
-        role: 'assistant',
-        content: [{ type: 'text', text: transcriptFixture.greeting }],
-      },
+      messageId: greetingPromptId,
+      parentId: null,
+      content: [{ type: 'text', text: transcriptFixture.hiddenStartup }],
+    })],
+    [
+      record('greeting_started', 'assistant_message_started', '2026-07-23T15:00:00.100Z', {
+        submissionId: greetingSubmission,
+        messageId: greetingMessageId,
+        parentId: greetingPromptId,
+        modelInfo,
+      }),
+      record('greeting_text_started', 'assistant_text_started', '2026-07-23T15:00:00.150Z', {
+        submissionId: greetingSubmission,
+        messageId: greetingMessageId,
+        blockId: 'block_packaged_greeting',
+        blockIndex: 0,
+      }),
+      record('greeting_text_delta', 'assistant_text_delta', '2026-07-23T15:00:00.200Z', {
+        submissionId: greetingSubmission,
+        messageId: greetingMessageId,
+        blockId: 'block_packaged_greeting',
+        sequence: 0,
+        delta: transcriptFixture.greeting,
+      }),
+      record('greeting_text_completed', 'assistant_text_completed', '2026-07-23T15:00:00.250Z', {
+        submissionId: greetingSubmission,
+        messageId: greetingMessageId,
+        blockId: 'block_packaged_greeting',
+        deltaCount: 1,
+      }),
+      record('greeting_completed', 'assistant_message_completed', '2026-07-23T15:00:00.300Z', {
+        submissionId: greetingSubmission,
+        messageId: greetingMessageId,
+        stopReason: 'stop',
+        usage,
+      }),
+    ],
+    [record('greeting_settled', 'submission_settled', '2026-07-23T15:00:00.350Z', {
       submissionId: greetingSubmission,
-      eventIndex: 1,
-      timestamp: '2026-07-23T15:00:00.200Z',
-    },
-    {
-      type: 'operation',
-      operationId: 'packaged-greeting-operation',
-      operationKind: 'startup',
-      durationMs: 700,
-      isError: false,
-      submissionId: greetingSubmission,
-      eventIndex: 2,
-      timestamp: '2026-07-23T15:00:00.300Z',
-    },
-    {
-      type: 'operation_start',
-      operationId: 'packaged-user-operation',
-      operationKind: 'prompt',
+      outcome: 'completed',
+    })],
+    [record('user_prompt', 'user_message', '2026-07-23T15:01:00.000Z', {
       submissionId: userSubmission,
-      eventIndex: 0,
-      timestamp: '2026-07-23T15:01:00.100Z',
-    },
-    {
-      type: 'thinking_start',
-      turnId: 'packaged-user-turn',
-      submissionId: userSubmission,
-      eventIndex: 1,
-      timestamp: '2026-07-23T15:01:00.200Z',
-    },
-    {
-      type: 'thinking_delta',
-      turnId: 'packaged-user-turn',
-      delta: transcriptFixture.thinking,
-      submissionId: userSubmission,
-      eventIndex: 2,
-      timestamp: '2026-07-23T15:01:00.300Z',
-    },
-    {
-      type: 'thinking_end',
-      turnId: 'packaged-user-turn',
-      submissionId: userSubmission,
-      eventIndex: 3,
-      timestamp: '2026-07-23T15:01:00.400Z',
-    },
-    {
-      type: 'tool_start',
-      toolCallId: 'packaged-tool',
-      toolName: 'repository_status',
-      submissionId: userSubmission,
-      eventIndex: 4,
-      timestamp: '2026-07-23T15:01:00.500Z',
-    },
-    {
-      type: 'tool',
-      toolCallId: 'packaged-tool',
-      toolName: 'repository_status',
-      durationMs: 31,
-      isError: false,
-      result: { text: transcriptFixture.hiddenToolResult },
-      submissionId: userSubmission,
-      eventIndex: 5,
-      timestamp: '2026-07-23T15:01:00.600Z',
-    },
-    {
-      type: 'task_start',
-      taskId: 'packaged-task',
-      taskName: 'researcher',
-      submissionId: userSubmission,
-      eventIndex: 6,
-      timestamp: '2026-07-23T15:01:00.700Z',
-    },
-    {
-      type: 'message_end',
-      message: {
-        role: 'assistant',
-        content: [{ type: 'text', text: transcriptFixture.hiddenNested }],
-      },
-      parentSession: 'default',
-      session: 'task:default:packaged-worker',
-      submissionId: userSubmission,
-      eventIndex: 7,
-      timestamp: '2026-07-23T15:01:00.800Z',
-    },
-    {
-      type: 'message_end',
-      message: {
-        role: 'toolResult',
+      messageId: userPromptId,
+      parentId: greetingMessageId,
+      content: [{
+        type: 'text',
+        text: `${transcriptFixture.promptLineOne}\n${transcriptFixture.promptLineTwo}`,
+      }],
+    })],
+    [
+      record('tool_message_started', 'assistant_message_started', '2026-07-23T15:01:00.100Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        parentId: userPromptId,
+        modelInfo,
+      }),
+      record('reasoning_started', 'assistant_reasoning_started', '2026-07-23T15:01:00.200Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        blockId: 'block_packaged_reasoning',
+        blockIndex: 0,
+      }),
+      record('reasoning_delta', 'assistant_reasoning_delta', '2026-07-23T15:01:00.300Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        blockId: 'block_packaged_reasoning',
+        sequence: 0,
+        delta: transcriptFixture.thinking,
+      }),
+      record('reasoning_completed', 'assistant_reasoning_completed', '2026-07-23T15:01:00.400Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        blockId: 'block_packaged_reasoning',
+        deltaCount: 1,
+      }),
+      record('repository_call', 'assistant_tool_call', '2026-07-23T15:01:00.500Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        blockId: 'block_packaged_repository_status',
+        blockIndex: 1,
+        toolCallId: repositoryCallId,
+        name: 'repository_status',
+        arguments: {},
+      }),
+      record('task_call', 'assistant_tool_call', '2026-07-23T15:01:00.600Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        blockId: 'block_packaged_task',
+        blockIndex: 2,
+        toolCallId: taskCallId,
+        name: 'task',
+        arguments: { agent: 'researcher' },
+      }),
+      record('tool_message_completed', 'assistant_message_completed', '2026-07-23T15:01:00.700Z', {
+        submissionId: userSubmission,
+        messageId: toolMessageId,
+        stopReason: 'toolUse',
+        usage,
+      }),
+    ],
+    [
+      record('repository_outcome', 'tool_outcome', '2026-07-23T15:01:00.800Z', {
+        submissionId: userSubmission,
+        assistantMessageId: toolMessageId,
+        toolCallId: repositoryCallId,
+        toolName: 'repository_status',
+        isError: false,
         content: [{ type: 'text', text: transcriptFixture.hiddenToolResult }],
-      },
+        output: { ok: true },
+        durationMs: 31,
+      }),
+      record('task_outcome', 'tool_outcome', '2026-07-23T15:01:00.900Z', {
+        submissionId: userSubmission,
+        assistantMessageId: toolMessageId,
+        toolCallId: taskCallId,
+        toolName: 'task',
+        isError: false,
+        content: [{ type: 'text', text: transcriptFixture.hiddenNested }],
+        output: { ok: true },
+        durationMs: 1_200,
+      }),
+      record('tool_results', 'tool_results_committed', '2026-07-23T15:01:01.000Z', {
+        submissionId: userSubmission,
+        assistantMessageId: toolMessageId,
+        parentId: toolMessageId,
+        outcomeIds: ['record_repository_outcome', 'record_task_outcome'],
+      }),
+    ],
+    [
+      record('final_started', 'assistant_message_started', '2026-07-23T15:01:01.100Z', {
+        submissionId: userSubmission,
+        messageId: finalMessageId,
+        parentId: toolResultEntryId(toolMessageId, taskCallId),
+        modelInfo,
+      }),
+      record('final_text_started', 'assistant_text_started', '2026-07-23T15:01:01.150Z', {
+        submissionId: userSubmission,
+        messageId: finalMessageId,
+        blockId: 'block_packaged_final',
+        blockIndex: 0,
+      }),
+      record('final_text_delta', 'assistant_text_delta', '2026-07-23T15:01:01.200Z', {
+        submissionId: userSubmission,
+        messageId: finalMessageId,
+        blockId: 'block_packaged_final',
+        sequence: 0,
+        delta: `**${transcriptFixture.finalLineOne}**\n\n${transcriptFixture.finalLineTwo}`,
+      }),
+      record('final_text_completed', 'assistant_text_completed', '2026-07-23T15:01:01.250Z', {
+        submissionId: userSubmission,
+        messageId: finalMessageId,
+        blockId: 'block_packaged_final',
+        deltaCount: 1,
+      }),
+      record('final_completed', 'assistant_message_completed', '2026-07-23T15:01:01.300Z', {
+        submissionId: userSubmission,
+        messageId: finalMessageId,
+        stopReason: 'stop',
+        usage,
+      }),
+    ],
+    [record('user_settled', 'submission_settled', '2026-07-23T15:01:01.350Z', {
       submissionId: userSubmission,
-      eventIndex: 8,
-      timestamp: '2026-07-23T15:01:00.900Z',
-    },
-    {
-      type: 'message_end',
-      message: {
-        role: 'assistant',
-        content: [],
-        metadata: transcriptFixture.hiddenEmptyAssistant,
-      },
-      submissionId: userSubmission,
-      eventIndex: 9,
-      timestamp: '2026-07-23T15:01:01.000Z',
-    },
-    {
-      type: 'task',
-      taskId: 'packaged-task',
-      taskName: 'researcher',
-      durationMs: 1_200,
-      isError: false,
-      submissionId: userSubmission,
-      eventIndex: 10,
-      timestamp: '2026-07-23T15:01:01.100Z',
-    },
-    {
-      type: 'message_end',
-      message: {
-        role: 'assistant',
-        content: [{
-          type: 'text',
-          text: `**${transcriptFixture.finalLineOne}**\n\n${transcriptFixture.finalLineTwo}`,
-        }],
-      },
-      submissionId: userSubmission,
-      eventIndex: 11,
-      timestamp: '2026-07-23T15:01:01.200Z',
-    },
-    {
-      type: 'operation',
-      operationId: 'packaged-user-operation',
-      operationKind: 'prompt',
-      durationMs: 5_900,
-      isError: false,
-      submissionId: userSubmission,
-      eventIndex: 12,
-      timestamp: '2026-07-23T15:01:01.300Z',
-    },
+      outcome: 'completed',
+    })],
   ];
 
   try {
@@ -699,6 +862,13 @@ function seedTranscriptFixture(sessionDatabasePath, flueDatabasePath, sessionId)
          WHERE session_id = ?`,
       )
       .run(now, sessionId);
+    sessionDatabase
+      .prepare(
+        `UPDATE chat_session_generations
+         SET instance_id = ?
+         WHERE session_id = ? AND instance_id = ?`,
+      )
+      .run(instanceId, sessionId, previousInstanceId);
     sessionDatabase
       .prepare('DELETE FROM normalized_message_events WHERE session_id = ?')
       .run(sessionId);
@@ -735,7 +905,7 @@ function seedTranscriptFixture(sessionDatabasePath, flueDatabasePath, sessionId)
       userSubmission,
       userSubmission,
       `/${streamPath}`,
-      '0000000000000000_0000000000000002',
+      formatFlueOffset(4),
       '2026-07-23T15:01:00.000Z',
       now,
       now,
@@ -758,21 +928,41 @@ function seedTranscriptFixture(sessionDatabasePath, flueDatabasePath, sessionId)
 
     flueDatabase.exec('BEGIN IMMEDIATE');
     flueDatabase
-      .prepare('DELETE FROM flue_event_stream_entries WHERE path = ?')
+      .prepare('DELETE FROM flue_conversation_fold_checkpoint_chunks WHERE path = ?')
       .run(streamPath);
     flueDatabase
-      .prepare('DELETE FROM flue_event_streams WHERE path = ?')
+      .prepare('DELETE FROM flue_conversation_fold_checkpoints WHERE path = ?')
+      .run(streamPath);
+    flueDatabase
+      .prepare('DELETE FROM flue_conversation_stream_batch_chunks WHERE path = ?')
+      .run(streamPath);
+    flueDatabase
+      .prepare('DELETE FROM flue_conversation_stream_batches WHERE path = ?')
+      .run(streamPath);
+    flueDatabase
+      .prepare('DELETE FROM flue_conversation_streams WHERE path = ?')
       .run(streamPath);
     flueDatabase
       .prepare(
-        'INSERT INTO flue_event_streams (path, next_offset, closed) VALUES (?, ?, 0)',
+        `INSERT INTO flue_conversation_streams
+         (path, identity_json, next_offset, producer_id, producer_epoch,
+          next_producer_sequence, incarnation)
+         VALUES (?, ?, ?, 'packaged-fixture', 1, ?, 'inc-packaged-fixture')`,
       )
-      .run(streamPath, events.length);
-    const insertEvent = flueDatabase.prepare(
-      'INSERT INTO flue_event_stream_entries (path, seq, data) VALUES (?, ?, ?)',
+      .run(
+        streamPath,
+        JSON.stringify({ agentName: 'orchestrator', instanceId }),
+        batches.length,
+        batches.length,
+      );
+    const insertBatch = flueDatabase.prepare(
+      `INSERT INTO flue_conversation_stream_batches
+       (path, seq, producer_id, producer_epoch, producer_sequence, data,
+        submission_id, attempt_id)
+       VALUES (?, ?, 'packaged-fixture', 1, ?, ?, NULL, NULL)`,
     );
-    for (const [index, event] of events.entries()) {
-      insertEvent.run(streamPath, index, JSON.stringify(event));
+    for (const [index, batch] of batches.entries()) {
+      insertBatch.run(streamPath, index, index, JSON.stringify(batch));
     }
     flueDatabase.exec('COMMIT');
   } catch (error) {
@@ -789,6 +979,19 @@ function seedTranscriptFixture(sessionDatabasePath, flueDatabasePath, sessionId)
   }
 }
 
+function formatFlueOffset(sequence) {
+  if (sequence < 0) return '-1';
+  return `${'0'.repeat(16)}_${String(sequence).padStart(16, '0')}`;
+}
+
+function toolResultEntryId(assistantMessageId, toolCallId) {
+  return `entry_tool_result_${encodeCanonicalId(assistantMessageId)}_${encodeCanonicalId(toolCallId)}`;
+}
+
+function encodeCanonicalId(value) {
+  return Buffer.from(value, 'utf8').toString('base64url');
+}
+
 function assertPackagedTranscriptResume(output) {
   for (const visible of [
     transcriptFixture.greeting,
@@ -797,12 +1000,17 @@ function assertPackagedTranscriptResume(output) {
     transcriptFixture.thinking,
     transcriptFixture.finalLineOne,
     transcriptFixture.finalLineTwo,
-    'operation: prompt completed in 5.9s',
     'tool: repository_status completed in 31ms',
     'task: researcher completed in 1.2s',
   ]) {
     assertOccurrenceCount(output, visible, 1, `restored transcript did not render ${visible} exactly once`);
   }
+  assertOccurrenceCount(
+    output,
+    'operation: operation completed',
+    2,
+    'restored transcript did not render one completed operation per settled submission',
+  );
   for (const hidden of [
     transcriptFixture.hiddenStartup,
     transcriptFixture.hiddenNested,
