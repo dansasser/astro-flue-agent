@@ -948,6 +948,33 @@ test('coding worker remains available when optional GitHub MCP connection fails'
   }
 });
 
+test('coding worker mounts a prepared GitHub MCP integration', () => {
+  const project = createWorkspaceProject();
+  const readTool = {
+    name: 'mcp__github__issue_read',
+    description: 'Read a GitHub issue.',
+    inputSchema: {},
+    execute: async () => '{}',
+  } as ToolDefinition;
+
+  try {
+    const composition = createCodingWorkerComposition({
+      repoPath: project.repoPath,
+      githubMcp: {
+        readTools: [readTool],
+        async close() {},
+      },
+    });
+
+    assert.equal(
+      composition.tools.some((tool) => tool.name === 'mcp__github__issue_read'),
+      true,
+    );
+  } finally {
+    rmrf(project.workspaceRoot);
+  }
+});
+
 test('GitHub tools read extended PR context and gate PR updates through approval service', async () => {
   const approvalService = createInMemoryCodingApprovalService();
   let updateCount = 0;

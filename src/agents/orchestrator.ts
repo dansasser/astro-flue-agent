@@ -61,7 +61,10 @@ import {
 } from '../engine/tools/index.js';
 import type { AgentModelCard } from '../core/models/types.js';
 import { telegramReplyTool } from '../channels/telegram.js';
-import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
+import {
+  createCodingWorkerSubagent,
+  runtimeCodingWorkerGithubMcp,
+} from '../engine/workers/coding-worker/coding-worker.js';
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
 import greetingPreflight from '../skills/greeting-preflight/SKILL.md';
@@ -141,6 +144,7 @@ export function createOrchestratorComposition(
         workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
         stateRoot: runtimePaths.codingWorkerState,
         env: createCodingWorkerToolEnv(env, runtimeRoot),
+        githubMcp: runtimeCodingWorkerGithubMcp,
       }),
       createResearcherSubagent(),
     ],
