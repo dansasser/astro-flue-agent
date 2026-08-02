@@ -25,13 +25,13 @@
     "sim-one.config.example"
   ],
   "scripts": {
-    "build": "node scripts/run-flue.mjs build --target node && node scripts/generate-builtin-registry.mjs && node scripts/copy-runtime-config.mjs && node scripts/copy-wasm-artifact.mjs && node scripts/package-runtime-dependencies.mjs",
+    "build": "vite build",
     "build:cli": "pnpm --filter sim-one-cli run build",
     "build:tui": "node scripts/build-ratatui-tui.mjs",
     "build:tui:ratatui": "pnpm run build:tui",
     "build:all": "pnpm run build && pnpm run build:tui && pnpm run build:cli && node scripts/check-sim-one-product-command.mjs",
     "connect": "node scripts/run-flue.mjs connect orchestrator local --target node --session local",
-    "dev": "node scripts/run-flue.mjs dev --target node",
+    "dev": "vite dev",
     "docs:check": "python3 scripts/check-documentation.py",
     "test:unit": "node scripts/run-unit-tests.mjs && node --test scripts/portable-node-modules.test.mjs scripts/product-artifact-lock.test.mjs scripts/runtime-configuration-files.test.mjs scripts/runtime-configuration-inventory.test.mjs scripts/runtime-root.test.mjs",
     "test:capability-product": "node scripts/test-capability-product.mjs",
@@ -66,12 +66,10 @@
     "cargo:test": "cargo test --workspace"
   },
   "engines": {
-    "node": ">=22.18.0"
+    "node": ">=22.19.0"
   },
   "pnpm": {
     "overrides": {
-      "@flue/cli>@cloudflare/vite-plugin": "1.47.0",
-      "@flue/telegram>hono": "4.12.32",
       "@modelcontextprotocol/sdk>@hono/node-server": "2.0.11",
       "onnxruntime-node>adm-zip": "0.6.0",
       "brace-expansion": "5.0.8",
@@ -84,8 +82,9 @@
   "dependencies": {
     "@ai-sdk/provider": "^3.0.10",
     "@astrojs/language-server": "^2.16.13",
-    "@flue/runtime": "1.0.0-beta.1",
-    "@flue/telegram": "1.0.0-beta.1",
+    "@earendil-works/pi-ai": "0.83.0",
+    "@flue/runtime": "2.0.1",
+    "@flue/telegram": "2.0.1",
     "@hono/node-server": "^2.0.11",
     "@huggingface/tokenizers": "^0.1.3",
     "@lancedb/lancedb": "^0.30.0",
@@ -96,6 +95,7 @@
     "grammy": "^1.44.0",
     "hono": "^4.12.32",
     "js-yaml": "^4.3.0",
+    "just-bash": "3.2.0",
     "onnxruntime-node": "^1.27.0",
     "proper-lockfile": "^4.1.2",
     "pyright": "^1.1.410",
@@ -104,11 +104,13 @@
     "valibot": "^1.4.2"
   },
   "devDependencies": {
-    "@flue/cli": "1.0.0-beta.1",
+    "@flue/cli": "2.0.1",
+    "@flue/vite": "2.0.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.9.2",
     "@types/proper-lockfile": "^4.1.4",
     "esbuild": "0.28.1",
+    "vite": "8.2.0",
     "wrangler": "4.114.0"
   },
   "packageManager": "pnpm@10.10.0"
