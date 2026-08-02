@@ -5,6 +5,7 @@ src/tests/telegram-connector.test.ts
 src/channels/telegram.ts
   s_a81fff26d52223::t_17a9c30b765527 1-2,4-7,19-21,244-258,260-272,274,278-297,303-305,307-320,322-337,338-361,367-372
   s_a81fff26d52223::t_a2b1246df34bb2 373
+  s_a81fff26d52223::t_6f16fc438aa6e3 3,259,302,306,466-472,474
 ---
 {
   "schema_version": "authorship/3.0.0",
