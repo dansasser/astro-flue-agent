@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { minimaxM3Card } from '../core/models/catalog.js';
 import { calculateContextBudget } from '../engine/session/context-budget.js';
+import { renderContinuationContext } from '../engine/session/continuation-context.js';
 import {
   InMemorySessionBudgetStore,
   createSessionBudgetReport,
@@ -45,17 +46,51 @@ test('session budget derives history, usage, turns, and compactions from Flue 2 
 });
 
 test('session budget counts continuation context as active history', () => {
+  const summary = 'Preserve the selected branch and pending verification.';
+  const continuationContext = renderContinuationContext({
+    productSessionId: 'continued-session',
+    generation: 1,
+    continuationSummary: summary,
+  });
   const report = createSessionBudgetReport({
     sessionId: 'continued-session',
     modelCard: minimaxM3Card,
     snapshots: [],
-    additionalHistoryText: 'Preserve the selected branch and pending verification.',
+    additionalHistoryText: continuationContext,
     compactions: 1,
   });
 
-  assert.ok(report.estimatedHistoryTokens > 0);
+  assert.ok(report.estimatedHistoryTokens > Math.ceil(summary.length / 4));
   assert.equal(report.estimatedPromptTokens, 0);
   assert.equal(report.estimatedUsedTokens, report.estimatedHistoryTokens);
+});
+
+test('session budget excludes compaction summaries from assistant turn count', () => {
+  const value = conversationSnapshot();
+  value.messages.push({
+    id: 'compact-signal',
+    role: 'system',
+    purpose: 'dispatch',
+    display: 'hidden',
+    submissionId: 'compact-1',
+    signal: { tagName: 'session_compaction' },
+    parts: [{ type: 'text', text: 'compact', state: 'done' }],
+  }, {
+    id: 'compact-summary',
+    role: 'assistant',
+    purpose: 'assistant',
+    display: 'visible',
+    submissionId: 'compact-1',
+    parts: [{ type: 'text', text: 'private summary', state: 'done' }],
+  });
+
+  const state = deriveSessionBudgetStateFromSnapshots({
+    sessionId: 'support',
+    modelSpecifier: minimaxM3Card.specifier,
+    snapshots: [value],
+    compactions: 1,
+  });
+  assert.equal(state.turns, 1);
 });
 
 test('provider usage and manual compaction update fallback budget state', () => {

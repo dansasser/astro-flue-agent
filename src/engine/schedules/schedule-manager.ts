@@ -37,6 +37,11 @@ interface ObservationOutcome {
   error: string | null;
 }
 
+interface ActiveSettlement {
+  controller: AbortController;
+  outcome: Promise<ObservationOutcome>;
+}
+
 export interface ScheduleManagerOptions {
   store?: ScheduleStore;
   config: SchedulesConfig;
@@ -55,6 +60,7 @@ export class ScheduleManager {
   private readonly cronJobs = new Map<string, Cron>(); // scheduleId -> Cron
   private readonly retryTimers = new Map<string, Set<ReturnType<typeof setTimeout>>>(); // scheduleId -> pending retry timers
   private readonly fireQueue: Array<() => void> = [];
+  private readonly activeSettlements = new Map<string, ActiveSettlement>();
   private inFlight = 0;
   private started = false;
   private shuttingDown = false;
@@ -71,6 +77,7 @@ export class ScheduleManager {
     if (this.started) {
       return;
     }
+    this.shuttingDown = false;
     this.started = true;
     this.store.migrate();
     this.store.cleanup(this.config.runLog.keepRuns, this.config.sessionRetentionMs);
@@ -80,8 +87,8 @@ export class ScheduleManager {
     }
   }
 
-  /** Graceful stop: stop accepting fires, stop all crons, abort in-flight observations. */
-  stop(): void {
+  /** Graceful stop: stop accepting fires, drain, then abort in-flight observations. */
+  async stop(graceMs = 0): Promise<void> {
     this.shuttingDown = true;
     for (const cron of this.cronJobs.values()) {
       cron.stop();
@@ -95,6 +102,27 @@ export class ScheduleManager {
       }
     }
     this.retryTimers.clear();
+    for (const release of this.fireQueue.splice(0)) {
+      release();
+    }
+
+    if (this.activeSettlements.size > 0 && graceMs > 0) {
+      await waitForActiveSettlements(
+        [...this.activeSettlements.values()].map((entry) => entry.outcome),
+        graceMs,
+      );
+    }
+    for (const settlement of this.activeSettlements.values()) {
+      if (!settlement.controller.signal.aborted) {
+        settlement.controller.abort(new DOMException(
+          'Schedule shutdown grace expired before settlement.',
+          'AbortError',
+        ));
+      }
+    }
+    await Promise.allSettled(
+      [...this.activeSettlements.values()].map((entry) => entry.outcome),
+    );
     this.started = false;
   }
 
@@ -243,7 +271,6 @@ export class ScheduleManager {
       receipt = await this.dispatchImpl({
         instanceId,
         targetAgent: record.targetAgent,
-        signal: AbortSignal.timeout(this.settlementTimeoutMs),
         input: {
           prompt: record.prompt,
           scheduledAt,
@@ -270,7 +297,27 @@ export class ScheduleManager {
       attempt,
     });
 
-    const outcome = await settleScheduleDispatch(receipt.settlement);
+    const settlementKey = `${runId}:${attempt}`;
+    const settlementController = new AbortController();
+    const settlementTimeout = setTimeout(() => {
+      settlementController.abort(new DOMException('Settlement timed out.', 'TimeoutError'));
+    }, this.settlementTimeoutMs);
+    const outcomePromise = settleScheduleDispatch(receipt.settle, settlementController.signal)
+      .finally(() => {
+        clearTimeout(settlementTimeout);
+        this.activeSettlements.delete(settlementKey);
+      });
+    this.activeSettlements.set(settlementKey, {
+      controller: settlementController,
+      outcome: outcomePromise,
+    });
+    if (this.shuttingDown) {
+      settlementController.abort(new DOMException(
+        'Schedule manager stopped before settlement.',
+        'AbortError',
+      ));
+    }
+    const outcome = await outcomePromise;
     if (outcome.status === 'ok') {
       this.store.recordRunTerminal(runId, 'ok', { firedAtMs: startedAtMs, nextFireAt: this.nextFireFor(record.id) });
       this.emitEvent('schedule.completed', { scheduleId: record.id, runId, instanceId, attempt });
@@ -503,10 +550,11 @@ function errorMessage(value: unknown): string {
 }
 
 async function settleScheduleDispatch(
-  settlement: Awaited<ReturnType<typeof dispatchSchedule>>['settlement'],
+  settle: Awaited<ReturnType<typeof dispatchSchedule>>['settle'],
+  signal: AbortSignal,
 ): Promise<ObservationOutcome> {
   try {
-    await settlement;
+    await settle(signal);
     return { status: 'ok', error: null };
   } catch (error) {
     const name = error instanceof Error ? error.name : '';
@@ -514,5 +562,24 @@ async function settleScheduleDispatch(
       return { status: 'timeout', error: 'settlement timeout' };
     }
     return { status: 'error', error: errorMessage(error) };
+  }
+}
+
+async function waitForActiveSettlements(
+  settlements: Promise<ObservationOutcome>[],
+  graceMs: number,
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Promise.allSettled(settlements),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(resolve, graceMs);
+      }),
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 }
