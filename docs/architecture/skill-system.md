@@ -48,11 +48,11 @@ Agent Skills for capability authoring:
 
 | Skill | Purpose |
 | --- | --- |
-| `coding-worker.triage-loop` | Classify work and produce the execution plan |
-| `coding-worker.code-change-loop` | Plan, edit, verify, debug, and package changes |
-| `coding-worker.ci-debug-loop` | Diagnose and resolve failing checks |
-| `coding-worker.code-review-loop` | Perform independent requirements and regression review |
-| `coding-worker.github-pr-loop` | Manage approval-aware Git and GitHub workflows |
+| `coding-worker-triage-loop` | Classify work and produce the execution plan |
+| `coding-worker-code-change-loop` | Plan, edit, verify, debug, and package changes |
+| `coding-worker-ci-debug-loop` | Diagnose and resolve failing checks |
+| `coding-worker-code-review-loop` | Perform independent requirements and regression review |
+| `coding-worker-github-pr-loop` | Manage approval-aware Git and GitHub workflows |
 | `capability-design` | Classify extension responsibility and prepare the authoring boundary |
 | `skill-authoring` | Author Agent Skills-compatible packages |
 | `tool-authoring` | Author Flue `defineTool(...)` packages |

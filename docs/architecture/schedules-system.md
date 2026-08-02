@@ -15,7 +15,7 @@ Cron or manual fire
 -> create durable schedule run and unique instanceId
 -> init(Orchestrator, { id: instanceId })
 -> dispatch structured schedule signal with idempotency key
--> persist submissionId, uid, and acceptedAt
+-> persist submissionId and acceptedAt
 -> await handle.read(receipt) for the exact submission
 -> record ok, error, timeout, skipped, or retry state
 ```
@@ -34,9 +34,11 @@ Correlation uses:
 ```text
 instanceId
 submissionId
-uid
 acceptedAt
 ```
+
+Flue also returns `uid` on the transient dispatch receipt, but the schedule
+store does not persist that field.
 
 Schedule `runId` remains a SIM-ONE application identifier. It is not a Flue
 workflow run id. Flue 2 workflow routes and beta event correlation are not used.

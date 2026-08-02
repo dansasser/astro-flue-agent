@@ -109,8 +109,8 @@ normalize and persist trusted event
 -> resolve product session and active generation
 -> init(Orchestrator, { id: instanceId })
 -> dispatch(message)
--> persist the receipt
 -> read(receipt) to exact settlement
+-> persist delivery correlation from the settled dispatch result
 -> return result, stream metadata, event, and product-session metadata
 ```
 
