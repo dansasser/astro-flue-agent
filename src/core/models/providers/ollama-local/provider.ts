@@ -1,5 +1,6 @@
-import { registerProvider } from '@flue/runtime';
+import { setProvider } from '@flue/runtime';
 import { resolveProviderCardEnv } from '../../../../core/models/env.js';
+import { createOpenAICompatibleProvider } from '../../../../core/models/pi-provider.js';
 import { ollamaLocalProviderId } from '../../../../core/models/provider-ids.js';
 import type { AgentModelCard } from '../../../../core/models/types.js';
 
@@ -24,7 +25,13 @@ export function registerOllamaLocalProvider(
     return;
   }
 
-  registerProvider(ollamaLocalProviderId, registration);
+  setProvider(createOpenAICompatibleProvider({
+    id: ollamaLocalProviderId,
+    name: 'Ollama Local',
+    baseUrl: registration.baseUrl,
+    apiKey: registration.apiKey,
+    cards,
+  }));
 }
 
 export function resolveOllamaLocalProviderRegistration(
