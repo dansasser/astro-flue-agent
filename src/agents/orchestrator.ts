@@ -150,24 +150,34 @@ export function createOrchestratorComposition(
     scheduleRunsTool,
     telegramReplyTool,
   ];
+  const subagents: SubagentDefinition[] = [
+    createCapabilityManagerSubagent({ env }),
+    createCodingWorkerSubagent({
+      workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
+      stateRoot: runtimePaths.codingWorkerState,
+      env: createCodingWorkerToolEnv(env, runtimeRoot),
+      githubMcp: runtimeCodingWorkerGithubMcp,
+    }),
+    createResearcherSubagent(),
+  ];
+  const runtimeTools = retainUniqueRuntimeDefinitions(
+    'tool',
+    tools,
+    resolvedRuntimeCapabilities.tools,
+  );
+  const runtimeSubagents = retainUniqueRuntimeDefinitions(
+    'subagent',
+    subagents,
+    resolvedRuntimeCapabilities.subagents,
+  );
 
   return {
     model: selectedModelCard.specifier,
     compaction: createFlueCompactionConfig(selectedModelCard),
     instructions: orchestratorInstructions,
     skills: [greetingPreflight, ...resolvedRuntimeCapabilities.skills],
-    tools: [...tools, ...resolvedRuntimeCapabilities.tools],
-    subagents: [
-      createCapabilityManagerSubagent({ env }),
-      createCodingWorkerSubagent({
-        workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
-        stateRoot: runtimePaths.codingWorkerState,
-        env: createCodingWorkerToolEnv(env, runtimeRoot),
-        githubMcp: runtimeCodingWorkerGithubMcp,
-      }),
-      createResearcherSubagent(),
-      ...resolvedRuntimeCapabilities.subagents,
-    ],
+    tools: [...tools, ...runtimeTools],
+    subagents: [...subagents, ...runtimeSubagents],
     mcpConnections: [
       ...getBuiltinMcpConnections(),
       ...resolvedRuntimeCapabilities.mcpConnections,
@@ -175,6 +185,24 @@ export function createOrchestratorComposition(
     cwd: runtimePaths.packagedServer,
     sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
   };
+}
+
+function retainUniqueRuntimeDefinitions<T extends { name: string }>(
+  kind: 'tool' | 'subagent',
+  builtins: T[],
+  runtimeDefinitions: T[],
+): T[] {
+  const usedNames = new Set(builtins.map((definition) => definition.name));
+  return runtimeDefinitions.filter((definition) => {
+    if (usedNames.has(definition.name)) {
+      console.error(
+        `[capabilities] Ignoring runtime ${kind} ${definition.name}: the exported name conflicts with an attached definition.`,
+      );
+      return false;
+    }
+    usedNames.add(definition.name);
+    return true;
+  });
 }
 
 function resolveRuntimeCapabilitySnapshot(
