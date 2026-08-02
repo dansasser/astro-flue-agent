@@ -1,4 +1,9 @@
-import { defineAgentProfile, type AgentProfile, type ToolDefinition } from '@flue/runtime';
+import {
+  defineSubagent,
+  type SubagentDefinition,
+  type ToolDefinition,
+  useTool,
+} from '@flue/runtime';
 import {
   composeWorkspaceInstructions,
   resolveWorkspaceDirectory,
@@ -15,7 +20,38 @@ export interface CodingInternalSubagentConfig {
   tools?: ToolDefinition[];
 }
 
-export function createCodingInternalSubagent(config: CodingInternalSubagentConfig): AgentProfile {
+export interface CodingInternalSubagentComposition {
+  instructions: string;
+  tools: ToolDefinition[];
+}
+
+const compositionBySubagent = new WeakMap<
+  SubagentDefinition,
+  CodingInternalSubagentComposition
+>();
+
+export function createCodingInternalSubagent(
+  config: CodingInternalSubagentConfig,
+): SubagentDefinition {
+  const composition = createCodingInternalSubagentComposition(config);
+  const subagent = defineSubagent({
+    name: config.name,
+    description: config.description,
+    ...(config.model ? { model: config.model } : {}),
+    agent: function CodingInternalDelegate() {
+      for (const tool of composition.tools) {
+        useTool(tool);
+      }
+      return composition.instructions;
+    },
+  });
+  compositionBySubagent.set(subagent, composition);
+  return subagent;
+}
+
+export function createCodingInternalSubagentComposition(
+  config: CodingInternalSubagentConfig,
+): CodingInternalSubagentComposition {
   const instructions = [
     composeWorkspaceInstructions({
       workspaceDir: resolveWorkspaceDirectory(config.workspacePath),
@@ -24,13 +60,20 @@ export function createCodingInternalSubagent(config: CodingInternalSubagentConfi
     createInternalRuntimeBlock(config),
   ].join('\n\n');
 
-  return defineAgentProfile({
-    name: config.name,
-    description: config.description,
-    ...(config.model ? { model: config.model } : {}),
-    tools: config.tools ?? [],
+  return {
     instructions,
-  });
+    tools: config.tools ?? [],
+  };
+}
+
+export function getCodingInternalSubagentComposition(
+  subagent: SubagentDefinition,
+): CodingInternalSubagentComposition {
+  const composition = compositionBySubagent.get(subagent);
+  if (!composition) {
+    throw new Error(`Unknown coding-worker internal subagent: ${subagent.name}`);
+  }
+  return composition;
 }
 
 function createInternalRuntimeBlock(config: CodingInternalSubagentConfig): string {
@@ -44,4 +87,3 @@ The main orchestrator must not call this subagent directly. The coding-worker le
 
 Return structured findings, evidence, risks, and next actions to the coding-worker lead. Emit public trace summaries through the lead; do not expose raw hidden thinking or full internal prompts.`;
 }
-

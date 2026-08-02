@@ -9,6 +9,7 @@ import {
   connectCodingWorkerGithubMcp,
   createGitProcessEnvironment,
   McpGitHubClient,
+  prepareCodingWorkerGithubMcp,
 } from '../engine/workers/coding-worker/github/github-mcp.js';
 import {
   createGithubGitCredentialEnv,
@@ -93,6 +94,22 @@ test('GitHub MCP connection errors redact the configured PAT', async () => {
       return true;
     },
   );
+});
+
+test('runtime GitHub MCP preparation fails soft without exposing credentials', async () => {
+  const integration = await prepareCodingWorkerGithubMcp({
+    env: {
+      GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
+    },
+    connect: async () => {
+      throw new Error('upstream rejected Bearer secret-pat');
+    },
+  });
+
+  assert.equal(integration.client, undefined);
+  assert.deepEqual(integration.readTools, []);
+  assert.match(integration.unavailableReason ?? '', /failed during runtime startup/);
+  assert.doesNotMatch(JSON.stringify(integration), /secret-pat/);
 });
 
 test('MCP Git operations keep the PAT out of anonymous fetch and checkout', async () => {

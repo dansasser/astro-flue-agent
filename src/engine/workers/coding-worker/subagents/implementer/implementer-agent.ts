@@ -1,10 +1,10 @@
-import type { AgentProfile, ToolDefinition } from '@flue/runtime';
+import type { SubagentDefinition, ToolDefinition } from '@flue/runtime';
 import { createCodingInternalSubagent } from '../../../../../engine/workers/coding-worker/subagents/profile-factory.js';
 import { createCodingImplementerTools } from '../../../../../engine/workers/coding-worker/tools/coding-implementer-tools.js';
 
 export const codingImplementerSubagentName = 'coding-worker-implementer';
 
-export function createCodingImplementerSubagent(model?: string, tools?: ToolDefinition[]): AgentProfile {
+export function createCodingImplementerSubagent(model?: string, tools?: ToolDefinition[]): SubagentDefinition {
   const implementerTools = createCodingImplementerTools();
   const mergedTools = mergeToolsByName(tools ?? [], implementerTools);
 

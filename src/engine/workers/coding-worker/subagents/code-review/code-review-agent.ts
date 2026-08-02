@@ -1,4 +1,4 @@
-import type { AgentProfile, ToolDefinition } from '@flue/runtime';
+import type { SubagentDefinition, ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 import {
   CodingCodeReviewFindingSchema,
@@ -10,7 +10,7 @@ import { createCodingInternalSubagent } from '../../../../../engine/workers/codi
 
 export const codingCodeReviewSubagentName = 'coding-worker-code-review';
 
-export function createCodingCodeReviewSubagent(model?: string, tools?: ToolDefinition[]): AgentProfile {
+export function createCodingCodeReviewSubagent(model?: string, tools?: ToolDefinition[]): SubagentDefinition {
   return createCodingInternalSubagent({
     kind: 'code-review',
     name: codingCodeReviewSubagentName,
