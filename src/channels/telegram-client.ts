@@ -100,6 +100,7 @@ export function createTelegramReplyTool(
         event: 'telegram.send_started',
         chunkCount: chunks.length,
       });
+      let deliveredChunkCount = 0;
       try {
         for (const [index, chunk] of chunks.entries()) {
           await telegramClient.sendMessage(conversation.chatId, chunk, {
@@ -108,13 +109,21 @@ export function createTelegramReplyTool(
             direct_messages_topic_id: conversation.directMessagesTopicId,
             parse_mode: format === 'markdownv2' ? 'MarkdownV2' : undefined,
           });
+          deliveredChunkCount += 1;
         }
       } catch (error) {
         log.error('Telegram send failed.', {
           event: 'telegram.send_failed',
           chunkCount: chunks.length,
+          deliveredChunkCount,
           errorType: error instanceof Error ? error.name : 'unknown',
         });
+        if (deliveredChunkCount > 0) {
+          throw new Error(
+            `Telegram partially delivered ${deliveredChunkCount} of ${chunks.length} chunks; do not retry the full response.`,
+            { cause: error },
+          );
+        }
         throw error;
       }
       log.info('Telegram send completed.', {

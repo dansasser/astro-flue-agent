@@ -52,13 +52,23 @@ try {
 
   child = await startGateway();
   await postTelegramUpdate(child.port, 100, 500, 'first message');
-  await waitFor(() => fixtures.telegramMessages().length === 1, 'first Telegram reply');
+  await waitFor(
+    () => fixtures.telegramMessages().length === 1
+      && settledSubmissionCount() === 1
+      && indexedPromptCount() === 1,
+    'first Telegram reply, settled submission, and indexed prompt',
+  );
   await stopGateway(child.process);
   child = undefined;
 
   child = await startGateway();
   await postTelegramUpdate(child.port, 101, 501, 'second message after restart');
-  await waitFor(() => fixtures.telegramMessages().length === 2, 'second Telegram reply');
+  await waitFor(
+    () => fixtures.telegramMessages().length === 2
+      && settledSubmissionCount() === 2
+      && indexedPromptCount() === 2,
+    'second Telegram reply, settled submission, and indexed prompt',
+  );
   await stopGateway(child.process);
   child = undefined;
 
@@ -77,14 +87,46 @@ try {
     ORDER BY sequence
   `).all();
   database.close();
+  const productDatabase = new DatabaseSync(sessionDatabasePath, { readOnly: true });
+  const productSessions = productDatabase.prepare(`
+    SELECT session_id, origin, actor_id, conversation_id
+    FROM chat_sessions
+    ORDER BY created_at
+  `).all();
+  const generations = productDatabase.prepare(`
+    SELECT session_id, instance_id
+    FROM chat_session_generations
+    ORDER BY generation
+  `).all();
+  const activeSessions = productDatabase.prepare(`
+    SELECT connector, actor_id, conversation_id, session_id
+    FROM active_sessions
+  `).all();
+  productDatabase.close();
   assert(submissions.length === 2, `expected two persisted Telegram submissions, got ${submissions.length}`);
   assert(new Set(submissions.map((row) => row.session_key)).size === 1, 'Telegram restart created a second Flue instance');
   assert(submissions.every((row) => row.status === 'settled'), 'Telegram submission did not settle');
-  assert(String(submissions[0].session_key).includes('telegram:'), 'persisted instance is not Telegram-scoped');
+  assert(productSessions.length === 1, `expected one Telegram product session, got ${productSessions.length}`);
+  assert(productSessions[0].origin === 'connector', 'Telegram product session has the wrong origin');
+  assert(productSessions[0].actor_id === '42', 'Telegram product session has the wrong actor');
+  assert(productSessions[0].conversation_id === '9001', 'Telegram product session has the wrong conversation');
+  assert(generations.length === 1, `expected one active Telegram generation, got ${generations.length}`);
+  assert(generations[0].session_id === productSessions[0].session_id, 'Telegram generation belongs to another product session');
+  assert(
+    submissions.every((row) => String(row.session_key).includes(String(generations[0].instance_id))),
+    'persisted Flue submissions do not use the Telegram product-session generation',
+  );
+  assert(activeSessions.length === 1, `expected one active Telegram connector session, got ${activeSessions.length}`);
+  assert(activeSessions[0].connector === 'telegram', 'active connector session is not Telegram-scoped');
+  assert(activeSessions[0].actor_id === '42', 'active Telegram connector session has the wrong actor');
+  assert(activeSessions[0].conversation_id === '9001', 'active Telegram connector session has the wrong conversation');
+  assert(activeSessions[0].session_id === productSessions[0].session_id, 'active Telegram connector session points elsewhere');
+  assert(indexedPromptCount() === 2, 'Telegram prompts were not searchable after gateway restart');
 
   console.log('[telegram-product] authenticated webhooks admitted before and after gateway restart.');
   console.log('[telegram-product] outbound Bot API replies reached the same bound chat.');
   console.log(`[telegram-product] one persisted Flue session handled ${submissions.length} settled submissions.`);
+  console.log('[telegram-product] both prompts remained indexed after gateway restart.');
   console.log('[telegram-product] PASS');
 } finally {
   try {
@@ -233,6 +275,43 @@ function diagnosticState() {
     stdout: stdout.slice(-4000),
     stderr: stderr.slice(-4000),
   }, null, 2);
+}
+
+function settledSubmissionCount() {
+  if (!flueV2DatabasePath || !existsSync(flueV2DatabasePath)) {
+    return 0;
+  }
+  try {
+    const database = new DatabaseSync(flueV2DatabasePath, { readOnly: true });
+    const row = database.prepare(`
+      SELECT COUNT(*) AS count
+      FROM flue_agent_submissions
+      WHERE status = 'settled'
+    `).get();
+    database.close();
+    return Number(row?.count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+function indexedPromptCount() {
+  if (!sessionDatabasePath || !existsSync(sessionDatabasePath)) {
+    return 0;
+  }
+  try {
+    const database = new DatabaseSync(sessionDatabasePath, { readOnly: true });
+    const row = database.prepare(`
+      SELECT COUNT(*) AS count
+      FROM session_memory_chunks
+      WHERE role = 'user'
+        AND content IN ('first message', 'second message after restart')
+    `).get();
+    database.close();
+    return Number(row?.count ?? 0);
+  } catch {
+    return 0;
+  }
 }
 
 async function stopGateway(processHandle) {

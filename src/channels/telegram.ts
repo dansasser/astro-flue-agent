@@ -1,4 +1,9 @@
-import { dispatch } from '@flue/runtime';
+import {
+  dispatch,
+  init,
+  type AgentReply,
+  type DispatchReceipt,
+} from '@flue/runtime';
 import { createTelegramChannel, type TelegramConversationRef } from '@flue/telegram';
 import type { Message, Update } from 'grammy/types';
 import { Orchestrator } from '../agents/orchestrator.js';
@@ -9,6 +14,9 @@ import {
 import { createSharedCodingApprovalService } from '../engine/approvals/shared-approval-service.js';
 import { goromboPersistenceRuntime } from '../db.js';
 import { resolveChatSession } from '../engine/session/session-routing.js';
+import { renderContinuationContext } from '../engine/session/continuation-context.js';
+import { agentConversationUrl } from '../engine/session/flue-conversation.js';
+import type { NormalizedMessageEvent } from '../core/types/index.js';
 import { createChatPrompt } from '../api/routes/chat-prompt.js';
 import { normalizeTelegramUpdate } from '../api/connectors/telegram/telegram.js';
 import { buildApprovalResolvedMessage, parseApprovalCallback } from '../api/connectors/telegram/approval-ui/index.js';
@@ -171,33 +179,136 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
     update_id: update.update_id,
     message: incoming as unknown as Parameters<typeof normalizeTelegramUpdate>[0]['message'],
   });
-  const activeChannel = getOrCreateTelegramChannel();
-  const agentInstanceId = activeChannel.instanceId(conversationFromMessage(incoming));
-
-  const sessionResolution = resolveChatSession({ event: normalized });
-  goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
+  return dispatchTelegramNormalizedMessage({
     event: normalized,
+    conversation: conversationFromMessage(incoming),
+    updateId: update.update_id,
+    messageId: incoming.message_id,
+  });
+}
+
+type TelegramAgentDispatch = typeof dispatch;
+
+export interface TelegramDispatchDependencies {
+  dispatchAgent?: TelegramAgentDispatch;
+  settleAgent?: (instanceId: string, receipt: DispatchReceipt) => Promise<AgentReply>;
+  scheduleBackground?: (task: () => Promise<void>) => void;
+}
+
+export async function dispatchTelegramNormalizedMessage(
+  input: {
+    event: NormalizedMessageEvent;
+    conversation: TelegramConversationRef;
+    updateId: number;
+    messageId: number;
+  },
+  dependencies: TelegramDispatchDependencies = {},
+): Promise<DispatchReceipt> {
+  const sessionResolution = resolveChatSession({ event: input.event });
+  const generation = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(
+    sessionResolution.sessionId,
+  );
+  goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
+    event: input.event,
     sessionId: sessionResolution.sessionId,
     deliveryKind: 'direct-agent',
   });
-  const receipt = await dispatch(Orchestrator, {
-    id: agentInstanceId,
-    idempotencyKey: telegramDispatchIdempotencyKey(update.update_id),
-    initialData: conversationData(conversationFromMessage(incoming)),
+
+  const prompt = createChatPrompt(input.event);
+  const message = generation.continuationSummary
+    ? `${renderContinuationContext({
+        productSessionId: sessionResolution.sessionId,
+        generation: generation.generation,
+        continuationSummary: generation.continuationSummary,
+      })}\n\n${prompt}`
+    : prompt;
+  const dispatchAgent = dependencies.dispatchAgent ?? dispatch;
+  const receipt = await dispatchAgent(Orchestrator, {
+    id: generation.instanceId,
+    idempotencyKey: telegramDispatchIdempotencyKey(input.updateId),
+    initialData: {
+      ...conversationData(input.conversation),
+      productSessionId: sessionResolution.sessionId,
+      generation: generation.generation,
+      ...(generation.continuationSummary
+        ? { continuationSummary: generation.continuationSummary }
+        : {}),
+    },
     message: {
       kind: 'signal',
       type: 'telegram.message',
       tagName: 'telegram_message',
       attributes: {
-        updateId: String(update.update_id),
-        eventId: normalized.id,
-        messageId: String(incoming.message_id),
+        updateId: String(input.updateId),
+        eventId: input.event.id,
+        messageId: String(input.messageId),
       },
-      body: createChatPrompt(normalized),
+      body: message,
     },
   });
 
+  goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
+    event: input.event,
+    sessionId: sessionResolution.sessionId,
+    deliveryKind: 'direct-agent',
+    deliveryId: receipt.submissionId,
+    delivery: {
+      submissionId: receipt.submissionId,
+      instanceId: generation.instanceId,
+      uid: receipt.uid,
+      streamUrl: agentConversationUrl(generation.instanceId),
+    },
+    acceptedAt: receipt.acceptedAt,
+  });
+
+  const settleAgent = dependencies.settleAgent ?? settleTelegramSubmission;
+  const scheduleBackground = dependencies.scheduleBackground ?? ((task) => {
+    setImmediate(() => {
+      void task().catch((error) => {
+        console.error(
+          '[WARN] Telegram submission settlement failed:',
+          error instanceof Error ? error.message : String(error),
+        );
+      });
+    });
+  });
+  scheduleBackground(async () => {
+    const reply = await settleAgent(generation.instanceId, receipt);
+    const now = new Date().toISOString();
+    await goromboPersistenceRuntime.sessionDatabase.indexFlueConversationSnapshot(
+      sessionResolution.sessionId,
+      {
+        v: 1,
+        conversationId: generation.instanceId,
+        offset: receipt.uid,
+        settlements: [{
+          submissionId: receipt.submissionId,
+          outcome: 'completed',
+          answeredBySubmissionId: reply.submissionId,
+        }],
+        messages: reply.text.trim()
+          ? [{
+              id: `telegram:${reply.submissionId}:assistant`,
+              role: 'assistant',
+              purpose: 'assistant',
+              display: 'visible',
+              submissionId: receipt.submissionId,
+              parts: [{ type: 'text', text: reply.text, state: 'done' }],
+              ...(reply.metadata ? { metadata: reply.metadata } : {}),
+            }]
+          : [],
+      },
+    );
+  });
+
   return receipt;
+}
+
+async function settleTelegramSubmission(
+  instanceId: string,
+  receipt: DispatchReceipt,
+): Promise<AgentReply> {
+  return init(Orchestrator, { id: instanceId }).read(receipt);
 }
 
 export function telegramDispatchIdempotencyKey(updateId: number): string {

@@ -97,6 +97,31 @@ test('Telegram reply tool chunks long messages and replies only from the first c
   assert.ok(calls.every((call) => call.options.message_thread_id === 12));
 });
 
+test('Telegram reply tool reports partial delivery without hiding delivered chunks', async () => {
+  let attempts = 0;
+  const event = telegramEvent('telegram:44');
+  const tool = createTelegramReplyTool({ connector: 'telegram', chatId: 9001 }, {
+    eventId: event.id,
+  }, {
+    loadEvent: (eventId) => (eventId === event.id ? event : undefined),
+    client: {
+      sendMessage: (async () => {
+        attempts += 1;
+        if (attempts === 2) {
+          throw new Error('provider unavailable');
+        }
+        return {} as never;
+      }) as never,
+    },
+  });
+
+  await assert.rejects(
+    runToolForText(tool, { text: 'a'.repeat(5_000) }),
+    /partially delivered 1 of 2 chunks; do not retry the full response/i,
+  );
+  assert.equal(attempts, 2);
+});
+
 function telegramEvent(id: string): NormalizedMessageEvent {
   return {
     id,
