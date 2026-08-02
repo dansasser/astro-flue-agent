@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { startDeterministicChatProvider } from './deterministic-chat-provider.mjs';
 import { acquireProductArtifactLock } from './product-artifact-lock.mjs';
 
 const runtimeRoot = resolve('.gorombo');
@@ -27,15 +28,27 @@ const modelEnv = {
     process.env.CODEX_BRAIN_LOCAL_API_KEY || 'built-http-test-key',
   CODEX_BRAIN_LOCAL_API_URL:
     process.env.CODEX_BRAIN_LOCAL_API_URL || 'https://dt1.example.test/v1',
+  RUNPOD_API_KEY: 'built-http-test-key',
 };
 
 let stderr = '';
 let stdout = '';
 let child;
+let deterministicChatProvider;
 
 try {
   originalConfig = readFileSync(configPath, 'utf8');
   const config = JSON.parse(originalConfig);
+  const previousPrimary = config.models?.primary;
+  config.models = {
+    ...config.models,
+    primary: 'kimi-k2-6-runpod',
+    ...(config.models?.backup === 'kimi-k2-6-runpod' &&
+    previousPrimary &&
+    previousPrimary !== 'kimi-k2-6-runpod'
+      ? { backup: previousPrimary }
+      : {}),
+  };
   config.storage = {
     ...(config.storage ?? {}),
     flueDatabasePath: join(codingWorkspaceRoot, 'flue.sqlite'),
@@ -43,12 +56,14 @@ try {
     vectorStorePath: join(codingWorkspaceRoot, 'vectors'),
   };
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+  deterministicChatProvider = await startDeterministicChatProvider();
 
   child = spawn(process.execPath, nodeArgs, {
     cwd: runtimeRoot,
     env: {
       ...process.env,
       ...modelEnv,
+      RUNPOD_CHAT_BASE_URL: deterministicChatProvider.baseUrl,
       GOROMBO_RUNTIME_ROOT: runtimeRoot,
       PORT: String(port),
       API_SECRET: requestSecret,
@@ -172,7 +187,6 @@ try {
       );
     },
   );
-
   await expectStatus(
     `${baseUrl}/api/chat/sessions/${encodeURIComponent(firstLifecycleId)}/resume`,
     {
@@ -228,14 +242,14 @@ try {
   );
 
   await expectStatus(
-    `${baseUrl}/workflows/not-real`,
+    `${baseUrl}/agents/orchestrator/not-real`,
     {
       method: 'POST',
       headers: { ...externalHeaders, 'content-type': 'application/json' },
       body: JSON.stringify({ text: 'auth check' }),
     },
     401,
-    'workflow route without secret',
+    'agent route without secret',
   );
 
   const webNewCommand = await expectJsonStatus(
@@ -438,39 +452,38 @@ try {
       );
     },
   );
-
-  const missingRunId = 'agent:orchestrator:built-http-missing-run';
-  await expectStatus(`${baseUrl}/runs/${encodeURIComponent(missingRunId)}`, { method: 'GET', headers: externalHeaders }, 401, 'run lookup without secret');
-  await expectStatus(
-    `${baseUrl}/runs/${encodeURIComponent(missingRunId)}`,
-    {
-      method: 'GET',
-      headers: { ...externalHeaders, 'x-api-secret': requestSecret },
-    },
-    404,
-    'missing run lookup with secret',
+  assertJson(
+    deterministicChatProvider.requestCount() > 0,
+    'compact command did not reach the deterministic chat provider',
   );
 
+  const missingExecutionId = 'built-http-missing-execution';
   await expectStatus(
-    `${baseUrl}/api/telemetry/runs/${encodeURIComponent(missingRunId)}`,
+    `${baseUrl}/api/telemetry/executions/${encodeURIComponent(missingExecutionId)}`,
+    { method: 'GET', headers: externalHeaders },
+    401,
+    'telemetry execution lookup without secret',
+  );
+  await expectStatus(
+    `${baseUrl}/api/telemetry/executions/${encodeURIComponent(missingExecutionId)}`,
     {
       method: 'GET',
       headers: { ...externalHeaders, 'x-api-secret': requestSecret },
     },
     404,
-    'missing telemetry run with secret',
+    'missing telemetry execution with secret',
   );
 
   await expectJsonStatus(
-    `${baseUrl}/api/telemetry/runs`,
+    `${baseUrl}/api/telemetry/executions`,
     {
       method: 'GET',
       headers: { ...externalHeaders, 'x-api-secret': requestSecret },
     },
     200,
-    'telemetry run list with secret',
+    'telemetry execution list with secret',
     (body) => {
-      assertJson(Array.isArray(body.runs), 'telemetry snapshot did not include a runs array');
+      assertJson(Array.isArray(body.executions), 'telemetry snapshot did not include an executions array');
       assertJson(typeof body.unscopedEventCount === 'number', 'telemetry snapshot did not include unscopedEventCount');
     },
   );
@@ -484,6 +497,9 @@ try {
   } finally {
     if (originalConfig !== undefined) {
       writeFileSync(configPath, originalConfig);
+    }
+    if (deterministicChatProvider) {
+      await deterministicChatProvider.close();
     }
     rmSync(codingWorkspaceRoot, { recursive: true, force: true });
     await releaseArtifactLock();
