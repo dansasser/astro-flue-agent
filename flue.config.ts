@@ -1,5 +1,5 @@
-import { defineConfig } from '@flue/cli/config';
+import { defineConfig } from '@flue/runtime/config';
 
 export default defineConfig({
-  output: './.gorombo/sim-one-alpha',
+  target: 'node',
 });

@@ -12,6 +12,7 @@ runtime flow or inspect a specific subsystem.
 | [Architecture Overview](overview.md) | High-level product identity, governed runtime flow, Flue foundation, SIM-ONE governance, persistence, and security boundaries |
 | [Execution Workflows](execution-workflows.md) | End-to-end conversational, research, memory, coding, scheduled, capability, and authentication execution flows |
 | [Flue Architecture Contract](flue-architecture.md) | Required ownership boundaries for Flue agents, workflows, tools, skills, subagents, models, and application ingress |
+| [Flue 2 Migration Specification](flue-v2-migration.md) | Implementation contract for migrating the beta runtime, clients, packaging, persistence, tests, and documentation to Flue 2 |
 | [SIM-ONE Alpha Flue Map](gorombo-flue-map.md) | Detailed source ownership map from repository paths to Flue and SIM-ONE responsibilities |
 
 ## Governance And Execution

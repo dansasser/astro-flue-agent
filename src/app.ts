@@ -1,6 +1,7 @@
 import './core/config/runtime-environment-bootstrap.js';
-import { flue } from '@flue/runtime/routing';
+import { createAgentRouter } from '@flue/runtime/routing';
 import { Hono } from 'hono';
+import Orchestrator from './agents/orchestrator.js';
 import './core/models/runtime.js';
 import './engine/schedules/boot.js';
 import { requireApiSecret } from './api/middleware/api-secret.js';
@@ -30,6 +31,6 @@ registerSchedulesRoutes(app);
 registerTelemetryRoutes(app);
 registerApprovalRoutes(app);
 registerTelegramAdminRoutes(app);
-app.route('/', flue());
+app.route('/agents/orchestrator', createAgentRouter(Orchestrator));
 
 export default app;

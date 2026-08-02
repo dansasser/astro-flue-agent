@@ -9034,13 +9034,349 @@
       "max_traversals": null,
       "to": "specify-task-lifecycle-architecture",
       "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "Grounded project context is current and bound before the Flue 2 migration specification is maintained.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-context-to-specify-flue-v2-migration",
+      "max_traversals": null,
+      "to": "specify-flue-v2-migration",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "A changed grounded baseline invalidates the Flue 2 migration specification.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-context-invalidates-flue-v2-migration",
+      "max_traversals": null,
+      "to": "specify-flue-v2-migration",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "The Flue 2 migration specification is current and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:release-reconciliation-specification-verification"
+      ],
+      "condition": "A material change to the Flue 2 migration specification invalidates this downstream output.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-verify-release-reconciliation-specifications-invalidates",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "The Flue 2 migration specification is current and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-plan-implementation-consumes",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:implementation-plan"
+      ],
+      "condition": "A material change to the Flue 2 migration specification invalidates this downstream output.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-plan-implementation-invalidates",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "The Flue 2 migration specification is current and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-review-architecture-security-consumes",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:architecture-security-review"
+      ],
+      "condition": "A material change to the Flue 2 migration specification invalidates this downstream output.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-review-architecture-security-invalidates",
+      "max_traversals": null,
+      "to": "review-architecture-security",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "The Flue 2 migration specification is current and bound to this run.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-integrate-and-repair-consumes",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:integrated-change"
+      ],
+      "condition": "A material change to the Flue 2 migration specification invalidates this downstream output.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "flue-v2-spec-to-integrate-and-repair-invalidates",
+      "max_traversals": null,
+      "to": "integrate-and-repair",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-migration-spec"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "specify-flue-v2-migration-to-migrate-flue-v2-foundation-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-foundation-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "specify-flue-v2-migration",
+      "id": "specify-flue-v2-migration-to-migrate-flue-v2-foundation-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-foundation-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-foundation",
+      "id": "migrate-flue-v2-foundation-to-migrate-flue-v2-agents-workers-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-agents-workers",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-agents-workers-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-foundation",
+      "id": "migrate-flue-v2-foundation-to-migrate-flue-v2-agents-workers-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-agents-workers",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-agents-workers-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-agents-workers",
+      "id": "migrate-flue-v2-agents-workers-to-migrate-flue-v2-capabilities-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-capabilities",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-capabilities-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-agents-workers",
+      "id": "migrate-flue-v2-agents-workers-to-migrate-flue-v2-capabilities-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-capabilities",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-capabilities-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-capabilities",
+      "id": "migrate-flue-v2-capabilities-to-migrate-flue-v2-execution-persistence-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-execution-persistence",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-execution-persistence-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-capabilities",
+      "id": "migrate-flue-v2-capabilities-to-migrate-flue-v2-execution-persistence-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-execution-persistence",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-execution-persistence-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-execution-persistence",
+      "id": "migrate-flue-v2-execution-persistence-to-migrate-flue-v2-connectors-clients-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-connectors-clients",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-connectors-clients-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-execution-persistence",
+      "id": "migrate-flue-v2-execution-persistence-to-migrate-flue-v2-connectors-clients-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-connectors-clients",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-connectors-clients-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-connectors-clients",
+      "id": "migrate-flue-v2-connectors-clients-to-migrate-flue-v2-product-packaging-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-product-packaging",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-product-packaging-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-connectors-clients",
+      "id": "migrate-flue-v2-connectors-clients-to-migrate-flue-v2-product-packaging-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-product-packaging",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-product-packaging-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-product-packaging",
+      "id": "migrate-flue-v2-product-packaging-to-migrate-flue-v2-documentation-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-documentation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-documentation-change"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-product-packaging",
+      "id": "migrate-flue-v2-product-packaging-to-migrate-flue-v2-documentation-invalidates",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-documentation",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-documentation-change"
+      ],
+      "condition": "The upstream Flue 2 migration milestone is verified and its artifact is current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-documentation",
+      "id": "migrate-flue-v2-documentation-to-verify-flue-v2-production-migration-consumes",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-production-verification"
+      ],
+      "condition": "A material upstream migration change invalidates the dependent milestone.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-documentation",
+      "id": "migrate-flue-v2-documentation-to-verify-flue-v2-production-migration-invalidates",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "Grounded repository context is verified before implementation.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-flue-v2-foundation",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-foundation-change"
+      ],
+      "condition": "A changed repository baseline invalidates the migration foundation.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-invalidates-flue-v2-foundation",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-foundation",
+      "type": "invalidates"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 60,
+  "graph_version": 65,
   "nodes": [
     {
       "acceptance": [
@@ -9754,6 +10090,12 @@
           "evidence": "runtime:evidence/plan-implementation/tui-status-approval-lineage.json",
           "id": "tui-status-approval-lineage-mapped",
           "kind": "policy"
+        },
+        {
+          "criterion": "The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output.",
+          "evidence": "runtime:evidence/plan-implementation/flue-v2-migration.json",
+          "id": "flue-v2-migration-bound",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -9928,6 +10270,11 @@
           "artifact": "decision:d9-flue-native-task-graph-runtime",
           "name": "resolved Flue-native task graph runtime decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "name": "Flue 2 migration specification",
+          "required": true
         }
       ],
       "outputs": [
@@ -9987,7 +10334,8 @@
           "decision:d11-shared-task-graph-engine",
           "decision:d7-separate-project-and-task-graphs",
           "decision:d8-memory-helper-task-runs",
-          "decision:d9-flue-native-task-graph-runtime"
+          "decision:d9-flue-native-task-graph-runtime",
+          "docs/architecture/flue-v2-migration.md"
         ],
         "write": [
           "doc/implementation-lineage.md"
@@ -11253,6 +11601,12 @@
           "evidence": "runtime:evidence/integrate-and-repair/company-instruction-exclusion.json",
           "id": "company-instruction-exclusion-preserved",
           "kind": "policy"
+        },
+        {
+          "criterion": "The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output.",
+          "evidence": "runtime:evidence/integrate-and-repair/flue-v2-migration.json",
+          "id": "flue-v2-migration-bound",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -11487,6 +11841,11 @@
           "artifact": "decision:d10-sealed-node-context",
           "name": "resolved sealed per-node context decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "name": "Flue 2 migration specification",
+          "required": true
         }
       ],
       "outputs": [
@@ -11516,7 +11875,8 @@
           "doc/decisions/d9-flue-native-task-graph-runtime.md",
           "decision:d10-sealed-node-context",
           "doc/decisions/d10-sealed-node-context.md",
-          "doc/decisions/d11-shared-task-graph-engine.md"
+          "doc/decisions/d11-shared-task-graph-engine.md",
+          "docs/architecture/flue-v2-migration.md"
         ],
         "write": [
           "authorized project files across affected domains, excluding src/AGENTS.md"
@@ -13158,6 +13518,12 @@
           "evidence": "runtime:evidence/review-architecture-security/release-lineage.json",
           "id": "release-lineage-consistent",
           "kind": "review"
+        },
+        {
+          "criterion": "The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output.",
+          "evidence": "runtime:evidence/review-architecture-security/flue-v2-migration.json",
+          "id": "flue-v2-migration-bound",
+          "kind": "review"
         }
       ],
       "execution": {
@@ -13212,6 +13578,11 @@
           "artifact": "artifact:task-lifecycle-architecture-spec",
           "name": "task lifecycle graph architecture specification",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "name": "Flue 2 migration specification",
+          "required": true
         }
       ],
       "outputs": [
@@ -13262,7 +13633,8 @@
           "decision:d8-memory-helper-task-runs",
           "decision:d9-flue-native-task-graph-runtime",
           "artifact:task-lifecycle-architecture-spec",
-          "docs/architecture/task-lifecycle-graphs.md"
+          "docs/architecture/task-lifecycle-graphs.md",
+          "docs/architecture/flue-v2-migration.md"
         ],
         "write": []
       },
@@ -15201,6 +15573,12 @@
           "evidence": "runtime:evidence/verify-release-reconciliation-specifications/release-ledger-complete.json",
           "id": "release-ledger-complete",
           "kind": "review"
+        },
+        {
+          "criterion": "The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output.",
+          "evidence": "runtime:evidence/verify-release-reconciliation-specifications/flue-v2-migration.json",
+          "id": "flue-v2-migration-bound",
+          "kind": "test"
         }
       ],
       "execution": {
@@ -15360,6 +15738,11 @@
           "artifact": "decision:d11-shared-task-graph-engine",
           "name": "resolved shared task graph engine decision",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "name": "Flue 2 migration specification",
+          "required": true
         }
       ],
       "outputs": [
@@ -15411,7 +15794,8 @@
           "decision:d10-sealed-node-context",
           "doc/decisions/d10-sealed-node-context.md",
           "decision:d11-shared-task-graph-engine",
-          "doc/decisions/d11-shared-task-graph-engine.md"
+          "doc/decisions/d11-shared-task-graph-engine.md",
+          "docs/architecture/flue-v2-migration.md"
         ],
         "write": []
       },
@@ -18557,10 +18941,1027 @@
       ],
       "title": "Specify Task Lifecycle Graph Architecture",
       "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "All 13 official Flue 2 migration checklist items are mapped to observed SIM-ONE beta.1 source, runtime, packaging, documentation, and test surfaces with required changes and evidence.",
+          "evidence": "docs/architecture/flue-v2-migration.md",
+          "id": "official-checklist-mapped",
+          "kind": "review"
+        },
+        {
+          "criterion": "The target preserves Flue ownership, protocol-first orchestration, runtime capability registries, connector-owned session policy, approval boundaries, the movable .gorombo product runtime, and the SIM-ONE TUI product contract.",
+          "evidence": "docs/architecture/flue-v2-migration.md",
+          "id": "product-contracts-preserved",
+          "kind": "policy"
+        },
+        {
+          "criterion": "The reset-only Flue persistence boundary is explicit, no beta database is silently reused or deleted, and any unresolved history-retention choice is recorded before implementation crosses the storage boundary.",
+          "evidence": "docs/architecture/flue-v2-migration.md",
+          "id": "reset-boundary-explicit",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Implementation is sequenced into dependency-ordered, stackable milestones whose pull requests each remain below 100 changed files, with shared contracts landing before dependent slices.",
+          "evidence": "docs/architecture/flue-v2-migration.md",
+          "id": "delivery-slices-bounded",
+          "kind": "review"
+        },
+        {
+          "criterion": "The specification names focused and full production verification for agents, tools, providers, persistence, sessions, HTTP, Telegram, TUI streaming, packaging, and documentation.",
+          "evidence": "docs/architecture/flue-v2-migration.md",
+          "id": "verification-and-docs-mapped",
+          "kind": "test"
+        },
+        {
+          "criterion": "The migration specification is registered in the architecture documentation index and the repository documentation checker passes.",
+          "evidence": "docs/architecture/README.md",
+          "id": "architecture-indexed",
+          "kind": "review"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every migration acceptance criterion is represented in the specification and the specification manifest verifies against the current graph.",
+        "max_attempts": 2,
+        "timeout_minutes": 120
+      },
+      "executor": {
+        "instructions": "Maintain the normative Flue 2 migration specification from official Flue 2.0.1 sources and observed SIM-ONE beta.1 behavior. Do not rewrite current-state architecture documents as if migration were already implemented.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue migration architect"
+      },
+      "goal": "Translate the official Flue 2.0.1 migration contract and SIM-ONE current implementation into one implementation-ready, graph-bound migration specification.",
+      "id": "specify-flue-v2-migration",
+      "inputs": [
+        {
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "format": "text/markdown",
+          "name": "Flue 2 migration specification"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/migration/",
+          "https://flueframework.com/docs/",
+          "https://github.com/withastro/flue/blob/main/CHANGELOG.md",
+          "https://www.npmjs.com/package/@flue/runtime"
+        ],
+        "read": [
+          "artifact:baseline-context",
+          "package.json",
+          "pnpm-lock.yaml",
+          "flue.config.ts",
+          "src/",
+          "sim-one-cli/",
+          "tui/ratatui/",
+          "scripts/",
+          ".github/workflows/",
+          "docs/",
+          "openwiki/",
+          "development-graph.json",
+          "development-graph.md",
+          "specification-manifest.json",
+          "decisions.json"
+        ],
+        "write": [
+          "docs/architecture/flue-v2-migration.md",
+          "specification-manifest.json",
+          "docs/architecture/README.md"
+        ]
+      },
+      "resources": [
+        "docs/architecture/flue-v2-migration.md",
+        "specification-manifest.json",
+        "docs/architecture/README.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates the Flue 2 migration specification and its manifest binding.",
+        "level": "reversible",
+        "rollback": "Restore the specification and manifest from version control, then invalidate downstream planning and implementation."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "specification",
+        "flue",
+        "migration",
+        "release-blocker"
+      ],
+      "title": "Specify Flue 2 Migration",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count before commit or PR preparation.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/file-count.json",
+          "id": "foundation-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "All coordinated @flue packages are pinned to the same verified 2.0.1 release and required Vite, Pi, and sandbox dependencies are declared without a beta Flue package remaining in the lockfile.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/package-pins.json",
+          "id": "flue-2-pins",
+          "kind": "test"
+        },
+        {
+          "criterion": "Vite owns dev/build, flue.config.ts uses @flue/runtime/config without root/output, and Vite resolves the Node project through the foundation into an exact downstream migration diagnostic; executable server artifact verification is reserved for the final stacked verification node.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/vite-build.json",
+          "id": "vite-build-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "src/app.ts explicitly mounts the orchestrator agent router while preserving health, auth, custom API routes, schedules, telemetry, approvals, and Telegram administration.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/routing.json",
+          "id": "explicit-routing-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "RunPod, Ollama cloud/local, and Codex Brain providers use Pi createProvider plus Flue setProvider while preserving model-card metadata and canonical runtime credential lookup.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/providers.json",
+          "id": "pi-provider-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused package, routing, provider, and configuration checks pass; repository-wide typecheck and Vite build diagnostics are captured as explicit downstream handoff evidence rather than hidden or bypassed.",
+          "evidence": "runtime:evidence/migrate-flue-v2-foundation/verification.json",
+          "id": "foundation-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All focused foundation acceptance evidence passes, downstream migration diagnostics are recorded, and the changed-file count is below 100.",
+        "max_attempts": 3,
+        "timeout_minutes": 240
+      },
+      "executor": {
+        "instructions": "Establish official Flue 2 checklist items 1-3 and provider requirements without compatibility shims. Use tests first, preserve product routes, record exact downstream compiler/build diagnostics, and stop before agent/tool conversion. Full repository green status belongs to the final stacked verification node.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue foundation migrator"
+      },
+      "goal": "Establish checklist items 1 through 3 and the provider foundation from item 9: coordinated package pins, Vite build/config, explicit routing, and Pi provider registration, with exact handoff diagnostics for dependent source conversions.",
+      "id": "migrate-flue-v2-foundation",
+      "inputs": [
+        {
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-migration-spec",
+          "name": "Flue 2 migration specification",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-foundation-change",
+          "format": "git-diff",
+          "name": "Flue 2 foundation change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/migration/",
+          "https://flueframework.com/docs/guide/models/",
+          "https://flueframework.com/docs/guide/routing/",
+          "https://flueframework.com/docs/guide/node-target/",
+          "https://www.npmjs.com/"
+        ],
+        "read": [
+          "artifact:baseline-context",
+          "artifact:flue-v2-migration-spec",
+          "package.json",
+          "pnpm-lock.yaml",
+          "flue.config.ts",
+          "scripts/",
+          "src/app.ts",
+          "src/core/models/",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md",
+          "sim-one-cli/package.json"
+        ],
+        "write": [
+          "package.json",
+          "pnpm-lock.yaml",
+          "vite.config.ts",
+          "flue.config.ts",
+          "scripts/run-flue.mjs",
+          "src/app.ts",
+          "src/core/models/",
+          "src/tests/models.test.ts",
+          "src/tests/build-script-regressions.test.ts",
+          "src/tests/architecture-contract.test.ts",
+          "sim-one-cli/package.json",
+          "docs/architecture/flue-v2-migration.md"
+        ]
+      },
+      "resources": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "vite.config.ts",
+        "flue.config.ts",
+        "scripts/run-flue.mjs",
+        "src/app.ts",
+        "src/core/models/",
+        "sim-one-cli/package.json",
+        "docs/architecture/flue-v2-migration.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates the dependency, build, route, and provider foundation in the authorized worktree.",
+        "level": "reversible",
+        "rollback": "Restore milestone files from the prior Git commit."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-1",
+        "foundation"
+      ],
+      "title": "Migrate Flue 2 Foundation",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/file-count.json",
+          "id": "agents-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Every built-in agent is a discovered exported capitalized synchronous function in a use-agent module with exactly one root useModel declaration and supported statics.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/agents.json",
+          "id": "agent-function-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "The orchestrator exposes only lead workers; worker-internal subagents remain worker-owned; runtime-added worker definitions have one validated Flue 2 adapter.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/workers.json",
+          "id": "worker-ownership-preserved",
+          "kind": "test"
+        },
+        {
+          "criterion": "The orchestrator has no generic mutable filesystem surface and coding workers retain explicit runtime-root-scoped sandbox access.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/sandboxes.json",
+          "id": "sandbox-boundaries-preserved",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused orchestrator, worker, delegation, workspace, and type checks pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-agents-workers/verification.json",
+          "id": "agents-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All built-in agent and worker contracts compile and focused tests pass below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 300
+      },
+      "executor": {
+        "instructions": "Convert only agents and worker composition. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue agent migrator"
+      },
+      "goal": "Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership.",
+      "id": "migrate-flue-v2-agents-workers",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-foundation-change",
+          "name": "verified Flue 2 foundation",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-agents-workers-change",
+          "format": "git-diff",
+          "name": "Flue 2 agents and workers change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/agents/",
+          "https://flueframework.com/docs/guide/agent-hooks/",
+          "https://flueframework.com/docs/guide/subagents/",
+          "https://flueframework.com/docs/guide/sandboxes/"
+        ],
+        "read": [
+          "artifact:flue-v2-foundation-change",
+          "src/agents/",
+          "src/engine/workers/",
+          "src/workspace/",
+          "src/workspace-loader.ts",
+          "src/engine/registries/",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md"
+        ],
+        "write": [
+          "src/agents/",
+          "src/engine/workers/",
+          "src/workspace-loader.ts",
+          "src/tests/ files assigned exclusively to agent and worker migration"
+        ]
+      },
+      "resources": [
+        "src/agents/",
+        "src/engine/workers/",
+        "src/workspace-loader.ts"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates built-in agent and worker composition.",
+        "level": "reversible",
+        "rollback": "Restore milestone files from the prior stacked commit."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-2",
+        "agents",
+        "workers"
+      ],
+      "title": "Migrate Flue 2 Agents And Workers",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/file-count.json",
+          "id": "capabilities-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Every built-in and generated tool uses input, run({data}), and valid result envelopes; no parameters or execute marker remains.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/tools.json",
+          "id": "tool-contract-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Skill imports use Flue 2 SKILL.md semantics without removed import attributes or protocol leakage.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/skills.json",
+          "id": "skill-contract-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Built-in and runtime MCP connections use supported Flue 2 connection hooks while preserving canonical config, ownership, and approval controls.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/mcp.json",
+          "id": "mcp-contract-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Capability package schemas, validators, scaffolds, CLI add flows, fixtures, and documentation examples agree on the Flue 2 contracts.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/runtime-packages.json",
+          "id": "runtime-scaffolds-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused capability, registry, approval, generated-package, and type checks pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-capabilities/verification.json",
+          "id": "capabilities-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All capability contracts and generated forms pass focused verification below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 360
+      },
+      "executor": {
+        "instructions": "Convert tools, skills, MCP, registries, and runtime package contracts consistently. Preserve protocol and approval boundaries.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue capability migrator"
+      },
+      "goal": "Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, and approval-preserving adapters.",
+      "id": "migrate-flue-v2-capabilities",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-agents-workers-change",
+          "name": "verified agent and worker migration",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-capabilities-change",
+          "format": "git-diff",
+          "name": "Flue 2 capability change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/tools/",
+          "https://flueframework.com/docs/guide/skills/",
+          "https://flueframework.com/docs/guide/mcp/"
+        ],
+        "read": [
+          "artifact:flue-v2-agents-workers-change",
+          "src/engine/tools/",
+          "src/skills/",
+          "src/engine/capabilities/",
+          "src/engine/registries/",
+          "scripts/",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md"
+        ],
+        "write": [
+          "src/engine/tools/",
+          "src/skills/",
+          "src/engine/capabilities/",
+          "src/engine/registries/",
+          "scripts/ capability scaffold and validation files",
+          "src/tests/ files assigned exclusively to capability migration"
+        ]
+      },
+      "resources": [
+        "src/engine/tools/",
+        "src/skills/",
+        "src/engine/capabilities/",
+        "src/engine/registries/"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates capability contracts and registries.",
+        "level": "reversible",
+        "rollback": "Restore milestone files from the prior stacked commit."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-3",
+        "tools",
+        "skills",
+        "mcp",
+        "registries"
+      ],
+      "title": "Migrate Flue 2 Tools Skills MCP And Registries",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/file-count.json",
+          "id": "execution-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "No removed Flue workflow or FlueSession API remains; each behavior uses an awaited agent handle, durable tool, or app-owned orchestrator.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/workflows.json",
+          "id": "workflow-removal-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Flue 2 uses a distinct persistence path, never opens or deletes beta persistence, and app-owned session/history data follows the recorded compatibility decision.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/persistence.json",
+          "id": "persistence-reset-boundary",
+          "kind": "test"
+        },
+        {
+          "criterion": "The product chat facade uses public dispatch/read behavior and preserves TUI submission semantics without ?wait=result or runtime-internal imports.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/chat-facade.json",
+          "id": "chat-facade-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "Progress and telemetry correlate instanceId and submissionId and settlement outcomes without beta run fields.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/observability.json",
+          "id": "observability-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused session, history, compact, schedules, telemetry, HTTP, restart, and type checks pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-execution-persistence/verification.json",
+          "id": "execution-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Execution, persistence, session, and observability checks pass below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 360
+      },
+      "executor": {
+        "instructions": "Replace removed execution and persistence APIs using only public Flue 2 contracts. Preserve connector-owned sessions and never reuse beta Flue storage.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue execution migrator"
+      },
+      "goal": "Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, and submission observability.",
+      "id": "migrate-flue-v2-execution-persistence",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-capabilities-change",
+          "name": "verified capability migration",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-execution-persistence-change",
+          "format": "git-diff",
+          "name": "Flue 2 execution and persistence change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/migration/",
+          "https://flueframework.com/docs/guide/workflows/",
+          "https://flueframework.com/docs/guide/database/",
+          "https://flueframework.com/docs/reference/events/"
+        ],
+        "read": [
+          "artifact:flue-v2-capabilities-change",
+          "src/workflows/",
+          "src/api/",
+          "src/engine/session/",
+          "src/engine/schedules/",
+          "src/core/telemetry/",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md"
+        ],
+        "write": [
+          "src/workflows/",
+          "src/api/routes/chat-events.ts",
+          "src/api/routes/chat-sessions.ts",
+          "src/engine/session/",
+          "src/engine/schedules/",
+          "src/core/telemetry/",
+          "src/tests/ files assigned exclusively to execution and persistence migration"
+        ]
+      },
+      "resources": [
+        "src/workflows/",
+        "src/api/routes/chat-events.ts",
+        "src/api/routes/chat-sessions.ts",
+        "src/engine/session/",
+        "src/engine/schedules/",
+        "src/core/telemetry/"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates execution and persistence contracts without deleting beta data.",
+        "level": "reversible",
+        "rollback": "Restore code and point runtime back to the prior package; preserve both persistence namespaces."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-4",
+        "persistence",
+        "sessions",
+        "observability"
+      ],
+      "title": "Migrate Flue 2 Execution Persistence And Observability",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/file-count.json",
+          "id": "clients-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Telegram uses instanceId semantics and preserves its persistent connector-owned conversation policy, pairing, approvals, and restart behavior.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/telegram.json",
+          "id": "telegram-instance-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "Ratatui consumes materialized history and conversation update chunks with offset replay, SSE reconnect, UTF-8 safety, deduplication, settlement, reasoning, and tool lifecycle rendering.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/tui-stream.json",
+          "id": "tui-stream-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "The packaged TUI starts fresh by default, resumes explicitly, preserves rename/new/compact/exit behavior, starts or reuses the gateway, and shows one final response.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/tui-session.json",
+          "id": "tui-session-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "CLI, SDK, and remaining React/Ink clients use conversation-scoped Flue 2 APIs or have an explicit verified non-production disposition.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/clients.json",
+          "id": "client-contract-complete",
+          "kind": "test"
+        },
+        {
+          "criterion": "Focused Telegram, Rust, CLI, packaged TUI, reconnect, and multi-turn tests pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-connectors-clients/verification.json",
+          "id": "clients-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All connector and client tests pass below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 420
+      },
+      "executor": {
+        "instructions": "Migrate connector and client contracts to conversation-scoped Flue 2 behavior while preserving product UX and connector session policy.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue client migrator"
+      },
+      "goal": "Migrate Telegram, Ratatui, CLI, and remaining clients to conversation-scoped Flue 2 identities, submissions, history, and update streams.",
+      "id": "migrate-flue-v2-connectors-clients",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-execution-persistence-change",
+          "name": "verified execution and persistence migration",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-connectors-clients-change",
+          "format": "git-diff",
+          "name": "Flue 2 connector and client change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/channels/",
+          "https://flueframework.com/docs/sdk/create-flue-client/",
+          "https://flueframework.com/docs/sdk/flue-client/",
+          "https://flueframework.com/docs/reference/streaming-protocol/"
+        ],
+        "read": [
+          "artifact:flue-v2-execution-persistence-change",
+          "src/channels/",
+          "src/api/routes/telegram-admin.ts",
+          "sim-one-cli/",
+          "tui/",
+          "scripts/test-tui-e2e.mjs",
+          "scripts/test-ratatui-product.mjs",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md"
+        ],
+        "write": [
+          "src/channels/",
+          "src/api/routes/telegram-admin.ts",
+          "sim-one-cli/",
+          "tui/",
+          "scripts/test-tui-e2e.mjs",
+          "scripts/test-ratatui-product.mjs",
+          "src/tests/ files assigned exclusively to connector and client migration"
+        ]
+      },
+      "resources": [
+        "src/channels/",
+        "sim-one-cli/",
+        "tui/"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates connectors, CLI, and terminal clients.",
+        "level": "reversible",
+        "rollback": "Restore milestone files and prior packaged binaries."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-5",
+        "telegram",
+        "tui",
+        "cli"
+      ],
+      "title": "Migrate Flue 2 Connectors And Clients",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-product-packaging/file-count.json",
+          "id": "packaging-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "The product stages verified Vite Node output under .gorombo/sim-one-alpha and resolves all runtime state from the owner of the movable .gorombo tree, never caller cwd.",
+          "evidence": "runtime:evidence/migrate-flue-v2-product-packaging/runtime-root.json",
+          "id": "movable-runtime-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "sim-one and the packaged TUI start or reuse the gateway, preserve service/local-process detection, and work from an arbitrary directory.",
+          "evidence": "runtime:evidence/migrate-flue-v2-product-packaging/launcher.json",
+          "id": "launcher-parity",
+          "kind": "test"
+        },
+        {
+          "criterion": "The package includes required runtime dependencies, workspaces, capability seeds, config example, WASM, and assets without secrets or source-machine absolute paths.",
+          "evidence": "runtime:evidence/migrate-flue-v2-product-packaging/package-content.json",
+          "id": "package-content-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "Build-all, HTTP, CLI, capability-product, arbitrary-cwd, and packaged Ratatui smoke checks pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-product-packaging/verification.json",
+          "id": "packaging-focused-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The standalone packaged product passes all product smoke checks below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 360
+      },
+      "executor": {
+        "instructions": "Integrate Vite output into the existing movable product package without changing product names or runtime-root behavior.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue product packager"
+      },
+      "goal": "Stage the Vite Node output into the movable .gorombo product runtime and preserve launcher, dependency, configuration, service, and arbitrary-cwd behavior.",
+      "id": "migrate-flue-v2-product-packaging",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-connectors-clients-change",
+          "name": "verified connector and client migration",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-product-packaging-change",
+          "format": "git-diff",
+          "name": "Flue 2 product packaging change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [],
+        "read": [
+          "artifact:flue-v2-connectors-clients-change",
+          "package.json",
+          "scripts/",
+          "sim-one-cli/",
+          "tui/",
+          "src/tests/",
+          "docs/architecture/flue-v2-migration.md"
+        ],
+        "write": [
+          "package.json",
+          "pnpm-lock.yaml",
+          "scripts/ product build, staging, launcher, and smoke files",
+          "sim-one-cli/ packaging files",
+          "src/tests/ files assigned exclusively to product packaging"
+        ]
+      },
+      "resources": [
+        "package.json",
+        "scripts/",
+        "sim-one-cli/"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Migrates build staging and product packaging.",
+        "level": "reversible",
+        "rollback": "Restore packaging files and regenerate the prior product artifact."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-6",
+        "packaging",
+        "runtime"
+      ],
+      "title": "Migrate Flue 2 Product Packaging",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The milestone changes fewer than 100 tracked files and records the exact changed-file count.",
+          "evidence": "runtime:evidence/migrate-flue-v2-documentation/file-count.json",
+          "id": "docs-under-file-cap",
+          "kind": "policy"
+        },
+        {
+          "criterion": "Architecture, Flue map, source maps, session/TUI, connectors, models, tools, skills, workers, registries, build, packaging, installation, and operations docs describe verified Flue 2 behavior with no beta API examples.",
+          "evidence": "runtime:evidence/migrate-flue-v2-documentation/current-state.json",
+          "id": "current-state-docs",
+          "kind": "review"
+        },
+        {
+          "criterion": "OpenWiki architecture, workflows, operations, integrations, testing, and source maps match the verified implementation.",
+          "evidence": "runtime:evidence/migrate-flue-v2-documentation/openwiki.json",
+          "id": "openwiki-current",
+          "kind": "review"
+        },
+        {
+          "criterion": "Documentation index, links, source references, graph/manifest parity, examples, terminology, and release status checks pass.",
+          "evidence": "runtime:evidence/migrate-flue-v2-documentation/verification.json",
+          "id": "documentation-verification",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "All documentation and graph checks pass below the file cap.",
+        "max_attempts": 3,
+        "timeout_minutes": 300
+      },
+      "executor": {
+        "instructions": "Document only verified Flue 2 behavior. Update all affected repo documentation and examples without presenting unimplemented behavior as current.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue documentation migrator"
+      },
+      "goal": "Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified.",
+      "id": "migrate-flue-v2-documentation",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-product-packaging-change",
+          "name": "verified packaged Flue 2 product",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-documentation-change",
+          "format": "git-diff",
+          "name": "Flue 2 documentation change"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/migration/",
+          "https://flueframework.com/docs/"
+        ],
+        "read": [
+          "artifact:flue-v2-product-packaging-change",
+          "docs/",
+          "openwiki/",
+          "README.md",
+          "CONTRIBUTING.md",
+          "src/",
+          "scripts/",
+          "package.json"
+        ],
+        "write": [
+          "docs/",
+          "openwiki/",
+          "README.md",
+          "CONTRIBUTING.md",
+          "CHANGELOG.md",
+          "docs/agent-flow.svg"
+        ]
+      },
+      "resources": [
+        "docs/",
+        "openwiki/",
+        "README.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Updates documentation to match the verified migration.",
+        "level": "reversible",
+        "rollback": "Restore documentation from the prior stacked commit."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-7",
+        "documentation"
+      ],
+      "title": "Update Flue 2 Documentation",
+      "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "A repository-wide static scan finds no removed beta Flue API or beta package pin in production source, scaffolds, fixtures, clients, or documentation examples.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/static-scan.json",
+          "id": "no-beta-api-remains",
+          "kind": "test"
+        },
+        {
+          "criterion": "WASM build, typecheck, unit, Rust, Vite build, CLI, capability product, HTTP, Ratatui, TUI E2E, memory, documentation, graph, and ledger checks all pass.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/checks.json",
+          "id": "all-configured-checks-pass",
+          "kind": "test"
+        },
+        {
+          "criterion": "A real packaged multi-turn TUI flow produces correct greeting, tool/worker progress, final responses, session commands, restart history, and clean shutdown from an arbitrary cwd.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/tui-product.json",
+          "id": "production-output-proof",
+          "kind": "probe"
+        },
+        {
+          "criterion": "A real connector flow proves Telegram instance persistence, gateway restart recovery, and correct response delivery.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/telegram-product.json",
+          "id": "connector-output-proof",
+          "kind": "probe"
+        },
+        {
+          "criterion": "Flue 2 persistence survives restart, beta storage remains untouched, and app-owned session/history behavior matches the approved migration decision.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/persistence.json",
+          "id": "persistence-proof",
+          "kind": "probe"
+        },
+        {
+          "criterion": "Each dependency-ordered prospective PR remains below 100 changed files, has a detailed commit, and is ready for a stacked non-draft PR only after explicit user approval.",
+          "evidence": "runtime:evidence/verify-flue-v2-production-migration/stack.json",
+          "id": "stack-ready",
+          "kind": "policy"
+        }
+      ],
+      "execution": {
+        "completion_condition": "Every migration acceptance criterion passes and all prospective PR slices remain below 100 files.",
+        "max_attempts": 3,
+        "timeout_minutes": 600
+      },
+      "executor": {
+        "instructions": "Run every configured check and real product flow. Do not infer working status from a process or port. Retain output-level evidence.",
+        "kind": "hybrid",
+        "name": "SIM-ONE Flue production verifier"
+      },
+      "goal": "Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity.",
+      "id": "verify-flue-v2-production-migration",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-documentation-change",
+          "name": "completed Flue 2 documentation",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-production-verification",
+          "format": "verification-report",
+          "name": "Flue 2 production migration verification"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "configured model providers for authorized production smoke tests",
+          "loopback gateway"
+        ],
+        "read": [
+          "authorized project tree",
+          "node_modules/",
+          "artifact:flue-v2-documentation-change"
+        ],
+        "write": [
+          ".gorombo/",
+          ".tmp/",
+          "dist/",
+          "target/",
+          "crates/gorombo-memory/pkg/",
+          "runtime:evidence/verify-flue-v2-production-migration/"
+        ]
+      },
+      "resources": [
+        "authorized project tree",
+        ".gorombo/",
+        "runtime:evidence/verify-flue-v2-production-migration/"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Builds and exercises local product artifacts without opening a PR or publishing.",
+        "level": "reversible",
+        "rollback": "Stop local test processes and remove only generated test/build artifacts."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "stack-8",
+        "verification",
+        "production"
+      ],
+      "title": "Verify Flue 2 Production Migration",
+      "type": "verification"
     }
   ],
   "project": {
-    "context_version": "runpod-live-model-ci:2026-08-01",
+    "context_version": "sim-one-alpha-flue-v2-stacked-verification-2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

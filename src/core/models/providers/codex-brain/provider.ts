@@ -1,6 +1,6 @@
-import { registerProvider } from '@flue/runtime';
-import { providerContextWindow } from '../../../../core/models/card-limits.js';
+import { setProvider } from '@flue/runtime';
 import { resolveProviderCardEnv } from '../../../../core/models/env.js';
+import { createOpenAICompatibleProvider } from '../../../../core/models/pi-provider.js';
 import { codexBrainProviderId } from '../../../../core/models/provider-ids.js';
 import type { AgentModelCard } from '../../../../core/models/types.js';
 import { codexBrainCards } from '../../../../core/models/providers/codex-brain/cards/index.js';
@@ -14,20 +14,11 @@ export function registerCodexBrainProvider(
     return;
   }
 
-  registerProvider(codexBrainProviderId, {
-    api: 'openai-completions',
+  setProvider(createOpenAICompatibleProvider({
+    id: codexBrainProviderId,
+    name: 'Codex Brain',
     baseUrl: resolvedEnv.baseUrl,
     apiKey: resolvedEnv.apiKey,
-    contextWindow: Math.max(...cards.map(providerContextWindow)),
-    maxTokens: Math.max(...cards.map((card) => card.maxOutputTokens)),
-    models: Object.fromEntries(
-      cards.map((card) => [
-        card.modelId,
-        {
-          contextWindow: providerContextWindow(card),
-          maxTokens: card.maxOutputTokens,
-        },
-      ]),
-    ),
-  });
+    cards,
+  }));
 }

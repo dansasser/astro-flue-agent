@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 1919320138d7b2a1c9015eb2f66b5d909cd65ba1c31c2157aee55a3287eee7a9 -->
+<!-- development-graph-sha256: b0044df293bc2faee06b99a6443d8bdb8d04d344c3a66b5255c45ad668478648 -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `60` |
+| Graph version | `65` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `runpod-live-model-ci:2026-08-01` |
+| Context version | `sim-one-alpha-flue-v2-stacked-verification-2026-08-01` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `1919320138d7b2a1c9015eb2f66b5d909cd65ba1c31c2157aee55a3287eee7a9` |
+| Canonical checksum | `b0044df293bc2faee06b99a6443d8bdb8d04d344c3a66b5255c45ad668478648` |
 
 ## Flow
 
@@ -104,6 +104,15 @@ flowchart TD
     n_resolve_d10_sealed_node_context{"Seal Per-Node Context Envelopes\\n(decision / planned)"}
     n_resolve_d11_shared_task_graph_engine{"Share Task Graph Engine Across Agents\\n(decision / planned)"}
     n_specify_task_lifecycle_architecture["Specify Task Lifecycle Graph Architecture\\n(work / planned)"]
+    n_specify_flue_v2_migration["Specify Flue 2 Migration\\n(work / planned)"]
+    n_migrate_flue_v2_foundation["Migrate Flue 2 Foundation\\n(work / planned)"]
+    n_migrate_flue_v2_agents_workers["Migrate Flue 2 Agents And Workers\\n(work / planned)"]
+    n_migrate_flue_v2_capabilities["Migrate Flue 2 Tools Skills MCP And Registries\\n(work / planned)"]
+    n_migrate_flue_v2_execution_persistence["Migrate Flue 2 Execution Persistence And Observability\\n(work / planned)"]
+    n_migrate_flue_v2_connectors_clients["Migrate Flue 2 Connectors And Clients\\n(work / planned)"]
+    n_migrate_flue_v2_product_packaging["Migrate Flue 2 Product Packaging\\n(work / planned)"]
+    n_migrate_flue_v2_documentation["Update Flue 2 Documentation\\n(work / planned)"]
+    n_verify_flue_v2_production_migration(["Verify Flue 2 Production Migration\\n(verification / planned)"])
     n_baseline_context -- "consumes" --> n_install_dependencies
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
@@ -858,6 +867,34 @@ flowchart TD
     n_resolve_d10_sealed_node_context -. "invalidates" .-> n_integrate_and_repair
     n_baseline_context -- "consumes" --> n_specify_task_lifecycle_architecture
     n_baseline_context -. "invalidates" .-> n_specify_task_lifecycle_architecture
+    n_baseline_context -- "consumes" --> n_specify_flue_v2_migration
+    n_baseline_context -. "invalidates" .-> n_specify_flue_v2_migration
+    n_specify_flue_v2_migration -- "consumes" --> n_verify_release_reconciliation_specifications
+    n_specify_flue_v2_migration -. "invalidates" .-> n_verify_release_reconciliation_specifications
+    n_specify_flue_v2_migration -- "consumes" --> n_plan_implementation
+    n_specify_flue_v2_migration -. "invalidates" .-> n_plan_implementation
+    n_specify_flue_v2_migration -- "consumes" --> n_review_architecture_security
+    n_specify_flue_v2_migration -. "invalidates" .-> n_review_architecture_security
+    n_specify_flue_v2_migration -- "consumes" --> n_integrate_and_repair
+    n_specify_flue_v2_migration -. "invalidates" .-> n_integrate_and_repair
+    n_specify_flue_v2_migration -- "consumes" --> n_migrate_flue_v2_foundation
+    n_specify_flue_v2_migration -. "invalidates" .-> n_migrate_flue_v2_foundation
+    n_migrate_flue_v2_foundation -- "consumes" --> n_migrate_flue_v2_agents_workers
+    n_migrate_flue_v2_foundation -. "invalidates" .-> n_migrate_flue_v2_agents_workers
+    n_migrate_flue_v2_agents_workers -- "consumes" --> n_migrate_flue_v2_capabilities
+    n_migrate_flue_v2_agents_workers -. "invalidates" .-> n_migrate_flue_v2_capabilities
+    n_migrate_flue_v2_capabilities -- "consumes" --> n_migrate_flue_v2_execution_persistence
+    n_migrate_flue_v2_capabilities -. "invalidates" .-> n_migrate_flue_v2_execution_persistence
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_migrate_flue_v2_connectors_clients
+    n_migrate_flue_v2_execution_persistence -. "invalidates" .-> n_migrate_flue_v2_connectors_clients
+    n_migrate_flue_v2_connectors_clients -- "consumes" --> n_migrate_flue_v2_product_packaging
+    n_migrate_flue_v2_connectors_clients -. "invalidates" .-> n_migrate_flue_v2_product_packaging
+    n_migrate_flue_v2_product_packaging -- "consumes" --> n_migrate_flue_v2_documentation
+    n_migrate_flue_v2_product_packaging -. "invalidates" .-> n_migrate_flue_v2_documentation
+    n_migrate_flue_v2_documentation -- "consumes" --> n_verify_flue_v2_production_migration
+    n_migrate_flue_v2_documentation -. "invalidates" .-> n_verify_flue_v2_production_migration
+    n_baseline_context -- "consumes" --> n_migrate_flue_v2_foundation
+    n_baseline_context -. "invalidates" .-> n_migrate_flue_v2_foundation
 ```
 
 ## Nodes
@@ -944,6 +981,15 @@ flowchart TD
 | `resolve-d10-sealed-node-context` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Make exact bounded context envelopes and capability absence enforceable for every model-executed task graph node. | decision:d10-sealed-node-context |
 | `resolve-d11-shared-task-graph-engine` | `decision` | `planned` | agent: SIM-ONE architecture adapter | Use one graph engine for orchestrator and Coding Worker definitions while preserving private worker subgraphs and DLG authority. | decision:d11-shared-task-graph-engine |
 | `specify-task-lifecycle-architecture` | `work` | `planned` | agent: SIM-ONE architecture adapter | Synthesize the five accepted architecture decisions into one implementation-independent task lifecycle graph contract. | artifact:task-lifecycle-architecture-spec |
+| `specify-flue-v2-migration` | `work` | `planned` | agent: SIM-ONE Flue migration architect | Translate the official Flue 2.0.1 migration contract and SIM-ONE current implementation into one implementation-ready, graph-bound migration specification. | artifact:flue-v2-migration-spec |
+| `migrate-flue-v2-foundation` | `work` | `planned` | agent: SIM-ONE Flue foundation migrator | Establish checklist items 1 through 3 and the provider foundation from item 9: coordinated package pins, Vite build/config, explicit routing, and Pi provider registration, with exact handoff diagnostics for dependent source conversions. | artifact:flue-v2-foundation-change |
+| `migrate-flue-v2-agents-workers` | `work` | `planned` | agent: SIM-ONE Flue agent migrator | Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership. | artifact:flue-v2-agents-workers-change |
+| `migrate-flue-v2-capabilities` | `work` | `planned` | agent: SIM-ONE Flue capability migrator | Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, and approval-preserving adapters. | artifact:flue-v2-capabilities-change |
+| `migrate-flue-v2-execution-persistence` | `work` | `planned` | agent: SIM-ONE Flue execution migrator | Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, and submission observability. | artifact:flue-v2-execution-persistence-change |
+| `migrate-flue-v2-connectors-clients` | `work` | `planned` | agent: SIM-ONE Flue client migrator | Migrate Telegram, Ratatui, CLI, and remaining clients to conversation-scoped Flue 2 identities, submissions, history, and update streams. | artifact:flue-v2-connectors-clients-change |
+| `migrate-flue-v2-product-packaging` | `work` | `planned` | agent: SIM-ONE Flue product packager | Stage the Vite Node output into the movable .gorombo product runtime and preserve launcher, dependency, configuration, service, and arbitrary-cwd behavior. | artifact:flue-v2-product-packaging-change |
+| `migrate-flue-v2-documentation` | `work` | `planned` | agent: SIM-ONE Flue documentation migrator | Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified. | artifact:flue-v2-documentation-change |
+| `verify-flue-v2-production-migration` | `verification` | `planned` | hybrid: SIM-ONE Flue production verifier | Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity. | artifact:flue-v2-production-verification |
 
 ## Edges
 
@@ -1703,6 +1749,34 @@ flowchart TD
 | `decide-sealed-node-context-to-integrate-and-repair-invalidates` | `resolve-d10-sealed-node-context` | `invalidates` | `integrate-and-repair` | A material change to the consumed task-lifecycle decision or specification invalidates integration and requires fresh execution. | artifact:integrated-change | — |
 | `baseline-context-to-specify-task-lifecycle-architecture` | `baseline-context` | `consumes` | `specify-task-lifecycle-architecture` | Grounded project context is current and bound before the task-lifecycle specification is maintained. | artifact:baseline-context | — |
 | `baseline-context-invalidates-task-lifecycle-architecture` | `baseline-context` | `invalidates` | `specify-task-lifecycle-architecture` | A changed grounded baseline invalidates the task-lifecycle architecture specification. | artifact:task-lifecycle-architecture-spec | — |
+| `baseline-context-to-specify-flue-v2-migration` | `baseline-context` | `consumes` | `specify-flue-v2-migration` | Grounded project context is current and bound before the Flue 2 migration specification is maintained. | artifact:baseline-context | — |
+| `baseline-context-invalidates-flue-v2-migration` | `baseline-context` | `invalidates` | `specify-flue-v2-migration` | A changed grounded baseline invalidates the Flue 2 migration specification. | artifact:flue-v2-migration-spec | — |
+| `flue-v2-spec-to-verify-release-reconciliation-specifications-consumes` | `specify-flue-v2-migration` | `consumes` | `verify-release-reconciliation-specifications` | The Flue 2 migration specification is current and bound to this run. | artifact:flue-v2-migration-spec | — |
+| `flue-v2-spec-to-verify-release-reconciliation-specifications-invalidates` | `specify-flue-v2-migration` | `invalidates` | `verify-release-reconciliation-specifications` | A material change to the Flue 2 migration specification invalidates this downstream output. | artifact:release-reconciliation-specification-verification | — |
+| `flue-v2-spec-to-plan-implementation-consumes` | `specify-flue-v2-migration` | `consumes` | `plan-implementation` | The Flue 2 migration specification is current and bound to this run. | artifact:flue-v2-migration-spec | — |
+| `flue-v2-spec-to-plan-implementation-invalidates` | `specify-flue-v2-migration` | `invalidates` | `plan-implementation` | A material change to the Flue 2 migration specification invalidates this downstream output. | artifact:implementation-plan | — |
+| `flue-v2-spec-to-review-architecture-security-consumes` | `specify-flue-v2-migration` | `consumes` | `review-architecture-security` | The Flue 2 migration specification is current and bound to this run. | artifact:flue-v2-migration-spec | — |
+| `flue-v2-spec-to-review-architecture-security-invalidates` | `specify-flue-v2-migration` | `invalidates` | `review-architecture-security` | A material change to the Flue 2 migration specification invalidates this downstream output. | artifact:architecture-security-review | — |
+| `flue-v2-spec-to-integrate-and-repair-consumes` | `specify-flue-v2-migration` | `consumes` | `integrate-and-repair` | The Flue 2 migration specification is current and bound to this run. | artifact:flue-v2-migration-spec | — |
+| `flue-v2-spec-to-integrate-and-repair-invalidates` | `specify-flue-v2-migration` | `invalidates` | `integrate-and-repair` | A material change to the Flue 2 migration specification invalidates this downstream output. | artifact:integrated-change | — |
+| `specify-flue-v2-migration-to-migrate-flue-v2-foundation-consumes` | `specify-flue-v2-migration` | `consumes` | `migrate-flue-v2-foundation` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-migration-spec | — |
+| `specify-flue-v2-migration-to-migrate-flue-v2-foundation-invalidates` | `specify-flue-v2-migration` | `invalidates` | `migrate-flue-v2-foundation` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-foundation-change | — |
+| `migrate-flue-v2-foundation-to-migrate-flue-v2-agents-workers-consumes` | `migrate-flue-v2-foundation` | `consumes` | `migrate-flue-v2-agents-workers` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-foundation-change | — |
+| `migrate-flue-v2-foundation-to-migrate-flue-v2-agents-workers-invalidates` | `migrate-flue-v2-foundation` | `invalidates` | `migrate-flue-v2-agents-workers` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-agents-workers-change | — |
+| `migrate-flue-v2-agents-workers-to-migrate-flue-v2-capabilities-consumes` | `migrate-flue-v2-agents-workers` | `consumes` | `migrate-flue-v2-capabilities` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-agents-workers-change | — |
+| `migrate-flue-v2-agents-workers-to-migrate-flue-v2-capabilities-invalidates` | `migrate-flue-v2-agents-workers` | `invalidates` | `migrate-flue-v2-capabilities` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-capabilities-change | — |
+| `migrate-flue-v2-capabilities-to-migrate-flue-v2-execution-persistence-consumes` | `migrate-flue-v2-capabilities` | `consumes` | `migrate-flue-v2-execution-persistence` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-capabilities-change | — |
+| `migrate-flue-v2-capabilities-to-migrate-flue-v2-execution-persistence-invalidates` | `migrate-flue-v2-capabilities` | `invalidates` | `migrate-flue-v2-execution-persistence` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-execution-persistence-change | — |
+| `migrate-flue-v2-execution-persistence-to-migrate-flue-v2-connectors-clients-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `migrate-flue-v2-connectors-clients` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-execution-persistence-change | — |
+| `migrate-flue-v2-execution-persistence-to-migrate-flue-v2-connectors-clients-invalidates` | `migrate-flue-v2-execution-persistence` | `invalidates` | `migrate-flue-v2-connectors-clients` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-connectors-clients-change | — |
+| `migrate-flue-v2-connectors-clients-to-migrate-flue-v2-product-packaging-consumes` | `migrate-flue-v2-connectors-clients` | `consumes` | `migrate-flue-v2-product-packaging` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-connectors-clients-change | — |
+| `migrate-flue-v2-connectors-clients-to-migrate-flue-v2-product-packaging-invalidates` | `migrate-flue-v2-connectors-clients` | `invalidates` | `migrate-flue-v2-product-packaging` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-product-packaging-change | — |
+| `migrate-flue-v2-product-packaging-to-migrate-flue-v2-documentation-consumes` | `migrate-flue-v2-product-packaging` | `consumes` | `migrate-flue-v2-documentation` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-product-packaging-change | — |
+| `migrate-flue-v2-product-packaging-to-migrate-flue-v2-documentation-invalidates` | `migrate-flue-v2-product-packaging` | `invalidates` | `migrate-flue-v2-documentation` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-documentation-change | — |
+| `migrate-flue-v2-documentation-to-verify-flue-v2-production-migration-consumes` | `migrate-flue-v2-documentation` | `consumes` | `verify-flue-v2-production-migration` | The upstream Flue 2 migration milestone is verified and its artifact is current. | artifact:flue-v2-documentation-change | — |
+| `migrate-flue-v2-documentation-to-verify-flue-v2-production-migration-invalidates` | `migrate-flue-v2-documentation` | `invalidates` | `verify-flue-v2-production-migration` | A material upstream migration change invalidates the dependent milestone. | artifact:flue-v2-production-verification | — |
+| `baseline-to-flue-v2-foundation` | `baseline-context` | `consumes` | `migrate-flue-v2-foundation` | Grounded repository context is verified before implementation. | artifact:baseline-context | — |
+| `baseline-invalidates-flue-v2-foundation` | `baseline-context` | `invalidates` | `migrate-flue-v2-foundation` | A changed repository baseline invalidates the migration foundation. | artifact:flue-v2-foundation-change | — |
 
 ## Node contracts
 
@@ -1822,9 +1896,9 @@ flowchart TD
 
 - Goal: Produce the repository-owned executable implementation lineage for every required 0.1.0 member, with exact file ownership, decision boundaries, evidence, approval scopes, and rollback under the development graph.
 - Executor instructions: Verify the current graph, manifest, decision catalog, repository specifications, implementation lineage, and release ledger against artifact:baseline-context and artifact:beta-release-contract; stop on any missing, added, or changed planning artifact. Then map the decision to bounded workstreams. Keep shared types and contracts ahead of dependent implementation, name the exact scripts from package.json, classify every workspace-related change by instruction/persona/runtime-root ownership, and assign every changed file and focused test file to exactly one workstream before parallel execution. Update doc/implementation-lineage.md; do not create an external plan.
-- Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement, artifact:task-lifecycle-architecture-spec, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime
+- Inputs: artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement, artifact:task-lifecycle-architecture-spec, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, artifact:flue-v2-migration-spec
 - Resources: project:implementation-lineage
-- Permissions: read [artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, decision:d1-github-auth-strategy, docs/getting-started/pre-release-status.md, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, specification-manifest.json, decisions.json, doc/decisions/d1-github-auth-strategy.md, doc/product-spec.md, doc/constraints-and-risks.md, doc/architecture-spec.md, doc/acceptance-spec.md, doc/open-questions.md, doc/product-spec-workspace.md, doc/architecture-spec-workspace.md, doc/acceptance-spec-workspace.md, doc/open-questions-workspace.md, doc/product-spec-file-access-history.md, doc/architecture-spec-file-access-history.md, doc/acceptance-spec-file-access-history.md, doc/open-questions-file-access-history.md, development-graph.json, doc/implementation-lineage.md, doc/product-spec-runtime-configuration.md, doc/architecture-spec-runtime-configuration.md, doc/acceptance-spec-runtime-configuration.md, doc/open-questions-runtime-configuration.md, doc/runtime-configuration-inventory.md, doc/decisions/d5-canonical-runtime-configuration.md, decision:d6-tui-approval-surface-placement, doc/decisions/d6-tui-approval-surface-placement.md, artifact:task-lifecycle-architecture-spec, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime]; write [doc/implementation-lineage.md]; external [—]; destructive `false`
+- Permissions: read [artifact:change-contract, artifact:architecture-decision, artifact:beta-release-contract, decision:d1-github-auth-strategy, docs/getting-started/pre-release-status.md, package.json, .github/workflows/ci.yml, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/engine/workers/, docs/architecture/flue-architecture.md, docs/architecture/gorombo-flue-map.md, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, specification-manifest.json, decisions.json, doc/decisions/d1-github-auth-strategy.md, doc/product-spec.md, doc/constraints-and-risks.md, doc/architecture-spec.md, doc/acceptance-spec.md, doc/open-questions.md, doc/product-spec-workspace.md, doc/architecture-spec-workspace.md, doc/acceptance-spec-workspace.md, doc/open-questions-workspace.md, doc/product-spec-file-access-history.md, doc/architecture-spec-file-access-history.md, doc/acceptance-spec-file-access-history.md, doc/open-questions-file-access-history.md, development-graph.json, doc/implementation-lineage.md, doc/product-spec-runtime-configuration.md, doc/architecture-spec-runtime-configuration.md, doc/acceptance-spec-runtime-configuration.md, doc/open-questions-runtime-configuration.md, doc/runtime-configuration-inventory.md, doc/decisions/d5-canonical-runtime-configuration.md, decision:d6-tui-approval-surface-placement, doc/decisions/d6-tui-approval-surface-placement.md, artifact:task-lifecycle-architecture-spec, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, docs/architecture/flue-v2-migration.md]; write [doc/implementation-lineage.md]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `60` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Updates the repository-owned implementation lineage consumed by the development graph.
 - Rollback: Restore the prior implementation-lineage revision and invalidate downstream work that consumed it.
@@ -1839,6 +1913,7 @@ flowchart TD
   - `repository-planning-lineage-preserved` (policy): Before producing any implementation workstream, the planner verifies current graph, manifest, decision, specification, implementation-lineage, and release-ledger bindings; a mismatch stops planning and requires a fresh baseline and approval. Evidence: `runtime:evidence/plan-implementation/repository-planning-lineage.json`
   - `runtime-configuration-lineage-mapped` (policy): REL-CFG-001 is assigned to one serialized configuration implementation member and one integrated-build verification member; every environment-sensitive downstream member consumes D5 or the consolidated configuration artifact without parallel file ownership. Evidence: `runtime:evidence/plan-implementation/runtime-configuration-lineage.json`
   - `tui-status-approval-lineage-mapped` (policy): REL-TUI-002 and REL-APP-001 use separate serialized members: the status member owns the exact two-row split through messages: N and context remaining, then the approval member consumes that geometry and owns the slash-menu-style drop-up interface. Evidence: `runtime:evidence/plan-implementation/tui-status-approval-lineage.json`
+  - `flue-v2-migration-bound` (review): The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output. Evidence: `runtime:evidence/plan-implementation/flue-v2-migration.json`
 
 ### `implement-core-contracts` — Implement Core Contracts And Architecture
 
@@ -2010,9 +2085,9 @@ flowchart TD
 
 - Goal: Combine selected domain outputs into one coherent change set, resolve cross-domain contract issues, and apply bounded repairs from verification or observation evidence.
 - Executor instructions: Integrate only authorized outputs. Before every integration or repair mutation, call the already active Coding Worker approval service with the exact run, failed evidence, file path, proposed mutation or command, and scope; stop fail-closed on denied, missing, expired, or mismatched approval and record the decision. Preserve unrelated verified branches, route failures to the owning domain, and emit a complete diff plus typed progress record. Reconcile the implementation plan's exact file-ownership matrix before combining changes; a file with multiple parallel producers is a failed integration precondition, not an automatic merge.
-- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d10-sealed-node-context
+- Inputs: artifact:beta-release-contract, artifact:core-contracts-change, artifact:agent-runtime-change, artifact:memory-retrieval-change, artifact:capabilities-security-change, artifact:ingress-operations-change, artifact:product-delivery-change, artifact:dependency-environment, artifact:embedding-model-assets, artifact:memory-wasm, artifact:typecheck-report, artifact:unit-test-report, artifact:documentation-verification-report, artifact:rust-test-report, artifact:runtime-build, artifact:sim-one-tui-build, artifact:sim-one-tui-product-report, artifact:onboarding-distribution-report, artifact:release-package, artifact:cli-build, artifact:cli-behavior-report, artifact:http-test-report, artifact:tui-e2e-report, artifact:memory-smoke-report, artifact:verification-summary, artifact:architecture-security-review, artifact:canary-behavior-report, artifact:production-observation, artifact:coding-worker-progress-change, artifact:coding-worker-github-flow-change, artifact:coding-worker-scaffold-tooling-change, artifact:orchestrator-worker-verification-change, artifact:image-reasoning-worker-change, artifact:document-index-change, artifact:protocol-scoring-change, artifact:runtime-configuration-consolidation-change, artifact:capability-management-worker-change, artifact:coding-worker-capability-authoring-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d10-sealed-node-context, artifact:flue-v2-migration-spec
 - Resources: project:core-contracts, project:agent-runtime, project:memory-retrieval, project:capabilities-security, project:ingress-operations, project:product-delivery
-- Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence, artifact:runtime-configuration-consolidation-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, doc/decisions/d11-shared-task-graph-engine.md]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
+- Permissions: read [artifact:beta-release-contract, authorized project tree, domain change artifacts, verification evidence, artifact:runtime-configuration-consolidation-change, decision:d11-shared-task-graph-engine, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, doc/decisions/d11-shared-task-graph-engine.md, docs/architecture/flue-v2-migration.md]; write [authorized project files across affected domains, excluding src/AGENTS.md]; external [—]; destructive `false`
 - Execution: max `3` attempt(s), `180` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `reversible` — Integrates and repairs only approval-service-authorized project files in the isolated worktree.
 - Rollback: Restore the affected files from the pre-integration Git commit while preserving unrelated branches and evidence.
@@ -2025,6 +2100,7 @@ flowchart TD
   - `post-merge-repair-republication-required` (policy): A repair caused by post-merge package or onboarding evidence records the superseded merged candidate and cannot return to post-merge verification until the repaired integrated diff completes fresh pre-merge verification, architecture review, owner approval, non-draft pull request checks, merge, and main-branch readback as a new artifact:release-candidate. Evidence: `runtime:evidence/integrate-and-repair/post-merge-republication.json`
   - `parallel-file-ownership-reconciled` (policy): Every changed file has one recorded producer; shared or cross-domain files were serialized or assigned to integration, and no parallel branch silently overwrote another branch. Evidence: `runtime:evidence/integrate-and-repair/file-ownership.json`
   - `company-instruction-exclusion-preserved` (policy): Integration and repair never writes src/AGENTS.md. Any company-owned system-instruction change remains outside this ordinary lifecycle and requires a separately scoped owner-approved gate. Evidence: `runtime:evidence/integrate-and-repair/company-instruction-exclusion.json`
+  - `flue-v2-migration-bound` (review): The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output. Evidence: `runtime:evidence/integrate-and-repair/flue-v2-migration.json`
 
 ### `verify-typecheck` — Verify TypeScript Types
 
@@ -2269,9 +2345,9 @@ flowchart TD
 
 - Goal: Review the integrated change and verification summary for Flue ownership, instruction and persona workspace boundaries, Coding Worker runtime-root scope, trusted context, approval gates, durable progress, product identity, secret boundaries, and release-document accuracy, clarity, and scanability.
 - Executor instructions: Perform a fresh review independent of implementation self-report. Confirm user-visible behavior, fail-closed mutations, research ownership, workspace instruction composition, lead-only worker exposure, internal-subagent ownership, runtime-root scoping, disjoint parallel file ownership, documented rollback, and release-document accuracy and readability.
-- Inputs: artifact:integrated-change, artifact:verification-summary, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec
+- Inputs: artifact:integrated-change, artifact:verification-summary, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, artifact:flue-v2-migration-spec
 - Resources: —
-- Permissions: read [artifact:integrated-change, artifact:verification-summary, AGENTS.md, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, README.md, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/architecture/, docs/getting-started/, docs/guides/, docs/operations/, docs/reference/, docs/tui/, openwiki/, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md]; write [—]; external [—]; destructive `false`
+- Permissions: read [artifact:integrated-change, artifact:verification-summary, AGENTS.md, AUTHORS.md, CHANGELOG.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, LICENSE, README.md, SECURITY.md, SUPPORT.md, THIRD_PARTY_NOTICES.md, docs/README.md, docs/architecture/, docs/getting-started/, docs/guides/, docs/operations/, docs/reference/, docs/tui/, openwiki/, src/AGENTS.md, src/workspace-loader.ts, src/agents/orchestrator.ts, src/workspace/, src/engine/workers/*/workspace/, src/engine/workers/coding-worker/subagents/*/workspace/, src/tests/architecture-contract.test.ts, src/tests/workspace-loader.test.ts, src/tests/coding-worker.test.ts, src/tests/coding-worker-internal-subagents.test.ts, src/tests/research-agent.test.ts, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, docs/architecture/flue-v2-migration.md]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `90` minute(s); Every acceptance criterion has durable, independently inspectable evidence.
 - Side effects: `none` — Produces evidence without mutating project or external state.
 - Rollback: none
@@ -2285,6 +2361,7 @@ flowchart TD
   - `verification-claims-match-probes` (review): Every release claim is mapped to a probe that actually exercises it. Direct gateway/CLI smoke, built HTTP session/transcript tests, TypeScript approval/progress tests, Rust TUI state/rendering tests, packaged SIM-ONE TUI PTY tests, isolated onboarding/distribution tests, and any user-visible approval/subagent end-to-end evidence remain distinct; missing applicable evidence blocks approval. Evidence: `runtime:evidence/review-architecture-security/probe-claim-map.json`
   - `release-documentation-reviewed` (review): Release documentation is source-accurate, uses clear topic and paragraph boundaries, remains scannable, and distinguishes current behavior, required release gates, and owner-scoped planned product work without making speculative promises. Evidence: `runtime:evidence/review-architecture-security/release-documentation.json`
   - `release-lineage-consistent` (review): The release ledger, graph members, owner scope decision, repository specification lineage, and verification summary contain the same complete set of stable release IDs and no required item is hidden by a generic workstream. Evidence: `runtime:evidence/review-architecture-security/release-lineage.json`
+  - `flue-v2-migration-bound` (review): The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output. Evidence: `runtime:evidence/review-architecture-security/flue-v2-migration.json`
 
 ### `approve-release-candidate` — Approve Release Candidate Publication
 
@@ -2592,9 +2669,9 @@ flowchart TD
 
 - Goal: Verify graph/schema/manifest lineage, document containment, resolved-decision coverage, open-decision isolation, and release-ledger completeness.
 - Executor instructions: Run the graph and specification validators and retain their bounded JSON result.
-- Inputs: artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement, artifact:task-lifecycle-architecture-spec, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine
+- Inputs: artifact:product-spec, artifact:constraints-and-risks, artifact:architecture-spec, artifact:acceptance-spec, artifact:open-questions, artifact:product-spec-workspace, artifact:architecture-spec-workspace, artifact:acceptance-spec-workspace, artifact:open-questions-workspace, artifact:product-spec-file-access, artifact:architecture-spec-file-access, artifact:acceptance-spec-file-access, artifact:open-questions-file-access, decision:d1-github-auth-strategy, decision:d2-workspace-root-isolation, decision:d3-file-access-gate, artifact:product-spec-runtime-configuration, artifact:architecture-spec-runtime-configuration, artifact:acceptance-spec-runtime-configuration, artifact:open-questions-runtime-configuration, artifact:runtime-configuration-inventory, decision:d5-canonical-runtime-configuration, decision:d6-tui-approval-surface-placement, artifact:task-lifecycle-architecture-spec, decision:d7-separate-project-and-task-graphs, decision:d8-memory-helper-task-runs, decision:d9-flue-native-task-graph-runtime, decision:d10-sealed-node-context, decision:d11-shared-task-graph-engine, artifact:flue-v2-migration-spec
 - Resources: —
-- Permissions: read [doc/product-spec.md, doc/constraints-and-risks.md, doc/architecture-spec.md, doc/acceptance-spec.md, doc/open-questions.md, doc/product-spec-workspace.md, doc/architecture-spec-workspace.md, doc/acceptance-spec-workspace.md, doc/open-questions-workspace.md, doc/product-spec-file-access-history.md, doc/architecture-spec-file-access-history.md, doc/acceptance-spec-file-access-history.md, doc/open-questions-file-access-history.md, doc/decisions/d1-github-auth-strategy.md, development-graph.json, development-graph.md, specification-manifest.json, decisions.json, docs/getting-started/pre-release-status.md, doc/product-spec-runtime-configuration.md, doc/architecture-spec-runtime-configuration.md, doc/acceptance-spec-runtime-configuration.md, doc/open-questions-runtime-configuration.md, doc/runtime-configuration-inventory.md, doc/decisions/d5-canonical-runtime-configuration.md, decision:d6-tui-approval-surface-placement, doc/decisions/d6-tui-approval-surface-placement.md, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, decision:d9-flue-native-task-graph-runtime, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, decision:d11-shared-task-graph-engine, doc/decisions/d11-shared-task-graph-engine.md]; write [—]; external [—]; destructive `false`
+- Permissions: read [doc/product-spec.md, doc/constraints-and-risks.md, doc/architecture-spec.md, doc/acceptance-spec.md, doc/open-questions.md, doc/product-spec-workspace.md, doc/architecture-spec-workspace.md, doc/acceptance-spec-workspace.md, doc/open-questions-workspace.md, doc/product-spec-file-access-history.md, doc/architecture-spec-file-access-history.md, doc/acceptance-spec-file-access-history.md, doc/open-questions-file-access-history.md, doc/decisions/d1-github-auth-strategy.md, development-graph.json, development-graph.md, specification-manifest.json, decisions.json, docs/getting-started/pre-release-status.md, doc/product-spec-runtime-configuration.md, doc/architecture-spec-runtime-configuration.md, doc/acceptance-spec-runtime-configuration.md, doc/open-questions-runtime-configuration.md, doc/runtime-configuration-inventory.md, doc/decisions/d5-canonical-runtime-configuration.md, decision:d6-tui-approval-surface-placement, doc/decisions/d6-tui-approval-surface-placement.md, artifact:task-lifecycle-architecture-spec, docs/architecture/task-lifecycle-graphs.md, decision:d7-separate-project-and-task-graphs, doc/decisions/d7-separate-project-and-task-graphs.md, decision:d8-memory-helper-task-runs, doc/decisions/d8-memory-helper-task-runs.md, decision:d9-flue-native-task-graph-runtime, doc/decisions/d9-flue-native-task-graph-runtime.md, decision:d10-sealed-node-context, doc/decisions/d10-sealed-node-context.md, decision:d11-shared-task-graph-engine, doc/decisions/d11-shared-task-graph-engine.md, docs/architecture/flue-v2-migration.md]; write [—]; external [—]; destructive `false`
 - Execution: max `2` attempt(s), `30` minute(s); Graph and specification validation pass with no errors or warnings.
 - Side effects: `none` — Produces deterministic verification evidence without project mutation.
 - Rollback: none
@@ -2603,6 +2680,7 @@ flowchart TD
   - `specctl-pass` (schema): specctl verify passes against the current graph, Markdown, manifest, decisions, and project root. Evidence: `runtime:evidence/verify-release-reconciliation-specifications/specctl-pass.json`
   - `open-decisions-isolated` (policy): D4 remains the only open owner decision and blocks only its named consumer; resolved D1-D3 and D5-D11 are consumed by specification, planning, verification, and every declared affected implementation or release member. Evidence: `runtime:evidence/verify-release-reconciliation-specifications/open-decisions-isolated.json`
   - `release-ledger-complete` (review): Every stable 0.1.0 release ID has one producing graph member and behavioral acceptance evidence. Evidence: `runtime:evidence/verify-release-reconciliation-specifications/release-ledger-complete.json`
+  - `flue-v2-migration-bound` (test): The current Flue 2 migration specification is consumed and its applicable requirements are reflected in this node output. Evidence: `runtime:evidence/verify-release-reconciliation-specifications/flue-v2-migration.json`
 
 ### `implement-runtime-root-layout` — Implement Install-Relative Runtime Root
 
@@ -3083,6 +3161,173 @@ flowchart TD
   - `memory-helper-boundary-complete` (review): The specification uses the Rust/WASM Memory Helper as shared durable task state and distinguishes user-visible checklist projection from execution state. Evidence: `docs/architecture/task-lifecycle-graphs.md`
   - `flue-context-boundary-complete` (policy): The specification preserves Flue ownership and requires sealed per-node context envelopes, typed broker requests, interrupts, checkpoints, and bounded recovery. Evidence: `docs/architecture/task-lifecycle-graphs.md`
   - `shared-engine-boundary-complete` (policy): The specification requires one shared graph engine with separate validated definitions and private worker subgraph state while preserving DLG definition, run-state, mutation, and evidence authority through retry-safe compare-and-swap, stale-version rejection, idempotent operation identity, and unknown-outcome recovery. Evidence: `docs/architecture/task-lifecycle-graphs.md`
+
+### `specify-flue-v2-migration` — Specify Flue 2 Migration
+
+- Goal: Translate the official Flue 2.0.1 migration contract and SIM-ONE current implementation into one implementation-ready, graph-bound migration specification.
+- Executor instructions: Maintain the normative Flue 2 migration specification from official Flue 2.0.1 sources and observed SIM-ONE beta.1 behavior. Do not rewrite current-state architecture documents as if migration were already implemented.
+- Inputs: artifact:baseline-context
+- Resources: docs/architecture/flue-v2-migration.md, specification-manifest.json, docs/architecture/README.md
+- Permissions: read [artifact:baseline-context, package.json, pnpm-lock.yaml, flue.config.ts, src/, sim-one-cli/, tui/ratatui/, scripts/, .github/workflows/, docs/, openwiki/, development-graph.json, development-graph.md, specification-manifest.json, decisions.json]; write [docs/architecture/flue-v2-migration.md, specification-manifest.json, docs/architecture/README.md]; external [https://flueframework.com/docs/guide/migration/, https://flueframework.com/docs/, https://github.com/withastro/flue/blob/main/CHANGELOG.md, https://www.npmjs.com/package/@flue/runtime]; destructive `false`
+- Execution: max `2` attempt(s), `120` minute(s); Every migration acceptance criterion is represented in the specification and the specification manifest verifies against the current graph.
+- Side effects: `reversible` — Creates or updates the Flue 2 migration specification and its manifest binding.
+- Rollback: Restore the specification and manifest from version control, then invalidate downstream planning and implementation.
+- Approval required: `false`
+- Acceptance:
+  - `official-checklist-mapped` (review): All 13 official Flue 2 migration checklist items are mapped to observed SIM-ONE beta.1 source, runtime, packaging, documentation, and test surfaces with required changes and evidence. Evidence: `docs/architecture/flue-v2-migration.md`
+  - `product-contracts-preserved` (policy): The target preserves Flue ownership, protocol-first orchestration, runtime capability registries, connector-owned session policy, approval boundaries, the movable .gorombo product runtime, and the SIM-ONE TUI product contract. Evidence: `docs/architecture/flue-v2-migration.md`
+  - `reset-boundary-explicit` (policy): The reset-only Flue persistence boundary is explicit, no beta database is silently reused or deleted, and any unresolved history-retention choice is recorded before implementation crosses the storage boundary. Evidence: `docs/architecture/flue-v2-migration.md`
+  - `delivery-slices-bounded` (review): Implementation is sequenced into dependency-ordered, stackable milestones whose pull requests each remain below 100 changed files, with shared contracts landing before dependent slices. Evidence: `docs/architecture/flue-v2-migration.md`
+  - `verification-and-docs-mapped` (test): The specification names focused and full production verification for agents, tools, providers, persistence, sessions, HTTP, Telegram, TUI streaming, packaging, and documentation. Evidence: `docs/architecture/flue-v2-migration.md`
+  - `architecture-indexed` (review): The migration specification is registered in the architecture documentation index and the repository documentation checker passes. Evidence: `docs/architecture/README.md`
+
+### `migrate-flue-v2-foundation` — Migrate Flue 2 Foundation
+
+- Goal: Establish checklist items 1 through 3 and the provider foundation from item 9: coordinated package pins, Vite build/config, explicit routing, and Pi provider registration, with exact handoff diagnostics for dependent source conversions.
+- Executor instructions: Establish official Flue 2 checklist items 1-3 and provider requirements without compatibility shims. Use tests first, preserve product routes, record exact downstream compiler/build diagnostics, and stop before agent/tool conversion. Full repository green status belongs to the final stacked verification node.
+- Inputs: artifact:baseline-context, artifact:flue-v2-migration-spec
+- Resources: package.json, pnpm-lock.yaml, vite.config.ts, flue.config.ts, scripts/run-flue.mjs, src/app.ts, src/core/models/, sim-one-cli/package.json, docs/architecture/flue-v2-migration.md
+- Permissions: read [artifact:baseline-context, artifact:flue-v2-migration-spec, package.json, pnpm-lock.yaml, flue.config.ts, scripts/, src/app.ts, src/core/models/, src/tests/, docs/architecture/flue-v2-migration.md, sim-one-cli/package.json]; write [package.json, pnpm-lock.yaml, vite.config.ts, flue.config.ts, scripts/run-flue.mjs, src/app.ts, src/core/models/, src/tests/models.test.ts, src/tests/build-script-regressions.test.ts, src/tests/architecture-contract.test.ts, sim-one-cli/package.json, docs/architecture/flue-v2-migration.md]; external [https://flueframework.com/docs/guide/migration/, https://flueframework.com/docs/guide/models/, https://flueframework.com/docs/guide/routing/, https://flueframework.com/docs/guide/node-target/, https://www.npmjs.com/]; destructive `false`
+- Execution: max `3` attempt(s), `240` minute(s); All focused foundation acceptance evidence passes, downstream migration diagnostics are recorded, and the changed-file count is below 100.
+- Side effects: `reversible` — Migrates the dependency, build, route, and provider foundation in the authorized worktree.
+- Rollback: Restore milestone files from the prior Git commit.
+- Approval required: `false`
+- Acceptance:
+  - `foundation-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count before commit or PR preparation. Evidence: `runtime:evidence/migrate-flue-v2-foundation/file-count.json`
+  - `flue-2-pins` (test): All coordinated @flue packages are pinned to the same verified 2.0.1 release and required Vite, Pi, and sandbox dependencies are declared without a beta Flue package remaining in the lockfile. Evidence: `runtime:evidence/migrate-flue-v2-foundation/package-pins.json`
+  - `vite-build-contract` (test): Vite owns dev/build, flue.config.ts uses @flue/runtime/config without root/output, and Vite resolves the Node project through the foundation into an exact downstream migration diagnostic; executable server artifact verification is reserved for the final stacked verification node. Evidence: `runtime:evidence/migrate-flue-v2-foundation/vite-build.json`
+  - `explicit-routing-contract` (test): src/app.ts explicitly mounts the orchestrator agent router while preserving health, auth, custom API routes, schedules, telemetry, approvals, and Telegram administration. Evidence: `runtime:evidence/migrate-flue-v2-foundation/routing.json`
+  - `pi-provider-contract` (test): RunPod, Ollama cloud/local, and Codex Brain providers use Pi createProvider plus Flue setProvider while preserving model-card metadata and canonical runtime credential lookup. Evidence: `runtime:evidence/migrate-flue-v2-foundation/providers.json`
+  - `foundation-focused-verification` (test): Focused package, routing, provider, and configuration checks pass; repository-wide typecheck and Vite build diagnostics are captured as explicit downstream handoff evidence rather than hidden or bypassed. Evidence: `runtime:evidence/migrate-flue-v2-foundation/verification.json`
+
+### `migrate-flue-v2-agents-workers` — Migrate Flue 2 Agents And Workers
+
+- Goal: Convert the orchestrator and built-in worker hierarchy to synchronous Flue 2 agent functions, hooks, subagent definitions, and explicit sandbox ownership.
+- Executor instructions: Convert only agents and worker composition. Preserve protocol-first orchestration, worker ownership, progress, and workspace boundaries.
+- Inputs: artifact:flue-v2-foundation-change
+- Resources: src/agents/, src/engine/workers/, src/workspace-loader.ts
+- Permissions: read [artifact:flue-v2-foundation-change, src/agents/, src/engine/workers/, src/workspace/, src/workspace-loader.ts, src/engine/registries/, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/agents/, src/engine/workers/, src/workspace-loader.ts, src/tests/ files assigned exclusively to agent and worker migration]; external [https://flueframework.com/docs/guide/agents/, https://flueframework.com/docs/guide/agent-hooks/, https://flueframework.com/docs/guide/subagents/, https://flueframework.com/docs/guide/sandboxes/]; destructive `false`
+- Execution: max `3` attempt(s), `300` minute(s); All built-in agent and worker contracts compile and focused tests pass below the file cap.
+- Side effects: `reversible` — Migrates built-in agent and worker composition.
+- Rollback: Restore milestone files from the prior stacked commit.
+- Approval required: `false`
+- Acceptance:
+  - `agents-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/file-count.json`
+  - `agent-function-contract` (test): Every built-in agent is a discovered exported capitalized synchronous function in a use-agent module with exactly one root useModel declaration and supported statics. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/agents.json`
+  - `worker-ownership-preserved` (test): The orchestrator exposes only lead workers; worker-internal subagents remain worker-owned; runtime-added worker definitions have one validated Flue 2 adapter. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/workers.json`
+  - `sandbox-boundaries-preserved` (test): The orchestrator has no generic mutable filesystem surface and coding workers retain explicit runtime-root-scoped sandbox access. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/sandboxes.json`
+  - `agents-focused-verification` (test): Focused orchestrator, worker, delegation, workspace, and type checks pass. Evidence: `runtime:evidence/migrate-flue-v2-agents-workers/verification.json`
+
+### `migrate-flue-v2-capabilities` — Migrate Flue 2 Tools Skills MCP And Registries
+
+- Goal: Convert built-in and runtime-extensible capability contracts to Flue 2 tools, skills, MCP connections, registries, scaffolds, and approval-preserving adapters.
+- Executor instructions: Convert tools, skills, MCP, registries, and runtime package contracts consistently. Preserve protocol and approval boundaries.
+- Inputs: artifact:flue-v2-agents-workers-change
+- Resources: src/engine/tools/, src/skills/, src/engine/capabilities/, src/engine/registries/
+- Permissions: read [artifact:flue-v2-agents-workers-change, src/engine/tools/, src/skills/, src/engine/capabilities/, src/engine/registries/, scripts/, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/engine/tools/, src/skills/, src/engine/capabilities/, src/engine/registries/, scripts/ capability scaffold and validation files, src/tests/ files assigned exclusively to capability migration]; external [https://flueframework.com/docs/guide/tools/, https://flueframework.com/docs/guide/skills/, https://flueframework.com/docs/guide/mcp/]; destructive `false`
+- Execution: max `3` attempt(s), `360` minute(s); All capability contracts and generated forms pass focused verification below the file cap.
+- Side effects: `reversible` — Migrates capability contracts and registries.
+- Rollback: Restore milestone files from the prior stacked commit.
+- Approval required: `false`
+- Acceptance:
+  - `capabilities-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/file-count.json`
+  - `tool-contract-complete` (test): Every built-in and generated tool uses input, run({data}), and valid result envelopes; no parameters or execute marker remains. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/tools.json`
+  - `skill-contract-complete` (test): Skill imports use Flue 2 SKILL.md semantics without removed import attributes or protocol leakage. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/skills.json`
+  - `mcp-contract-complete` (test): Built-in and runtime MCP connections use supported Flue 2 connection hooks while preserving canonical config, ownership, and approval controls. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/mcp.json`
+  - `runtime-scaffolds-complete` (test): Capability package schemas, validators, scaffolds, CLI add flows, fixtures, and documentation examples agree on the Flue 2 contracts. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/runtime-packages.json`
+  - `capabilities-focused-verification` (test): Focused capability, registry, approval, generated-package, and type checks pass. Evidence: `runtime:evidence/migrate-flue-v2-capabilities/verification.json`
+
+### `migrate-flue-v2-execution-persistence` — Migrate Flue 2 Execution Persistence And Observability
+
+- Goal: Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, and submission observability.
+- Executor instructions: Replace removed execution and persistence APIs using only public Flue 2 contracts. Preserve connector-owned sessions and never reuse beta Flue storage.
+- Inputs: artifact:flue-v2-capabilities-change
+- Resources: src/workflows/, src/api/routes/chat-events.ts, src/api/routes/chat-sessions.ts, src/engine/session/, src/engine/schedules/, src/core/telemetry/
+- Permissions: read [artifact:flue-v2-capabilities-change, src/workflows/, src/api/, src/engine/session/, src/engine/schedules/, src/core/telemetry/, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/workflows/, src/api/routes/chat-events.ts, src/api/routes/chat-sessions.ts, src/engine/session/, src/engine/schedules/, src/core/telemetry/, src/tests/ files assigned exclusively to execution and persistence migration]; external [https://flueframework.com/docs/guide/migration/, https://flueframework.com/docs/guide/workflows/, https://flueframework.com/docs/guide/database/, https://flueframework.com/docs/reference/events/]; destructive `false`
+- Execution: max `3` attempt(s), `360` minute(s); Execution, persistence, session, and observability checks pass below the file cap.
+- Side effects: `reversible` — Migrates execution and persistence contracts without deleting beta data.
+- Rollback: Restore code and point runtime back to the prior package; preserve both persistence namespaces.
+- Approval required: `false`
+- Acceptance:
+  - `execution-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/file-count.json`
+  - `workflow-removal-complete` (test): No removed Flue workflow or FlueSession API remains; each behavior uses an awaited agent handle, durable tool, or app-owned orchestrator. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/workflows.json`
+  - `persistence-reset-boundary` (test): Flue 2 uses a distinct persistence path, never opens or deletes beta persistence, and app-owned session/history data follows the recorded compatibility decision. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/persistence.json`
+  - `chat-facade-contract` (test): The product chat facade uses public dispatch/read behavior and preserves TUI submission semantics without ?wait=result or runtime-internal imports. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/chat-facade.json`
+  - `observability-contract` (test): Progress and telemetry correlate instanceId and submissionId and settlement outcomes without beta run fields. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/observability.json`
+  - `execution-focused-verification` (test): Focused session, history, compact, schedules, telemetry, HTTP, restart, and type checks pass. Evidence: `runtime:evidence/migrate-flue-v2-execution-persistence/verification.json`
+
+### `migrate-flue-v2-connectors-clients` — Migrate Flue 2 Connectors And Clients
+
+- Goal: Migrate Telegram, Ratatui, CLI, and remaining clients to conversation-scoped Flue 2 identities, submissions, history, and update streams.
+- Executor instructions: Migrate connector and client contracts to conversation-scoped Flue 2 behavior while preserving product UX and connector session policy.
+- Inputs: artifact:flue-v2-execution-persistence-change
+- Resources: src/channels/, sim-one-cli/, tui/
+- Permissions: read [artifact:flue-v2-execution-persistence-change, src/channels/, src/api/routes/telegram-admin.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/, docs/architecture/flue-v2-migration.md]; write [src/channels/, src/api/routes/telegram-admin.ts, sim-one-cli/, tui/, scripts/test-tui-e2e.mjs, scripts/test-ratatui-product.mjs, src/tests/ files assigned exclusively to connector and client migration]; external [https://flueframework.com/docs/guide/channels/, https://flueframework.com/docs/sdk/create-flue-client/, https://flueframework.com/docs/sdk/flue-client/, https://flueframework.com/docs/reference/streaming-protocol/]; destructive `false`
+- Execution: max `3` attempt(s), `420` minute(s); All connector and client tests pass below the file cap.
+- Side effects: `reversible` — Migrates connectors, CLI, and terminal clients.
+- Rollback: Restore milestone files and prior packaged binaries.
+- Approval required: `false`
+- Acceptance:
+  - `clients-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/file-count.json`
+  - `telegram-instance-contract` (test): Telegram uses instanceId semantics and preserves its persistent connector-owned conversation policy, pairing, approvals, and restart behavior. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/telegram.json`
+  - `tui-stream-contract` (test): Ratatui consumes materialized history and conversation update chunks with offset replay, SSE reconnect, UTF-8 safety, deduplication, settlement, reasoning, and tool lifecycle rendering. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/tui-stream.json`
+  - `tui-session-contract` (test): The packaged TUI starts fresh by default, resumes explicitly, preserves rename/new/compact/exit behavior, starts or reuses the gateway, and shows one final response. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/tui-session.json`
+  - `client-contract-complete` (test): CLI, SDK, and remaining React/Ink clients use conversation-scoped Flue 2 APIs or have an explicit verified non-production disposition. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/clients.json`
+  - `clients-focused-verification` (test): Focused Telegram, Rust, CLI, packaged TUI, reconnect, and multi-turn tests pass. Evidence: `runtime:evidence/migrate-flue-v2-connectors-clients/verification.json`
+
+### `migrate-flue-v2-product-packaging` — Migrate Flue 2 Product Packaging
+
+- Goal: Stage the Vite Node output into the movable .gorombo product runtime and preserve launcher, dependency, configuration, service, and arbitrary-cwd behavior.
+- Executor instructions: Integrate Vite output into the existing movable product package without changing product names or runtime-root behavior.
+- Inputs: artifact:flue-v2-connectors-clients-change
+- Resources: package.json, scripts/, sim-one-cli/
+- Permissions: read [artifact:flue-v2-connectors-clients-change, package.json, scripts/, sim-one-cli/, tui/, src/tests/, docs/architecture/flue-v2-migration.md]; write [package.json, pnpm-lock.yaml, scripts/ product build, staging, launcher, and smoke files, sim-one-cli/ packaging files, src/tests/ files assigned exclusively to product packaging]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `360` minute(s); The standalone packaged product passes all product smoke checks below the file cap.
+- Side effects: `reversible` — Migrates build staging and product packaging.
+- Rollback: Restore packaging files and regenerate the prior product artifact.
+- Approval required: `false`
+- Acceptance:
+  - `packaging-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-product-packaging/file-count.json`
+  - `movable-runtime-contract` (test): The product stages verified Vite Node output under .gorombo/sim-one-alpha and resolves all runtime state from the owner of the movable .gorombo tree, never caller cwd. Evidence: `runtime:evidence/migrate-flue-v2-product-packaging/runtime-root.json`
+  - `launcher-parity` (test): sim-one and the packaged TUI start or reuse the gateway, preserve service/local-process detection, and work from an arbitrary directory. Evidence: `runtime:evidence/migrate-flue-v2-product-packaging/launcher.json`
+  - `package-content-contract` (test): The package includes required runtime dependencies, workspaces, capability seeds, config example, WASM, and assets without secrets or source-machine absolute paths. Evidence: `runtime:evidence/migrate-flue-v2-product-packaging/package-content.json`
+  - `packaging-focused-verification` (test): Build-all, HTTP, CLI, capability-product, arbitrary-cwd, and packaged Ratatui smoke checks pass. Evidence: `runtime:evidence/migrate-flue-v2-product-packaging/verification.json`
+
+### `migrate-flue-v2-documentation` — Update Flue 2 Documentation
+
+- Goal: Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified.
+- Executor instructions: Document only verified Flue 2 behavior. Update all affected repo documentation and examples without presenting unimplemented behavior as current.
+- Inputs: artifact:flue-v2-product-packaging-change
+- Resources: docs/, openwiki/, README.md
+- Permissions: read [artifact:flue-v2-product-packaging-change, docs/, openwiki/, README.md, CONTRIBUTING.md, src/, scripts/, package.json]; write [docs/, openwiki/, README.md, CONTRIBUTING.md, CHANGELOG.md, docs/agent-flow.svg]; external [https://flueframework.com/docs/guide/migration/, https://flueframework.com/docs/]; destructive `false`
+- Execution: max `3` attempt(s), `300` minute(s); All documentation and graph checks pass below the file cap.
+- Side effects: `reversible` — Updates documentation to match the verified migration.
+- Rollback: Restore documentation from the prior stacked commit.
+- Approval required: `false`
+- Acceptance:
+  - `docs-under-file-cap` (policy): The milestone changes fewer than 100 tracked files and records the exact changed-file count. Evidence: `runtime:evidence/migrate-flue-v2-documentation/file-count.json`
+  - `current-state-docs` (review): Architecture, Flue map, source maps, session/TUI, connectors, models, tools, skills, workers, registries, build, packaging, installation, and operations docs describe verified Flue 2 behavior with no beta API examples. Evidence: `runtime:evidence/migrate-flue-v2-documentation/current-state.json`
+  - `openwiki-current` (review): OpenWiki architecture, workflows, operations, integrations, testing, and source maps match the verified implementation. Evidence: `runtime:evidence/migrate-flue-v2-documentation/openwiki.json`
+  - `documentation-verification` (test): Documentation index, links, source references, graph/manifest parity, examples, terminology, and release status checks pass. Evidence: `runtime:evidence/migrate-flue-v2-documentation/verification.json`
+
+### `verify-flue-v2-production-migration` — Verify Flue 2 Production Migration
+
+- Goal: Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity.
+- Executor instructions: Run every configured check and real product flow. Do not infer working status from a process or port. Retain output-level evidence.
+- Inputs: artifact:flue-v2-documentation-change
+- Resources: authorized project tree, .gorombo/, runtime:evidence/verify-flue-v2-production-migration/
+- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
+- Execution: max `3` attempt(s), `600` minute(s); Every migration acceptance criterion passes and all prospective PR slices remain below 100 files.
+- Side effects: `reversible` — Builds and exercises local product artifacts without opening a PR or publishing.
+- Rollback: Stop local test processes and remove only generated test/build artifacts.
+- Approval required: `false`
+- Acceptance:
+  - `no-beta-api-remains` (test): A repository-wide static scan finds no removed beta Flue API or beta package pin in production source, scaffolds, fixtures, clients, or documentation examples. Evidence: `runtime:evidence/verify-flue-v2-production-migration/static-scan.json`
+  - `all-configured-checks-pass` (test): WASM build, typecheck, unit, Rust, Vite build, CLI, capability product, HTTP, Ratatui, TUI E2E, memory, documentation, graph, and ledger checks all pass. Evidence: `runtime:evidence/verify-flue-v2-production-migration/checks.json`
+  - `production-output-proof` (probe): A real packaged multi-turn TUI flow produces correct greeting, tool/worker progress, final responses, session commands, restart history, and clean shutdown from an arbitrary cwd. Evidence: `runtime:evidence/verify-flue-v2-production-migration/tui-product.json`
+  - `connector-output-proof` (probe): A real connector flow proves Telegram instance persistence, gateway restart recovery, and correct response delivery. Evidence: `runtime:evidence/verify-flue-v2-production-migration/telegram-product.json`
+  - `persistence-proof` (probe): Flue 2 persistence survives restart, beta storage remains untouched, and app-owned session/history behavior matches the approved migration decision. Evidence: `runtime:evidence/verify-flue-v2-production-migration/persistence.json`
+  - `stack-ready` (policy): Each dependency-ordered prospective PR remains below 100 changed files, has a detailed commit, and is ready for a stacked non-draft PR only after explicit user approval. Evidence: `runtime:evidence/verify-flue-v2-production-migration/stack.json`
 
 ## Assumptions
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 60,
-  "context_version": "runpod-live-model-ci:2026-08-01",
+  "graph_version": 65,
+  "context_version": "sim-one-alpha-flue-v2-stacked-verification-2026-08-01",
   "specification_root": "doc",
   "documents": [
     {
@@ -227,6 +227,20 @@
       "path": "docs/architecture/task-lifecycle-graphs.md",
       "artifact": "artifact:task-lifecycle-architecture-spec",
       "producer_node": "specify-task-lifecycle-architecture",
+      "consumer_nodes": [
+        "verify-release-reconciliation-specifications",
+        "plan-implementation",
+        "review-architecture-security",
+        "integrate-and-repair"
+      ],
+      "required": true
+    },
+    {
+      "id": "flue-v2-migration-specification",
+      "kind": "architecture",
+      "path": "docs/architecture/flue-v2-migration.md",
+      "artifact": "artifact:flue-v2-migration-spec",
+      "producer_node": "specify-flue-v2-migration",
       "consumer_nodes": [
         "verify-release-reconciliation-specifications",
         "plan-implementation",

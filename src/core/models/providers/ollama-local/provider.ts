@@ -1,7 +1,9 @@
-import { registerProvider } from '@flue/runtime';
+import { setProvider } from '@flue/runtime';
 import { resolveProviderCardEnv } from '../../../../core/models/env.js';
+import { createOpenAICompatibleProvider } from '../../../../core/models/pi-provider.js';
 import { ollamaLocalProviderId } from '../../../../core/models/provider-ids.js';
 import type { AgentModelCard } from '../../../../core/models/types.js';
+import { ollamaLocalCards } from './cards/index.js';
 
 export const ollamaLocalDefaultBaseUrl = 'http://localhost:11434/v1';
 
@@ -16,7 +18,7 @@ export interface OllamaLocalProviderRegistration {
 
 export function registerOllamaLocalProvider(
   env: Record<string, unknown> = process.env,
-  cards: readonly AgentModelCard[] = [],
+  cards: readonly AgentModelCard[] = ollamaLocalCards,
 ): void {
   const registration = resolveOllamaLocalProviderRegistration(env, cards);
 
@@ -24,12 +26,18 @@ export function registerOllamaLocalProvider(
     return;
   }
 
-  registerProvider(ollamaLocalProviderId, registration);
+  setProvider(createOpenAICompatibleProvider({
+    id: ollamaLocalProviderId,
+    name: 'Ollama Local',
+    baseUrl: registration.baseUrl,
+    apiKey: registration.apiKey,
+    cards,
+  }));
 }
 
 export function resolveOllamaLocalProviderRegistration(
   env: Record<string, unknown> = process.env,
-  cards: readonly AgentModelCard[] = [],
+  cards: readonly AgentModelCard[] = ollamaLocalCards,
 ): OllamaLocalProviderRegistration | undefined {
   if (!shouldRegisterLocalProvider(env, cards)) {
     return undefined;

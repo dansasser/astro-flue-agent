@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { codexBrainCard, deepseekV4ProCard, kimiK26RunpodCard, kimik27codeCard, minimaxM3Card, qwen35Card, resolveModelCard } from '../core/models/catalog.js';
 import { configureRuntimeModels, createModelRegistry, selectModelCardForRole } from '../core/models/index.js';
+import { agentModelCardToPiModel, createOpenAICompatibleProvider } from '../core/models/pi-provider.js';
 import { registerOllamaCloudProvider } from '../core/models/providers/ollama-cloud/index.js';
 import { resolveOllamaLocalProviderRegistration } from '../core/models/providers/ollama-local/index.js';
 import { registerRunpodProvider } from '../core/models/providers/runpod/index.js';
@@ -248,7 +249,7 @@ test('unknown model specifier returns undefined', () => {
   assert.equal(resolveModelCard('unknown/model'), undefined);
 });
 
-test('Ollama Local provider registration uses local endpoint environment values without cards', () => {
+test('Ollama Local provider registration includes bundled cards by default', () => {
   const registration = resolveOllamaLocalProviderRegistration({
     OLLAMA_LOCAL_BASE_URL: 'http://localhost:11435/v1',
     OLLAMA_LOCAL_API_KEY: 'local-key',
@@ -256,8 +257,8 @@ test('Ollama Local provider registration uses local endpoint environment values 
 
   assert.equal(registration?.baseUrl, 'http://localhost:11435/v1');
   assert.equal(registration?.apiKey, 'local-key');
-  assert.equal(registration?.contextWindow, 128_000);
-  assert.equal(registration?.maxTokens, 32_000);
+  assert.deepEqual(Object.keys(registration?.models ?? {}), ['nomic-embed-text']);
+  assert.equal(registration?.maxTokens, 768);
 });
 
 test('Ollama Cloud provider registration tolerates an empty card list', () => {
@@ -266,4 +267,41 @@ test('Ollama Cloud provider registration tolerates an empty card list', () => {
 
 test('RunPod provider registration tolerates an empty card list', () => {
   assert.doesNotThrow(() => registerRunpodProvider({ RUNPOD_API_KEY: 'test-key' }, []));
+});
+
+test('Pi provider mapping preserves SIM-ONE model-card limits and capabilities', () => {
+  const model = agentModelCardToPiModel(kimik27codeCard, 'https://example.test/v1');
+
+  assert.equal(model.id, kimik27codeCard.modelId);
+  assert.equal(model.provider, kimik27codeCard.providerId);
+  assert.equal(model.baseUrl, 'https://example.test/v1');
+  assert.equal(model.contextWindow, kimik27codeCard.providerReportedContextWindow);
+  assert.equal(model.maxTokens, kimik27codeCard.maxOutputTokens);
+  assert.equal(model.reasoning, true);
+  assert.deepEqual(model.input, ['text', 'image']);
+});
+
+test('custom Pi provider resolves runtime credentials and declares card models', async () => {
+  const provider = createOpenAICompatibleProvider({
+    id: 'test-provider',
+    name: 'Test Provider',
+    baseUrl: 'https://example.test/v1',
+    apiKey: 'test-key',
+    cards: [kimiK26RunpodCard],
+  });
+
+  assert.equal(provider.id, 'test-provider');
+  assert.deepEqual(provider.getModels().map((model) => model.id), [kimiK26RunpodCard.modelId]);
+  assert.deepEqual(
+    await provider.auth.apiKey?.resolve({
+      ctx: {
+        env: async () => undefined,
+        fileExists: async () => false,
+      },
+    }),
+    {
+      auth: { apiKey: 'test-key' },
+      source: 'SIM-ONE runtime configuration',
+    },
+  );
 });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
+import { escapeRegExp } from './test-utils.js';
 
 test('SKILL.md loader accepts CRLF frontmatter', () => {
   const script = [
@@ -51,4 +52,78 @@ test('built-in registry reserves a Markdown skill by parent directory name', () 
   ) as { skills?: string[] };
   assert.equal(registry.skills?.includes('greeting-preflight'), true);
   assert.equal(registry.skills?.includes('SKILL.md'), false);
+});
+
+test('Flue 2 foundation uses coordinated package pins and Vite build commands', () => {
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+    scripts: Record<string, string>;
+    dependencies: Record<string, string>;
+    devDependencies: Record<string, string>;
+    engines: { node: string };
+  };
+
+  assert.equal(packageJson.dependencies['@flue/runtime'], '2.0.1');
+  assert.equal(packageJson.dependencies['@flue/telegram'], '2.0.1');
+  assert.equal(packageJson.devDependencies['@flue/cli'], '2.0.1');
+  assert.equal(packageJson.devDependencies['@flue/vite'], '2.0.1');
+  assert.equal(packageJson.dependencies['@earendil-works/pi-ai'], '0.83.0');
+  assert.equal(packageJson.dependencies['just-bash'], '3.2.0');
+  assert.equal(packageJson.devDependencies.vite, '8.2.0');
+  assert.equal(packageJson.engines.node, '>=22.18.0');
+  assert.match(packageJson.scripts.build, /^vite build/);
+  assert.equal(packageJson.scripts.dev, 'vite dev');
+
+  const flueConfig = readFileSync('flue.config.ts', 'utf8');
+  assert.match(flueConfig, /from '@flue\/runtime\/config'/);
+  assert.doesNotMatch(flueConfig, /\b(?:root|output)\s*:/);
+
+  const viteConfig = readFileSync('vite.config.ts', 'utf8');
+  assert.match(viteConfig, /from '@flue\/vite'/);
+  assert.match(viteConfig, /plugins:\s*\[flue\(/);
+
+  const cliPackageJson = JSON.parse(readFileSync('sim-one-cli/package.json', 'utf8')) as {
+    dependencies: Record<string, string>;
+  };
+  assert.equal(cliPackageJson.dependencies['@flue/sdk'], '2.0.1');
+  assert.equal(cliPackageJson.dependencies['@flue/react'], '2.0.1');
+});
+
+test('application mounts the orchestrator with the explicit Flue 2 router', () => {
+  const appSource = readFileSync('src/app.ts', 'utf8');
+
+  assert.match(appSource, /createAgentRouter/);
+  assert.match(appSource, /app\.route\('\/agents\/orchestrator', createAgentRouter\(Orchestrator\)\)/);
+  assert.doesNotMatch(appSource, /app\.route\('\/', flue\(\)\)/);
+  for (const preservedRoute of [
+    "app.get('/health'",
+    'registerChatEventRoutes(app)',
+    'registerChatSessionRoutes(app)',
+    'registerKnowledgeRoutes(app)',
+    'registerSchedulesRoutes(app)',
+    'registerTelemetryRoutes(app)',
+    'registerApprovalRoutes(app)',
+    'registerTelegramAdminRoutes(app)',
+  ]) {
+    assert.match(appSource, new RegExp(escapeRegExp(preservedRoute)));
+  }
+});
+
+test('custom model providers use Pi provider objects and Flue setProvider', () => {
+  const providerPaths = [
+    'src/core/models/providers/codex-brain/provider.ts',
+    'src/core/models/providers/ollama-cloud/provider.ts',
+    'src/core/models/providers/ollama-local/provider.ts',
+    'src/core/models/providers/runpod/provider.ts',
+  ];
+
+  for (const providerPath of providerPaths) {
+    const source = readFileSync(providerPath, 'utf8');
+    assert.match(source, /createOpenAICompatibleProvider/);
+    assert.match(source, /setProvider/);
+    assert.doesNotMatch(source, /registerProvider/);
+  }
+
+  const sharedProviderSource = readFileSync('src/core/models/pi-provider.ts', 'utf8');
+  assert.match(sharedProviderSource, /createProvider/);
+  assert.match(sharedProviderSource, /openAICompletionsApi/);
 });

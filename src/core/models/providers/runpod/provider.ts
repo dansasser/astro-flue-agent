@@ -1,6 +1,6 @@
-import { registerProvider } from '@flue/runtime';
-import { providerContextWindow } from '../../../../core/models/card-limits.js';
+import { setProvider } from '@flue/runtime';
 import { resolveProviderCardEnv } from '../../../../core/models/env.js';
+import { createOpenAICompatibleProvider } from '../../../../core/models/pi-provider.js';
 import { runpodProviderId } from '../../../../core/models/provider-ids.js';
 import type { AgentModelCard } from '../../../../core/models/types.js';
 import { runpodCards } from '../../../../core/models/providers/runpod/cards/index.js';
@@ -22,20 +22,11 @@ export function registerRunpodProvider(
     return;
   }
 
-  registerProvider(runpodProviderId, {
-    api: 'openai-completions',
+  setProvider(createOpenAICompatibleProvider({
+    id: runpodProviderId,
+    name: 'RunPod',
     baseUrl: resolvedEnv.baseUrl ?? runpodDefaultChatBaseUrl,
     apiKey,
-    contextWindow: Math.max(...cards.map(providerContextWindow)),
-    maxTokens: Math.max(...cards.map((card) => card.maxOutputTokens)),
-    models: Object.fromEntries(
-      cards.map((card) => [
-        card.modelId,
-        {
-          contextWindow: providerContextWindow(card),
-          maxTokens: card.maxOutputTokens,
-        },
-      ]),
-    ),
-  });
+    cards,
+  }));
 }
