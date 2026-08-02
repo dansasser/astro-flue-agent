@@ -127,3 +127,24 @@ test('custom model providers use Pi provider objects and Flue setProvider', () =
   assert.match(sharedProviderSource, /createProvider/);
   assert.match(sharedProviderSource, /openAICompletionsApi/);
 });
+
+test('local research command invokes the trusted research workflow facade', () => {
+  const source = readFileSync('scripts/research.mjs', 'utf8');
+  assert.match(source, /\.tmp\/tsc\/workflows\/research\.js/);
+  assert.match(source, /runResearchWorkflow/);
+  assert.doesNotMatch(source, /run-flue\.mjs/);
+  assert.doesNotMatch(source, /workers\/researcher\/researcher\.ts/);
+});
+
+test('Coding Worker process skill ids use Flue-compatible names', () => {
+  const source = readFileSync('src/engine/workers/coding-worker/skills.ts', 'utf8');
+  for (const name of [
+    'coding-worker-triage-loop',
+    'coding-worker-code-change-loop',
+    'coding-worker-ci-debug-loop',
+    'coding-worker-code-review-loop',
+    'coding-worker-github-pr-loop',
+  ]) {
+    assert.match(source, new RegExp(escapeRegExp(`name: '${name}'`)));
+  }
+});

@@ -1,4 +1,3 @@
-import type { FlueSession } from '@flue/runtime';
 import {
   codingCodeReviewSubagentName,
   codingGithubSubagentName,
@@ -12,6 +11,11 @@ import {
   CodingTestDebugResultSchema,
   CodingCodeReviewResultSchema,
   CodingGithubResultSchema,
+  type CodingCodeReviewResult,
+  type CodingGithubResult,
+  type CodingImplementerResult,
+  type CodingTestDebugResult,
+  type CodingTriageResult,
 } from '../../../../core/schemas/coding-worker.js';
 import type {
   CodingSubagentKind,
@@ -47,7 +51,11 @@ export const codingSubagentFlueNames: Record<CodingSubagentKind, string> = {
   github: codingGithubSubagentName,
 };
 
-export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'task'>) {
+export interface CodingSubagentTaskSession {
+  task<T>(prompt: string, options: { agent: string; result: unknown }): Promise<{ data: T }>;
+}
+
+export function createFlueCodingSubagentDelegate(session: CodingSubagentTaskSession) {
   return async (
     subagent: CodingSubagentKind,
     request: CodingTaskSubagentRequest,
@@ -58,7 +66,7 @@ export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'tas
 
     switch (subagent) {
       case 'triage': {
-        const response = await session.task(prompt, {
+        const response = await session.task<CodingTriageResult>(prompt, {
           agent,
           result: CodingTriageResultSchema,
         });
@@ -72,7 +80,7 @@ export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'tas
         };
       }
       case 'implementer': {
-        const response = await session.task(prompt, {
+        const response = await session.task<CodingImplementerResult>(prompt, {
           agent,
           result: CodingImplementerResultSchema,
         });
@@ -86,7 +94,7 @@ export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'tas
         };
       }
       case 'test-debug': {
-        const response = await session.task(prompt, {
+        const response = await session.task<CodingTestDebugResult>(prompt, {
           agent,
           result: CodingTestDebugResultSchema,
         });
@@ -100,7 +108,7 @@ export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'tas
         };
       }
       case 'code-review': {
-        const response = await session.task(prompt, {
+        const response = await session.task<CodingCodeReviewResult>(prompt, {
           agent,
           result: CodingCodeReviewResultSchema,
         });
@@ -114,7 +122,7 @@ export function createFlueCodingSubagentDelegate(session: Pick<FlueSession, 'tas
         };
       }
       case 'github': {
-        const response = await session.task(prompt, {
+        const response = await session.task<CodingGithubResult>(prompt, {
           agent,
           result: CodingGithubResultSchema,
         });

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 67,
-  "context_version": "sim-one-alpha-flue-v2-capabilities-scope-2026-08-01",
+  "graph_version": 70,
+  "context_version": "flue-v2-execution-skill-validation-scope:2026-08-01",
   "specification_root": "doc",
   "documents": [
     {
@@ -418,6 +418,21 @@
         "review-architecture-security",
         "specify-task-lifecycle-architecture",
         "verify-release-reconciliation-specifications"
+      ]
+    },
+    {
+      "id": "d12-flue-v2-persistence-and-compaction",
+      "status": "resolved",
+      "source_path": "doc/decisions/d12-flue-v2-persistence-and-compaction.md",
+      "decision_node": "resolve-d12-flue-v2-persistence-and-compaction",
+      "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+      "affected_nodes": [
+        "migrate-flue-v2-execution-persistence",
+        "migrate-flue-v2-connectors-clients",
+        "migrate-flue-v2-product-packaging",
+        "migrate-flue-v2-documentation",
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
       ]
     }
   ],

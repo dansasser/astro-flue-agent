@@ -40,6 +40,7 @@ export interface GoromboModelConfig {
 }
 
 export interface GoromboStorageConfig {
+  flueV2DatabasePath?: string;
   flueDatabasePath?: string;
   sessionDatabasePath?: string;
   vectorStorePath?: string;
@@ -216,11 +217,13 @@ function validateStorageConfig(value: unknown, source: string): GoromboStorageCo
     throw new Error(`${source} storage must be a JSON object when provided.`);
   }
 
+  const flueV2DatabasePath = readOptionalStoragePath(value, 'flueV2DatabasePath', source);
   const flueDatabasePath = readOptionalStoragePath(value, 'flueDatabasePath', source);
   const sessionDatabasePath = readOptionalStoragePath(value, 'sessionDatabasePath', source);
   const vectorStorePath = readOptionalStoragePath(value, 'vectorStorePath', source);
 
   return {
+    ...(flueV2DatabasePath ? { flueV2DatabasePath } : {}),
     ...(flueDatabasePath ? { flueDatabasePath } : {}),
     ...(sessionDatabasePath ? { sessionDatabasePath } : {}),
     ...(vectorStorePath ? { vectorStorePath } : {}),

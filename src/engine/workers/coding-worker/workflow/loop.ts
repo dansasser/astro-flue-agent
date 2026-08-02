@@ -40,11 +40,13 @@ import type {
   CodingWorkerRunStatus,
   CodingWorkerTaskRequest,
 } from '../../../../engine/workers/coding-worker/types.js';
-import type { FlueSession } from '@flue/runtime';
 import { createInitialCodingPlan, chooseSubagents, setPlanStatus } from '../../../../engine/workers/coding-worker/workflow/coding-task.js';
 import { createInitialPlan, replan } from '../../../../engine/workers/coding-worker/workflow/planning.js';
 import type { CodingTaskSubagentRequest } from '../../../../engine/workers/coding-worker/workflow/coding-task.js';
-import { createFlueCodingSubagentDelegate } from '../../../../engine/workers/coding-worker/workflow/coordination.js';
+import {
+  createFlueCodingSubagentDelegate,
+  type CodingSubagentTaskSession,
+} from '../../../../engine/workers/coding-worker/workflow/coordination.js';
 
 export interface CodingWorkerLoopDependencies {
   reporter?: CodingProgressReporter;
@@ -1051,7 +1053,7 @@ function summarizeShellResult(stdout: string, stderr: string): string {
   return combined ? combined.slice(0, 1_000) : 'Command produced no output.';
 }
 
-export function createCodingWorkerLoopDelegate(session: { task: FlueSession['task'] }) {
+export function createCodingWorkerLoopDelegate(session: CodingSubagentTaskSession) {
   return createFlueCodingSubagentDelegate(session);
 }
 

@@ -18,6 +18,12 @@ import {
   loadSessionTranscriptPage,
   TranscriptCursorError,
 } from '../../engine/session/session-transcript.js';
+import {
+  agentConversationUrl,
+  type FlueConversationSnapshot,
+} from '../../engine/session/flue-conversation.js';
+import { loadFlueConversationSnapshot } from '../../engine/session/flue-conversation-loader.js';
+import { runtimeEnvForRequest } from '../middleware/api-secret.js';
 
 const NonEmptyStringSchema = v.pipe(v.string(), v.trim(), v.minLength(1));
 const TuiSessionIdentitySchema = v.object({
@@ -29,6 +35,11 @@ const TuiSessionIdentitySchema = v.object({
 
 export interface ChatSessionRouteOptions {
   loadTranscript?: typeof loadSessionTranscriptPage;
+  loadConversationSnapshot?: (input: {
+    instanceId: string;
+    headers: Headers;
+    env: Record<string, unknown>;
+  }) => Promise<FlueConversationSnapshot | null>;
 }
 
 export function registerChatSessionRoutes(
@@ -140,7 +151,19 @@ export function registerChatSessionRoutes(
       if (resolution.sessionId !== requestedSessionId) {
         return c.json({ error: `Session ${requestedSessionId} does not exist.` }, 404);
       }
-      const eventStreamStore = await goromboPersistenceRuntime.getEventStreamStore();
+      const generations = goromboPersistenceRuntime.sessionDatabase.listRuntimeGenerations(
+        resolution.sessionId,
+      );
+      const headers = new Headers(c.req.raw.headers);
+      const env = runtimeEnvForRequest(c.env as Record<string, unknown> | undefined);
+      const snapshotLoader = options.loadConversationSnapshot
+        ?? ((input) => loadFlueConversationSnapshot(
+          (path, init, env) => app.request(path, init, env),
+          input,
+        ));
+      const snapshots = (await Promise.all(generations.map((generation) =>
+        snapshotLoader({ instanceId: generation.instanceId, headers, env }))))
+        .filter((snapshot): snapshot is FlueConversationSnapshot => snapshot !== null);
       const loadTranscript = options.loadTranscript ?? loadSessionTranscriptPage;
       return c.json(await loadTranscript({
         session: {
@@ -148,7 +171,8 @@ export function registerChatSessionRoutes(
           ...(resolution.session.displayName ? { title: resolution.session.displayName } : {}),
         },
         sessionDatabase: goromboPersistenceRuntime.sessionDatabase,
-        eventStreamStore,
+        snapshots,
+        generations,
         limit,
         ...(before ? { before } : {}),
       }));

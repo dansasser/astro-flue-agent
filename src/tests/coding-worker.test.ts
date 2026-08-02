@@ -69,7 +69,7 @@ import { runCodingWorkerLoop, createInitialLoopState, createLoopCheckpoint } fro
 import { assertCodingWorkerCanComplete } from '../engine/workers/coding-worker/workflow/result-schema.js';
 import type { CodingSubagentKind, CodingSubagentRunResult, CodingWorkerTaskRequest } from '../engine/workers/coding-worker/types.js';
 import type { CodingTaskSubagentRequest } from '../engine/workers/coding-worker/workflow/coding-task.js';
-import type { ToolDefinition } from '@flue/runtime';
+import { defineTool, type ToolDefinition } from '@flue/runtime';
 
 test('coding worker internal subagents are worker-local profiles with distinct context identities', () => {
   const subagents = createCodingWorkerInternalSubagents({ model: 'ollama-cloud/minimax-m3' });
@@ -952,12 +952,11 @@ test('coding worker remains available when optional GitHub MCP connection fails'
 
 test('coding worker mounts a prepared GitHub MCP integration', () => {
   const project = createWorkspaceProject();
-  const readTool = {
+  const readTool = defineTool({
     name: 'mcp__github__issue_read',
     description: 'Read a GitHub issue.',
-    inputSchema: {},
-    execute: async () => '{}',
-  } as ToolDefinition;
+    run: async () => '{}',
+  });
 
   try {
     const composition = createCodingWorkerComposition({
@@ -1844,11 +1843,11 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
     const shell = getTool(codingWorker.tools, 'coding_shell_run');
 
     await runTool(patch, {
-      path: `${project.projectRelativePath}/index.js`,
+      path: 'index.js',
       edits: [{ oldText: 'return 41;', newText: 'return 42;', expectedOccurrences: 1 }],
     });
     const output = JSON.parse(
-      await runTool(shell, { command: 'node test.js', cwd: project.projectRelativePath }),
+      await runTool(shell, { command: 'node test.js' }),
     ) as { exitCode: number };
 
     assert.equal(output.exitCode, 0);

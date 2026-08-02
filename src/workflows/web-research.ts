@@ -1,4 +1,3 @@
-import type { FlueContext } from '@flue/runtime';
 import type { MemoryProvider } from '../engine/memory/memory-provider.js';
 import { createDefaultWebSearchProvider, type RagProvider } from '../engine/rag/providers.js';
 import { CachedWebSearchProvider } from '../engine/workers/researcher/research/cached-web-provider.js';
@@ -78,16 +77,6 @@ export interface WebResearchWorkflowOptions {
   cache?: ResearchCache;
   webProvider?: RagProvider;
   memoryProvider?: MemoryProvider;
-}
-
-/**
- * Flue workflow entrypoint for source-backed web research runs.
- */
-export async function run({
-  env,
-  payload,
-}: FlueContext<WebResearchWorkflowPayload>): Promise<WebResearchResult> {
-  return runWebResearch(payload, { env });
 }
 
 /**

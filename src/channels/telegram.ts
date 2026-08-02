@@ -2,7 +2,7 @@ import { dispatch, defineTool } from '@flue/runtime';
 import { createTelegramChannel, type TelegramConversationRef } from '@flue/telegram';
 import { Api } from 'grammy';
 import type { Message, Update } from 'grammy/types';
-import orchestratorAgent from '../agents/orchestrator.js';
+import { Orchestrator } from '../agents/orchestrator.js';
 import {
   createApprovalIngress,
   createFileApprovalBindingStore,
@@ -233,7 +233,7 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
     message: incoming as unknown as Parameters<typeof normalizeTelegramUpdate>[0]['message'],
   });
   const activeChannel = getOrCreateTelegramChannel();
-  const agentInstanceId = activeChannel.conversationKey(conversationFromMessage(incoming));
+  const agentInstanceId = activeChannel.instanceId(conversationFromMessage(incoming));
 
   const sessionResolution = resolveChatSession({ event: normalized });
   goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
@@ -241,17 +241,18 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
     sessionId: sessionResolution.sessionId,
     deliveryKind: 'direct-agent',
   });
-  const harness = await dispatch(orchestratorAgent, {
+  const receipt = await dispatch(Orchestrator, {
     id: agentInstanceId,
-    input: {
+    message: {
+      kind: 'signal',
       type: 'telegram.message',
-      updateId: update.update_id,
-      message: incoming,
-      prompt: createChatPrompt(normalized),
+      tagName: 'telegram_message',
+      attributes: { updateId: String(update.update_id) },
+      body: createChatPrompt(normalized),
     },
   });
 
-  return harness;
+  return receipt;
 }
 
 async function handleCallbackQuery(query: NonNullable<Update['callback_query']>, _update: Update) {

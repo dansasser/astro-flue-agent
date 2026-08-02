@@ -9370,13 +9370,109 @@
       "max_traversals": null,
       "to": "migrate-flue-v2-foundation",
       "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "artifact:baseline-context"
+      ],
+      "condition": "The grounded repository and installed Flue 2 baseline are current and bound to this decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d12-flue-v2-persistence-and-compaction-consumes",
+      "max_traversals": null,
+      "to": "resolve-d12-flue-v2-persistence-and-compaction",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "A changed runtime or framework baseline invalidates the persistence decision.",
+      "exit_condition": null,
+      "from": "baseline-context",
+      "id": "baseline-to-resolve-d12-flue-v2-persistence-and-compaction-invalidates",
+      "max_traversals": null,
+      "to": "resolve-d12-flue-v2-persistence-and-compaction",
+      "type": "invalidates"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-execution-persistence-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-execution-persistence",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-connectors-clients-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-connectors-clients",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-product-packaging-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-product-packaging",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-documentation-consumes",
+      "max_traversals": null,
+      "to": "migrate-flue-v2-documentation",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-verify-release-reconciliation-specifications-consumes",
+      "max_traversals": null,
+      "to": "verify-release-reconciliation-specifications",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "decision:d12-flue-v2-persistence-and-compaction"
+      ],
+      "condition": "The resolved Flue 2 persistence and compaction decision is current and bound to this consumer.",
+      "exit_condition": null,
+      "from": "resolve-d12-flue-v2-persistence-and-compaction",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction-to-plan-implementation-consumes",
+      "max_traversals": null,
+      "to": "plan-implementation",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 67,
+  "graph_version": 70,
   "nodes": [
     {
       "acceptance": [
@@ -10274,6 +10370,11 @@
         {
           "artifact": "artifact:flue-v2-migration-spec",
           "name": "Flue 2 migration specification",
+          "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
           "required": true
         }
       ],
@@ -15743,6 +15844,11 @@
           "artifact": "artifact:flue-v2-migration-spec",
           "name": "Flue 2 migration specification",
           "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
+          "required": true
         }
       ],
       "outputs": [
@@ -19498,16 +19604,21 @@
         "timeout_minutes": 360
       },
       "executor": {
-        "instructions": "Replace removed execution and persistence APIs using only public Flue 2 contracts. Preserve connector-owned sessions and never reuse beta Flue storage.",
+        "instructions": "Replace removed execution and persistence APIs using only public Flue 2 contracts. Preserve connector-owned sessions and never reuse beta Flue storage. Implement D12 exactly: use db/flue-v2.sqlite, leave beta db/flue.sqlite untouched, preserve sessions.sqlite, and rotate public Flue instance generations for explicit compaction. In src/channels/telegram.ts, change only the named orchestrator export, stable connector session id, and public AgentDispatchRequest shape required for Stack 4 compilation; Stack 5 owns all remaining connector and client behavior. In src/engine/workers/coding-worker/skills.ts, mechanically replace dots in the five built-in process skill ids with single hyphens so Flue 2 validation passes; do not change instructions or behavior.",
         "kind": "agent",
         "name": "SIM-ONE Flue execution migrator"
       },
-      "goal": "Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, and submission observability.",
+      "goal": "Replace removed workflows and beta session stores with public Flue 2 dispatch/read, distinct persistence, session/history compatibility, schedules, submission observability, and the minimal connector compile bridge required to verify them.",
       "id": "migrate-flue-v2-execution-persistence",
       "inputs": [
         {
           "artifact": "artifact:flue-v2-capabilities-change",
           "name": "verified capability migration",
+          "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
           "required": true
         }
       ],
@@ -19534,7 +19645,14 @@
           "src/engine/schedules/",
           "src/core/telemetry/",
           "src/tests/",
-          "docs/architecture/flue-v2-migration.md"
+          "docs/architecture/flue-v2-migration.md",
+          "decision:d12-flue-v2-persistence-and-compaction",
+          "src/agents/orchestrator.ts",
+          "src/channels/telegram.ts",
+          "src/engine/workers/coding-worker/skills.ts",
+          "src/db.ts",
+          "src/core/config/gorombo-config.ts",
+          "src/core/config/gorombo.config.json"
         ],
         "write": [
           "src/workflows/",
@@ -19543,7 +19661,13 @@
           "src/engine/session/",
           "src/engine/schedules/",
           "src/core/telemetry/",
-          "src/tests/ files assigned exclusively to execution and persistence migration"
+          "src/tests/ files assigned exclusively to execution and persistence migration",
+          "src/agents/orchestrator.ts",
+          "src/channels/telegram.ts minimal Flue 2 compile bridge only",
+          "src/engine/workers/coding-worker/skills.ts Flue 2 id validation bridge only",
+          "src/db.ts",
+          "src/core/config/gorombo-config.ts",
+          "src/core/config/gorombo.config.json"
         ]
       },
       "resources": [
@@ -19552,7 +19676,13 @@
         "src/api/routes/chat-sessions.ts",
         "src/engine/session/",
         "src/engine/schedules/",
-        "src/core/telemetry/"
+        "src/core/telemetry/",
+        "src/agents/orchestrator.ts",
+        "src/channels/telegram.ts",
+        "src/engine/workers/coding-worker/skills.ts",
+        "src/db.ts",
+        "src/core/config/gorombo-config.ts",
+        "src/core/config/gorombo.config.json"
       ],
       "side_effects": {
         "approval_required": false,
@@ -19627,6 +19757,11 @@
         {
           "artifact": "artifact:flue-v2-execution-persistence-change",
           "name": "verified execution and persistence migration",
+          "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
           "required": true
         }
       ],
@@ -19739,6 +19874,11 @@
           "artifact": "artifact:flue-v2-connectors-clients-change",
           "name": "verified connector and client migration",
           "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
+          "required": true
         }
       ],
       "outputs": [
@@ -19833,6 +19973,11 @@
         {
           "artifact": "artifact:flue-v2-product-packaging-change",
           "name": "verified packaged Flue 2 product",
+          "required": true
+        },
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "name": "resolved Flue 2 persistence, history, and compaction decision",
           "required": true
         }
       ],
@@ -19995,10 +20140,89 @@
       ],
       "title": "Verify Flue 2 Production Migration",
       "type": "verification"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The decision records the exact Flue 2 database path, beta rollback archive, app-owned session/history boundary, public dispatch/read compaction rotation, failure behavior, and affected consumers.",
+          "evidence": "doc/decisions/d12-flue-v2-persistence-and-compaction.md",
+          "id": "flue-v2-persistence-decision-complete",
+          "kind": "artifact"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The decision record is source-grounded, internally consistent, and bound to every affected consumer.",
+        "max_attempts": 2,
+        "timeout_minutes": 45
+      },
+      "executor": {
+        "instructions": "Verify and preserve D12 against the installed Flue 2.0.1 public APIs and the SIM-ONE product-session contract. Keep beta Flue storage untouched and bind every affected migration consumer.",
+        "kind": "agent",
+        "name": "SIM-ONE Flue migration architect"
+      },
+      "goal": "Bind Flue 2 to a separate persistence namespace while preserving SIM-ONE product sessions and implementing explicit compaction through public runtime generations.",
+      "id": "resolve-d12-flue-v2-persistence-and-compaction",
+      "inputs": [
+        {
+          "artifact": "artifact:baseline-context",
+          "name": "grounded project context",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "decision:d12-flue-v2-persistence-and-compaction",
+          "format": "text/markdown",
+          "name": "Flue 2 Persistence History And Compaction Decision"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "https://flueframework.com/docs/guide/database/",
+          "https://flueframework.com/docs/reference/agent-api/",
+          "https://flueframework.com/docs/reference/streaming-protocol/"
+        ],
+        "read": [
+          "artifact:baseline-context",
+          "AGENTS.md",
+          "docs/architecture/flue-v2-migration.md",
+          "docs/architecture/session-context-budget.md",
+          "src/engine/session/",
+          "src/api/routes/chat-events.ts",
+          "version-matched Flue documentation",
+          "doc/decisions/d12-flue-v2-persistence-and-compaction.md",
+          "decisions.json",
+          "specification-manifest.json"
+        ],
+        "write": [
+          "doc/decisions/d12-flue-v2-persistence-and-compaction.md"
+        ]
+      },
+      "resources": [
+        "doc/decisions/d12-flue-v2-persistence-and-compaction.md"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Creates or updates the Flue 2 persistence and compaction decision record.",
+        "level": "reversible",
+        "rollback": "Restore the decision record and invalidate only its declared migration consumers."
+      },
+      "state": "planned",
+      "tags": [
+        "architecture",
+        "decision",
+        "flue",
+        "migration",
+        "persistence",
+        "compaction"
+      ],
+      "title": "Resolve Flue 2 Persistence History And Compaction",
+      "type": "decision"
     }
   ],
   "project": {
-    "context_version": "sim-one-alpha-flue-v2-capabilities-scope-2026-08-01",
+    "context_version": "flue-v2-execution-skill-validation-scope:2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

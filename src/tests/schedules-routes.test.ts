@@ -2,7 +2,7 @@
  * Admin HTTP route tests for schedules (plan §17).
  *
  * Builds a test Hono app with `requireApiSecret` + `registerSchedulesRoutes`,
- * injects a real ScheduleManager (temp DB + fake dispatch + fake observe) via
+ * injects a real ScheduleManager (temp DB + fake dispatch/settlement) via
  * the test-only `__setScheduleManagerForTesting` setter, and exercises each
  * endpoint, auth (401 without x-api-secret, 503 if API_SECRET unset / manager
  * disabled), and the `?wait=1` run mode.
@@ -10,7 +10,6 @@
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
-import type { FlueEvent } from '@flue/runtime';
 import { Hono } from 'hono';
 
 import { resolveScheduleConfig } from '../engine/schedules/schedule-config.js';
@@ -43,28 +42,22 @@ async function withApiSecret(secret: string | undefined, fn: () => Promise<void>
   }
 }
 
-function makeAppWithManager(observeTimeoutMs = 50): { app: Hono; path: string; cleanup: () => void } {
+function makeAppWithManager(settlementTimeoutMs = 50): { app: Hono; path: string; cleanup: () => Promise<void> } {
   const path = tempDbPath();
   const store = new ScheduleStore(path);
-  let subscriber: ((event: FlueEvent) => void) | null = null;
-  const fakeObserve = (sub: (event: FlueEvent) => void): (() => void) => {
-    subscriber = sub;
-    return () => {
-      subscriber = null;
-    };
-  };
   const fakeDispatch = async (args: DispatchScheduleArgs): Promise<ScheduleDispatchResult> => ({
-    dispatchId: 'd-' + args.instanceId,
+    submissionId: 'd-' + args.instanceId,
     acceptedAt: new Date().toISOString(),
+    uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
+    settle: (signal) => rejectWhenAborted(signal),
   });
   const config = resolveScheduleConfig({}, {});
   const manager = new ScheduleManager({
     store,
     config,
     dispatch: fakeDispatch,
-    observeFn: fakeObserve as never,
-    observeTimeoutMs,
+    settlementTimeoutMs,
   });
   manager.start();
   __setScheduleManagerForTesting(manager);
@@ -76,8 +69,8 @@ function makeAppWithManager(observeTimeoutMs = 50): { app: Hono; path: string; c
   return {
     app,
     path,
-    cleanup: () => {
-      manager.stop();
+    cleanup: async () => {
+      await manager.stop();
       __setScheduleManagerForTesting(null);
       rmSync(path, { force: true });
     },
@@ -100,7 +93,7 @@ test('schedules route: 503 when API_SECRET is not configured', async () => {
       const res = await app.request('/api/schedules', { headers: headers(false) });
       assert.equal(res.status, 503);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -113,7 +106,7 @@ test('schedules route: 401 without x-api-secret', async () => {
       assert.equal(res.status, 401);
       assert.deepEqual(await res.json(), { error: 'Unauthorized' });
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -179,7 +172,7 @@ test('schedules route: create -> get -> list -> update -> pause/resume -> delete
       const getAfter = await app.request('/api/schedules/daily', { headers: headers(false) });
       assert.equal(getAfter.status, 404);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -195,14 +188,14 @@ test('schedules route: create rejects bad payload with 400', async () => {
       });
       assert.equal(res.status, 400);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
 
 test('schedules route: run (no wait) returns runId; ?wait=1 reaches terminal', async () => {
   await withApiSecret(SECRET, async () => {
-    // short observe timeout so ?wait=1 sees 'timeout' (502) deterministically
+    // Short settlement timeout so ?wait=1 sees 'timeout' (502) deterministically.
     const { app, cleanup } = makeAppWithManager(30);
     try {
       const create = await app.request('/api/schedules', {
@@ -218,12 +211,13 @@ test('schedules route: run (no wait) returns runId; ?wait=1 reaches terminal', a
       const runBody = (await run.json()) as { runId: string };
       assert.ok(runBody.runId);
 
-      // ?wait=1 — observe timeout is 30ms, so the run reaches 'timeout' -> 502
+      // ?wait=1 reaches timeout after 30ms, so the route returns 502.
       const waitRun = await app.request('/api/schedules/run-test/run?wait=1', { method: 'POST', headers: headers() });
       const waitBody = (await waitRun.json()) as { status: string };
-      assert.ok(['timeout', 'ok', 'error', 'skipped'].includes(waitBody.status), `wait returned a terminal status: ${waitBody.status}`);
+      assert.equal(waitRun.status, 502);
+      assert.equal(waitBody.status, 'timeout');
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -259,7 +253,7 @@ test('schedules route: runs history + one-run detail + 404s', async () => {
       const missingSched = await app.request('/api/schedules/nope/runs', { headers: headers(false) });
       assert.equal(missingSched.status, 404);
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
@@ -283,7 +277,20 @@ test('schedules route: maxAttempts must be a positive integer', async () => {
       });
       assert.equal(ok.status, 201, 'maxAttempts=3 accepted');
     } finally {
-      cleanup();
+      await cleanup();
     }
   });
 });
+
+function rejectWhenAborted(signal: AbortSignal | undefined): Promise<never> {
+  return new Promise((_, reject) => {
+    if (!signal) {
+      return;
+    }
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+  });
+}

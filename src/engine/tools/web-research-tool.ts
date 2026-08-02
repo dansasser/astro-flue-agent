@@ -13,12 +13,10 @@ import { runWebResearch } from '../../workflows/web-research.js';
 export const webResearchTool = defineTool({
   name: 'web_research',
   description:
-    'Researcher-only tool that runs the web research workflow with query planning, caching, web search, page fetch, source packing, and confidence metadata. Scope is read from the trusted eventId when available; falls back to explicit actorId/conversationId when the event is not persisted (e.g. direct TUI agent sessions).',
+    'Researcher-only tool that runs the web research workflow with query planning, caching, web search, page fetch, source packing, and confidence metadata. Scope is derived from the trusted persisted eventId.',
   input: v.object({
     eventId: v.string(),
     text: v.string(),
-    actorId: v.optional(v.string()),
-    conversationId: v.optional(v.string()),
     depth: v.optional(v.string()),
     maxQueries: v.optional(v.union([v.number(), v.string()])),
     maxFetches: v.optional(v.union([v.number(), v.string()])),
@@ -32,8 +30,6 @@ export const webResearchTool = defineTool({
   run: async ({ data: {
     eventId,
     text,
-    actorId: fallbackActorId,
-    conversationId: fallbackConversationId,
     depth,
     maxQueries,
     maxFetches,
@@ -45,15 +41,16 @@ export const webResearchTool = defineTool({
     maxIterations,
   } }) => {
     const event = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(eventId);
-    const actorId = event?.actor.id ?? fallbackActorId ?? 'researcher';
-    const conversationId = event?.conversation.id ?? fallbackConversationId ?? 'researcher-session';
+    if (!event) {
+      throw new Error('web_research requires a trusted eventId persisted by chat ingress.');
+    }
 
     return JSON.stringify(
       await runWebResearch({
         eventId: String(eventId),
         text: String(text),
-        actorId,
-        conversationId,
+        actorId: event.actor.id,
+        conversationId: event.conversation.id,
         depth: readResearchDepth(depth),
         maxQueries: readPositiveInteger(maxQueries),
         maxFetches: readNonNegativeInteger(maxFetches),
