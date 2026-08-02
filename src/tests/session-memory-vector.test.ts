@@ -173,6 +173,81 @@ test('incremental Flue snapshots preserve previously indexed assistant replies',
   }
 });
 
+test('newer indexed snapshots are not replaced by a stale offset', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sim-one-flue-v2-stale-index-'));
+  const database = new GoromboSessionDatabase(join(directory, 'sessions.sqlite'));
+  try {
+    await database.indexFlueConversationSnapshot('stale-session', {
+      ...assistantSnapshot('stale-instance', '0000000000000000_0000000000000002', 'assistant-new', 'Newest answer.'),
+      incarnation: 'incarnation-1',
+    });
+    await database.indexFlueConversationSnapshot('stale-session', {
+      ...assistantSnapshot('stale-instance', '0000000000000000_0000000000000001', 'assistant-old', 'Stale answer.'),
+      incarnation: 'incarnation-1',
+    });
+
+    assert.equal(database.searchSessionMemory({
+      text: 'stale answer',
+      sessionId: 'stale-session',
+    }).some((record) => record.content === 'Stale answer.'), false);
+    assert.equal(database.searchSessionMemory({
+      text: 'newest answer',
+      sessionId: 'stale-session',
+    }).some((record) => record.content === 'Newest answer.'), true);
+  } finally {
+    database.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('incremental snapshots embed only newly discovered messages', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sim-one-flue-v2-delta-index-'));
+  const embeddedBatches: string[][] = [];
+  const database = new GoromboSessionDatabase(join(directory, 'sessions.sqlite'), {
+    embeddingClient: {
+      embedBatch: async (values: string[]) => {
+        embeddedBatches.push([...values]);
+        return values.map(() => [1, 0]);
+      },
+    } as never,
+    vectorStore: {
+      upsert: async () => {},
+      delete: async () => {},
+    } as never,
+  });
+  try {
+    const first = assistantSnapshot(
+      'delta-instance',
+      '0000000000000000_0000000000000001',
+      'assistant-1',
+      'First answer.',
+    );
+    await database.indexFlueConversationSnapshot('delta-session', first);
+    await database.indexFlueConversationSnapshot('delta-session', {
+      ...assistantSnapshot(
+        'delta-instance',
+        '0000000000000000_0000000000000002',
+        'assistant-2',
+        'Second answer.',
+      ),
+      messages: [
+        ...first.messages,
+        ...assistantSnapshot(
+          'delta-instance',
+          '0000000000000000_0000000000000002',
+          'assistant-2',
+          'Second answer.',
+        ).messages,
+      ],
+    });
+
+    assert.deepEqual(embeddedBatches, [['First answer.'], ['Second answer.']]);
+  } finally {
+    database.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 function assistantSnapshot(
   conversationId: string,
   offset: string,

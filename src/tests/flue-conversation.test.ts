@@ -23,6 +23,9 @@ test('Flue conversation snapshots validate nested messages, parts, and settlemen
     { ...valid, messages: [{ ...valid.messages[0], role: 'intruder' }] },
     { ...valid, messages: [{ ...valid.messages[0], parts: [{ type: 'text', text: 42, state: 'done' }] }] },
     { ...valid, messages: [{ ...valid.messages[0], parts: [{ type: 'dynamic-tool', toolName: 'x', toolCallId: '1', state: 'output-error', input: {}, errorText: 42 }] }] },
+    { ...valid, messages: [{ ...valid.messages[0], parts: [{ type: 'dynamic-tool', toolName: 'x', toolCallId: '1', state: 'input-available' }] }] },
+    { ...valid, messages: [{ ...valid.messages[0], parts: [{ type: 'dynamic-tool', toolName: 'x', toolCallId: '1', state: 'output-available', input: {} }] }] },
+    { ...valid, messages: [{ ...valid.messages[0], parts: [{ type: 'dynamic-tool', toolName: 'x', toolCallId: '1', state: 'output-error', errorText: 'failed' }] }] },
     { ...valid, settlements: [{ submissionId: 42, outcome: 'completed' }] },
     { ...valid, settlements: [{ submissionId: 'submission-1', outcome: 'unknown' }] },
   ]) {

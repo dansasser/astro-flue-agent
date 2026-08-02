@@ -12,6 +12,7 @@ export interface OrchestratorDispatchInput {
   message: DeliveredMessageInput;
   initialData?: OrchestratorInitialData;
   idempotencyKey?: string;
+  onAccepted?: (receipt: DispatchReceipt) => void | Promise<void>;
   onEvent?: AgentReadOptions['onEvent'];
   signal?: AbortSignal;
 }
@@ -34,6 +35,7 @@ export const dispatchOrchestratorMessage: OrchestratorDispatcher = async (input)
     ...(input.initialData ? { initialData: input.initialData } : {}),
     ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
   });
+  await input.onAccepted?.(receipt);
   const reply = await handle.read(receipt, {
     ...(input.onEvent ? { onEvent: input.onEvent } : {}),
     ...(input.signal ? { signal: input.signal } : {}),

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { DeliveredMessageInput } from '@flue/runtime';
+import type { DeliveredMessageInput, DispatchReceipt } from '@flue/runtime';
 import { Hono } from 'hono';
 import { registerChatEventRoutes } from '../api/routes/chat-events.js';
 import { goromboPersistenceRuntime } from '../db.js';
@@ -109,7 +109,121 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
     fixture.eventIds.push(continuedBody.event?.id ?? '');
     assert.equal(continued.status, 200);
     assert.deepEqual(fixture.loadedInstanceIds, [generations[1]?.instanceId]);
+
+    const continuedAgain = await fixture.post({
+      connector: 'tui',
+      text: 'Continue one more time.',
+      actorId: fixture.actorId,
+      conversationId: fixture.conversationId,
+      session: fixture.sessionId,
+    });
+    assert.equal(continuedAgain.status, 200);
+    assert.doesNotMatch(JSON.stringify(fixture.dispatches[2]?.message), /Continuation summary/);
+    assert.doesNotMatch(JSON.stringify(fixture.dispatches[3]?.message), /Continuation summary/);
+    assert.equal(
+      fixture.dispatches[2]?.initialData?.continuationSummary,
+      'Continuation summary',
+    );
   } finally {
+    fixture.cleanup();
+  }
+});
+
+test('chat facade persists dispatch admission before a failed settlement read returns', async () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const actorId = `admission-actor-${suffix}`;
+  const conversationId = `admission-conversation-${suffix}`;
+  const app = new Hono();
+  const previous = {
+    API_SECRET: process.env.API_SECRET,
+    OLLAMA_API_KEY: process.env.OLLAMA_API_KEY,
+    CODEX_BRAIN_LOCAL_API_KEY: process.env.CODEX_BRAIN_LOCAL_API_KEY,
+    CODEX_BRAIN_LOCAL_API_URL: process.env.CODEX_BRAIN_LOCAL_API_URL,
+  };
+  process.env.API_SECRET = 'test-secret';
+  process.env.OLLAMA_API_KEY = 'test-key';
+  process.env.CODEX_BRAIN_LOCAL_API_KEY = 'test-key';
+  process.env.CODEX_BRAIN_LOCAL_API_URL = 'https://codex-brain.example.test/v1';
+  registerChatEventRoutes(app, {
+    dispatchOrchestrator: async (input) => {
+      const receipt: DispatchReceipt = {
+        submissionId: `admission-${suffix}`,
+        acceptedAt: '2026-08-01T00:00:00.000Z',
+        uid: `uid-${suffix}`,
+      };
+      await input.onAccepted?.(receipt);
+      throw new Error('provider settlement failed');
+    },
+  });
+
+  let sessionId: string | undefined;
+  try {
+    const response = await app.request('/api/chat/events', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-secret': 'test-secret' },
+      body: JSON.stringify({ connector: 'tui', text: 'Persist this admission.', actorId, conversationId }),
+    });
+    assert.equal(response.status, 500);
+    sessionId = goromboPersistenceRuntime.sessionDatabase.listChatSessionsForScope({
+      origin: 'tui',
+      actorId,
+      conversationId,
+      limit: 1,
+    })[0]?.sessionId;
+    assert.ok(sessionId);
+    const stored = goromboPersistenceRuntime.sessionDatabase
+      .listNormalizedMessageEventsForSession({ sessionId })[0];
+    assert.equal(stored?.delivery.submissionId, `admission-${suffix}`);
+    assert.equal(stored?.delivery.instanceId, sessionId);
+  } finally {
+    if (sessionId) goromboPersistenceRuntime.sessionDatabase.deleteChatSession(sessionId);
+    for (const session of goromboPersistenceRuntime.sessionDatabase.listChatSessionsForScope({
+      origin: 'tui', actorId, conversationId, limit: 10,
+    })) {
+      for (const record of goromboPersistenceRuntime.sessionDatabase
+        .listNormalizedMessageEventsForSession({ sessionId: session.sessionId })) {
+        goromboPersistenceRuntime.sessionDatabase.deleteNormalizedMessageEvent(record.event.id);
+      }
+      goromboPersistenceRuntime.sessionDatabase.deleteChatSession(session.sessionId);
+    }
+    restoreEnv('API_SECRET', previous.API_SECRET);
+    restoreEnv('OLLAMA_API_KEY', previous.OLLAMA_API_KEY);
+    restoreEnv('CODEX_BRAIN_LOCAL_API_KEY', previous.CODEX_BRAIN_LOCAL_API_KEY);
+    restoreEnv('CODEX_BRAIN_LOCAL_API_URL', previous.CODEX_BRAIN_LOCAL_API_URL);
+  }
+});
+
+test('chat facade awaits session-memory indexing before responding', async () => {
+  const fixture = createFixture();
+  const database = goromboPersistenceRuntime.sessionDatabase;
+  const original = database.indexFlueConversationSnapshot.bind(database);
+  let release!: () => void;
+  const blocked = new Promise<void>((resolve) => { release = resolve; });
+  let indexingStarted = false;
+  database.indexFlueConversationSnapshot = async () => {
+    indexingStarted = true;
+    await blocked;
+  };
+  try {
+    let responded = false;
+    const pending = Promise.resolve(fixture.post({
+      connector: 'tui',
+      text: 'Wait for indexing.',
+      actorId: fixture.actorId,
+      conversationId: fixture.conversationId,
+    })).then((response) => {
+      responded = true;
+      return response;
+    });
+    while (!indexingStarted) await new Promise((resolve) => setTimeout(resolve, 1));
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.equal(responded, false);
+    release();
+    const response = await pending;
+    assert.equal(response.status, 200);
+  } finally {
+    database.indexFlueConversationSnapshot = original;
+    release();
     fixture.cleanup();
   }
 });
@@ -119,7 +233,11 @@ function createFixture() {
   const actorId = `flue-v2-actor-${suffix}`;
   const conversationId = `flue-v2-conversation-${suffix}`;
   const eventIds: string[] = [];
-  const dispatches: Array<{ instanceId: string; message: DeliveredMessageInput }> = [];
+  const dispatches: Array<{
+    instanceId: string;
+    message: DeliveredMessageInput;
+    initialData?: { continuationSummary?: string };
+  }> = [];
   const loadedInstanceIds: string[] = [];
   let dispatchCount = 0;
   let sessionId: string | undefined;
@@ -128,7 +246,11 @@ function createFixture() {
   registerChatEventRoutes(app, {
     dispatchOrchestrator: async (input) => {
       dispatchCount += 1;
-      dispatches.push({ instanceId: input.instanceId, message: input.message });
+      dispatches.push({
+        instanceId: input.instanceId,
+        message: input.message,
+        initialData: input.initialData,
+      });
       const submissionId = `submission-${dispatchCount}`;
       const compact = JSON.stringify(input.message).includes('sim_one_compact');
       return {

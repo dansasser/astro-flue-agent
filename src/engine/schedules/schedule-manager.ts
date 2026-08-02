@@ -61,6 +61,7 @@ export class ScheduleManager {
   private readonly retryTimers = new Map<string, Set<ReturnType<typeof setTimeout>>>(); // scheduleId -> pending retry timers
   private readonly fireQueue: Array<() => void> = [];
   private readonly activeSettlements = new Map<string, ActiveSettlement>();
+  private readonly activeAttempts = new Set<Promise<void>>();
   private inFlight = 0;
   private started = false;
   private shuttingDown = false;
@@ -96,21 +97,13 @@ export class ScheduleManager {
     this.cronJobs.clear();
     // Clear all pending retry backoff timers so the process does not stay alive
     // or wake on an orphaned retry after shutdown.
-    for (const set of this.retryTimers.values()) {
-      for (const timer of set) {
-        clearTimeout(timer);
-      }
-    }
-    this.retryTimers.clear();
+    this.cancelAllRetries();
     for (const release of this.fireQueue.splice(0)) {
       release();
     }
 
-    if (this.activeSettlements.size > 0 && graceMs > 0) {
-      await waitForActiveSettlements(
-        [...this.activeSettlements.values()].map((entry) => entry.outcome),
-        graceMs,
-      );
+    if (this.activeAttempts.size > 0 && graceMs > 0) {
+      await waitForActiveAttempts([...this.activeAttempts], graceMs);
     }
     for (const settlement of this.activeSettlements.values()) {
       if (!settlement.controller.signal.aborted) {
@@ -123,6 +116,7 @@ export class ScheduleManager {
     await Promise.allSettled(
       [...this.activeSettlements.values()].map((entry) => entry.outcome),
     );
+    this.cancelAllRetries();
     this.started = false;
   }
 
@@ -162,7 +156,7 @@ export class ScheduleManager {
         },
       },
       () => {
-        this.fire(record).catch((error) => {
+        this.launchAttempt(this.fire(record), (error) => {
           this.emitScheduleError(record, `uncaught fire error: ${errorMessage(error)}`);
         });
       },
@@ -180,7 +174,7 @@ export class ScheduleManager {
     }
     const runId = ulid();
     // Fire without going through Croner (manual trigger), but same fire path.
-    this.fire(record, runId).catch((error) => {
+    this.launchAttempt(this.fire(record, runId), (error) => {
       this.emitScheduleError(record, `manual fire error: ${errorMessage(error)}`);
     });
     return { runId };
@@ -248,6 +242,25 @@ export class ScheduleManager {
       }
       this.retryTimers.delete(scheduleId);
     }
+  }
+
+  private cancelAllRetries(): void {
+    for (const scheduleId of [...this.retryTimers.keys()]) {
+      this.cancelRetriesFor(scheduleId);
+    }
+  }
+
+  private launchAttempt(
+    attempt: Promise<void>,
+    onError: (error: unknown) => void,
+  ): void {
+    let tracked: Promise<void>;
+    tracked = attempt
+      .catch(onError)
+      .finally(() => {
+        this.activeAttempts.delete(tracked);
+      });
+    this.activeAttempts.add(tracked);
   }
 
   /**
@@ -335,6 +348,7 @@ export class ScheduleManager {
       // transient categories actually retry, so a customized retry policy has
       // runtime effect.
       if (
+        !this.shuttingDown &&
         isTransientScheduleError(category) &&
         this.config.retry.retryOn.includes(category) &&
         attempt < maxAttempts
@@ -348,8 +362,15 @@ export class ScheduleManager {
         const delay = backoffForAttempt(this.config.retry, attempt);
         const timer: ReturnType<typeof setTimeout> = setTimeout(() => {
           // Remove the fired timer from the tracked set, then retry.
-          this.retryTimers.get(record.id)?.delete(timer);
-          this.retryFire(record, runId, retryInstanceId, nextAttempt).catch((error) => {
+          const timers = this.retryTimers.get(record.id);
+          timers?.delete(timer);
+          if (timers?.size === 0) {
+            this.retryTimers.delete(record.id);
+          }
+          if (this.shuttingDown) {
+            return;
+          }
+          this.launchAttempt(this.retryFire(record, runId, retryInstanceId, nextAttempt), (error) => {
             this.emitScheduleError(record, `retry fire error: ${errorMessage(error)}`);
           });
         }, delay);
@@ -565,14 +586,14 @@ async function settleScheduleDispatch(
   }
 }
 
-async function waitForActiveSettlements(
-  settlements: Promise<ObservationOutcome>[],
+async function waitForActiveAttempts(
+  attempts: Promise<unknown>[],
   graceMs: number,
 ): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      Promise.allSettled(settlements),
+      Promise.allSettled(attempts),
       new Promise<void>((resolve) => {
         timer = setTimeout(resolve, graceMs);
       }),

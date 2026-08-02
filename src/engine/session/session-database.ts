@@ -2,6 +2,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { parseOffset } from '@flue/runtime/adapter';
 import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type { EmbeddingClient } from '../../engine/rag/embeddings.js';
 import { getOnnxEmbeddingDimensions } from '../../engine/embeddings/index.js';
@@ -260,24 +261,31 @@ export class GoromboSessionDatabase {
   ): Promise<void> {
     const indexed = this.database
       .prepare(
-        `SELECT offset
+        `SELECT incarnation, offset
          FROM flue_conversation_index_state
          WHERE session_id = ? AND conversation_id = ?`,
       )
-      .get(sessionId, snapshot.conversationId) as { offset: string } | undefined;
-    if (indexed?.offset === snapshot.offset) {
-      return;
+      .get(sessionId, snapshot.conversationId) as FlueConversationIndexStateRow | undefined;
+    const incarnation = snapshot.incarnation ?? '';
+    if (indexed?.incarnation === incarnation) {
+      const ordering = compareFlueOffsets(snapshot.offset, indexed.offset);
+      if (ordering !== undefined && ordering <= 0) {
+        return;
+      }
     }
 
     const now = new Date().toISOString();
     const storageKey = `flue-v2:${snapshot.conversationId}`;
-    const prompts = this.listAllNormalizedMessageEventsForSession(sessionId)
-      .filter((record) => record.delivery.instanceId === snapshot.conversationId);
-    const entriesById = new Map<string, LegacyBetaConversationData['entries'][number]>();
-    for (const entry of this.listExistingAssistantMemoryEntries(storageKey)) {
-      entriesById.set(entry.id, entry);
+    if (indexed && indexed.incarnation !== incarnation) {
+      this.deleteSessionMemoryByStorageKey(storageKey);
     }
-    for (const entry of [
+    const existingEntryIds = this.listSessionMemoryEntryIds(storageKey);
+    const prompts = this.listUnindexedNormalizedMessageEventsForConversation(
+      sessionId,
+      snapshot.conversationId,
+      storageKey,
+    );
+    const entries = [
       ...prompts.map((record) => ({
         id: `event:${record.event.id}`,
         type: 'message',
@@ -289,6 +297,7 @@ export class GoromboSessionDatabase {
           message.role === 'assistant'
           && message.purpose === 'assistant'
           && message.display === 'visible'
+          && !existingEntryIds.has(`message:${message.id}`)
           && readMessageText(message).trim().length > 0)
         .map((message) => ({
           id: `message:${message.id}`,
@@ -296,67 +305,63 @@ export class GoromboSessionDatabase {
           timestamp: now,
           message: { role: 'assistant', content: readMessageText(message) },
         })),
-    ] satisfies LegacyBetaConversationData['entries']) {
-      entriesById.set(entry.id, entry);
-    }
-    const entries = [...entriesById.values()]
-      .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+    ] satisfies LegacyBetaConversationData['entries'];
 
-    await this.indexSessionMemory(
-      storageKey,
-      'orchestrator',
-      sessionId,
-      { createdAt: now, updatedAt: now, entries },
-    );
+    if (entries.length > 0) {
+      await this.appendSessionMemory(
+        storageKey,
+        'orchestrator',
+        sessionId,
+        { createdAt: now, updatedAt: now, entries },
+      );
+    }
     this.database
       .prepare(
         `INSERT INTO flue_conversation_index_state
-         (session_id, conversation_id, offset, updated_at)
-         VALUES (?, ?, ?, ?)
+         (session_id, conversation_id, incarnation, offset, updated_at)
+         VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(session_id, conversation_id) DO UPDATE SET
+           incarnation = excluded.incarnation,
            offset = excluded.offset,
            updated_at = excluded.updated_at`,
       )
-      .run(sessionId, snapshot.conversationId, snapshot.offset, now);
+      .run(sessionId, snapshot.conversationId, incarnation, snapshot.offset, now);
   }
 
-  private listExistingAssistantMemoryEntries(
-    storageKey: string,
-  ): LegacyBetaConversationData['entries'] {
+  private listSessionMemoryEntryIds(storageKey: string): Set<string> {
     const rows = this.database
       .prepare(
-        `SELECT entry_id, content, created_at
-         FROM session_memory_chunks
-         WHERE source_storage_key = ? AND role = 'assistant'`,
+        `SELECT entry_id FROM session_memory_chunks WHERE source_storage_key = ?`,
       )
-      .all(storageKey) as unknown as Array<{
-        entry_id: string;
-        content: string;
-        created_at: string;
-      }>;
-    return rows.map((row) => ({
-      id: row.entry_id,
-      type: 'message',
-      timestamp: row.created_at,
-      message: { role: 'assistant', content: row.content },
-    }));
+      .all(storageKey) as unknown as Array<{ entry_id: string }>;
+    return new Set(rows.map((row) => row.entry_id));
   }
 
-  private listAllNormalizedMessageEventsForSession(
+  private listUnindexedNormalizedMessageEventsForConversation(
     sessionId: string,
+    conversationId: string,
+    storageKey: string,
   ): SessionNormalizedMessageRecord[] {
-    const records: SessionNormalizedMessageRecord[] = [];
-    let before: string | undefined;
-    do {
-      const page = this.listNormalizedMessageEventsForSession({
-        sessionId,
-        limit: 1_000,
-        ...(before ? { before } : {}),
-      });
-      records.unshift(...page);
-      before = page.length === 1_000 ? page[0]?.event.id : undefined;
-    } while (before);
-    return records;
+    const rows = this.database
+      .prepare(
+        `SELECT event_id, session_id, connector, message_kind, text, received_at, actor_id,
+                actor_display_name, conversation_id, thread_id, client_id, project_id,
+                workflow, task, delivery_kind, delivery_id, delivery_submission_id,
+                delivery_instance_id, delivery_uid, delivery_stream_url, delivery_offset, accepted_at
+         FROM normalized_message_events AS event
+         WHERE event.session_id = ?
+           AND event.delivery_kind = 'direct-agent'
+           AND event.delivery_instance_id = ?
+           AND NOT EXISTS (
+             SELECT 1
+             FROM session_memory_chunks AS memory
+             WHERE memory.source_storage_key = ?
+               AND memory.entry_id = 'event:' || event.event_id
+           )
+         ORDER BY event.received_at ASC, event.event_id ASC`,
+      )
+      .all(sessionId, conversationId, storageKey) as unknown as NormalizedMessageEventRow[];
+    return rows.map(toSessionNormalizedMessageRecord);
   }
 
   async deleteLegacyBetaConversation(storageKey: string): Promise<void> {
@@ -1226,6 +1231,7 @@ export class GoromboSessionDatabase {
       CREATE TABLE IF NOT EXISTS flue_conversation_index_state (
         session_id TEXT NOT NULL,
         conversation_id TEXT NOT NULL,
+        incarnation TEXT NOT NULL DEFAULT '',
         offset TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         PRIMARY KEY (session_id, conversation_id)
@@ -1386,6 +1392,7 @@ export class GoromboSessionDatabase {
     `);
 
     this.ensureChatSessionExplicitNameColumn();
+    this.ensureFlueConversationIndexStateColumns();
     this.ensureNormalizedMessageDeliveryColumns();
     this.ensureSessionMemoryScopeColumns();
     this.database.prepare(`DELETE FROM active_sessions WHERE surface = 'tui'`).run();
@@ -1404,6 +1411,25 @@ export class GoromboSessionDatabase {
     if (!existingColumns.has('explicit_name')) {
       try {
         this.database.exec('ALTER TABLE chat_sessions ADD COLUMN explicit_name TEXT');
+      } catch (error) {
+        if (!String(error).includes('duplicate column name')) {
+          throw error;
+        }
+      }
+    }
+  }
+
+  private ensureFlueConversationIndexStateColumns(): void {
+    const existingColumns = new Set(
+      (this.database.prepare(`PRAGMA table_info(flue_conversation_index_state)`).all() as unknown as Array<{ name: string }>)
+        .map((column) => column.name),
+    );
+    if (!existingColumns.has('incarnation')) {
+      try {
+        this.database.exec(
+          `ALTER TABLE flue_conversation_index_state
+           ADD COLUMN incarnation TEXT NOT NULL DEFAULT ''`,
+        );
       } catch (error) {
         if (!String(error).includes('duplicate column name')) {
           throw error;
@@ -1468,6 +1494,15 @@ export class GoromboSessionDatabase {
     data: LegacyBetaConversationData,
   ): Promise<void> {
     this.deleteSessionMemoryByStorageKey(storageKey);
+    await this.appendSessionMemory(storageKey, harnessName, sessionName, data);
+  }
+
+  private async appendSessionMemory(
+    storageKey: string,
+    harnessName: string,
+    sessionName: string,
+    data: LegacyBetaConversationData,
+  ): Promise<void> {
     const parts = parseLegacyFlueStorageKey(storageKey);
     const chatSession =
       this.getChatSession(sessionName) ??
@@ -1920,6 +1955,24 @@ function cleanScopeValue(value: string | undefined): string | undefined {
   return trimmed || undefined;
 }
 
+function compareFlueOffsets(left: string, right: string): number | undefined {
+  if (left === right) {
+    return 0;
+  }
+  try {
+    const leftOffset = parseOffset(left);
+    const rightOffset = parseOffset(right);
+    return leftOffset < rightOffset ? -1 : leftOffset > rightOffset ? 1 : 0;
+  } catch {
+    if (/^\d+$/.test(left) && /^\d+$/.test(right)) {
+      const leftOffset = BigInt(left);
+      const rightOffset = BigInt(right);
+      return leftOffset < rightOffset ? -1 : leftOffset > rightOffset ? 1 : 0;
+    }
+    return undefined;
+  }
+}
+
 function activeSessionKey(input: ActiveSessionLookup): string {
   return [
     input.surface,
@@ -2075,6 +2128,11 @@ interface ChatSessionGenerationRow {
   continuation_summary: string | null;
   compaction_submission_id: string | null;
   created_at: string;
+}
+
+interface FlueConversationIndexStateRow {
+  incarnation: string;
+  offset: string;
 }
 
 interface ActiveSessionRow {

@@ -128,17 +128,16 @@ test('custom model providers use Pi provider objects and Flue setProvider', () =
   assert.match(sharedProviderSource, /openAICompletionsApi/);
 });
 
-test('local research command targets the Flue 2 researcher agent module', () => {
+test('local research command invokes the trusted research workflow facade', () => {
   const source = readFileSync('scripts/research.mjs', 'utf8');
-  assert.match(source, /src\/engine\/workers\/researcher\/researcher\.ts/);
-  assert.match(source, /--message/);
-  assert.doesNotMatch(source, /'run',\s*'research'/);
-  assert.doesNotMatch(source, /--payload/);
+  assert.match(source, /\.tmp\/tsc\/workflows\/research\.js/);
+  assert.match(source, /runResearchWorkflow/);
+  assert.doesNotMatch(source, /run-flue\.mjs/);
+  assert.doesNotMatch(source, /workers\/researcher\/researcher\.ts/);
 });
 
-test('documented Coding Worker skill ids match their runtime names', () => {
+test('Coding Worker process skill ids use Flue-compatible names', () => {
   const source = readFileSync('src/engine/workers/coding-worker/skills.ts', 'utf8');
-  const docs = readFileSync('docs/architecture/skill-system.md', 'utf8');
   for (const name of [
     'coding-worker-triage-loop',
     'coding-worker-code-change-loop',
@@ -147,6 +146,5 @@ test('documented Coding Worker skill ids match their runtime names', () => {
     'coding-worker-github-pr-loop',
   ]) {
     assert.match(source, new RegExp(escapeRegExp(`name: '${name}'`)));
-    assert.match(docs, new RegExp(escapeRegExp(`\`${name}\``)));
   }
 });

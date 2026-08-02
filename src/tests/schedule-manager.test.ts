@@ -135,6 +135,57 @@ test('dispatch admission failures are recorded as errors', async () => {
   }
 });
 
+test('stop waits for a dispatch admission already in progress', async () => {
+  let releaseAdmission!: () => void;
+  const admission = new Promise<void>((resolve) => { releaseAdmission = resolve; });
+  const fixture = createFixture(async (args) => {
+    await admission;
+    return settled(args);
+  });
+  try {
+    fixture.manager.store.upsert({ slug: 'pending-admission', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
+    const runId = fixture.manager.fireNow('pending-admission')?.runId;
+    assert.ok(runId);
+    await waitForRun(fixture.store, runId!, ['queued']);
+    let stopped = false;
+    const stopping = fixture.manager.stop(250).then(() => { stopped = true; });
+    await wait(10);
+    assert.equal(stopped, false);
+    releaseAdmission();
+    await stopping;
+    assert.equal(fixture.store.getRun(runId!)?.status, 'ok');
+  } finally {
+    releaseAdmission();
+    await fixture.cleanup();
+  }
+});
+
+test('stop suppresses retries created while active work is draining', async () => {
+  let rejectSettlement!: (error: Error) => void;
+  const settlement = new Promise<AgentReply>((_, reject) => { rejectSettlement = reject; });
+  let dispatches = 0;
+  const fixture = createFixture(async (args) => {
+    dispatches += 1;
+    return settled(args, () => settlement);
+  }, 1_000, { retryDelayMs: 10 });
+  try {
+    fixture.manager.store.upsert({ slug: 'no-retry-after-stop', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
+    const runId = fixture.manager.fireNow('no-retry-after-stop')?.runId;
+    await waitForRun(fixture.store, runId!, ['admitted']);
+    const stopping = fixture.manager.stop(100);
+    rejectSettlement(new Error('network unavailable'));
+    await stopping;
+    assert.equal(dispatches, 1);
+    assert.equal(
+      (fixture.manager as unknown as { retryTimers: Map<string, Set<unknown>> }).retryTimers.size,
+      0,
+    );
+  } finally {
+    rejectSettlement(new Error('cleanup'));
+    await fixture.cleanup();
+  }
+});
+
 test('error classifier preserves transient and permanent categories', () => {
   assert.equal(classifyError('rate limit exceeded'), 'rate_limit');
   assert.equal(classifyError('provider unavailable'), 'provider-unavailable');
@@ -144,12 +195,23 @@ test('error classifier preserves transient and permanent categories', () => {
 function createFixture(
   dispatch: (args: DispatchScheduleArgs) => Promise<ScheduleDispatchResult>,
   timeoutMs = 1_000,
+  options: { retryDelayMs?: number } = {},
 ) {
   const path = `/tmp/sim-one-schedule-${Date.now()}-${Math.random()}.sqlite`;
   const store = new ScheduleStore(path);
   const manager = new ScheduleManager({
     store,
-    config: resolveScheduleConfig({}, {}),
+    config: {
+      ...resolveScheduleConfig({}, {}),
+      ...(options.retryDelayMs === undefined
+        ? {}
+        : {
+            retry: {
+              ...resolveScheduleConfig({}, {}).retry,
+              backoffMs: [options.retryDelayMs],
+            },
+          }),
+    },
     dispatch,
     settlementTimeoutMs: timeoutMs,
   });

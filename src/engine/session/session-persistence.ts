@@ -1,6 +1,7 @@
 import { sqlite } from '@flue/runtime/node';
 import type { PersistenceAdapter } from '@flue/runtime/adapter';
-import { realpathSync, statSync } from 'node:fs';
+import { lstatSync, readlinkSync, realpathSync, statSync } from 'node:fs';
+import { basename, dirname, join, resolve as resolvePath } from 'node:path';
 import type { GoromboConfig } from '../../core/config/gorombo-config.js';
 import {
   createGoromboRuntimePaths,
@@ -79,19 +80,60 @@ export function createGoromboPersistenceRuntime(config: GoromboConfig): GoromboP
 }
 
 function databasePathsAlias(left: string, right: string): boolean {
-  if (left === right) {
+  const canonicalLeft = canonicalizePotentialPath(left);
+  const canonicalRight = canonicalizePotentialPath(right);
+  if (canonicalLeft === canonicalRight) {
     return true;
   }
 
   try {
-    if (realpathSync(left) === realpathSync(right)) {
-      return true;
+    const leftStat = statSync(left);
+    const rightStat = statSync(right);
+    return leftStat.dev === rightStat.dev && leftStat.ino === rightStat.ino;
+  } catch (error) {
+    if (isMissingPathError(error)) {
+      return false;
     }
-  } catch {
-    return false;
+    throw error;
+  }
+}
+
+function canonicalizePotentialPath(path: string, seen = new Set<string>()): string {
+  const absolute = resolvePath(path);
+  if (seen.has(absolute)) {
+    throw new Error(`Database path symlink cycle detected at ${absolute}.`);
+  }
+  seen.add(absolute);
+
+  try {
+    return realpathSync(absolute);
+  } catch (error) {
+    if (!isMissingPathError(error)) {
+      throw error;
+    }
   }
 
-  const leftStat = statSync(left);
-  const rightStat = statSync(right);
-  return leftStat.dev === rightStat.dev && leftStat.ino === rightStat.ino;
+  try {
+    if (lstatSync(absolute).isSymbolicLink()) {
+      return canonicalizePotentialPath(
+        resolvePath(dirname(absolute), readlinkSync(absolute)),
+        seen,
+      );
+    }
+  } catch (error) {
+    if (!isMissingPathError(error)) {
+      throw error;
+    }
+  }
+
+  const parent = dirname(absolute);
+  return parent === absolute
+    ? absolute
+    : join(canonicalizePotentialPath(parent, seen), basename(absolute));
+}
+
+function isMissingPathError(error: unknown): boolean {
+  return error instanceof Error
+    && 'code' in error
+    && (error as NodeJS.ErrnoException).code === 'ENOENT';
 }

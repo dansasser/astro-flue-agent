@@ -60,6 +60,19 @@ test('Flue 2 and beta databases reject symlink and hardlink aliases', () => {
   }
 });
 
+test('Flue 2 and beta databases reject a dangling symlink alias', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'sim-one-flue-dangling-alias-'));
+  try {
+    symlinkSync('future.sqlite', join(directory, 'legacy.sqlite'));
+    assert.throws(
+      () => createGoromboPersistenceRuntime(config(directory, 'future.sqlite', 'legacy.sqlite')),
+      /must not point to the legacy Flue database/,
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test('product sessions keep stable ids while compaction rotates Flue runtime generations', () => {
   const directory = mkdtempSync(join(tmpdir(), 'sim-one-generations-'));
   const runtime = createRuntime(directory);

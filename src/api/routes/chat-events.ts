@@ -1,4 +1,5 @@
 import type { Hono } from 'hono';
+import type { DispatchReceipt } from '@flue/runtime';
 import {
   isSessionCreationSlashCommand,
   isSupportedSlashCommand,
@@ -221,17 +222,30 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
       sessionResolution.sessionId,
     );
     const chatPrompt = createChatPrompt(event);
-    const dispatchMessage = generation.continuationSummary
-      ? `${renderContinuationContext({
-          productSessionId: sessionResolution.sessionId,
-          generation: generation.generation,
-          continuationSummary: generation.continuationSummary,
-        })}\n\n${chatPrompt}`
-      : chatPrompt;
+    let persistedSubmissionId: string | undefined;
+    const persistAdmission = (receipt: DispatchReceipt): void => {
+      if (persistedSubmissionId === receipt.submissionId) {
+        return;
+      }
+      const admittedDelivery = createAgentDeliveryReference(
+        generation.instanceId,
+        receipt,
+      );
+      goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
+        event,
+        sessionId: sessionResolution.sessionId,
+        deliveryKind: 'direct-agent',
+        deliveryId: receipt.submissionId,
+        delivery: admittedDelivery,
+        acceptedAt: receipt.acceptedAt,
+      });
+      persistedSubmissionId = receipt.submissionId;
+    };
     const dispatchResult = await runWithTrustedMessageEvent(event, () => dispatchOrchestrator({
       instanceId: generation.instanceId,
-      message: dispatchMessage,
+      message: chatPrompt,
       idempotencyKey: event.id,
+      onAccepted: persistAdmission,
       initialData: {
         productSessionId: sessionResolution.sessionId,
         generation: generation.generation,
@@ -240,20 +254,11 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
           : {}),
       },
     }));
-    const delivery: AgentDeliveryReference = {
-      submissionId: dispatchResult.receipt.submissionId,
-      instanceId: generation.instanceId,
-      uid: dispatchResult.receipt.uid,
-      streamUrl: agentConversationUrl(generation.instanceId),
-    };
-    goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
-      event,
-      sessionId: sessionResolution.sessionId,
-      deliveryKind: 'direct-agent',
-      deliveryId: dispatchResult.receipt.submissionId,
-      delivery,
-      acceptedAt: dispatchResult.receipt.acceptedAt,
-    });
+    persistAdmission(dispatchResult.receipt);
+    const delivery = createAgentDeliveryReference(
+      generation.instanceId,
+      dispatchResult.receipt,
+    );
     const contextProjection = await createContextUsageProjection({
       sessionId: sessionResolution.sessionId,
       env: runtimeEnv,
@@ -261,7 +266,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
       loadConversationSnapshot,
     });
     if (contextProjection.snapshot) {
-      scheduleConversationIndexing(
+      await indexConversationSnapshot(
         sessionResolution.sessionId,
         contextProjection.snapshot,
       );
@@ -412,19 +417,33 @@ async function createContextUsageProjection(input: {
   }
 }
 
-function scheduleConversationIndexing(
+async function indexConversationSnapshot(
   sessionId: string,
   snapshot: FlueConversationSnapshot,
-): void {
-  void goromboPersistenceRuntime.sessionDatabase.indexFlueConversationSnapshot(
-    sessionId,
-    snapshot,
-  ).catch((error) => {
+): Promise<void> {
+  try {
+    await goromboPersistenceRuntime.sessionDatabase.indexFlueConversationSnapshot(
+      sessionId,
+      snapshot,
+    );
+  } catch (error) {
     console.error(
       '[WARN] Flue 2 session memory indexing failed:',
       error instanceof Error ? error.message : String(error),
     );
-  });
+  }
+}
+
+function createAgentDeliveryReference(
+  instanceId: string,
+  receipt: DispatchReceipt,
+): AgentDeliveryReference {
+  return {
+    submissionId: receipt.submissionId,
+    instanceId,
+    uid: receipt.uid,
+    streamUrl: agentConversationUrl(instanceId),
+  };
 }
 
 function projectContextUsage(report: SessionBudgetReport): ContextUsageProjection {

@@ -77,32 +77,11 @@ test('web_research tool accepts string budget controls and webFetch mode', async
   }
 });
 
-test('web_research tool falls back to explicit actor/conversation when event is not persisted', async () => {
-  const originalFetch = globalThis.fetch;
-  const fetchCalls = [];
-  try {
-    globalThis.fetch = async (url, init) => {
-      fetchCalls.push({ url: String(url), body: init?.body });
-      return new Response(
-        JSON.stringify({
-          results: [
-            {
-              title: 'Test source',
-              url: 'https://example.com/test',
-              content: 'Test content.',
-            },
-          ],
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      );
-    };
-
-    const result = JSON.parse(
-      await runTool(webResearchTool, {
+test('web_research rejects scope that is not backed by a persisted event', async () => {
+  await assert.rejects(
+    runTool(webResearchTool, {
         eventId: 'nonexistent-event-id',
         text: 'query',
-        actorId: 'tui-user',
-        conversationId: 'tui-conversation',
         depth: 'basic',
         maxQueries: '1',
         maxFetches: '1',
@@ -112,18 +91,7 @@ test('web_research tool falls back to explicit actor/conversation when event is 
         freshness: 'fresh',
         minSources: '1',
         maxIterations: '1',
-      }),
-    ) as {
-      budget?: { depth?: string };
-      queriesRun?: string[];
-    };
-
-    assert.equal(result.budget?.depth, 'basic');
-    assert.deepEqual(result.queriesRun, ['query']);
-    // queriesRun proves the tool ran with the fallback actor/conversation
-    // values — the query was accepted and processed, not thrown or skipped.
-    // fetchCalls may be empty when no OLLAMA_API_KEY is set (placeholder provider).
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+    }),
+    /trusted eventId persisted by chat ingress/,
+  );
 });

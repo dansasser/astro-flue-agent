@@ -192,13 +192,16 @@ function isFlueConversationPart(value: unknown): value is FlueConversationPart {
     return false;
   }
   if (value.state === 'input-available') {
-    return true;
+    return Object.hasOwn(value, 'input');
   }
   if (value.state === 'output-available') {
-    return value.durationMs === undefined || typeof value.durationMs === 'number';
+    return Object.hasOwn(value, 'input')
+      && Object.hasOwn(value, 'output')
+      && (value.durationMs === undefined || typeof value.durationMs === 'number');
   }
   if (value.state === 'output-error') {
-    return typeof value.errorText === 'string'
+    return Object.hasOwn(value, 'input')
+      && typeof value.errorText === 'string'
       && (value.durationMs === undefined || typeof value.durationMs === 'number');
   }
   return false;

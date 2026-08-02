@@ -7,6 +7,7 @@ import {
   type Skill,
   type SubagentDefinition,
   type ToolDefinition,
+  useInitialData,
   useModel,
   useMcpConnection,
   useSandbox,
@@ -28,6 +29,8 @@ import {
   resolveWorkspaceDirectory,
 } from '../workspace-loader.js';
 import { calculateContextBudget } from '../engine/session/context-budget.js';
+import { renderContinuationContext } from '../engine/session/continuation-context.js';
+import type { OrchestratorInitialData } from '../engine/session/direct-agent-session.js';
 import {
   addKnowledgeTool,
   loadProtocolsTool,
@@ -215,6 +218,7 @@ function resolveRuntimeCapabilitySnapshot(
 
 export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
+  const initialData = useInitialData<OrchestratorInitialData | undefined>();
 
   useModel(composition.model, { compaction: composition.compaction });
   useRuntimeCapabilities(composition);
@@ -226,9 +230,24 @@ export function Orchestrator(_props: AgentProps): string {
       toolCallCount: response.toolCalls.length,
     },
   }));
-  return composition.instructions;
+  return [
+    composition.instructions,
+    createOrchestratorContinuationInstructions(initialData),
+  ].filter(Boolean).join('\n\n');
 }
 Orchestrator.agentName = 'orchestrator';
+
+export function createOrchestratorContinuationInstructions(
+  initialData: OrchestratorInitialData | undefined,
+): string {
+  return initialData?.continuationSummary
+    ? renderContinuationContext({
+        productSessionId: initialData.productSessionId,
+        generation: initialData.generation,
+        continuationSummary: initialData.continuationSummary,
+      })
+    : '';
+}
 
 function useRuntimeCapabilities(composition: OrchestratorComposition): void {
   for (const skill of composition.skills) {
