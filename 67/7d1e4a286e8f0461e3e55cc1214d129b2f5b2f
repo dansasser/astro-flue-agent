@@ -1,0 +1,31 @@
+scripts/test-built-http.mjs
+  s_a81fff26d52223::t_d2db00d5337e97 6,31,37,42-51,59,66,501-502
+  s_a81fff26d52223::t_0de9305e90ea58 455-457
+  s_a81fff26d52223::t_9a621bbc42f84c 245,252
+  s_a81fff26d52223::t_c3fa01d7d39bff 460,462-465,468,474,478,484,486
+  s_a81fff26d52223::t_eacf43843b61de 458
+  s_a81fff26d52223::t_432e6bdf26e4fe 503
+scripts/smoke-http-endpoints.mjs
+  s_a81fff26d52223::t_c3fa01d7d39bff 57,64-68,70
+  s_a81fff26d52223::t_7e3c52fcb02d1e 16,53,63,69
+scripts/test-ratatui-product.mjs
+  s_a81fff26d52223::t_d2db00d5337e97 21
+scripts/deterministic-chat-provider.mjs
+  s_a81fff26d52223::t_d2db00d5337e97 1-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "677d1e4a286e8f0461e3e55cc1214d129b2f5b2f",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
