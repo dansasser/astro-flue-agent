@@ -163,6 +163,27 @@ jobs:
       - name: Verify documentation
         run: pnpm run docs:check
 
+      - name: Verify Flue v2 foundation source
+        if: github.head_ref == 'codex/flue-v2-01-foundation'
+        run: >-
+          pnpm exec tsx --test
+          src/tests/build-script-regressions.test.ts
+          src/tests/models.test.ts
+
+      - name: Verify Flue v2 agent and worker source
+        if: github.head_ref == 'codex/flue-v2-02-agents-workers'
+        run: >-
+          pnpm exec tsx --test
+          src/tests/flue-v2-agents.test.ts
+          src/tests/flue-v2-subagent-composition.test.ts
+
+      - name: Verify Flue v2 capability source
+        if: github.head_ref == 'codex/flue-v2-03-capabilities'
+        run: >-
+          pnpm exec tsx --test
+          src/tests/flue-v2-capabilities.test.ts
+          src/tests/runtime-capability-snapshot.test.ts
+
       - name: Typecheck compiler-coherent slices
         if: >-
           github.head_ref == 'codex/flue-v2-04-execution-persistence' ||
