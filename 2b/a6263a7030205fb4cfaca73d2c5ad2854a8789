@@ -1,0 +1,175 @@
+src/engine/capabilities/builtin-mcp.ts
+  s_a81fff26d52223::t_33ceceda3da22a 1-4,9-15,17-18
+src/engine/capabilities/capability-lifecycle-service.ts
+  s_a81fff26d52223::t_b8da393b2c46c6 852,854,866
+src/tests/worker-loader.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 53-56,58-59,83,93,100,106,122
+src/engine/workers/coding-worker/capability-authoring/capability-authoring.ts
+  s_a81fff26d52223::t_ad96cbf28daef3 114
+  s_a81fff26d52223::t_b8da393b2c46c6 120,303-304,307
+src/engine/capabilities/tool-loader.ts
+  s_a81fff26d52223::t_ad96cbf28daef3 54-55,57
+src/tests/fixtures/capabilities/test-tool/index.mjs
+  s_a81fff26d52223::t_ad96cbf28daef3 7,10,15
+src/engine/workers/coding-worker/tools/code-intelligence/code-intelligence-tools.ts
+  s_a81fff26d52223::t_98dab05061f2f2 37,110,113,130,135,186,191,239,244,292,297,457,478,483
+src/engine/capabilities/mcp-broker.ts
+  s_a81fff26d52223::t_33ceceda3da22a 1-4,9,13,16-17,22-25,28-33,37-39,43-56,60-63,67,72-74
+scripts/test-capability-product.mjs
+  s_a81fff26d52223::t_3b12c53928ce2f 411
+  s_a81fff26d52223::t_b8da393b2c46c6 417
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_56be9ebd4a5d67 5,11,70-76,93,100,147-148,157-161,172-178,188-190
+src/engine/workers/capability-manager/capability-manager-tools.ts
+  s_a81fff26d52223::t_8b08aff667d7dc 30-48,132,135,144,148,157-158,180-181,204,218,250,256
+src/tests/github-mcp.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 1,7-8,30,37-38,44-49,303,315,346,399,403-404,422-426
+  s_a81fff26d52223::t_d51d370ac02f60 402
+  s_a81fff26d52223::t_e5c34427dd6f70 427
+src/tests/capability-lifecycle-service.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 178,917,923
+  s_a81fff26d52223::t_6d5c838b21b454 317
+src/tests/coding-task-memory-tools.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 1,43,48,57,71,79,82,100,105
+src/tests/github-private-clone.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 1,7,45,54,104,115,134-135,137
+src/engine/workers/coding-worker/skills/worker-authoring/SKILL.md
+  s_a81fff26d52223::t_3b12c53928ce2f 10
+src/tests/capability-manager.test.ts
+  s_a81fff26d52223::t_3b12c53928ce2f 1,107,129,162,178,192,229,237,267,307,319,358,367,377,386,404,415,448,457,468,486,525,607
+src/tests/runtime-capability-snapshot.test.ts
+  s_a81fff26d52223::t_c971c5bd10c828 1-125
+src/engine/capabilities/capability-flue-contract.ts
+  s_a81fff26d52223::t_b8da393b2c46c6 18
+src/engine/capabilities/skill-loader.ts
+  s_a81fff26d52223::t_c5a7a4c22b99aa 1-168
+src/tests/fixtures/capabilities/test-worker/index.mjs
+  s_a81fff26d52223::t_b8da393b2c46c6 1,3-7,10-11
+src/engine/capabilities/index.ts
+  s_a81fff26d52223::t_c5a7a4c22b99aa 31-32
+  s_a81fff26d52223::t_56be9ebd4a5d67 35-36
+  s_a81fff26d52223::t_33ceceda3da22a 27,43-48
+src/tests/flue-v2-capabilities.test.ts
+  s_a81fff26d52223::t_7908d7d4ca5119 1-88
+src/engine/capabilities/capability-store.ts
+  s_a81fff26d52223::t_c971c5bd10c828 40,44-49
+src/tests/memory-tool.test.ts
+  s_a81fff26d52223::t_6d5c838b21b454 1,9,15,30
+src/engine/workers/coding-worker/github/github-mcp.ts
+  s_a81fff26d52223::t_31ec2eafe195dd 568
+  s_a81fff26d52223::t_0c1cc37ede54de 5-8,11,56-57,62,82,498,536-537,540,551,562-566,572,574
+specification-manifest.json
+  s_a81fff26d52223::t_0f184e4d6ad9ad 4-5
+src/engine/capabilities/runtime-capability-snapshot.ts
+  s_a81fff26d52223::t_c971c5bd10c828 25
+  s_a81fff26d52223::t_56be9ebd4a5d67 1-24,26-60
+src/engine/capabilities/worker-loader.ts
+  s_a81fff26d52223::t_59d9b08da88a1b 1-4,9-12,16,24,32,34-37,45,51-57,61-68,77,80-116,118-125,127
+scripts/generate-builtin-registry.mjs
+  s_a81fff26d52223::t_fcc7eb8d68e5c4 72,78,80,130-131,135,181,186,199
+src/engine/tools/direct-tool-runner.ts
+  s_a81fff26d52223::t_98dab05061f2f2 1-6,8-25,27,29-50
+  s_a81fff26d52223::t_a30ecf554c81a9 7,26,28
+development-graph.json
+  s_a81fff26d52223::t_37dec72bca077c 9379,19322,19328,19334,19340-19346,19352,19359,19364,19368,19393-19396,19401-19402,19408-19409,19414-19424,19429,19433-19435,19439,20001
+development-graph.md
+  s_a81fff26d52223::t_b3ab3aa345b93c 1,12,17,21,987,3224-3225,3227-3230,3235-3240
+src/channels/telegram.ts
+  s_a81fff26d52223::t_211c48914723ce 197,202
+src/engine/tools/knowledge-tool.ts
+  s_a81fff26d52223::t_6d0d1aa846664f 13,19
+src/engine/tools/memory-checklist-tools.ts
+  s_a81fff26d52223::t_20c9daa3a8475b 32,40,61,70,92,103,127,139,164,171,190,194,212,217
+src/engine/tools/memory-note-tools.ts
+  s_a81fff26d52223::t_67bb70d5f150d7 20,27,47,56,76,80,97,102
+src/engine/tools/memory-search-tools.ts
+  s_a81fff26d52223::t_7ca74af0394924 18,26
+src/engine/tools/memory-todo-tools.ts
+  s_a81fff26d52223::t_887ffb5eae68fd 20,29,51,61,83,87,104,108,126,131
+src/engine/tools/memory-tool.ts
+  s_a81fff26d52223::t_1452533057aa1d 53,57
+src/engine/tools/protocol-tool.ts
+  s_a81fff26d52223::t_d67c4a887f8bd4 29,41
+src/engine/tools/rag-tool.ts
+  s_a81fff26d52223::t_451b4827c2f3cb 11,19
+src/engine/tools/runpod-image/generate-image-tool.ts
+  s_a81fff26d52223::t_ebcf979b24e7f2 15,31
+src/engine/tools/runpod-image/list-image-artifacts-tool.ts
+  s_a81fff26d52223::t_208d04df7e8201 10,15
+src/engine/tools/runpod-image/record-image-artifact-tool.ts
+  s_a81fff26d52223::t_0cc846c3ecf222 12,28
+src/engine/tools/schedule-tools.ts
+  s_a81fff26d52223::t_1b4f09e6f0bbbb 50,61,84,88,107,111,130,139,164,168,183,186,196,200,214,218,236,241
+src/engine/tools/web-research-tool.ts
+  s_a81fff26d52223::t_e7a0a19cb76217 17,32,46
+src/engine/workers/coding-worker/capability-authoring/capability-authoring-tools.ts
+  s_a81fff26d52223::t_dff5413eca56a7 81,87,112,122,226-227,251,256,348,356
+src/engine/workers/coding-worker/github/github-tools.ts
+  s_a81fff26d52223::t_544c6bb2a52d49 70,77,123,133,190,196,233,239,277,284,338,350,414,421,481,487,544,571,599,608,674,681,738,745,800,808,869,879
+src/engine/workers/coding-worker/tools/code-intelligence/lsp/lsp-tools.ts
+  s_a81fff26d52223::t_c88ee94663b77a 145,150,177,183,212,215,239,242,285,290,317,322
+src/engine/workers/coding-worker/tools/coding-git-tools.ts
+  s_a81fff26d52223::t_82484a3ecbdab3 58-59,68,71,82,87,129,134,171,181
+src/engine/workers/coding-worker/tools/coding-implementer-tools.ts
+  s_a81fff26d52223::t_49c2028785af87 11,37
+src/engine/workers/coding-worker/tools/coding-planning-tools.ts
+  s_a81fff26d52223::t_9a7ba8bdd8a94a 40,47,77,127
+src/engine/workers/coding-worker/tools/coding-repo-tools.ts
+  s_a81fff26d52223::t_c9d0dee51367da 60,64,76,79,92,97,111,115,134,144,175,181,212,233,261,266,299,305,348,355
+src/engine/workers/coding-worker/tools/coding-repo-workflow-tools.ts
+  s_a81fff26d52223::t_768345210fc68c 90-91,107,116,161,170,246-247,264,269,297,303,348,354,390,397
+src/engine/workers/coding-worker/tools/coding-runtime-configuration-tools.ts
+  s_a81fff26d52223::t_03b49c1835fc96 30-31,64-65,86,92
+src/engine/workers/coding-worker/tools/coding-schedule-tools.ts
+  s_a81fff26d52223::t_daa17b9a486709 65,75,97-98,116-117,135,143,167-168,182-183,192-193,206-207,224,228
+src/engine/workers/coding-worker/tools/coding-task-memory-tools.ts
+  s_a81fff26d52223::t_7228bcfa80e1fc 122,129,150,161,186,194,216,220,239,246,267,271,290,298,317,321
+src/engine/workers/coding-worker/tools/coding-test-debug-tools.ts
+  s_a81fff26d52223::t_4bde180beeecb2 11-12
+src/engine/workers/coding-worker/tools/coding-triage-tools.ts
+  s_a81fff26d52223::t_3dce9b24a73225 11,41
+src/tests/code-intelligence.test.ts
+  s_a81fff26d52223::t_9f9b427c677d60 1,251,280,313,345,373
+src/tests/coding-capability-authoring.test.ts
+  s_a81fff26d52223::t_b027f84f81d6b3 1,55,74,87,92,113,139,154,174,251,288,297,304,313,331,350,503,511
+src/tests/coding-schedule-tools.test.ts
+  s_a81fff26d52223::t_de96e12ad4a9c8 1,70,75,81,86-87,96,114
+src/tests/coding-task-handoff.test.ts
+  s_a81fff26d52223::t_6ef540a9a2a5f6 1,53,85,125
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_664e8bcb1e7a1c 1,606,691,876,902,922,932,982,1003,1029,1070,1089,1253,1260,1293,1311,1330,1353,1357,1364,1367,1369,1551,1565,1602,1617,1662,1678,1690,1707,1718,1750,1765,1815,1820,1838,1849,1851,1924,1928,1957,2005,2098,2140,2397,2418,2439,2472,3100,3118,3133,3148
+src/tests/lsp-integration.test.ts
+  s_a81fff26d52223::t_124227c113445e 1,50,91-92,130,168
+src/tests/lsp-tools.test.ts
+  s_a81fff26d52223::t_6547ff19eb2614 1,121,178,235,275,315,359,383,419
+src/tests/memory-checklist-tools.test.ts
+  s_a81fff26d52223::t_cb5d0762a7cabc 1,29,41,47,54,58,63,69,82,85
+src/tests/memory-note-tools.test.ts
+  s_a81fff26d52223::t_83a9da5d9a52aa 1,17,23,28,32,38
+src/tests/memory-telemetry.test.ts
+  s_a81fff26d52223::t_093e1327189508 1,18
+src/tests/memory-todo-tools.test.ts
+  s_a81fff26d52223::t_95b9772a920a7d 1,17,23,31,44,47
+src/tests/runpod-image-tool.test.ts
+  s_a81fff26d52223::t_663e26163bc8cd 1,81
+src/tests/runtime-configuration-tools.test.ts
+  s_a81fff26d52223::t_6ef24bd7944330 1,28,69,85,130,156,206,218
+src/tests/web-research-tool.test.ts
+  s_a81fff26d52223::t_3d554ffd7e1e40 1,43,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2ba6263a7030205fb4cfaca73d2c5ad2854a8789",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
