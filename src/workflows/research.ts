@@ -53,7 +53,8 @@ export function createResearchPrompt(payload: ResearchWorkflowPayload): string {
 
   return `Use web_research for source-backed research before answering.
 Call web_research with ${webResearchControls.join(', ')}, and enough maxQueries for the task complexity.
-Compare sources, preserve source URLs, and report provider failures that affect confidence.
+When a budget or fetch option is not listed, omit it so web_research applies the selected depth defaults.
+Compare sources, preserve source URLs, and report providerFailures when they affect confidence.
 
 Research request:
 ${JSON.stringify({

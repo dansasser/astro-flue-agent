@@ -249,7 +249,7 @@ test('unknown model specifier returns undefined', () => {
   assert.equal(resolveModelCard('unknown/model'), undefined);
 });
 
-test('Ollama Local provider registration uses local endpoint environment values without cards', () => {
+test('Ollama Local provider registration includes bundled cards by default', () => {
   const registration = resolveOllamaLocalProviderRegistration({
     OLLAMA_LOCAL_BASE_URL: 'http://localhost:11435/v1',
     OLLAMA_LOCAL_API_KEY: 'local-key',
@@ -257,8 +257,8 @@ test('Ollama Local provider registration uses local endpoint environment values 
 
   assert.equal(registration?.baseUrl, 'http://localhost:11435/v1');
   assert.equal(registration?.apiKey, 'local-key');
-  assert.equal(registration?.contextWindow, 128_000);
-  assert.equal(registration?.maxTokens, 32_000);
+  assert.deepEqual(Object.keys(registration?.models ?? {}), ['nomic-embed-text']);
+  assert.equal(registration?.maxTokens, 768);
 });
 
 test('Ollama Cloud provider registration tolerates an empty card list', () => {

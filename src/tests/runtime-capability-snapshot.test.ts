@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
-import { loadRuntimeCapabilitySnapshot } from '../engine/capabilities/runtime-capability-snapshot.js';
+import {
+  createEmptyRuntimeCapabilitySnapshot,
+  loadRuntimeCapabilitySnapshot,
+} from '../engine/capabilities/runtime-capability-snapshot.js';
 import type { CapabilityRecord } from '../engine/capabilities/types.js';
 
 test('runtime snapshot loads promoted Flue 2 skills and MCP definitions from its runtime root', async () => {
@@ -79,6 +82,23 @@ test('runtime snapshot reports a mismatched skill identity without mounting it',
     assert.equal(snapshot.failures.length, 1);
     assert.equal(snapshot.failures[0]?.kind, 'skill');
     assert.match(snapshot.failures[0]?.error ?? '', /does not match registry id/);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('runtime snapshot records a capability-store open failure and remains empty', async () => {
+  const fixture = createFixture();
+  try {
+    const snapshot = await loadRuntimeCapabilitySnapshot({
+      ...fixture.env,
+      GOROMBO_CAPABILITY_DB_PATH: fixture.runtimeRoot,
+    });
+
+    assert.deepEqual(snapshot, createEmptyRuntimeCapabilitySnapshot(snapshot.failures));
+    assert.equal(snapshot.failures.length, 1);
+    assert.equal(snapshot.failures[0]?.kind, 'registry');
+    assert.equal(snapshot.failures[0]?.id, 'capability-store');
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }

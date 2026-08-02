@@ -8,6 +8,7 @@ import type {
   SessionNormalizedMessageRecord,
 } from './session-database.js';
 import {
+  agentConversationUrl,
   readMessageText,
   type FlueConversationMessage,
   type FlueConversationPart,
@@ -97,11 +98,13 @@ export function projectSessionTranscript(input: {
   generations?: ChatSessionGenerationRecord[];
   limit?: number;
   before?: string;
+  includeUnmatchedAssistants?: boolean;
 }): ChatTranscriptPage {
   const entries = buildTranscriptEntries(
     input.prompts,
     input.snapshots,
     input.generations ?? [],
+    input.includeUnmatchedAssistants ?? true,
   );
   const limit = input.limit ?? Math.max(1, entries.length);
   const selected = entries.slice(-limit);
@@ -123,7 +126,7 @@ export function projectSessionTranscript(input: {
     exchanges: selected.map((entry) => entry.exchange),
     stream: {
       instanceId: activeInstanceId,
-      url: `/agents/orchestrator/${encodeURIComponent(activeInstanceId)}`,
+      url: agentConversationUrl(activeInstanceId),
       nextOffset: activeSnapshot?.offset ?? '-1',
       upToDate: true,
     },
@@ -166,6 +169,7 @@ export async function loadSessionTranscriptPage(input: {
     generations: input.generations,
     limit: input.limit,
     ...(input.before ? { before: input.before } : {}),
+    includeUnmatchedAssistants: !cursor,
   });
 }
 
@@ -179,6 +183,7 @@ function buildTranscriptEntries(
   sourcePrompts: SessionNormalizedMessageRecord[],
   snapshots: FlueConversationSnapshot[],
   generations: ChatSessionGenerationRecord[],
+  includeUnmatchedAssistants: boolean,
 ): TranscriptEntry[] {
   const compactSubmissions = new Set(
     generations.map((generation) => generation.compactionSubmissionId).filter(isString),
@@ -231,7 +236,11 @@ function buildTranscriptEntries(
   }
 
   for (const [submissionId, assistant] of assistantBySubmission) {
-    if (consumedAssistantSubmissions.has(submissionId) || compactSubmissions.has(submissionId)) {
+    if (
+      !includeUnmatchedAssistants
+      || consumedAssistantSubmissions.has(submissionId)
+      || compactSubmissions.has(submissionId)
+    ) {
       continue;
     }
     entries.push({

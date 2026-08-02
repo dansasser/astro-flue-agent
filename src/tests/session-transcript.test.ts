@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   decodeTranscriptCursor,
   encodeTranscriptCursor,
+  loadSessionTranscriptPage,
   projectSessionTranscript,
   TranscriptCursorError,
 } from '../engine/session/session-transcript.js';
@@ -135,6 +136,33 @@ test('transcript cursor validates and pagination returns newest exchanges', () =
   assert.equal(page.exchanges[0]?.assistant?.text, 'two answer');
   assert.equal(page.page.hasOlder, true);
   assert.ok(page.page.before);
+});
+
+test('backward transcript pages exclude assistants outside the prompt cursor window', async () => {
+  const olderPrompt = prompt('event-1', 'submission-1', 'one');
+  const newerPrompt = prompt('event-2', 'submission-2', 'two');
+  const page = await loadSessionTranscriptPage({
+    session: { id: 'session-1' },
+    sessionDatabase: {
+      getSessionNormalizedMessageEvent: () => newerPrompt,
+      listNormalizedMessageEventsForSession: () => [olderPrompt],
+    },
+    snapshots: [
+      snapshot('session-1', 'submission-1', 'one answer'),
+      snapshot('session-1-g1', 'submission-2', 'two answer'),
+    ],
+    generations: [],
+    limit: 1,
+    before: encodeTranscriptCursor({
+      v: 1,
+      receivedAt: newerPrompt.event.receivedAt,
+      eventId: newerPrompt.event.id,
+    }),
+  });
+
+  assert.deepEqual(page.exchanges.map((exchange) => exchange.assistant?.text), [
+    'one answer',
+  ]);
 });
 
 function prompt(eventId: string, submissionId: string, text: string): SessionNormalizedMessageRecord {
