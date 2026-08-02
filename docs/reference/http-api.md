@@ -205,9 +205,11 @@ Telegram channel router:
 /channels/telegram/*
 ```
 
-These routes require the external API secret outside loopback. Use the
-[Flue agent documentation](https://flueframework.com/docs/guide/agents/) for
-the agent transport and streaming contracts.
+The orchestrator agent route requires the external API secret outside
+loopback. Telegram webhook delivery instead authenticates with the configured
+`TELEGRAM_WEBHOOK_SECRET_TOKEN`; it is not covered by the `x-api-secret`
+middleware. Use the [Flue agent documentation](https://flueframework.com/docs/guide/agents/)
+for the agent transport and streaming contracts.
 
 ## Error Handling
 

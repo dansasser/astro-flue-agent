@@ -94,8 +94,9 @@ src/app.ts
   Hono application shell and explicit Flue 2 router mounts.
 
 src/db.ts
-  Flue Node persistence adapter entrypoint discovered by Flue at build time.
-  Exports the SIM-ONE Alpha persistence adapter wrapper around Flue's sqlite() adapter.
+  Application persistence composition root imported by runtime modules.
+  Exports Flue 2's sqlite() adapter as the default and the SIM-ONE Alpha
+  persistence runtime for product-owned session state.
 
 src/index.ts
   Package barrel for exported connector, registry, and type helpers.

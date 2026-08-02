@@ -20,6 +20,10 @@ export function ChatLayout({ baseUrl, session, decidedBy }: ChatLayoutProps) {
   const agent = useFlueAgent({
     url: `${baseUrl}/agents/orchestrator/${encodeURIComponent(session)}`,
   });
+  const visibleMessages = useMemo(
+    () => agent.messages.filter((message) => message.display !== 'hidden'),
+    [agent.messages],
+  );
   const [input, setInput] = useState('');
 
   const approvalClient = useMemo(
@@ -53,7 +57,7 @@ export function ChatLayout({ baseUrl, session, decidedBy }: ChatLayoutProps) {
   return (
     <Box flexDirection="column" height="100%">
       <Header baseUrl={baseUrl} session={session} status={agent.status} />
-      <MessageList messages={agent.messages} />
+      <MessageList messages={visibleMessages} />
       {!configured && (
         <Box paddingX={1}>
           <Text dimColor>approvals: not configured (set GOROMBO_APPROVAL_ROOT on the server)</Text>
@@ -71,7 +75,7 @@ export function ChatLayout({ baseUrl, session, decidedBy }: ChatLayoutProps) {
           onResolved={() => setActiveApprovalId(undefined)}
         />
       )}
-      <StatusBar messageCount={agent.messages.length} pendingApprovals={pending.length} agentStatus={agent.status} />
+      <StatusBar messageCount={visibleMessages.length} pendingApprovals={pending.length} agentStatus={agent.status} />
       <ChatInput
         value={input}
         onChange={setInput}

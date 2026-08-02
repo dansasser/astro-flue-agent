@@ -44,6 +44,20 @@ test('session budget derives history, usage, turns, and compactions from Flue 2 
   assert.equal(state.compactions, 2);
 });
 
+test('session budget counts continuation context as active history', () => {
+  const report = createSessionBudgetReport({
+    sessionId: 'continued-session',
+    modelCard: minimaxM3Card,
+    snapshots: [],
+    additionalHistoryText: 'Preserve the selected branch and pending verification.',
+    compactions: 1,
+  });
+
+  assert.ok(report.estimatedHistoryTokens > 0);
+  assert.equal(report.estimatedPromptTokens, 0);
+  assert.equal(report.estimatedUsedTokens, report.estimatedHistoryTokens);
+});
+
 test('provider usage and manual compaction update fallback budget state', () => {
   const store = new InMemorySessionBudgetStore();
   recordPromptUsage({

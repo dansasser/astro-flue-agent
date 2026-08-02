@@ -1,5 +1,9 @@
 import { estimateTextTokens } from './context-budget.js';
 
+export function agentConversationUrl(instanceId: string): string {
+  return `/agents/orchestrator/${encodeURIComponent(instanceId)}`;
+}
+
 export interface FlueConversationSettlement {
   submissionId: string;
   outcome: 'completed' | 'failed' | 'aborted';

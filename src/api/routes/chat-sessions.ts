@@ -19,6 +19,7 @@ import {
   TranscriptCursorError,
 } from '../../engine/session/session-transcript.js';
 import {
+  agentConversationUrl,
   isFlueConversationSnapshot,
   type FlueConversationSnapshot,
 } from '../../engine/session/flue-conversation.js';
@@ -276,7 +277,7 @@ function toLifecycleResponse(resolution: ChatSessionResolution): {
     },
     stream: {
       instanceId: generation.instanceId,
-      url: `/agents/orchestrator/${encodeURIComponent(generation.instanceId)}`,
+      url: agentConversationUrl(generation.instanceId),
       nextOffset: '-1',
     },
   };
