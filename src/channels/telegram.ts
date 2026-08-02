@@ -213,7 +213,6 @@ export async function dispatchTelegramNormalizedMessage(
     sessionId: sessionResolution.sessionId,
     deliveryKind: 'direct-agent',
   });
-
   const prompt = createChatPrompt(input.event);
   const message = generation.continuationSummary
     ? `${renderContinuationContext({
