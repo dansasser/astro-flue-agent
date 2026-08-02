@@ -13,6 +13,8 @@ import {
   useSkill,
   useSubagent,
   useTool,
+  useDelivery,
+  useInitialData,
   useResponseFinish,
 } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
@@ -63,7 +65,12 @@ import {
   scheduleRunsTool,
 } from '../engine/tools/index.js';
 import type { AgentModelCard } from '../core/models/types.js';
-import { telegramReplyTool } from '../channels/telegram.js';
+import {
+  asTelegramConversationData,
+  createTelegramReplyTool,
+  resolveTelegramDelivery,
+  type TelegramConversationData,
+} from '../channels/telegram-client.js';
 import {
   createCodingWorkerSubagent,
   runtimeCodingWorkerGithubMcp,
@@ -76,6 +83,7 @@ import {
   loadRuntimeCapabilitySnapshot,
   type RuntimeCapabilitySnapshot,
 } from '../engine/capabilities/runtime-capability-snapshot.js';
+import type { OrchestratorInitialData } from '../engine/session/direct-agent-session.js';
 
 const runtimeCapabilitySnapshot = await loadRuntimeCapabilitySnapshot(process.env);
 
@@ -145,7 +153,6 @@ export function createOrchestratorComposition(
     scheduleGetTool,
     scheduleRunNowTool,
     scheduleRunsTool,
-    telegramReplyTool,
   ];
   const subagents: SubagentDefinition[] = [
     createCapabilityManagerSubagent({ env }),
@@ -219,9 +226,17 @@ function resolveRuntimeCapabilitySnapshot(
 
 export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
+  const initialData = useInitialData<OrchestratorInitialData | TelegramConversationData | undefined>();
+  const delivery = useDelivery();
 
   useModel(composition.model, { compaction: composition.compaction });
   useRuntimeCapabilities(composition);
+  useTool(
+    createTelegramReplyTool(
+      asTelegramConversationData(initialData),
+      resolveTelegramDelivery(delivery),
+    ),
+  );
   useSandbox(composition.sandbox, { cwd: composition.cwd });
   useResponseFinish(({ response }) => ({
     simOne: {
@@ -233,6 +248,17 @@ export function Orchestrator(_props: AgentProps): string {
   return composition.instructions;
 }
 Orchestrator.agentName = 'orchestrator';
+
+function isOrchestratorInitialData(value: unknown): value is OrchestratorInitialData {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Partial<OrchestratorInitialData>;
+  return (
+    typeof candidate.productSessionId === 'string' &&
+    typeof candidate.generation === 'number'
+  );
+}
 
 function useRuntimeCapabilities(composition: OrchestratorComposition): void {
   for (const skill of composition.skills) {
