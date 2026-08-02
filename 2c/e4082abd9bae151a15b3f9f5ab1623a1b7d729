@@ -1,0 +1,70 @@
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_906ee072ffd92f 10,32-33,221,233-236,240-250
+  s_a81fff26d52223::t_69f2087dd7495c 251
+src/engine/schedules/schedule-manager.ts
+  s_a81fff26d52223::t_2460bd8d5cb59d 64,100,105-106,119,159,177,247-265,351,365-373
+  s_a81fff26d52223::t_dc7471ba4ca417 589-590,596
+scripts/research.mjs
+  s_a81fff26d52223::t_f146c0b1851ac4 7,10-12,20-25,28-43
+src/tests/flue-session-store.test.ts
+  s_a81fff26d52223::t_d268c529f156a4 63-75
+src/api/routes/chat-events.ts
+  s_a81fff26d52223::t_bbf9cb4efdba4a 2,225-243,246,248,257-261,269,420,423-429,434-446
+src/engine/session/durable-orchestrator-session.ts
+  s_a81fff26d52223::t_2c52d6fb8cf970 15,38
+src/tests/research-workflow.test.ts
+  s_a81fff26d52223::t_d82968166fb02a 4-6,45-75
+  s_a81fff26d52223::t_acd34d68b34bd3 3,76-129
+src/tests/session-memory-vector.test.ts
+  s_a81fff26d52223::t_d268c529f156a4 176-250
+src/tests/schedule-manager.test.ts
+  s_a81fff26d52223::t_850e84b47c03ae 211
+  s_a81fff26d52223::t_711242c2420f9f 149,179-182
+  s_a81fff26d52223::t_d268c529f156a4 138-148,150-178,183-188,198,204-210,212-214
+scripts/runtime-configuration-inventory.test.mjs
+  s_a81fff26d52223::t_0fa9407b5d06f5 38
+src/tests/chat-events-flue-v2.test.ts
+  s_a81fff26d52223::t_d268c529f156a4 3,112-126,132-136,147-188,193-208,210-213,215-230,236-240,249-253
+  s_a81fff26d52223::t_711242c2420f9f 137-146,189-192
+  s_a81fff26d52223::t_2bafc22c475539 209,214
+src/engine/session/session-persistence.ts
+  s_a81fff26d52223::t_cbd9134abc3eed 3-4,83-85,90-95,97,99-133,135-138
+src/tests/web-research-tool.test.ts
+  s_a81fff26d52223::t_d82968166fb02a 80-82,94-96
+src/workflows/research.ts
+  s_a81fff26d52223::t_5ee253d9f9b17f 98,124-127,146-149
+  s_a81fff26d52223::t_496e7581952d1e 1-8,26,33-53,56,58-68,70-80,82,86,94-97,99-123,128,130,142,150-163
+src/engine/session/session-database.ts
+  s_a81fff26d52223::t_f01ea4af25f948 1424-1425
+  s_a81fff26d52223::t_4a83889c0dde5e 5,264,268-274,279-280,282-288,300,308,310-317,321-322,324,328,331,334,336-337,340,342-343,345-364,1234,1395,1422-1423,1426-1440,1497-1505,2133-2135
+  s_a81fff26d52223::t_1be2d54370f77c 1958-1975,2136
+  s_a81fff26d52223::t_46653857c5dfc9 2137
+src/tests/flue-conversation.test.ts
+  s_a81fff26d52223::t_d268c529f156a4 26-28
+src/engine/session/flue-conversation.ts
+  s_a81fff26d52223::t_9a12e668d65b64 195,198-200,203-204
+src/engine/tools/web-research-tool.ts
+  s_a81fff26d52223::t_496e7581952d1e 16,44-46,52-53
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_29379d07d3181e 8,192,196-197,204-205
+  s_a81fff26d52223::t_24b34ef2fcff2a 49
+src/tests/build-script-regressions.test.ts
+  s_a81fff26d52223::t_d82968166fb02a 131,133-136
+  s_a81fff26d52223::t_24b34ef2fcff2a 139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "2ce4082abd9bae151a15b3f9f5ab1623a1b7d729",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
