@@ -1,0 +1,23 @@
+scripts/check-flue-v2-stack-slice.test.mjs
+  s_a81fff26d52223::t_03f5eab215c669 6-7,46-79
+.github/workflows/ci.yml
+  s_a81fff26d52223::t_03f5eab215c669 156,189
+scripts/check-flue-v2-stack-slice.mjs
+  s_a81fff26d52223::t_03f5eab215c669 2,70-74,76,78-85,97,101-104,114-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "e773163455269f0e6df0da2c4f035bf18faf9b85",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
