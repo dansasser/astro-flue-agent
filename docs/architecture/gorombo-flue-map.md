@@ -4,20 +4,27 @@ This file maps Flue architecture to this repository.
 
 ## Top-Level Source Directory Map
 
-Every top-level `src/` entry should fit one of these categories: Flue-contract files (`src/agents/`, `src/workflows/`, `src/channels/`, `src/skills/`, `src/db.ts`, `src/app.ts`), root support files (`src/index.ts`, `src/workspace-loader.ts`, `src/AGENTS.md`), or one of the consolidation buckets (`src/core/`, `src/api/`, `src/engine/`, `src/workspace/`, `src/tests/`). If a new directory is added, update this map in the same change.
+Every top-level `src/` entry should fit one of these categories: Flue-facing
+application files (`src/agents/`, `src/channels/`, `src/skills/`, `src/db.ts`,
+`src/app.ts`), application workflow files (`src/workflows/`), root support
+files (`src/index.ts`, `src/workspace-loader.ts`, `src/AGENTS.md`), or one of
+the consolidation buckets (`src/core/`, `src/api/`, `src/engine/`,
+`src/workspace/`, `src/tests/`). If a new directory is added, update this map
+in the same change.
 
-### Flue-contract top-level files and directories
+### Flue-facing top-level files and directories
 
-Flue discovers these at the `src/` root. They cannot be moved into buckets.
+Vite builds these from the `src/` root. Agent, channel, persistence, and skill
+entries use Flue 2 APIs; workflow files are ordinary application modules.
 
 | Path | Type | Ownership rule |
 | --- | --- | --- |
-| `src/agents/` | Flue agent entrypoints | Main `createAgent(...)` files discovered by Flue. Each immediate file defines one agent; its filename becomes the agent name. |
-| `src/workflows/` | Flue workflows | Finite Flue operations that can initialize agents, manage bounded loops, and return structured results. Each immediate file defines one discovered workflow. |
-| `src/channels/` | Flue-native channel handlers | First-party provider ingress (e.g. Telegram) discovered by Flue under `/channels/<name>/...`. |
-| `src/skills/` | Flue Agent Skills | Application-owned Agent Skills imported with `with { type: 'skill' }` and registered on the owning agent or workflow. These are built-in Flue runtime skills, not post-build registry capabilities. |
-| `src/db.ts` | Flue persistence adapter entrypoint | Flue Node persistence adapter entrypoint discovered by Flue at build time. Exports the SIM-ONE Alpha persistence adapter wrapper around Flue's sqlite() adapter. |
-| `src/app.ts` | Application entrypoint | Hono application shell and Flue route mount. |
+| `src/agents/` | Flue 2 agent entrypoints | `'use agent'` synchronous agent functions. `src/app.ts` explicitly mounts the public orchestrator with `createAgentRouter(...)`. |
+| `src/workflows/` | Application workflows | Finite TypeScript functions that can initialize agents, manage bounded loops, and return structured results. Flue 2 does not discover or route these files. |
+| `src/channels/` | Flue 2 channel handlers | First-party provider ingress. `src/app.ts` explicitly mounts Telegram under `/channels/telegram`. |
+| `src/skills/` | Flue Agent Skills | Application-owned Agent Skills imported directly and registered by the owning agent with `useSkill(...)`. These are built-in skills, not post-build registry capabilities. |
+| `src/db.ts` | Flue persistence adapter entrypoint | Exports the Flue 2 SQLite adapter backed by the dedicated `flue-v2.sqlite` store and bootstraps application-owned persistence. |
+| `src/app.ts` | Application entrypoint | Hono composition root with explicit Flue 2 agent and channel routers. |
 
 ### `src/core/` — cross-cutting foundations
 
@@ -51,10 +58,10 @@ Flue discovers these at the `src/` root. They cannot be moved into buckets.
 | `src/engine/memory/` | Shared memory subsystem | Memory retrieval interfaces and routing shared by agents/tools/workflows. Hosts `rust-memory-engine.ts`, the TypeScript shim for the `gorombo-memory` WASM engine (structured memory: checklists, todos, session notes), and `checklist-memory-provider.ts`, the structured-memory RAG provider. Also hosts `knowledge-service.ts` (the shared service module folded in from the removed `src/services/` directory). |
 | `src/engine/rag/` | Shared retrieval subsystem | Retrieval provider interfaces, document indexing, vector storage, embedding routing, and result packing shared across retrieval workflows. |
 | `src/engine/registries/` | Registry subsystem | Typed source-defined registries for base tools, skills, agents, and protocol metadata. Runtime capability authority remains in `src/engine/capabilities/`. |
-| `src/engine/schedules/` | Scheduled execution subsystem | Standalone scheduled/recurring/one-shot agent execution: schedule definitions + run history durable in SQLite (`node:sqlite`, `.gorombo/db/schedules.sqlite`), firing via Croner in-process, rehydrated on restart. Dispatch is admission-only (`dispatch(...)` to the orchestrator); terminal status observed in-process via `observe()`. Exposed via orchestrator `schedule_*` tools, coding-worker `coding_schedule_*` aliases (lead-only), and the `/api/schedules/*` admin route. See `docs/architecture/schedules-system.md`. |
-| `src/engine/session/` | Session/context subsystem | Flue session persistence, connector prompt delivery correlation, ownership-scoped lifecycle routing, semantic transcript projection, compaction policy, context budget, and usage tracking. |
+| `src/engine/schedules/` | Scheduled execution subsystem | Standalone scheduled/recurring/one-shot agent execution: schedule definitions + run history durable in SQLite (`node:sqlite`, `.gorombo/db/schedules.sqlite`), firing via Croner in-process, rehydrated on restart. Dispatch persists the Flue 2 receipt and awaits `read(receipt)` for exact settlement. Exposed via orchestrator `schedule_*` tools, coding-worker `coding_schedule_*` aliases (lead-only), and the `/api/schedules/*` admin route. See `docs/architecture/schedules-system.md`. |
+| `src/engine/session/` | Session/context subsystem | Flue 2 conversation persistence, connector prompt delivery correlation, ownership-scoped product-session generations, semantic transcript projection, compaction policy, context budget, and usage tracking. |
 | `src/engine/tools/` | Model-callable tools | `defineTool(...)` capabilities attached only to owning agents. |
-| `src/engine/workers/` | Worker/subagent implementations | Specialized worker profiles plus worker-local support code and worker workspaces. |
+| `src/engine/workers/` | Worker/subagent implementations | Specialized `defineSubagent(...)` definitions plus worker-local support code and workspaces. |
 
 ### `src/workspace/` — agent persona content
 
@@ -84,7 +91,7 @@ Root source files:
 
 ```text
 src/app.ts
-  Hono application shell and Flue route mount.
+  Hono application shell and explicit Flue 2 router mounts.
 
 src/db.ts
   Flue Node persistence adapter entrypoint discovered by Flue at build time.
@@ -106,11 +113,11 @@ src/workspace-loader.ts
 ```text
 src/app.ts
   Hono application shell.
-  Mounts Flue with app.route('/', flue()).
+  Explicitly mounts createAgentRouter(Orchestrator) and the Telegram channel router.
   May expose health checks and app-owned ingress.
   Registers the lightweight Flue telemetry observer.
-  Applies imported API-secret middleware to public Flue route families.
-  Custom chat ingress forwards to the durable Flue orchestrator agent route.
+  Applies imported API-secret middleware to protected agent routes.
+  Custom chat ingress dispatches and reads the durable orchestrator directly.
   Must not call the old non-Flue orchestrator.
 
 src/api/middleware/api-secret.ts
@@ -120,8 +127,8 @@ src/api/middleware/api-secret.ts
 
 src/api/routes/chat-events.ts
   App-owned /api/chat/events ingress alias.
-  Verifies API-secret middleware, normalizes the HTTP boundary, persists trusted event context, binds the current event through request-local trusted context for model-callable authorization tools, resolves the prompt's product session, handles pre-LLM slash commands (/new, /clear, /resume, /rename, /compact), and prompts the durable /agents/orchestrator/:sessionId route.
-  Does not call c.executionCtx, a workflow route for normal chat execution, or a non-Flue orchestrator.
+  Verifies API-secret middleware, normalizes the HTTP boundary, persists trusted event context, binds the current event through request-local trusted context for model-callable authorization tools, resolves the prompt's product session, handles pre-LLM slash commands (/new, /clear, /resume, /rename, /compact), and uses init/dispatch/read against the active orchestrator generation.
+  Does not call a framework workflow route or a non-Flue orchestrator.
 
 src/api/routes/chat-sessions.ts
   Product session lifecycle API.
@@ -203,7 +210,7 @@ src/api/routes/knowledge.ts
 
 src/engine/schedules/boot.ts
   Side-effect boot target imported by src/app.ts (mirrors ./core/models/runtime.js).
-  Loads the schedules config block, installs schedule telemetry, constructs + starts the ScheduleManager singleton (schema, cleanup, observe subscription, rehydrate enabled Croner jobs), and registers SIGTERM/SIGINT drain. Skips when disabled or in test mode; a start failure logs and leaves the manager unset so the rest of the app runs. Schedules are app-owned business data in their own node:sqlite file, NOT the Flue sqlite() adapter.
+  Loads the schedules config block, constructs and starts the ScheduleManager singleton (schema, cleanup, and enabled Croner job rehydration), and registers SIGTERM/SIGINT drain. Skips when disabled or in test mode; a start failure logs and leaves the manager unset so the rest of the app runs. Schedules are app-owned business data in their own node:sqlite file, not the Flue SQLite adapter.
 
 src/api/routes/schedules.ts
   App-owned /api/schedules/* admin route (full v1), behind requireApiSecret.
@@ -211,15 +218,14 @@ src/api/routes/schedules.ts
 
 src/db.ts
   Flue persistence adapter entrypoint.
-  Uses Flue's Node sqlite() adapter for canonical agent sessions, durable direct/dispatch submissions, and event streams.
-  Supplies SQLite workflow run and run registry records through SIM-ONE Alpha's persistence wrapper.
-  Wraps the Flue session store to maintain logical session indexes, direct agent instance indexes, persisted normalized event context, and extracted session-memory FTS records.
-  Exposes a shared LanceDB vector store and embedding client used by session memory, document index, and knowledge base retrieval.
+  Exports Flue 2's Node sqlite() adapter for canonical agent instances, submissions, messages, snapshots, and updates in the dedicated flue-v2.sqlite store.
+  Initializes the SIM-ONE persistence runtime for product sessions and reconciles configured runtime capabilities.
+  Leaves the beta flue.sqlite database unchanged as a rollback archive.
 
 src/api/routes/telemetry.ts
   Protected app-owned telemetry inspection routes.
-  Exposes sanitized Flue event summaries by workflow run id.
-  Falls back to persisted Flue run events when the in-memory telemetry observer no longer has the run.
+  Exposes sanitized in-memory Flue event summaries by execution id at /api/telemetry/executions.
+  Uses submissionId when present and otherwise instanceId as the execution key.
 
 src/core/schemas/
   Shared Valibot schemas for structured runtime contracts.
@@ -228,8 +234,8 @@ src/core/schemas/
 
 src/core/telemetry/flue-telemetry.ts
   Registers Flue observe(...) once per running application context.
-  Stores sanitized live event summaries in memory by runId.
-  Tracks whether a run delegated to the researcher and whether web_research was called.
+  Stores sanitized live event summaries in memory by submissionId or instanceId.
+  Tracks whether an execution delegated to the researcher and whether web_research was called.
 
 src/agents/orchestrator.ts
   Main Flue orchestrator agent.
@@ -255,18 +261,18 @@ src/skills/greeting-preflight/SKILL.md
   The skill is guidance only; executable preflight checks stay in the connector/gateway startup path.
 
 src/engine/workers/researcher/researcher.ts
-  Research subagent and direct researcher agent.
+  Researcher defineSubagent(...) factory and direct 'use agent' function.
   Owns web research behavior.
   Composes its instructions from its workspace files plus a small runtime capability block.
-  May use tools, skills, and workflows.
+  May use tools, skills, and application workflow functions.
 
 src/engine/workers/researcher/workspace/
   Researcher subagent user-editable workspace persona files.
 
 src/engine/workers/coding-worker/coding-worker.ts
-  Coding worker lead subagent profile.
-  Owns coding-worker instructions, worker-local GitHub tools, coding-process skills, approval-aware side-effect boundaries, public progress event rules, and worker-local internal subagent profiles.
-  The main orchestrator delegates coding work only to this lead profile.
+  Coding Worker lead defineSubagent(...) factory and 'use agent' function.
+  Owns coding-worker instructions, worker-local GitHub tools, coding-process skills, approval-aware side-effect boundaries, public progress event rules, and worker-local internal subagent definitions.
+  The main orchestrator delegates coding work only to this lead definition.
   Receives `<runtime-root>/workspace` from the orchestrator and passes it to worker-owned tools.
   Connects the official GitHub MCP through Flue when the trusted runtime PAT is configured.
   Attaches selected read-only MCP tools and keeps GitHub mutations behind SIM-ONE approval wrappers.
@@ -338,8 +344,8 @@ sim-one.config.example
   resolve packages from the source checkout.
 
 src/workflows/research.ts
-  Finite direct research harness for testing or direct research runs.
-  Initializes the researcher.
+  Application-owned direct research harness for tests or direct research calls.
+  Initializes the Researcher agent and dispatches/reads the exact receipt.
 
 src/engine/workers/coding-worker/github/
   Coding Worker-owned official GitHub MCP connection, PAT isolation,
@@ -355,12 +361,12 @@ src/engine/workers/coding-worker/tools/sandbox-runtime.ts
   mounting the host home or persisting that identity in the repository.
 
 src/workflows/retrieval.ts
-  Shared retrieval machinery.
+  Application-owned shared retrieval machinery.
   Web-search provider access is restricted to the researcher/research workflow caller boundary.
   Does not expose a public route.
 
 src/workflows/web-research.ts
-  Researcher-owned web research workflow.
+  Researcher-owned application workflow function.
   Handles query planning, basic/standard/deep research depth, cache, web search, fetch, evidence packing, confidence, and failures.
   Used by the researcher-owned web_research tool.
 
@@ -373,12 +379,12 @@ src/engine/capabilities/
   capability store (skills, tools, workers, MCP). `capability-store.ts`
   owns CRUD; `capability-loader.ts` selects promoted managed packages at
   orchestrator init without refetching mutable sources; `skill-materializer.ts`
-  copies or clones sources into lifecycle staging; `mcp-broker.ts` connects
-  MCP servers through the shared canonical token-slot contract and returns
-  tools. Loaded at `createAgent(...)` init in `src/agents/orchestrator.ts`. See
+  copies or clones sources into lifecycle staging; `mcp-broker.ts` creates
+  MCP connection definitions through the shared canonical token-slot contract.
+  Loaded into a runtime capability snapshot when the orchestrator module initializes. See
   `docs/architecture/capability-system.md` and `scripts/capability-admin.mjs`.
   `tool-loader.ts` and `worker-loader.ts` dynamically `import()` user JS
-  modules that export direct `defineTool(...)`/`defineAgentProfile(...)`
+  modules that export direct `defineTool(...)`/`defineSubagent(...)`
   results. Agent local handoffs must be coding-workspace-relative, and GitHub
   sources must use a `github.com` HTTPS or SSH repository URL.
 
@@ -388,7 +394,7 @@ scripts/capability-admin.mjs
 
 src/engine/tools/memory-tool.ts
   Orchestrator-safe memory lookup tool.
-  Uses persisted session-memory FTS records and LanceDB vector embeddings extracted from Flue SessionData.
+  Uses persisted session-memory FTS records and LanceDB vector embeddings associated with product session context.
   Combines keyword and semantic search for hybrid retrieval.
 
 src/engine/memory/structured-memory-note-index.ts
@@ -506,10 +512,10 @@ import model-provider and schedule boot modules
 register the Flue telemetry observer
 create the Hono application
 register /health
-apply API-secret middleware to protected Flue and schedule route families
+apply API-secret middleware to protected agent and schedule route families
 register chat-event and chat-session routes
 register knowledge, schedule, telemetry, approval, and Telegram admin routes
-mount Flue with app.route('/', flue())
+mount createAgentRouter(Orchestrator) and the Telegram channel router explicitly
 export the Hono application
 ```
 
@@ -517,14 +523,17 @@ The exact route list is verified against `src/app.ts`. Orchestration, protocol
 matching, retrieval, worker execution, and model selection remain outside this
 composition root.
 
-Custom ingress may be added only if it enters the Flue agent/workflow path.
+Custom ingress may be added only if it enters a governed Flue agent or
+application workflow path.
 
 The built HTTP chat path enters the durable orchestrator agent route:
 
 ```text
 POST /api/chat/events
 -> persist normalized event context in SQLite
--> POST /agents/orchestrator/:sessionId?wait=result
+-> resolve the active product-session generation
+-> init(Orchestrator, { id: instanceId })
+-> dispatch(message) and read(receipt)
 -> 200 { result, streamUrl, offset, event, session }
 ```
 

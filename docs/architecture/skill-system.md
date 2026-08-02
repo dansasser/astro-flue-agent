@@ -14,8 +14,8 @@ SIM-ONE Alpha supports three skill sources:
 
 | Source | Ownership | Lifecycle |
 | --- | --- | --- |
-| Product skill | Imported and registered with a product agent or workflow | Built and shipped with the product |
-| Worker-local skill | Registered only on its owning worker profile | Built and shipped with that worker |
+| Product skill | Imported and registered with a product agent | Built and shipped with the product |
+| Worker-local skill | Registered only by its owning worker agent | Built and shipped with that worker |
 | Runtime skill | Added by a user or agent through the capability registry | Stored outside the product and loaded after restart |
 
 All three become Flue skills for the agent that owns them. Their installation
@@ -33,9 +33,8 @@ src/skills/example-skill/
     checklist.md
 ```
 
-The owning agent or workflow imports `SKILL.md` with the JavaScript
-`type: "skill"` import attribute and registers the imported reference in its
-Flue `skills` configuration.
+The owning agent imports `SKILL.md` directly and registers the resulting
+`Skill` with Flue 2's `useSkill(...)` hook.
 
 SIM-ONE Alpha currently registers `greeting-preflight` on the main
 orchestrator. It provides the startup greeting procedure without becoming a
@@ -57,7 +56,7 @@ Agent Skills for capability authoring:
 | `capability-design` | Classify extension responsibility and prepare the authoring boundary |
 | `skill-authoring` | Author Agent Skills-compatible packages |
 | `tool-authoring` | Author Flue `defineTool(...)` packages |
-| `worker-authoring` | Author Flue worker profiles and workspaces |
+| `worker-authoring` | Author Flue subagent definitions and workspaces |
 | `mcp-authoring` | Build MCP server packages or prepare MCP connection manifests |
 
 These skills guide the Coding Worker lead and its internal specialists. They do
@@ -67,7 +66,7 @@ service, or progress events.
 Capability authoring skills require the applicable Protocol Tool bundle before
 classification, validation, security scanning, tests, packaging, or handoff.
 
-The orchestrator does not inherit worker-local skills. Flue subagent profiles
+The orchestrator does not inherit worker-local skills. Flue subagent definitions
 own their own tools, skills, subagents, and instructions.
 
 ## Runtime Skills
@@ -127,7 +126,7 @@ as an authorization boundary.
 
 ## Discovery And Registration
 
-Product skills are available because an owning agent or workflow imports and
+Product skills are available because an owning agent imports and
 registers them. A source directory alone does not attach a skill.
 
 Runtime skills enter through the SIM-ONE capability registry:
@@ -216,7 +215,8 @@ execution. Use a protocol for mandatory runtime governance.
 | Coding Worker skill content | `src/engine/workers/coding-worker/skills/` |
 | Capability records | `src/engine/capabilities/capability-store.ts` |
 | Skill materialization | `src/engine/capabilities/skill-materializer.ts` |
-| Runtime loading | `src/engine/capabilities/capability-loader.ts` |
+| Runtime record loading | `src/engine/capabilities/capability-loader.ts` |
+| Runtime skill definitions | `src/engine/capabilities/skill-loader.ts` |
 | Collision checks | `src/engine/capabilities/collision-check.ts` |
 | Orchestrator registration | `src/agents/orchestrator.ts` |
 

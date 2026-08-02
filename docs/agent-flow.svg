@@ -142,7 +142,7 @@
 <g id="node9" class="node">
 <title>core_workflows</title>
 <path fill="#f8fafc" stroke="#334155" d="M1387.5,-490.5C1387.5,-490.5 1178.5,-490.5 1178.5,-490.5 1172.5,-490.5 1166.5,-484.5 1166.5,-478.5 1166.5,-478.5 1166.5,-464.5 1166.5,-464.5 1166.5,-458.5 1172.5,-452.5 1178.5,-452.5 1178.5,-452.5 1387.5,-452.5 1387.5,-452.5 1393.5,-452.5 1399.5,-458.5 1399.5,-464.5 1399.5,-464.5 1399.5,-478.5 1399.5,-478.5 1399.5,-484.5 1393.5,-490.5 1387.5,-490.5"/>
-<text text-anchor="middle" x="1283" y="-474.9" font-family="Arial" font-size="12.00">Core Workflows</text>
+<text text-anchor="middle" x="1283" y="-474.9" font-family="Arial" font-size="12.00">Application Workflows</text>
 <text text-anchor="middle" x="1283" y="-461.9" font-family="Arial" font-size="12.00">Chat answer • Research • Approval gate</text>
 </g>
 <!-- orchestrator&#45;&gt;core_workflows -->
@@ -217,8 +217,8 @@
 <g id="node14" class="node">
 <title>factory</title>
 <path fill="#dcfce7" stroke="#16a34a" d="M493,-387C493,-387 249,-387 249,-387 243,-387 237,-381 237,-375 237,-375 237,-361 237,-361 237,-355 243,-349 249,-349 249,-349 493,-349 493,-349 499,-349 505,-355 505,-361 505,-361 505,-375 505,-375 505,-381 499,-387 493,-387"/>
-<text text-anchor="middle" x="371" y="-371.4" font-family="Arial" font-size="12.00">Subagent Wrapper / Runtime Agent Factory</text>
-<text text-anchor="middle" x="371" y="-358.4" font-family="Arial" font-size="12.00">Build worker from registry definition on demand</text>
+<text text-anchor="middle" x="371" y="-371.4" font-family="Arial" font-size="12.00">Flue 2 Subagent Definition Loader</text>
+<text text-anchor="middle" x="371" y="-358.4" font-family="Arial" font-size="12.00">Register enabled worker definitions on startup</text>
 </g>
 <!-- tool_registry&#45;&gt;factory -->
 <g id="edge15" class="edge">

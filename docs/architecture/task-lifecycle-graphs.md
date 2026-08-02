@@ -32,9 +32,9 @@ rewrite the other.
   model call.
 - Making the TUI, Telegram, or another connector own agent orchestration.
 - Allowing an agent to approve its own graph mutation or side effect.
-- Using a Flue workflow as the durable TLG scheduler. Each Flue workflow run is
-  a finite function invocation with a recorded result and events; Flue does not
-  checkpoint arbitrary TypeScript execution for step-level resume.
+- Using an application workflow function as the durable TLG scheduler. Flue 2
+  has no framework workflow runtime, and ordinary TypeScript execution does not
+  checkpoint arbitrary steps for resume.
 
 ## Terminology
 
@@ -178,14 +178,14 @@ It schedules ready nodes and invokes Flue surfaces as node executors:
 
 - deterministic application code for validation and state reduction;
 - fresh Flue child sessions for model capsules;
-- named Flue subagent profiles for bounded specialist nodes;
+- named Flue subagent definitions for bounded specialist nodes;
 - registered Flue tools and MCP capabilities through the broker;
 - durable approval interrupts; and
 - typed observation nodes for progress and completion.
 
-Flue workflows may package bounded operations, but they are not the TLG
-checkpointer or scheduler because interrupted workflow functions do not resume
-from arbitrary completed steps.
+Application workflow functions may package bounded operations, but they are
+not the TLG checkpointer or scheduler because interrupted functions do not
+resume from arbitrary completed steps.
 
 ### Evidence And Observation Plane
 

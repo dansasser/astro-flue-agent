@@ -22,14 +22,14 @@ TUI or connector
       -> command-scoped PAT fallback when required
 ```
 
-The Coding Worker connects to the official remote GitHub MCP endpoint through
-Flue `connectMcpServer(...)`:
+The Coding Worker creates the official remote GitHub MCP connection with Flue
+2 `defineMcpConnection(...)` and registers it with `useMcpConnection(...)`:
 
 ```text
 https://api.githubcopilot.com/mcp/
 ```
 
-The connection is declared on the Coding Worker lead profile. The main
+The connection is declared on the Coding Worker lead agent. The main
 orchestrator, researcher, general runtime capability broker, and connector
 clients do not receive these tools.
 
@@ -135,7 +135,7 @@ state is connector-independent; approval audience and action scope are not.
 | PAT and command-scoped askpass | `src/engine/workers/coding-worker/github/github-pat.ts` |
 | Approval-gated GitHub tools | `src/engine/workers/coding-worker/github/github-tools.ts` |
 | Bounded Git tools and clone workflow | `src/engine/workers/coding-worker/tools/`, `src/engine/workers/coding-worker/repo/` |
-| Worker profile attachment | `src/engine/workers/coding-worker/coding-worker.ts` |
+| Worker agent attachment | `src/engine/workers/coding-worker/coding-worker.ts` |
 | Contract and security tests | `src/tests/github-mcp.test.ts`, `src/tests/github-private-clone.test.ts` |
 
 ## Related Documentation

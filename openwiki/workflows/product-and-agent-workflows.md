@@ -19,16 +19,18 @@ The current runtime gateway is the built Flue/Hono server. The source-backed flo
 
 ```text
 connector or HTTP client
--> app-owned Hono route or Flue route
+-> app-owned Hono route or explicitly mounted Flue 2 router
 -> normalized message event
 -> durable chat/session persistence
--> orchestrator Flue agent session
+-> orchestrator Flue 2 instance and submission
 -> protocol loading and optional memory retrieval
 -> tool use or worker delegation
 -> response returned to caller or channel
 ```
 
-`src/app.ts` registers route modules for chat events, knowledge, schedules, telemetry, approvals, and Telegram admin before mounting Flue runtime routes.
+`src/app.ts` registers route modules for chat events, knowledge, schedules,
+telemetry, approvals, and Telegram admin before explicitly mounting the
+orchestrator agent router and Telegram channel router.
 
 ## Chat event flow
 
@@ -39,7 +41,7 @@ connector or HTTP client
 3. Resolve durable session routing through `src/engine/session/session-routing.ts`.
 4. Record the normalized event in `goromboPersistenceRuntime.sessionDatabase`.
 5. Handle `/new` or `/compact` directly when applicable.
-6. Forward ordinary messages to `/agents/orchestrator/:sessionId?wait=result` with a chat prompt created by `src/api/routes/chat-prompt.ts`.
+6. Resolve the active generation, initialize `Orchestrator`, dispatch a chat prompt created by `src/api/routes/chat-prompt.ts`, and read the exact receipt to settlement.
 7. Add event and session metadata to JSON responses.
 
 Session access denial returns 403. Invalid JSON returns 400. Unknown slash commands are recorded and returned as handled command responses.
@@ -103,7 +105,7 @@ When changing coding behavior, check the worker workspace and approval paths bef
 Durable files, repositories, projects, and handoff notes are Coding Worker
 operations. The worker resolves them under `<runtime-root>/workspace`, returns
 workspace-relative paths, and verifies writes through its host-backed Flue Node
-local session. Shell, Git, and verification processes additionally run in a
+local sandbox. Shell, Git, and verification processes additionally run in a
 Bubblewrap namespace that mounts the workspace but not sibling owner runtime
 state. The main orchestrator intentionally has no generic virtual filesystem or
 shell tools; `/home/user` is not a durable product location.

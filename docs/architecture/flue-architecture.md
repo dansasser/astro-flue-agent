@@ -1,182 +1,214 @@
 # Flue Architecture Contract
 
-This document is the local source of truth for Flue architecture in this repository. Read it before modifying `src/app.ts`, agents, workflows, tools, skills, subagents, model cards, provider runtime, memory, RAG, or routing.
+This document is the local source of truth for Flue architecture in this
+repository. Read it before modifying `src/app.ts`, agents, application
+workflows, tools, skills, subagents, MCP connections, model cards, provider
+runtime, persistence, memory, RAG, routing, or observability.
 
-## Flue Components
+## Flue 2 Components
 
-Flue applications are built from these components:
+SIM-ONE Alpha uses these Flue 2 surfaces:
 
 ```text
-app.ts
-agents
-Flue agent profiles
-subagents
-workflows
+Vite and @flue/vite
+required Hono app.ts with explicit route mounts
+'use agent' modules and synchronous agent functions
+Agent Hooks
+subagent definitions
 tools
-skills
-models
-model providers
-model specifiers
-sessions
-persistence
-compaction
+Agent Skills
+MCP connections
+model providers and model specifiers
 sandboxes
-routing
-observability
-workflow-run records for finite invocations
-MCP servers
-CLI
-SDK
+agent handles: init(), dispatch(), read(), and abort()
+conversation snapshots and live updates
+SQLite persistence
+automatic agent compaction
+observability events
+conversation-scoped SDK clients
 ```
 
-## app.ts
+Flue 2 has no framework workflow registry, workflow HTTP routes, run registry,
+or deployment-wide SDK client. Files under `src/workflows/` are application
+functions, not discovered Flue framework objects.
 
-`src/app.ts` is an optional Hono application entrypoint. It composes app-owned routes and middleware with Flue's generated routes.
+## Build And Routing
+
+`vite.config.ts` uses `flue()` from `@flue/vite`. `vite dev` is the development
+server and `vite build` emits the Node server under
+`.gorombo/sim-one-alpha/`.
+
+`src/app.ts` is required and mounts every public Flue route explicitly. Its
+current Flue mounts are:
+
+```text
+/agents/orchestrator  -> createAgentRouter(Orchestrator)
+/channels/telegram    -> telegramChannel.route()
+```
 
 Allowed in `src/app.ts`:
 
 ```text
 Hono app creation
 health checks
-auth and middleware (loopback bypass for local TUI, x-api-secret for external connectors)
-imported route registration
-custom ingress that forwards into Flue architecture
+imported auth middleware
+imported application route registration
 telemetry observer registration
-app.route('/', flue())
-side-effect import of model runtime bootstrap
+explicit agent and channel route mounts
+side-effect imports for runtime configuration, providers, and schedules
 ```
 
 Not allowed in `src/app.ts`:
 
 ```text
 orchestration logic
-direct RAG router creation
-direct web-search provider creation
-old/non-Flue orchestrator wiring
-passing process.env into model-provider setup
+direct RAG or web-search wiring
 agent business logic
+model-selected authority
+beta auto-router or workflow/run routes
 ```
 
-Telemetry observers registered in `src/app.ts` must stay lightweight. Use Flue `observe(...)` for live runtime events, sanitize content-bearing events before exposing or exporting them, and keep protected telemetry routes in imported route modules.
+## Agents And Hooks
 
-If app-owned ingress is needed, it must dispatch or invoke the Flue agent/workflow path. It must not call a separate non-Flue orchestrator. Auth checks should live in imported middleware modules, not inline route bodies.
+An addressable Flue 2 agent is an exported capitalized synchronous function in
+a module marked with `'use agent'`. The function composes behavior through
+hooks and returns its instructions.
 
-## Agents
-
-An agent file is a Flue `createAgent(...)` entrypoint. Every agent has a main file. A subagent is a Flue agent profile called by an agent. In this project, that Flue term is not a model-selection concept; model selection always goes through project model cards.
-
-The main agent entrypoint lives at `src/agents/orchestrator.ts`. Subagent implementations live under `src/engine/workers/<name>/` so they do not sit at the same directory level as the main agent. The main agent workspace lives at `src/workspace/`; subagent workspaces live at `src/engine/workers/<name>/workspace/`.
-
-The main orchestrator replaces Flue's default virtual-sandbox tool set with an
-empty sandbox tool list. This prevents ephemeral virtual paths such as
-`/home/user` from being mistaken for durable product storage while preserving
-Flue task delegation. Durable file, repository, project, and handoff work is
-delegated to the Coding Worker, whose local sandbox is rooted at
-`<runtime-root>/workspace`. Runtime capability lifecycle mutations are
-delegated separately to `capability-manager`.
-
-Agents own:
+The main agent is `Orchestrator` in `src/agents/orchestrator.ts`. It uses:
 
 ```text
-model selection
-instructions
-tools
-skills
-subagents
-session persistence
-compaction
-sandbox settings
+useModel()              selected model card and automatic compaction
+useTool()               built-in and enabled runtime tools
+useSkill()              built-in and enabled runtime Agent Skills
+useSubagent()           built-in and enabled runtime workers
+useMcpConnection()      built-in and enabled runtime MCP connections
+useSandbox()            local factory with no generic model-visible file tools
+useInitialData()        trusted continuation context for compacted generations
+useInstruction()        conditional continuation instructions
+useResponseFinish()     sanitized response metadata
 ```
 
-Agents use model specifiers from project model cards. They do not hardcode provider credentials.
+`Orchestrator.agentName = 'orchestrator'` pins the deployed identity. Agent
+functions do not receive a beta initializer environment bag; they use trusted
+runtime configuration initialized before module consumers.
 
-## Workflows
+The orchestrator's local sandbox has an empty model tool list. Durable file,
+repository, project, and handoff work belongs to the Coding Worker under
+`<runtime-root>/workspace`.
 
-Workflow files live under `src/workflows/` and export `run(...)`. Workflows are finite application-controlled operations.
+## Subagents And Workers
 
-Workflows may:
+Built-in and runtime workers are Flue `SubagentDefinition` values. Built-ins use
+`defineSubagent(...)`; the owning agent registers them with `useSubagent(...)`.
+The parent model delegates through Flue's `task` tool.
 
-```text
-normalize input
-load app data
-initialize agents with init(agent)
-open sessions
-call prompt/task/skill
-manage bounded application loops
-use caches
-return structured results
-```
+The orchestrator owns these top-level workers:
 
-Workflows are first-class Flue architecture. Complex research machinery may live in workflow files when the owning agent is the researcher.
+- `researcher` for current, external, web, and source-backed research;
+- `coding-worker` for repository and GitHub work;
+- `capability-manager` for runtime capability lifecycle administration.
 
-Workflow files expose HTTP by exporting `route`. Flue workflow HTTP invocation is asynchronous by default: accepted calls return a workflow `runId`, and clients inspect `/runs/:runId` for the completed result. Workflows are finite operations, not the durable continuing chat boundary.
+Coding Worker internal subagents stay private to that worker. They are not
+mounted as public agents and are not attached directly to the orchestrator.
+
+## Application Workflows
+
+`src/workflows/` contains finite application functions:
+
+- `research.ts` drives the addressable Researcher with `init()`, `dispatch()`,
+  and `read()`;
+- `retrieval.ts` implements bounded memory/RAG retrieval;
+- `web-research.ts` implements researcher-owned search, fetch, cache, packing,
+  confidence, and provider-failure handling.
+
+They are ordinary TypeScript modules. They are not auto-discovered, do not
+export framework routes, and do not create workflow run IDs. Application code
+calls them directly or exposes them through an owning tool.
 
 ## Tools
 
-Tools are executable capabilities created with `defineTool(...)`.
+Tools use `defineTool(...)` and are attached with `useTool(...)`. A Flue 2 tool
+reads parsed arguments from `run({ data })`. Object, array, number, boolean, or
+`null` results are returned inside `{ output }`; a bare string remains valid.
+Side-effect sequences that need Flue checkpointing may opt into
+`durable: true` and use `step.do(...)`.
 
-The official GitHub MCP connection is a Coding Worker-owned runtime capability.
-The Coding Worker exposes its selected read-only MCP tools and keeps mutation
-tools behind SIM-ONE approval wrappers. The orchestrator delegates GitHub work
-to the Coding Worker and receives neither the MCP tools nor the PAT.
-
-Tools must be attached only to agents that should own those capabilities. Do not attach web-search-capable tools to the orchestrator.
+Tools are attached only to their owning agent. The orchestrator does not own web
+search or Coding Worker repository tools.
 
 ## Skills
 
-Skills are reusable workflow knowledge and instructions. Skills do not execute actions by themselves. Tools and workflows execute actions.
+An import that resolves to `SKILL.md` returns a Flue Skill reference and
+packages the skill directory. The owning agent registers it with
+`useSkill(...)`. JavaScript import attributes are not used in Flue 2.
 
-## Subagents
+Skills provide instructions and supporting resources. They do not execute
+actions or replace SQLite protocols.
 
-Subagents are named Flue agent profiles available to a parent agent through Flue task delegation. They run in child sessions and return results to the parent. They still use model specifiers supplied by project model cards.
+## MCP
 
-The orchestrator may delegate to subagents. Subagents may use their own tools, skills, workflows, model, and instructions.
+Built-in and runtime MCP definitions use `defineMcpConnection(...)`. The owning
+agent registers each connection with `useMcpConnection(...)`. Runtime records
+store endpoint, transport, and an allowlisted configuration key name; secret
+values remain in `sim-one.config` and never enter model context.
 
 ## Models And Providers
 
-Model cards define:
+Model cards contain model/provider identity, roles, capabilities, limits, and
+environment-variable names. They contain no secrets. Provider modules create Pi
+providers and register them with `setProvider()` before any agent renders.
+`useModel()` receives the selected card's Flue specifier and card-derived
+compaction settings.
 
-```text
-model key
-provider id
-model id
-specifier
-roles
-capabilities
-context limits
-output limits
-environment variable names for provider config
-source metadata
-```
+## Persistence, Sessions, And Compaction
 
-Model cards do not contain secret values.
+`src/db.ts` exports Flue 2's Node SQLite adapter. Flue 2 writes only to
+`<runtime-root>/db/flue-v2.sqlite`; the beta
+`<runtime-root>/db/flue.sqlite` is an untouched rollback archive.
 
-Provider runtime resolves the card-declared environment variable names against the runtime environment and registers Flue providers.
+`<runtime-root>/db/sessions.sqlite` remains SIM-ONE's product-session store.
+Each product session maps to one or more ordered Flue 2 instance generations.
+Normal chat uses an `init(Orchestrator, { id })` handle, awaits the exact
+`dispatch()` receipt with `read()`, and stores `instanceId`, `submissionId`,
+and `uid` correlation outside model-selected input.
+
+Automatic context compaction is configured through `useModel()`. The explicit
+`/compact` command is application-owned generation rotation: it obtains a
+continuation summary from the current instance, persists it, creates the next
+generation, and injects the summary through initial data. Prior generations
+remain immutable transcript history.
+
+## Observability
+
+Flue 2 events use `instanceId` and `submissionId`. SIM-ONE stores sanitized
+in-memory execution summaries keyed by submission ID when available, otherwise
+instance ID, and exposes them under `/api/telemetry/executions`. There are no
+beta `run_start`, `run_end`, workflow-run, or `/runs/*` contracts.
 
 ## SIM-ONE Alpha Boundary
 
-The orchestrator routes and delegates. The researcher owns web research.
-
 ```text
 User prompt
--> app-owned chat ingress
--> durable orchestrator agent session
--> orchestrator agent
--> load_protocols
--> safe memory lookup if useful
--> delegate to researcher if web/current/source-backed information is needed
--> researcher performs web research
--> orchestrator synthesizes the final response
+-> authenticated application or channel ingress
+-> normalized event and product-session resolution
+-> init(Orchestrator, { id })
+-> dispatch() admission receipt
+-> read(receipt) settlement
+-> Protocol Tool and trusted event lookup
+-> memory, tools, MCP, or worker delegation
+-> root orchestrator response
 ```
 
-The orchestrator must not directly call web search or a web-capable retrieval path.
+The orchestrator routes and delegates. The researcher owns web research. Nested
+worker output remains internal until the orchestrator synthesizes the public
+response.
 
 ## Related Documentation
 
-- [Architecture Overview](overview.md)
-- [Protocol System](protocol-system.md)
-- [Skill System](skill-system.md)
+- [Flue 2 Migration](flue-v2-migration.md)
+- [Product Flow](product-flow.md)
+- [Session Context Budget](session-context-budget.md)
 - [Worker System](worker-system.md)
-- [GitHub MCP And Repository Authentication](github-auth-system.md)
-- [Retrieval And Research](retrieval-and-research.md)
-- [Execution Workflows](execution-workflows.md)
+- [Tool System](tool-system.md)
+- [Skill System](skill-system.md)
+- [Registry System](registry-system.md)

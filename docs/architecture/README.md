@@ -11,7 +11,7 @@ runtime flow or inspect a specific subsystem.
 | --- | --- |
 | [Architecture Overview](overview.md) | High-level product identity, governed runtime flow, Flue foundation, SIM-ONE governance, persistence, and security boundaries |
 | [Execution Workflows](execution-workflows.md) | End-to-end conversational, research, memory, coding, scheduled, capability, and authentication execution flows |
-| [Flue Architecture Contract](flue-architecture.md) | Required ownership boundaries for Flue agents, workflows, tools, skills, subagents, models, and application ingress |
+| [Flue Architecture Contract](flue-architecture.md) | Required ownership boundaries for Flue 2 agents, Agent Hooks, application workflows, tools, skills, subagents, models, and ingress |
 | [Flue 2 Migration Specification](flue-v2-migration.md) | Implementation contract for migrating the beta runtime, clients, packaging, persistence, tests, and documentation to Flue 2 |
 | [SIM-ONE Alpha Flue Map](gorombo-flue-map.md) | Detailed source ownership map from repository paths to Flue and SIM-ONE responsibilities |
 
@@ -43,7 +43,7 @@ runtime flow or inspect a specific subsystem.
 | [Memory System](memory-system.md) | Rust/WebAssembly structured memory, SQLite durability, trusted scope, retrieval, and tests |
 | [Retrieval And Research](retrieval-and-research.md) | RAG ownership, document indexing, embeddings, web research, caching, and context packing |
 | [Model System](model-system.md) | Provider registration, model cards, runtime selection, and context-budget metadata |
-| [Session Context Budget](session-context-budget.md) | Durable Flue sessions, persistence, compaction, retrieval allocation, and session commands |
+| [Session Context Budget](session-context-budget.md) | Flue 2 conversations, product-session generations, persistence, compaction, retrieval allocation, and session commands |
 
 ## Product And Interface Engineering
 

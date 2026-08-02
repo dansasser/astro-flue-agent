@@ -66,7 +66,7 @@ Type `/` at the beginning of the prompt to open the command palette.
 | `/sessions [limit]` | List recent owned sessions; default 10, maximum 50 |
 | `/session` | Show the active durable session id |
 | `/rename <title>` | Assign an explicit name to the active session |
-| `/compact` | Compact the active Flue session without sending command text to the model |
+| `/compact` | Summarize the active generation and continue the product session in a new Flue 2 instance |
 | `/help` | Show available terminal commands |
 | `/exit` | Exit cleanly and print the active session id |
 
@@ -94,9 +94,11 @@ sim-one --session <session-id>
 
 ## Compaction
 
-`/compact` asks the gateway to compact the active durable Flue session.
-Compaction reduces context pressure while preserving the durable session and
-its visible history. The command itself is not submitted as model prompt text.
+`/compact` sends a trusted summary signal to the active Flue 2 generation,
+stores the continuation summary, and rotates the product session to a new
+instance. This reduces context pressure while preserving the product session
+and visible history. The slash command itself is not submitted as ordinary
+model prompt text.
 
 ## Clipboard And Scrolling
 
