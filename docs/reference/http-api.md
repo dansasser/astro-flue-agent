@@ -189,25 +189,27 @@ reason. The approval service validates that the request is still pending.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/telemetry/runs` | List sanitized run summaries |
-| `GET` | `/api/telemetry/runs/:runId` | Read one run summary |
+| `GET` | `/api/telemetry/executions` | List sanitized execution summaries |
+| `GET` | `/api/telemetry/executions/:executionId` | Read one execution summary |
 
 Telemetry responses expose structured execution evidence without returning
 secret values.
 
 ## Flue Routes
 
-The gateway also mounts Flue agent, workflow, and run routes:
+The gateway explicitly mounts the Flue 2 orchestrator agent router and the
+Telegram channel router:
 
 ```text
-/agents/*
-/workflows/*
-/runs/*
+/agents/orchestrator/*
+/channels/telegram/*
 ```
 
-These routes require the external API secret outside loopback. Use the
-[Flue SDK documentation](https://flueframework.com/docs/sdk/overview/) for the
-Flue transport and streaming contracts.
+The orchestrator agent route requires the external API secret outside
+loopback. Telegram webhook delivery instead authenticates with the configured
+`TELEGRAM_WEBHOOK_SECRET_TOKEN`; it is not covered by the `x-api-secret`
+middleware. Use the [Flue agent documentation](https://flueframework.com/docs/guide/agents/)
+for the agent transport and streaming contracts.
 
 ## Error Handling
 
@@ -223,6 +225,7 @@ Clients should handle:
 | `500` | Runtime or persistence failure |
 | `503` | Required service or external authentication is not configured |
 
-Do not infer successful work from request acceptance alone. Schedule dispatch,
-agent execution, and workflows can continue asynchronously; use the returned
-run, session, transcript, or telemetry identifiers to verify completion.
+Do not infer successful work from request acceptance alone. Schedule dispatch
+and agent execution can continue asynchronously; use returned schedule-run,
+product-session, Flue submission, transcript, or telemetry identifiers to
+verify completion.

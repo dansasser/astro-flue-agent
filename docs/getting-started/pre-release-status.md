@@ -7,7 +7,7 @@ runnable.
 
 ## Available In Source
 
-- Flue-based gateway and durable orchestrator sessions.
+- Flue 2 gateway, durable orchestrator instances, submissions, and product-session generations.
 - SIM-ONE terminal interface and the `sim-one` launch command.
 - `skill`, `tool`, `worker`, and `mcp` capability command families.
 - SQLite capability, protocol, session, schedule, and structured-memory stores.
@@ -26,6 +26,7 @@ no per-run deferral path.
 
 | ID | Release dependency | Pre-release status | Graph owner | Scope |
 | --- | --- | --- | --- | --- |
+| `REL-FLUE-001` | Complete Flue beta to Flue 2 migration across runtime, persistence, clients, packaging, tests, and documentation | Implementation and documentation stacks are complete on the migration branch; final full-suite and real product/connector verification remains in `verify-flue-v2-production-migration` | `verify-flue-v2-production-migration` | Required |
 | `REL-PKG-001` | Release archive, `sim-one.sh`, and checksums | Not published | `implement-sim-one-onboarding-distribution` | Required |
 | `REL-PKG-002` | Integrity-verified packaged installation | Awaits versioned release assets | `implement-sim-one-onboarding-distribution` | Required |
 | `REL-ONB-001` | Packaged onboarding interface and `sim-one install` | Unavailable in the current CLI | `implement-sim-one-onboarding-distribution` | Required |
@@ -44,10 +45,10 @@ no per-run deferral path.
 | `REL-TG-002` | Telegram `disabled` policy scope | The setting is named `dmPolicy`, but current ingress rejects both direct and group messages | `implement-ingress-operations` | Required |
 | `REL-SEC-001` | Gateway ingress rate limiting | Authentication and validation exist; request throttling is not implemented | `implement-ingress-operations` | Required |
 | `REL-CW-001` | Coding Worker file-edit approval enforcement | Workspace and sandbox boundaries exist; current write/patch tools do not call the approval service | `implement-file-access-approval-gate` | Required |
-| `REL-CW-002` | Live Coding Worker checkpoint progress over active connectors | Event types and standalone reporter exist; the live Flue worker profile does not attach or forward them | `implement-coding-worker-progress` | Required |
+| `REL-CW-002` | Live Coding Worker checkpoint progress over active connectors | Event types and standalone reporter exist; the live Flue 2 worker agent does not attach or forward them | `implement-coding-worker-progress` | Required |
 | `REL-CW-003` | Complete fail-closed filesystem and shell containment with allow-once/session escalation | General shell, Git, and verification processes now run in a Bubblewrap namespace that excludes sibling owner runtime state and fails closed when isolation is unavailable. File-edit approval enforcement and allow-once/session escalation remain required | `implement-file-access-approval-gate` | Required |
 | `REL-CW-004` | Owner-selected GitHub auth plus public anonymous clone and packaged TUI clone verification | D1 resolved to official GitHub MCP/PAT; read-only Flue ownership, approval-gated mutations, secret isolation, anonymous-first Git, and the full packaged product matrix are verified on the current branch. A live owner-PAT GitHub acceptance run remains a release-environment check | `implement-coding-worker-github-flow` | Required |
-| `REL-CW-005` | Coding scaffold tooling with profile-owned Astro MCP, repository wrapper, and noninteractive post-scaffold checks | Identified by the sim-one.dev probe; absent | `implement-coding-worker-scaffold-tooling` | Required |
+| `REL-CW-005` | Coding scaffold tooling with worker-owned Astro MCP, repository wrapper, and noninteractive post-scaffold checks | Identified by the sim-one.dev probe; absent | `implement-coding-worker-scaffold-tooling` | Required |
 | `REL-CW-006` | Orchestrator verification of typed Coding Worker evidence under the owner-selected D4 boundary | D4 is open; no approved verification projection is implemented | `implement-orchestrator-worker-verification` | Required |
 | `REL-CW-007` | Coding Worker capability authoring skills, scaffold/validation tools, and reproducible handoff for skills, tools, workers, and MCP packages | Five imported Flue authoring skills and protocol-gated classify/scaffold/validate/test/handoff tools are attached; focused fixtures cover every package kind and digest-bound test evidence | `implement-coding-worker-capability-authoring` | Required |
 | `REL-SCH-001` | Scheduled trusted-event context handoff | Scheduled turns reach the orchestrator, but dispatch does not persist or pass the event id required by protocol and scoped-memory tools | `implement-ingress-operations` | Required |

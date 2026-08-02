@@ -1,116 +1,105 @@
 # Schedules System
 
-Standalone scheduled, recurring, and one-shot agent execution for SIM-ONE Alpha. No Redis, no BullMQ, no external job broker — schedule *definitions* and *run history* are durable in SQLite, schedule *firing* uses [Croner](https://croner.56k.guru/) in-process, and Croner jobs rehydrate from SQLite on restart.
+SIM-ONE Alpha owns scheduled, recurring, one-shot, and manual agent execution.
+Schedule definitions and run history are durable in SQLite; Croner drives
+in-process timers and rehydrates enabled schedules after restart.
 
-## How it works
+## Lifecycle
 
 ```text
-CRUD via LLM tool (schedule_*) or admin route (/api/schedules/*)
-  -> ScheduleStore.upsert()           [SQLite: .gorombo/db/schedules.sqlite, node:sqlite]
-  -> ScheduleManager.syncCron()        [in-memory Croner mirror]
-       enabled -> new Cron(pattern, { protect, timezone, catch }, fire)
-       disabled/paused -> stop the Croner job, keep the row
+CRUD through schedule tools or /api/schedules
+-> ScheduleStore writes <runtime-root>/db/schedules.sqlite
+-> ScheduleManager mirrors enabled rows into Croner
 
-Boot (src/app.ts imports src/engine/schedules/boot.js side effect)
-  -> ScheduleManager.start()
-       -> ScheduleStore.migrate() + cleanup()
-       -> observe((event) => ...) subscribed once (routes agent events by instanceId)
-       -> rehydrate each enabled row into a Croner job
-
-Croner fire (dispatch is ADMISSION-ONLY — dispatch resolves = admitted, not completed)
-  -> recordRunStart (run row 'queued', unique instanceId per fire)
-  -> emit schedule.fired
-  -> dispatch({ agent: 'orchestrator', id: instanceId, input: { type:'schedule', ... } })
-       -> resolves to DispatchReceipt { dispatchId, acceptedAt }  (admission only)
-  -> recordRunAdmitted (store dispatch_id + admitted_at)
-  -> emit schedule.dispatched
-  -> OBSERVE the agent turn to terminal in-process via observe() filtered by dispatchId/instanceId
-       -> agent_end -> recordRunOk / recordRunError
-       -> transient error (rate_limit/overloaded/network/server_error) -> retry with backoff (new instanceId)
-       -> permanent error (validation/provider-unavailable) -> recordRunSkipped, no retry
-  -> emit schedule.completed/error/skipped
-  -> if deleteAfterRun and kind='at' -> delete the schedule row (cascade removes run history)
+Cron or manual fire
+-> create durable schedule run and unique instanceId
+-> init(Orchestrator, { id: instanceId })
+-> dispatch structured schedule signal with idempotency key
+-> persist submissionId and acceptedAt
+-> await handle.read(receipt) for the exact submission
+-> record ok, error, timeout, skipped, or retry state
 ```
 
-Current schedule input carries the prompt, schedule and run identifiers,
-target, and optional payload, but no trusted normalized-event id. The protocol
-and scoped-memory tools require an event id already persisted by trusted
-ingress, so they are unavailable during scheduled turns. Persisting a synthetic
-trusted schedule event and passing its id is a release gate.
+Admission and completion are distinct. A dispatch receipt proves only durable
+acceptance; the manager marks the run successful only after `read()` settles.
 
-### Key Flue constraints (verified against the installed 1.0.0-beta.1 runtime)
+## Flue 2 Contract
 
-- **`dispatch()` is admission-only.** It returns `DispatchReceipt { dispatchId, acceptedAt }` — `dispatchId` is "not a workflow runId." The agent turn runs asynchronously in the agent's continuing durable queue. The terminal status is observed in-process via `observe()` (the same API `src/core/telemetry/flue-telemetry.ts` uses) filtered by `event.dispatchId`/`event.instanceId`. A dispatch promise resolving is NOT the turn completing.
-- **Only `orchestrator` is dispatchable.** `coding-worker` is a subagent profile of the orchestrator ("not a separately addressable agent endpoint"). Schedules always dispatch to `orchestrator`; `targetAgent: 'coding-worker'` is carried in the input and the orchestrator delegates to the coding-worker subagent through its `task` tool.
-- **`node:sqlite`, not `better-sqlite3`.** The Flue `sqlite()` adapter in `src/db.ts` stores only Flue-runtime state (sessions, submissions, runs); schedule definitions + run history are application-owned business data (per the Flue database guide) and live in their own `node:sqlite` file, mirroring `GoromboSessionDatabase`.
+`src/engine/schedules/schedule-dispatch.ts` dynamically imports the
+`Orchestrator` function, initializes it by instance id, dispatches a signal
+message, and returns both the receipt fields and a settlement promise.
 
-### Schedule kinds
+Correlation uses:
 
-| Kind    | Field semantics                       | Croner pattern                                    |
-| ------- | ------------------------------------- | -------------------------------------------------- |
-| `cron`  | 5-field (or 6-field) cron expression  | cron expr passed through to Croner                 |
-| `every` | interval string, e.g. `20m` / `1h`    | converted to a cron expr (`20m`->`*/20 * * * *`); Croner 10.x rejects interval strings directly |
-| `at`    | ISO 8601 one-shot timestamp           | ISO string passed to Croner (fires once); `deleteAfterRun` defaults true |
+```text
+instanceId
+submissionId
+acceptedAt
+```
 
-Timezone: Croner `timezone` option (default UTC). Day-of-month/day-of-week use Croner's default Vixie OR logic (documented in the tool description so the model does not expect AND).
+Flue also returns `uid` on the transient dispatch receipt, but the schedule
+store does not persist that field.
+
+Schedule `runId` remains a SIM-ONE application identifier. It is not a Flue
+workflow run id. Flue 2 workflow routes and beta event correlation are not used.
+
+## Retry And Terminal State
+
+The manager waits with a bounded timeout. Configured transient categories may
+retry after backoff with a new per-attempt instance id. Permanent errors are
+recorded as skipped; exhausted or non-retryable transient errors are recorded
+as errors. Pausing, deleting, or stopping a schedule cancels pending retry
+timers.
+
+One-shot schedules may delete themselves only after the final terminal outcome,
+never while a retry remains pending.
+
+## Current Governance Boundary
+
+Schedule input includes schedule, run, target, prompt, and optional payload
+fields but does not yet persist a trusted normalized-event id. Protocol and
+scoped-memory tools therefore cannot rehydrate connector/user scope during a
+scheduled turn. Trusted schedule-event handoff and result delivery remain
+release gates.
+
+## Schedule Kinds
+
+| Kind | Stored value | Croner input |
+| --- | --- | --- |
+| `cron` | Five- or six-field expression | Passed through |
+| `every` | Interval such as `20m` or `1h` | Converted to a cron expression |
+| `at` | ISO 8601 timestamp | One-shot date |
+
+Timezone defaults to UTC. Croner applies its normal day-of-month/day-of-week
+semantics.
 
 ## Surfaces
 
-- **Orchestrator tools** (`src/engine/tools/schedule-tools.ts`, attached to `src/agents/orchestrator.ts`): `schedule_create`, `schedule_pause`, `schedule_resume`, `schedule_update`, `schedule_delete`, `schedule_list`, `schedule_get`, `schedule_run_now`, `schedule_runs`. Auth boundary: `ownerScope` is derived from the trusted chat `eventId` (never model-selected).
-- **Coding-worker aliases** (`src/engine/workers/coding-worker/tools/coding-schedule-tools.ts`, lead-only): `coding_schedule_*` scoped to the worker's `projectId`, `targetAgent` defaults to `coding-worker`. Never exposed to internal coding subagents.
-- **Admin HTTP route** (`src/api/routes/schedules.ts`, behind `requireApiSecret`): `GET/POST /api/schedules`, `GET/PATCH/DELETE /api/schedules/:slug`, `POST /api/schedules/:slug/pause|resume|run`, `GET /api/schedules/:slug/runs[/:runId]`. `?wait=1` on run polls the runId to terminal.
+- Orchestrator `schedule_*` tools derive owner scope from a trusted event id.
+- Coding Worker `coding_schedule_*` aliases remain lead-only and project scoped.
+- Protected `/api/schedules/*` routes expose CRUD, pause/resume, manual fire,
+  and application-owned run history.
 
-## Config (GoromboConfig.schedules)
-
-```text
-schedules.enabled              (env GOROMBO_SKIP_SCHEDULES=1 to disable)
-schedules.maxConcurrentRuns: 8
-schedules.retry.maxAttempts: 3
-schedules.retry.backoffMs: [60000, 120000, 300000]
-schedules.retry.retryOn: ["rate_limit","overloaded","network","server_error"]
-schedules.runLog.keepRuns: 200
-schedules.sessionRetention: "24h"
-schedules.shutdownGraceSeconds: 60
-schedules.providerPreflight: true   (the current preflight returns ok without probing a provider)
-```
-
-Env overrides: `GOROMBO_SCHEDULES_MAX_CONCURRENT_RUNS`, `GOROMBO_SCHEDULES_KEEP_RUNS`, `GOROMBO_SCHEDULES_MAX_ATTEMPTS`, `GOROMBO_SCHEDULES_SHUTDOWN_GRACE_SECONDS`, `GOROMBO_SCHEDULES_PROVIDER_PREFLIGHT`, `GOROMBO_SCHEDULES_SESSION_RETENTION`, `GOROMBO_SCHEDULES_DATABASE_PATH`.
+`POST /api/schedules/:slug/run?wait=1` polls the SIM-ONE run record to a bounded
+terminal state. Run history routes keep `runId` because that is the product
+schedule identifier.
 
 ## Visibility
 
-`src/engine/schedules/schedule-telemetry.ts` emits structured `schedule.*`
-progress events (fired, dispatched, completed, error, skipped, created, paused,
-resumed, updated, deleted, shutdown) to a bounded in-memory
-`ScheduleProgressReporter`. The manager observes the scheduled turn's terminal
-status but does not store its result content or deliver that result through a
-connector. Scheduled result persistence and user delivery remain release
-gates. Schedule lifecycle events are currently typed and collected in an
-internal in-memory reporter. No production admin or telemetry route exposes
-that reporter; schedule API routes expose definitions and durable run history
-instead. Lifecycle events are not durably persisted or pushed independently
-through connectors.
+`schedule.*` progress events describe fired, dispatched, completed, error,
+skipped, retry, CRUD, and shutdown activity. Durable route-visible state is the
+schedule and run tables. Result content is not currently persisted or delivered
+through a connector.
 
-## Files
+## Source Map
 
-```text
-src/engine/schedules/
-  schedule-types.ts        ScheduleKind, ScheduleRecord, ScheduleRunRecord, ScheduleRunInput, ScheduleRunStatus
-  schedule-store.ts        ScheduleStore (node:sqlite CRUD + run history + cleanup)
-  schedule-config.ts       resolveScheduleConfig + env overrides
-  schedule-dispatch.ts     dispatchSchedule wrapper (admission-only; always dispatches to orchestrator)
-  schedule-manager.ts      ScheduleManager singleton (Croner mirror + observe() terminal + retry + concurrency + auto-delete)
-  schedule-telemetry.ts    ScheduleProgressEvent + reporter + installScheduleTelemetry
-  schedule-shutdown.ts     SIGTERM/SIGINT drain
-  boot.ts                  side-effect boot target (config + start + shutdown)
-src/engine/tools/schedule-tools.ts                      orchestrator schedule_* tools
-src/engine/workers/coding-worker/tools/coding-schedule-tools.ts  coding_schedule_* aliases (lead-only)
-src/api/routes/schedules.ts                         admin HTTP route
-```
-
-## Adding to it
-
-- New schedule kind: add to `ScheduleKind`, handle in `toCronerPattern`, validate in `ScheduleStore.validateDefinition`.
-- New tool: add a `defineTool` in `schedule-tools.ts`, export from `src/engine/tools/index.ts`, attach to the orchestrator `tools:` slot.
-- New admin endpoint: add to `src/api/routes/schedules.ts` (behind `requireApiSecret`).
-- New config field: add to `SchedulesConfig` + `resolveScheduleConfig` + `readScheduleEnvOverrides`.
-- Tests: focused unit tests use injected fake dispatch + fake observe (`schedule-manager.test.ts`); the three-surface test (`schedules.test.ts`) uses a real 1-second Croner job to verify real firing + persistence; the route test (`schedules-routes.test.ts`) injects a real manager via `__setScheduleManagerForTesting`.
+| Responsibility | Source |
+| --- | --- |
+| Types and run identifiers | `src/engine/schedules/schedule-types.ts` |
+| SQLite definitions and history | `src/engine/schedules/schedule-store.ts` |
+| Flue 2 dispatch/read | `src/engine/schedules/schedule-dispatch.ts` |
+| Cron, retries, and settlement | `src/engine/schedules/schedule-manager.ts` |
+| Boot and shutdown | `src/engine/schedules/boot.ts` |
+| Orchestrator tools | `src/engine/tools/schedule-tools.ts` |
+| Coding Worker aliases | `src/engine/workers/coding-worker/tools/coding-schedule-tools.ts` |
+| Admin routes | `src/api/routes/schedules.ts` |

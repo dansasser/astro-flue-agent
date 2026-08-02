@@ -12,7 +12,10 @@ Start with:
 - `docs/architecture/gorombo-flue-map.md`
 - `AGENTS.md`
 
-Keep `src/app.ts` limited to Hono setup, middleware, imported routes, telemetry observer boot, and `flue()` routing. Runtime composition belongs in the orchestrator agent and domain modules, not in the app entrypoint.
+Keep `src/app.ts` limited to Hono setup, middleware, imported routes,
+telemetry observer boot, and explicit Flue 2 agent/channel router mounts.
+Runtime composition belongs in the orchestrator agent and domain modules, not
+in the app entrypoint.
 
 ## Runtime configuration
 
@@ -53,7 +56,9 @@ Start with:
 - `src/engine/workers/researcher/`
 - `src/engine/workers/coding-worker/`
 
-The orchestrator coordinates and delegates. Researcher owns web/source-backed work. Coding-worker owns coding work and worker-local tooling. Do not call worker internals from the orchestrator when Flue task delegation is the intended boundary.
+The orchestrator coordinates and delegates. Researcher owns web/source-backed
+work. Coding-worker owns coding work and worker-local tooling. Register workers
+through `useSubagent(...)`; do not expose worker internals to the orchestrator.
 
 ## Workflows and retrieval
 
@@ -65,7 +70,9 @@ Start with:
 - `src/engine/rag/`
 - `src/engine/workers/researcher/research/`
 
-Web search is caller-gated. Preserve provider failure metadata, cache behavior, context packing, and source evidence shape when refactoring.
+These are application workflow functions, not Flue-discovered workflow routes.
+Web search is caller-gated. Preserve provider failure metadata, cache behavior,
+context packing, and source evidence shape when refactoring.
 
 ## Capabilities and MCP
 
@@ -78,7 +85,10 @@ Start with:
 - `scripts/capability-admin.mjs`
 - `sim-one-cli/src/cli.tsx`
 
-Skills are instructions. Tools, workers, and MCP servers may execute code or external calls, so enablement and approval behavior matters. Runtime capability loading happens at orchestrator initialization.
+Skills are instructions. Tools, workers, and MCP servers may execute code or
+external calls, so enablement and approval behavior matters. Runtime capability
+loading creates a snapshot at gateway module initialization; the orchestrator
+registers it through Agent Hooks.
 
 ## Protocols
 
@@ -118,7 +128,9 @@ Start with:
 - `src/api/routes/schedules.ts`
 - `src/engine/workers/coding-worker/tools/coding-schedule-tools.ts`
 
-Schedules dispatch to the orchestrator and observe terminal status through Flue events. Owner scope is derived from trusted event context for non-create operations.
+Schedules initialize the orchestrator, dispatch with an idempotency key, store
+the receipt, and read that exact receipt to settlement. Owner scope is derived
+from trusted event context for non-create operations.
 
 ## Models, config, and schemas
 

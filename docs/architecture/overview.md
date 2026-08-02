@@ -39,7 +39,7 @@ Terminal / connector / Web API / schedule
 -> Durable Flue orchestrator session
 -> SQLite protocol lookup
 -> Orchestrator/critic admission
--> Memory, RAG, tools, workers, workflows, or MCP
+-> Memory, RAG, tools, workers, application workflows, or MCP
 -> Structured result returned to orchestrator/critic
 -> Protocol scoring and response validation
 -> Approval, revision, rejection, or response
@@ -54,14 +54,14 @@ own work or bypass the orchestrator.
 
 Flue supplies:
 
-- durable agents and sessions;
-- workflows and actions;
+- durable agent instances, submissions, messages, snapshots, and updates;
+- Agent Hooks and direct agent handles;
 - tools and MCP connections;
 - skills;
-- workers through subagent profiles;
+- workers through subagent definitions;
 - persistence and compaction;
 - streaming events and observability;
-- routing and deployable Node runtimes;
+- explicit Hono routing and Vite-built Node runtimes;
 - sandbox adapters for bounded execution.
 
 SIM-ONE Alpha mounts the Flue runtime behind its gateway and keeps application
@@ -151,7 +151,7 @@ SIM-ONE Alpha exposes two capability layers:
 
 | Layer | Contents |
 | --- | --- |
-| Built-in Flue layer | Product-shipped skills, tools, workers, workflows, and MCP connections |
+| Built-in Flue layer | Product-shipped skills, tools, subagents, and MCP connections |
 | Runtime registry | User- or agent-added skills, tools, workers, and MCP servers |
 
 Enabled runtime capabilities merge into the same governed Flue surfaces as
@@ -172,7 +172,7 @@ needed to perform the work.
 
 SIM-ONE Alpha separates:
 
-- durable Flue session state;
+- durable Flue 2 conversation state;
 - connector and logical session metadata;
 - Rust/WebAssembly structured memory for checklists, todos, and notes;
 - semantic retrieval and embeddings;
@@ -212,10 +212,11 @@ See:
 
 ## Persistence
 
-Flue SQLite stores durable runtime state such as sessions, submissions, runs,
-and event streams. SIM-ONE application databases store protocols, logical
-session metadata, structured memory, schedules, capabilities, retrieval data,
-and approvals.
+Flue 2 SQLite stores canonical agent instances, submissions, messages,
+snapshots, and updates in `flue-v2.sqlite`; the beta `flue.sqlite` remains an
+untouched rollback archive. SIM-ONE application databases store protocols,
+product sessions and generation mappings, structured memory, schedules,
+capabilities, retrieval data, and approvals.
 
 Keeping these stores distinct allows Flue to resume execution while SIM-ONE
 Alpha controls rules, context, identity, and product-owned state.

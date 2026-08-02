@@ -31,7 +31,9 @@ src/engine/commands/slash-commands.ts
   Shared pre-LLM slash command parser.
 
 src/engine/session/
-  Product session catalog, access checks, Flue session persistence wrapper, compaction budget, direct-agent instance indexes, and session-memory indexing.
+  Product session catalog, access checks, Flue 2 conversation persistence,
+  generation rotation, compaction budget, direct-agent instance indexes, and
+  session-memory indexing.
 
 src/skills/greeting-preflight/SKILL.md
   Built-in Flue Agent Skill used by the main orchestrator for local startup greeting events after connector preflight.
@@ -167,7 +169,7 @@ TUI opens
 -> assistant greeting renders from workspace identity/user context
 ```
 
-The TUI owns only connector checks and transcript/status rendering. The greeting words are not hardcoded in Rust. The startup prompt instructs the main orchestrator to use the built-in Flue skill `greeting-preflight`, which lives at `src/skills/greeting-preflight/SKILL.md` and is registered in `src/agents/orchestrator.ts` through the documented `with { type: 'skill' }` import flow.
+The TUI owns only connector checks and transcript/status rendering. The greeting words are not hardcoded in Rust. The startup prompt instructs the main orchestrator to use the built-in Flue skill `greeting-preflight`, which lives at `src/skills/greeting-preflight/SKILL.md` and is registered in `src/agents/orchestrator.ts` with `useSkill(...)`.
 
 Passing `--session <selector>` is an explicit resume launch. The TUI first calls `POST /api/chat/sessions/:selector/resume` with the stable local identity. The gateway checks canonical id first, then resolves an exact explicit name within the same TUI ownership scope. A successful resume returns the canonical id, restores the explicit title, attaches stream/history, and appends no startup greeting. A missing selector returns a newly created session so startup continues through the normal fresh greeting path. Cross-scope selectors return 403 and duplicate names return 409; both fail startup and leave prompt submission locked.
 
@@ -175,7 +177,7 @@ Telegram has a separate connector policy: updates in one Telegram chat/thread re
 
 ## Durable Transcript Projection And Replay
 
-The gateway owns transcript reconstruction. `GET /api/chat/sessions/:sessionId/transcript` accepts only a canonical id plus the stable TUI identity, applies the existing ownership check, and returns a display-neutral semantic page. Ratatui never opens `sessions.sqlite` or `flue.sqlite`.
+The gateway owns transcript reconstruction. `GET /api/chat/sessions/:sessionId/transcript` accepts only a canonical id plus the stable TUI identity, applies the existing ownership check, and returns a display-neutral semantic page. Ratatui never opens `sessions.sqlite` or `flue-v2.sqlite`.
 
 The projection combines two authoritative sources:
 
@@ -183,12 +185,12 @@ The projection combines two authoritative sources:
 normalized_message_events
   visible connector prompt text and explicit startup-workflow visibility
 
-Flue EventStreamStore
+Flue 2 conversation snapshots and telemetry updates
   root submission activity, authoritative duration/error state,
-  root assistant message_end, and durable stream offset
+  root assistant messages, and durable stream offset
 ```
 
-`src/engine/session/session-transcript.ts` reads the already-connected Flue `EventStreamStore` through the product persistence runtime. It correlates prompts to submissions with stored delivery metadata, sanitizes each event batch, and returns semantic exchanges. It does not execute an agent, duplicate Flue persistence, or create a second conversation source.
+`src/engine/session/session-transcript.ts` reads Flue 2 conversation snapshots through the product persistence runtime. It correlates prompts to submissions with stored delivery metadata, projects the durable messages and settlements, and returns semantic exchanges. It does not execute an agent, duplicate Flue persistence, or create a second conversation source.
 
 The projection returns only visible user prompts, bounded root thinking previews, structured public operation/tool/task activity, and non-empty root-assistant finals. It excludes internal startup prompts, raw tool results, tool arguments, nested worker thinking/responses, empty assistant tool-call messages, and unknown event payloads. Events with `parentSession` cannot become assistant chat responses. TUI-local command output has no Flue submission and is not durable conversation history.
 
@@ -234,8 +236,8 @@ TUI prompt submit
    session: <active-session-id> after lifecycle creation or explicit resume
 -> persist trusted normalized event context
 -> resolve product session
--> POST /agents/orchestrator/:sessionId?wait=result
--> Flue durable direct-agent submission
+-> init(Orchestrator, { id: active-generation-instance-id })
+-> dispatch prompt and read the exact receipt to settlement
 -> response text rendered in the transcript
 ```
 
@@ -293,7 +295,7 @@ Backend-owned commands:
 | `/clear [title]` | `src/api/routes/chat-events.ts` | Replaces the current TUI conversation with a fresh durable session and preserves the old id for resume. |
 | `/resume <session-id-or-name>` | `src/api/routes/chat-events.ts` | Resolves an exact id or explicit name, validates TUI actor/conversation scope, returns the canonical session id, and switches the TUI. Missing selectors leave the current session unchanged. |
 | `/rename <title>` | `src/api/routes/chat-events.ts` | Renames the active durable session. |
-| `/compact` | `src/api/routes/chat-events.ts` | Opens the active durable Flue session and calls `session.compact()` without sending `/compact` to the model. |
+| `/compact` | `src/api/routes/chat-events.ts` | Dispatches a trusted compaction signal to the active generation, stores its continuation summary, and rotates the product session to a new Flue 2 instance. The slash command is not sent as an ordinary user prompt. |
 
 TUI-local commands:
 

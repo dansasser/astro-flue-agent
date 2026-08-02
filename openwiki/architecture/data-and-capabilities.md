@@ -34,14 +34,15 @@ source metadata, config JSON, install/update timestamps, and install origin.
 The default DB path is `<runtime-root>/db/capabilities.sqlite`; a relative
 `GOROMBO_CAPABILITY_DB_PATH` remains rooted in the same `.gorombo` tree.
 
-Runtime loading happens during orchestrator initialization in `src/agents/orchestrator.ts`:
+Runtime loading creates one snapshot when the orchestrator module initializes:
 
 - `loadUserCapabilities()` reads enabled records grouped by kind.
-- `materializeCapability()` prepares user skill/tool/worker files.
-- `connectBuiltinMcpServers()` and `connectUserMcpServers()` return MCP tools.
+- promoted capability packages are reused without refetching mutable sources;
+- `loadUserSkills()` parses runtime Agent Skills into Flue `Skill` definitions;
 - `loadUserTools()` imports user tool modules.
-- `loadUserWorkers()` imports user worker profiles.
-- The orchestrator merges user tools into `tools` and user workers into `subagents`.
+- `loadUserWorkers()` imports user `defineSubagent(...)` definitions;
+- the MCP broker creates `McpConnectionDefinition` values;
+- the orchestrator registers every definition through Agent Hooks.
 
 Skills are instruction assets. Tools, workers, and MCP servers can execute code
 or external calls, so approval and enablement behavior matters. CLI/user

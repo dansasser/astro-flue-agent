@@ -131,10 +131,10 @@ Launch the locally built product command:
 ./.gorombo/sim-one-cli/sim-one
 ```
 
-The build produces the Flue runtime, terminal interface, Rust/WebAssembly
-memory helper, bundled embedding assets, isolated production `node_modules`,
-and unified product command. Flue's Node target leaves package dependencies
-external, so `pnpm run build` uses `pnpm deploy --prod` to place a portable
+The build produces the Vite-built Flue 2 runtime, terminal interface,
+Rust/WebAssembly memory helper, bundled embedding assets, isolated production
+`node_modules`, and unified product command. The Node output leaves package
+dependencies external, so `pnpm run build` uses `pnpm deploy --prod` to place a portable
 dependency tree beside `server.mjs`. A complete `.gorombo` build therefore does
 not resolve runtime packages from the source checkout's `node_modules`.
 Configure the source seed at `src/core/config/gorombo.config.json` before

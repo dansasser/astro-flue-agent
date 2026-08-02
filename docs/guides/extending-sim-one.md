@@ -7,10 +7,11 @@ capabilities added by a user or the agent.
 
 | Layer | Contents | Lifecycle |
 | --- | --- | --- |
-| Built-in Flue layer | Product skills, tools, workers, workflows, and MCP connections | Shipped with the product |
+| Built-in Flue layer | Product skills, tools, subagents, and MCP connections | Shipped with the product |
 | SIM-ONE runtime registry | User- or agent-added skills, tools, workers, and MCP servers | Stored outside the product artifact and loaded after restart |
 
-Both layers enter the same Flue skill, tool, and subagent surfaces. The runtime
+Both layers enter the same Flue 2 skill, tool, subagent, and MCP connection
+surfaces through Agent Hooks. The runtime
 registry adds extensibility without giving installed capabilities authority
 over protocols or approvals.
 
@@ -20,7 +21,7 @@ over protocols or approvals.
 | --- | --- | --- |
 | Skill | Reusable instructions, procedures, and supporting resources | Enabled when added |
 | Tool | Typed executable action attached to an owning agent | Disabled unless enabled |
-| Worker | Specialized executor loaded as a Flue subagent profile | Disabled unless enabled |
+| Worker | Specialized executor loaded as a Flue `SubagentDefinition` | Disabled unless enabled |
 | MCP server | Remote HTTP or HTTPS service contributing tools | Disabled unless enabled |
 
 Protocols are not capabilities. Protocols are mandatory runtime rules stored in
@@ -145,7 +146,7 @@ The agent can propose runtime capability lifecycle work through the dedicated
 - agent local source paths must stay relative to the coding workspace, and
   GitHub-labeled sources must use a `github.com` HTTPS or SSH repository URL.
 - executable modules must export direct `defineTool(...)` or
-  `defineAgentProfile(...)` results rather than wrapper functions.
+  `defineSubagent(...)` results rather than wrapper functions.
 
 Capability source implementation is delegated to the Coding Worker. Its
 capability authoring skills and tools classify, scaffold, validate, scan, test,

@@ -16,8 +16,8 @@ Tools are not protocols, skills, workers, or registries:
 
 | Layer | Registration | Examples |
 | --- | --- | --- |
-| Product built-ins | Explicit imports and the owning agent's `tools` array | Protocol lookup, memory, schedules, image generation |
-| Worker-local tools | Explicitly attached by a worker profile | Coding repository, shell, verification, approval, and GitHub tools |
+| Product built-ins | Explicit imports and the owning agent's `useTool(...)` calls | Protocol lookup, memory, schedules, image generation |
+| Worker-local tools | Registered by the owning worker with `useTool(...)` | Coding repository, shell, verification, approval, and GitHub tools |
 | Runtime tools | Enabled SQLite capability records loaded with dynamic `import()` | User- or agent-added `defineTool(...)` modules |
 | MCP tools | Returned by built-in or runtime MCP connections and attached to an owner | Astro Docs MCP and enabled user MCP servers |
 
@@ -84,7 +84,7 @@ Built-in product tools follow this path:
 defineTool(...)
 -> export from the owning tool module
 -> import into the owning agent or worker
--> attach to that profile's tools array
+-> register from the owning agent with useTool(...)
 -> include the name in the generated built-in capability manifest
 ```
 
@@ -104,7 +104,7 @@ sim-one CLI or capability-manager
 -> read enabled capability records
 -> dynamic import of index.mjs
 -> validate exported defineTool(...) definitions
--> merge loaded tools into the orchestrator tools array
+-> register loaded tools from the orchestrator with useTool(...)
 ```
 
 `src/engine/capabilities/tool-loader.ts` accepts a default export, an array

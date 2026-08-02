@@ -4,7 +4,13 @@
 
 SIM-ONE Alpha is a Flue-based orchestrating agent runtime for a protocol-governed AI employee system. The product identity is explicit in `/AGENTS.md`: Gorombo is the company, SIM-ONE Alpha is the product, Flue is the TypeScript agent harness, and Ollie is a workspace persona rather than an architecture or path name.
 
-The live runtime is a Node/TypeScript Flue application. `src/app.ts` creates the Hono app, registers app-owned HTTP routes, protects sensitive routes with API-secret middleware, starts telemetry observation, and mounts Flue routes with `app.route('/', flue())`. `src/agents/orchestrator.ts` is the main Flue `createAgent(...)` entrypoint. It selects a model from project model cards, composes workspace instructions, attaches built-in tools, connects built-in and user MCP tools, loads user tools/workers from the capability store, and exposes the built-in `researcher` and `coding-worker` subagents.
+The live runtime is a Node/TypeScript Flue 2 application. `src/app.ts` creates
+the Hono app, registers app-owned HTTP routes, protects sensitive routes,
+starts telemetry observation, mounts `createAgentRouter(Orchestrator)` at
+`/agents/orchestrator`, and mounts Telegram at `/channels/telegram`.
+`src/agents/orchestrator.ts` is the main `'use agent'` function. It registers
+the selected model, instructions, tools, skills, MCP connections, sandbox, and
+subagents through Flue 2 Agent Hooks.
 
 The repository also contains the `sim-one` CLI package, the Rust terminal
 interface, a Rust/WASM structured memory crate in `crates/gorombo-memory/`,
@@ -43,13 +49,13 @@ implemented runtime contracts.
 
 ## Repository map
 
-- `src/app.ts` - Hono app composition, route registration, auth middleware attachment, telemetry observer boot, Flue route mount.
-- `src/agents/orchestrator.ts` - main Flue agent profile and runtime capability merge point.
+- `src/app.ts` - Hono app composition, route registration, auth middleware attachment, telemetry observer boot, and explicit Flue 2 agent/channel routers.
+- `src/agents/orchestrator.ts` - main Flue 2 agent function and Agent Hook registration point.
 - `src/api/` - middleware, connector normalization, and app-owned API routes for chat events, approvals, knowledge, schedules, telemetry, and Telegram admin.
 - `src/channels/` - external channel integration, currently including Telegram.
 - `src/core/` - config, model/provider runtime, schemas, protocols, telemetry, shared types, and input utilities.
 - `src/engine/` - domain systems for approvals, capabilities, commands, embeddings, memory, RAG, registries, schedules, sessions, skills, tools, and workers.
-- `src/workflows/` - finite Flue workflows for retrieval and research.
+- `src/workflows/` - finite application workflow functions for retrieval and research; Flue 2 does not discover or route them.
 - `src/workspace/` - user-editable main agent workspace instructions and persona content.
 - `sim-one-cli/` - separate CLI/TUI package for the `sim-one` binary.
 - `crates/gorombo-memory/` - Rust structured-memory engine compiled to WASM.
@@ -105,7 +111,7 @@ commit the owner file's values.
 
 ## Change guidance for agents
 
-Before changing Flue runtime boundaries, read `docs/architecture/flue-architecture.md` and `docs/architecture/gorombo-flue-map.md`. The repo intentionally keeps orchestration out of `src/app.ts`; the app file should stay limited to Hono setup, imported route registration, telemetry observer boot, auth middleware wiring, and `flue()` routing.
+Before changing Flue runtime boundaries, read `docs/architecture/flue-architecture.md` and `docs/architecture/gorombo-flue-map.md`. The repo intentionally keeps orchestration out of `src/app.ts`; the app file should stay limited to Hono setup, imported route registration, telemetry observer boot, auth middleware wiring, and explicit agent/channel router mounts.
 
 Before changing product wording, keep names distinct: Gorombo is the company, SIM-ONE Alpha is the product, Flue is the framework, `sim-one` is the product binary, and worker names are internal subsystems.
 

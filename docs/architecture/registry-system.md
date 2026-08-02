@@ -37,10 +37,11 @@ user code to the running orchestrator.
 
 ## Generated Built-In Registry
 
-After `flue build`, `scripts/generate-builtin-registry.mjs` scans:
+After `vite build`, the `postbuild` script runs
+`scripts/generate-builtin-registry.mjs`, which scans:
 
 - `defineTool(...)` declarations under `src/engine/tools/` and `src/channels/`;
-- top-level worker profiles, excluding worker-internal subagents;
+- exported Flue 2 worker definitions, excluding worker-internal subagents;
 - imported Agent Skills;
 - seeded default-registry ids;
 - reserved built-in MCP server names.
@@ -86,12 +87,11 @@ At orchestrator initialization:
 
 ```text
 read enabled SQLite records
--> materialize file-backed capability sources
 -> load runtime tools
--> load runtime worker profiles
--> connect enabled runtime MCP servers
--> expose runtime skills through Flue skill discovery
--> merge with explicitly attached built-ins
+-> load runtime subagent definitions
+-> create enabled runtime MCP connection definitions
+-> parse runtime skills into Flue Skill definitions
+-> register definitions beside built-ins through Agent Hooks
 ```
 
 Runtime records do not become active merely because they exist. They must be

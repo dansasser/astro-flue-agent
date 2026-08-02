@@ -168,7 +168,10 @@ Use:
 /compact
 ```
 
-The gateway opens the active durable Flue session and calls Flue session compaction. The command is not sent as model prompt text.
+The gateway dispatches a trusted compaction signal to the active Flue 2
+generation, stores the continuation summary, and rotates the product session
+to a new agent instance. The slash command is not sent as ordinary model
+prompt text.
 
 Expected transcript shape:
 
@@ -205,7 +208,7 @@ Use that id or the session's exact explicit name with `sim-one --session <select
 /sessions [limit]      list recent sessions, default 10, max 50
 /session               show the current active session id
 /rename <title>        rename the active durable session
-/compact               compact the active durable Flue session
+/compact               summarize this generation and continue in a new Flue 2 instance
 /help                  print the TUI command list
 /exit                  close the TUI and print the active session id
 ```

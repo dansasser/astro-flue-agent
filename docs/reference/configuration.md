@@ -69,6 +69,7 @@ The runtime configuration declares schema version `1`.
     "backup": "codex-brain"
   },
   "storage": {
+    "flueV2DatabasePath": "db/flue-v2.sqlite",
     "flueDatabasePath": "db/flue.sqlite",
     "sessionDatabasePath": "db/sessions.sqlite"
   },
@@ -172,6 +173,7 @@ projects are separate under `workspace/`.
 ```json
 {
   "storage": {
+    "flueV2DatabasePath": "db/flue-v2.sqlite",
     "flueDatabasePath": "db/flue.sqlite",
     "sessionDatabasePath": "db/sessions.sqlite",
     "vectorStorePath": "vector"
@@ -181,13 +183,19 @@ projects are separate under `workspace/`.
 
 | Runtime data | Default location under `<runtime-root>` |
 | --- | --- |
-| Flue runtime state | `db/flue.sqlite` |
+| Flue 2 runtime state | `db/flue-v2.sqlite` |
+| Flue beta rollback archive | `db/flue.sqlite` |
 | Connector and logical session data | `db/sessions.sqlite` |
 | Structured memory | `db/structured-memory.sqlite` |
 | Protocols | `db/protocols.sqlite` |
 | Runtime capabilities | `db/capabilities.sqlite` |
 | Schedules and run history | `db/schedules.sqlite` |
 | Semantic retrieval data | `vector/` |
+
+`flueV2DatabasePath` is the active Flue 2 adapter path. The legacy
+`flueDatabasePath` is retained only to identify and protect the beta rollback
+archive; startup rejects configurations that point both settings at the same
+file.
 
 Relative runtime paths resolve from the one canonical `.gorombo` runtime root,
 never from `process.cwd()`. `GOROMBO_RUNTIME_ROOT` may select a different

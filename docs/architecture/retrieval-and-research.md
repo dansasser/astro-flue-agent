@@ -207,7 +207,7 @@ presenting partial evidence as complete.
 | Indexers | `src/engine/rag/indexers/` |
 | Vector store | `src/engine/rag/vector/lance-db-store.ts` |
 | Embedding chain | `src/engine/rag/embeddings.ts` |
-| Researcher profile | `src/engine/workers/researcher/researcher.ts` |
+| Researcher subagent definition | `src/engine/workers/researcher/researcher.ts` |
 | Research cache | `src/engine/workers/researcher/research/` |
 | Structured memory | `src/engine/memory/` |
 

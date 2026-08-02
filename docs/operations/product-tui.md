@@ -64,15 +64,16 @@ Build outputs:
 .gorombo/sim-one-alpha/memory/gorombo_memory.js
 ```
 
-Flue's Node target externalizes package dependencies. The runtime build follows
-the Flue build with `pnpm deploy --prod`, installing an isolated dependency
+The Vite Node build externalizes package dependencies. Packaging follows the
+Vite build with `pnpm deploy --prod`, installing an isolated dependency
 tree beside `server.mjs` so the complete `.gorombo` directory is a movable
 product unit.
 
 Runtime data:
 
 ```text
-.gorombo/db/flue.sqlite
+.gorombo/db/flue-v2.sqlite
+.gorombo/db/flue.sqlite  # untouched beta rollback archive
 .gorombo/db/sessions.sqlite
 .gorombo/db/structured-memory.sqlite
 .gorombo/db/capabilities.sqlite

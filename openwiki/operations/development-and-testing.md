@@ -36,8 +36,8 @@ relocated packaged capability lifecycle, then runs built HTTP tests.
 Important scripts from `package.json`:
 
 ```sh
-pnpm run dev              # flue dev --target node
-pnpm run build            # Flue build + registry/config/WASM/assets + contained production dependencies
+pnpm run dev              # Vite development server with @flue/vite
+pnpm run build            # Vite build + registry/config/WASM/assets + contained production dependencies
 pnpm run start            # built server; bootstrap loads .gorombo/sim-one.config
 pnpm run connect          # flue connect orchestrator local --target node --session local
 pnpm run build:cli        # build sim-one-cli package
@@ -129,7 +129,9 @@ unless there is a deliberate migration.
 
 ## Change-specific guidance
 
-When changing `src/app.ts`, run route and architecture tests. Verify the file stays limited to Hono setup, middleware, imported route registration, telemetry observer boot, and `flue()` routing.
+When changing `src/app.ts`, run route and architecture tests. Verify the file
+stays limited to Hono setup, middleware, imported route registration,
+telemetry observer boot, and explicit Flue 2 agent/channel router mounts.
 
 When changing `src/agents/orchestrator.ts`, run architecture, protocol, capability, session, and worker delegation tests as applicable. Check that the runtime capability block stays accurate.
 

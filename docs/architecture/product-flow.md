@@ -51,7 +51,7 @@ flowchart TD
     Dispatch --> Orchestrator
     Orchestrator --> Protocols["Protocol Tool and SQLite protocol bundle"]
     Protocols --> Orchestrator
-    Orchestrator --> Capabilities["Memory, tools, workflows, MCP, and workers"]
+    Orchestrator --> Capabilities["Memory, tools, application workflows, MCP, and workers"]
     Capabilities --> Validation["Orchestrator synthesis"]
     Validation --> Outcome["Implemented approval path or response"]
     Outcome --> Gateway
@@ -73,8 +73,9 @@ send independent final responses.
 - imports model and schedule boot modules;
 - registers health, chat, session, knowledge, schedule, telemetry, approval,
   and Telegram administration routes;
-- applies API-secret middleware to protected Flue and schedule routes;
-- mounts Flue with `app.route('/', flue())`.
+- applies API-secret middleware to protected agent and schedule routes;
+- mounts `createAgentRouter(Orchestrator)` at `/agents/orchestrator`;
+- mounts the Telegram channel router at `/channels/telegram`.
 
 The complete movable product runtime is one `.gorombo` tree. Compiled
 application files and mutable state occupy separate children:
@@ -128,7 +129,7 @@ User or agent requests capability
 -> apply default enablement and approval rules
 -> restart gateway process
 -> load enabled records during orchestrator initialization
--> attach tools, skills, MCP tools, and worker profiles to Flue
+-> register tools, skills, MCP connections, and subagent definitions through hooks
 ```
 
 Skills added by an agent are instruction content and are enabled by default.
@@ -142,7 +143,7 @@ owning-agent attachment, sandbox policy, or action-specific approval.
   is explicitly resumed.
 - Telegram retains connector-conversation active-session persistence.
 - Generic Web API and scheduled inputs do not inherit Telegram session policy.
-- Flue stores canonical session, submission, run, and event-stream state.
+- Flue stores canonical agent instances, submissions, messages, snapshots, and updates.
 - SIM-ONE stores product session metadata, protocols, memory, schedules,
   capabilities, approvals, and connector policy in application-owned stores.
 - Only the root orchestrator response becomes the product response. Nested
