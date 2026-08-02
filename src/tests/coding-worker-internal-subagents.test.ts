@@ -2,19 +2,20 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { createCodingWorkerInternalSubagents } from '../engine/workers/coding-worker/subagents/index.js';
-import type { AgentProfile } from '@flue/runtime';
+import { getCodingInternalSubagentComposition } from '../engine/workers/coding-worker/subagents/profile-factory.js';
+import type { SubagentDefinition } from '@flue/runtime';
 
 const MEMORY_TOOL_PREFIX = 'coding_task_';
 
-function collectToolNames(profiles: AgentProfile[] | undefined, into: Set<string>): void {
+function collectToolNames(profiles: SubagentDefinition[] | undefined, into: Set<string>): void {
   if (!profiles) return;
   for (const profile of profiles) {
-    for (const tool of profile.tools ?? []) {
+    const composition = getCodingInternalSubagentComposition(profile);
+    for (const tool of composition.tools) {
       if (typeof tool.name === 'string') {
         into.add(tool.name);
       }
     }
-    collectToolNames(profile.subagents, into);
   }
 }
 

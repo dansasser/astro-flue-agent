@@ -1,9 +1,19 @@
+'use agent';
+
 import {
-  createAgent,
-  type AgentRouteHandler,
+  type AgentProps,
   type SandboxFactory,
+  type Skill,
+  type SubagentDefinition,
+  type ToolDefinition,
+  useModel,
+  useSandbox,
+  useSkill,
+  useSubagent,
+  useTool,
 } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
+import '../core/models/runtime.js';
 import {
   createGoromboRuntimePaths,
   resolveCodingWorkspaceRoot,
@@ -54,15 +64,7 @@ import { telegramReplyTool } from '../channels/telegram.js';
 import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
-import { createCapabilityStore } from '../engine/capabilities/capability-store.js';
-import { loadPromotedUserCapabilities } from '../engine/capabilities/capability-loader.js';
-import { connectUserMcpServers } from '../engine/capabilities/mcp-broker.js';
-import { connectBuiltinMcpServers } from '../engine/capabilities/builtin-mcp.js';
-import { loadUserTools } from '../engine/capabilities/tool-loader.js';
-import { loadUserWorkers } from '../engine/capabilities/worker-loader.js';
-import greetingPreflight from '../skills/greeting-preflight/SKILL.md' with { type: 'skill' };
-
-export const route: AgentRouteHandler = async (_c, next) => next();
+import greetingPreflight from '../skills/greeting-preflight/SKILL.md';
 
 export const orchestratorInstructions = [
   composeWorkspaceInstructions({
@@ -72,21 +74,26 @@ export const orchestratorInstructions = [
   createOrchestratorRuntimeCapabilityBlock(),
 ].join('\n\n');
 
-export default createAgent(async ({ env }) => {
+export interface OrchestratorComposition {
+  model: string;
+  compaction: ReturnType<typeof createFlueCompactionConfig>;
+  instructions: string;
+  skills: Skill[];
+  tools: ToolDefinition[];
+  subagents: SubagentDefinition[];
+  cwd: string;
+  sandbox: SandboxFactory;
+}
+
+export function createOrchestratorComposition(
+  env: Record<string, unknown> = process.env,
+): OrchestratorComposition {
   const models = configureRuntimeModels(env);
   const selectedModelCard = models.selectedModelCard;
   const runtimeRoot = resolveGoromboRuntimeRoot({ env });
   const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
-  const codingWorker = await createCodingWorkerSubagent({
-    workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
-    stateRoot: runtimePaths.codingWorkerState,
-    env: createCodingWorkerToolEnv(env, runtimeRoot),
-  });
-  const capabilityManager = createCapabilityManagerSubagent({ env });
-  const researcher = createResearcherSubagent();
-  const sandbox = createOrchestratorSandbox(runtimePaths.packagedServer);
 
-  const builtInTools = [
+  const tools: ToolDefinition[] = [
     loadProtocolsTool,
     retrieveMemoryTool,
     addKnowledgeTool,
@@ -121,29 +128,44 @@ export default createAgent(async ({ env }) => {
     scheduleRunsTool,
     telegramReplyTool,
   ];
-  const builtInSubagents = [capabilityManager, codingWorker, researcher];
-
-  const userCapabilities = loadUserCapabilitiesFromStore(env);
-  const [builtinMcpResult, mcpResult, toolResult, workerResult] = await Promise.all([
-    connectBuiltinMcpServers(),
-    connectUserMcpServers(userCapabilities.mcp, env),
-    loadUserTools(userCapabilities.tools, env),
-    loadUserWorkers(userCapabilities.workers, env),
-  ]);
-  const userTools = [...builtinMcpResult.tools, ...mcpResult.tools, ...toolResult.tools];
-  const userSubagents: typeof builtInSubagents = [...workerResult.profiles];
 
   return {
     model: selectedModelCard.specifier,
-    instructions: orchestratorInstructions,
     compaction: createFlueCompactionConfig(selectedModelCard),
+    instructions: orchestratorInstructions,
     skills: [greetingPreflight],
-    tools: [...builtInTools, ...userTools],
-    subagents: [...builtInSubagents, ...userSubagents],
+    tools,
+    subagents: [
+      createCapabilityManagerSubagent({ env }),
+      createCodingWorkerSubagent({
+        workspaceRoot: resolveCodingWorkerWorkspaceRoot(env),
+        stateRoot: runtimePaths.codingWorkerState,
+        env: createCodingWorkerToolEnv(env, runtimeRoot),
+      }),
+      createResearcherSubagent(),
+    ],
     cwd: runtimePaths.packagedServer,
-    sandbox,
+    sandbox: createOrchestratorSandbox(runtimePaths.packagedServer),
   };
-});
+}
+
+export function Orchestrator(_props: AgentProps): string {
+  const composition = createOrchestratorComposition(process.env);
+
+  useModel(composition.model, { compaction: composition.compaction });
+  for (const skill of composition.skills) {
+    useSkill(skill);
+  }
+  for (const tool of composition.tools) {
+    useTool(tool);
+  }
+  for (const subagent of composition.subagents) {
+    useSubagent(subagent);
+  }
+  useSandbox(composition.sandbox, { cwd: composition.cwd });
+  return composition.instructions;
+}
+Orchestrator.agentName = 'orchestrator';
 
 export function createOrchestratorSandbox(packagedServerRoot: string): SandboxFactory {
   return {
@@ -186,26 +208,6 @@ function createCodingWorkerToolEnv(
 function readOptionalEnv(env: Record<string, unknown>, key: string): string | undefined {
   const value = env[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function loadUserCapabilitiesFromStore(env: Record<string, unknown>) {
-  let store;
-  try {
-    store = createCapabilityStore({});
-    const caps = loadPromotedUserCapabilities({ store, env });
-    for (const failure of caps.failures) {
-      console.error(
-        `[capabilities] Failed to load ${failure.kind} ${failure.id}: ${failure.error}`,
-      );
-    }
-    return caps;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`[capabilities] Failed to load user capabilities: ${message}`);
-    return { skills: [], tools: [], workers: [], mcp: [] };
-  } finally {
-    store?.close();
-  }
 }
 
 function createOrchestratorRuntimeCapabilityBlock(): string {

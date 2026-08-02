@@ -13,7 +13,7 @@ import { CapabilityLifecycleService } from '../engine/capabilities/capability-li
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
 import {
   capabilityManagerAgentName,
-  createCapabilityManagerSubagent,
+  createCapabilityManagerComposition,
 } from '../engine/workers/capability-manager/capability-manager.js';
 import { createDefaultCapabilityProtocolBundleLoader } from '../engine/workers/capability-manager/capability-manager-tools.js';
 import {
@@ -24,7 +24,7 @@ import {
 test('capability-manager owns the complete lifecycle tool surface', () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -105,7 +105,7 @@ test('capability-manager mutations fail closed and executable activation require
       join(sourcePath, 'index.mjs'),
       "import { defineTool } from '@flue/runtime';\nexport default defineTool({ name: 'fixture', parameters: {}, execute: async () => 'ok' });\n",
     );
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -207,7 +207,7 @@ test('capability-manager approvals distinguish different private local sources',
     createToolSource(workspaceRoot, 'second-source');
     const firstSource = 'first-source';
     const secondSource = 'second-source';
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -251,7 +251,7 @@ test('capability-manager approvals distinguish different private local sources',
 test('capability-manager rejects malformed protocols before creating approval records', async () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: async (eventId) => ({
@@ -286,7 +286,7 @@ test('capability-manager rejects malformed protocols before creating approval re
 test('capability-manager stores MCP connections in the runtime capability registry', async () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -338,7 +338,7 @@ test('capability-manager stores MCP connections in the runtime capability regist
 test('capability-manager applies partial MCP updates without resending the stored URL', async () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -428,7 +428,7 @@ test('capability-manager applies partial MCP updates without resending the store
 test('capability update approval binds the complete mutation payload', async () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,
@@ -512,7 +512,7 @@ test('capability update approval binds the complete mutation payload', async () 
 test('capability-manager rejects unsupported npm lifecycle sources', async () => {
   const fixture = createFixture();
   try {
-    const profile = createCapabilityManagerSubagent({
+    const profile = createCapabilityManagerComposition({
       approvalService: fixture.approvalService,
       serviceFactory: fixture.serviceFactory,
       protocolBundleLoader: fixture.protocolBundleLoader,

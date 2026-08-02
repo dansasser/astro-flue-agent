@@ -1,7 +1,7 @@
 import './core/config/runtime-environment-bootstrap.js';
 import { createAgentRouter } from '@flue/runtime/routing';
 import { Hono } from 'hono';
-import Orchestrator from './agents/orchestrator.js';
+import { Orchestrator } from './agents/orchestrator.js';
 import './core/models/runtime.js';
 import './engine/schedules/boot.js';
 import { requireApiSecret } from './api/middleware/api-secret.js';

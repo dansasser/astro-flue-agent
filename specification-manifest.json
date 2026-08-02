@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 65,
-  "context_version": "sim-one-alpha-flue-v2-stacked-verification-2026-08-01",
+  "graph_version": 66,
+  "context_version": "sim-one-alpha-flue-v2-agents-router-scope-2026-08-01",
   "specification_root": "doc",
   "documents": [
     {

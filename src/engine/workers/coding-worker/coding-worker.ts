@@ -1,12 +1,20 @@
-﻿import {
-  createAgent,
-  defineAgentProfile,
-  type AgentProfile,
-  type AgentRouteHandler,
+'use agent';
+
+import {
+  defineSubagent,
+  type AgentProps,
+  type Skill,
+  type SubagentDefinition,
+  type ToolDefinition,
+  useModel,
+  useSandbox,
+  useSkill,
+  useSubagent,
+  useTool,
 } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
-import { realpath } from 'node:fs/promises';
-import { mkdirSync } from 'node:fs';
+import '../../../core/models/runtime.js';
+import { mkdirSync, realpathSync } from 'node:fs';
 import { resolve as resolvePath, sep } from 'node:path';
 import {
   assertPathInsideRuntimeRoot,
@@ -19,11 +27,7 @@ import {
   composeWorkspaceInstructions,
   resolveWorkspaceDirectory,
 } from '../../../workspace-loader.js';
-import {
-  connectCodingWorkerGithubMcp,
-  type CodingWorkerGithubMcp,
-  type CodingWorkerGithubMcpOptions,
-} from '../../../engine/workers/coding-worker/github/github-mcp.js';
+import type { CodingWorkerGithubMcp } from '../../../engine/workers/coding-worker/github/github-mcp.js';
 import { githubPatEnvironmentKey } from '../../../engine/workers/coding-worker/github/github-pat.js';
 import { createCodingGitHubTools } from '../../../engine/workers/coding-worker/github/github-tools.js';
 import type { GitHubClient } from '../../../engine/workers/coding-worker/github/github-client.js';
@@ -45,7 +49,8 @@ import { createCodingWorkerLoopDelegate } from '../../../engine/workers/coding-w
 import type { CodingWorkspaceTargetInput } from '../../../engine/workers/coding-worker/repo/workspace-target.js';
 
 export const codingWorkerAgentName = 'coding-worker';
-export const route: AgentRouteHandler = async (_c, next) => next();
+export const codingWorkerDescription =
+  'coding worker lead that coordinates worker-local triage, implementation, test/debug, code review, and GitHub subagents.';
 
 export interface CodingWorkerSubagentOptions extends CodingWorkspaceTargetInput {
   model?: string;
@@ -55,14 +60,21 @@ export interface CodingWorkerSubagentOptions extends CodingWorkspaceTargetInput 
   allowLocalDevFallback?: boolean;
   githubClient?: GitHubClient;
   githubMcp?: CodingWorkerGithubMcp;
-  connectGithubMcp?: (
-    options: CodingWorkerGithubMcpOptions,
-  ) => Promise<CodingWorkerGithubMcp>;
   /**
    * Root directory for approval persistence. Must be outside workspaceRoot.
    * Falls back to a sibling of workspaceRoot when omitted.
    */
   approvalRoot?: string;
+}
+
+export interface CodingWorkerComposition {
+  name: string;
+  description: string;
+  model?: string;
+  instructions: string;
+  tools: ToolDefinition[];
+  skills: Skill[];
+  subagents: SubagentDefinition[];
 }
 
 export const codingWorkerInstructions = [
@@ -93,9 +105,27 @@ Default max turns: 10. The loop returns blocked if it exceeds the turn guard wit
 }
 
 /**
- * Creates the reusable coding worker Flue subagent profile used by the orchestrator.
+ * Creates the reusable coding worker Flue 2 delegate used by the orchestrator.
  */
-export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOptions = {}): Promise<AgentProfile> {
+export function createCodingWorkerSubagent(
+  options: CodingWorkerSubagentOptions = {},
+): SubagentDefinition {
+  const composition = createCodingWorkerComposition(options);
+
+  return defineSubagent({
+    name: composition.name,
+    description: composition.description,
+    ...(composition.model ? { model: composition.model } : {}),
+    agent: function CodingWorkerDelegate() {
+      mountCodingWorkerComposition(composition);
+      return composition.instructions;
+    },
+  });
+}
+
+export function createCodingWorkerComposition(
+  options: CodingWorkerSubagentOptions = {},
+): CodingWorkerComposition {
   const resolvedOptions = options;
   const workspaceRoot = resolveSubagentWorkspaceRoot(resolvedOptions);
   const stateRoot = resolveCodingWorkerStateRoot(resolvedOptions);
@@ -103,13 +133,9 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
   if (!approvalRoot) {
     throw new Error('Missing coding-worker approval storage root configuration.');
   }
-  await assertApprovalRootOutsideWorkspace(approvalRoot, workspaceRoot);
+  assertApprovalRootOutsideWorkspace(approvalRoot, workspaceRoot);
   const approvalService = createSharedCodingApprovalService({ GOROMBO_APPROVAL_ROOT: approvalRoot });
-  const githubMcp = resolvedOptions.githubMcp
-    ?? await connectOptionalGithubMcp(
-      resolvedOptions.connectGithubMcp ?? connectCodingWorkerGithubMcp,
-      { env: resolvedOptions.env },
-    );
+  const githubMcp = resolveGithubMcp(resolvedOptions);
   const githubClient = resolvedOptions.githubClient ?? githubMcp.client;
   const githubGitEnv = githubMcp.githubGitEnv;
   const executionEnv = withoutGithubCredentials(resolvedOptions.env);
@@ -117,10 +143,9 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
     resolveGoromboRuntimeRoot({ env: resolvedOptions.env ?? process.env }),
   ).environmentConfig;
 
-  return defineAgentProfile({
+  return {
     name: codingWorkerAgentName,
-    description:
-      'coding worker lead that coordinates worker-local triage, implementation, test/debug, code review, and GitHub subagents.',
+    description: codingWorkerDescription,
     ...(resolvedOptions.model ? { model: resolvedOptions.model } : {}),
     instructions: codingWorkerInstructions,
     tools: [
@@ -224,51 +249,60 @@ export async function createCodingWorkerSubagent(options: CodingWorkerSubagentOp
       approvalService,
       githubClient,
     }),
-  });
+  };
 }
 
-async function connectOptionalGithubMcp(
-  connect: (
-    options: CodingWorkerGithubMcpOptions,
-  ) => Promise<CodingWorkerGithubMcp>,
-  options: CodingWorkerGithubMcpOptions,
-): Promise<CodingWorkerGithubMcp> {
-  try {
-    return await connect(options);
-  } catch {
-    return {
-      readTools: [],
-      unavailableReason:
-        'GitHub MCP connection is unavailable for this worker run.',
-      async close() {},
-    };
+function resolveGithubMcp(
+  options: CodingWorkerSubagentOptions,
+): CodingWorkerGithubMcp {
+  if (options.githubMcp) {
+    return options.githubMcp;
+  }
+  return {
+    ...(options.githubClient ? { client: options.githubClient } : {}),
+    readTools: [],
+    unavailableReason: options.githubClient
+      ? undefined
+      : 'GitHub MCP connection is unavailable for this worker run.',
+    async close() {},
+  };
+}
+
+export function CodingWorker(_props: AgentProps): string {
+  const models = configureRuntimeModels(process.env);
+  const selectedModelCard = models.selectedModelCard;
+  const runtimeRoot = resolveGoromboRuntimeRoot({ env: process.env });
+  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
+  const workspaceRoot = resolveCodingWorkerWorkspaceRoot(process.env);
+  mkdirSync(workspaceRoot, { recursive: true });
+  const composition = createCodingWorkerComposition({
+    model: selectedModelCard.specifier,
+    workspaceRoot,
+    stateRoot: runtimePaths.codingWorkerState,
+    approvalRoot: readOptionalEnv(process.env, 'GOROMBO_APPROVAL_ROOT'),
+    env: createCodingWorkerToolEnv(process.env, runtimeRoot),
+  });
+
+  useModel(selectedModelCard.specifier);
+  useSandbox(local({ cwd: workspaceRoot, env: {} }), { cwd: workspaceRoot });
+  mountCodingWorkerComposition(composition);
+  return composition.instructions;
+}
+CodingWorker.agentName = 'coding-worker';
+
+function mountCodingWorkerComposition(
+  composition: CodingWorkerComposition,
+): void {
+  for (const tool of composition.tools) {
+    useTool(tool);
+  }
+  for (const skill of composition.skills) {
+    useSkill(skill);
+  }
+  for (const subagent of composition.subagents) {
+    useSubagent(subagent);
   }
 }
-
-export default createAgent(async ({ env }) => {
-  const models = configureRuntimeModels(env);
-  const selectedModelCard = models.selectedModelCard;
-  const runtimeRoot = resolveGoromboRuntimeRoot({ env });
-  const runtimePaths = createGoromboRuntimePaths(runtimeRoot);
-  const workspaceRoot = resolveCodingWorkerWorkspaceRoot(env);
-  mkdirSync(workspaceRoot, { recursive: true });
-
-  return {
-    profile: await createCodingWorkerSubagent({
-      model: selectedModelCard.specifier,
-      workspaceRoot,
-      stateRoot: runtimePaths.codingWorkerState,
-      approvalRoot: readOptionalEnv(env, 'GOROMBO_APPROVAL_ROOT'),
-      env: createCodingWorkerToolEnv(env, runtimeRoot),
-    }),
-    model: selectedModelCard.specifier,
-    cwd: workspaceRoot,
-    sandbox: local({
-      cwd: workspaceRoot,
-      env: {},
-    }),
-  };
-});
 
 export function resolveCodingWorkerWorkspaceRoot(env: Record<string, unknown>): string {
   const runtimeRoot = resolveGoromboRuntimeRoot({ env });
@@ -312,12 +346,12 @@ function resolveApprovalRoot(
   ).approvals;
 }
 
-async function assertApprovalRootOutsideWorkspace(approvalRoot: string, workspaceRoot: string | undefined): Promise<void> {
+function assertApprovalRootOutsideWorkspace(approvalRoot: string, workspaceRoot: string | undefined): void {
   if (!workspaceRoot) {
     return;
   }
-  const resolvedApproval = await realpath(resolvePath(approvalRoot)).catch(() => resolvePath(approvalRoot));
-  const resolvedWorkspace = await realpath(resolvePath(workspaceRoot)).catch(() => resolvePath(workspaceRoot));
+  const resolvedApproval = resolveRealPath(approvalRoot);
+  const resolvedWorkspace = resolveRealPath(workspaceRoot);
   const workspacePrefix = resolvedWorkspace.endsWith(sep) ? resolvedWorkspace : resolvedWorkspace + sep;
   const isInside = pathsEqual(resolvedApproval, resolvedWorkspace) || resolvedApproval.startsWith(workspacePrefix);
   if (isInside) {
@@ -325,6 +359,14 @@ async function assertApprovalRootOutsideWorkspace(approvalRoot: string, workspac
       'Approval persistence root must be outside the coding-worker workspace root to prevent model tampering. ' +
         `approvalRoot=${approvalRoot} workspaceRoot=${workspaceRoot}`,
     );
+  }
+}
+
+function resolveRealPath(path: string): string {
+  try {
+    return realpathSync(resolvePath(path));
+  } catch {
+    return resolvePath(path);
   }
 }
 

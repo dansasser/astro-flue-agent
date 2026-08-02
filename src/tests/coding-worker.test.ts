@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as v from 'valibot';
-import orchestratorAgent from '../agents/orchestrator.js';
+import { createOrchestratorComposition } from '../agents/orchestrator.js';
 import { CodingFileEditSchema, CodingImplementerResultSchema } from '../core/schemas/coding-worker.js';
 import { evaluateCodingApproval, createCodingApprovalRequest } from '../engine/workers/coding-worker/approvals/approval-policy.js';
 import {
@@ -23,7 +23,7 @@ import {
 import { createCodingGitHubTools } from '../engine/workers/coding-worker/github/github-tools.js';
 import type { GitHubClient } from '../engine/workers/coding-worker/github/github-client.js';
 import {
-  createCodingWorkerSubagent,
+  createCodingWorkerComposition,
   resolveCodingWorkerWorkspaceRoot,
 } from '../engine/workers/coding-worker/coding-worker.js';
 import { InMemoryCodingProgressReporter } from '../engine/workers/coding-worker/events/progress-reporter.js';
@@ -34,6 +34,7 @@ import {
   codingWorkerInternalSubagentNames,
   createCodingWorkerInternalSubagents,
 } from '../engine/workers/coding-worker/subagents/index.js';
+import { getCodingInternalSubagentComposition } from '../engine/workers/coding-worker/subagents/profile-factory.js';
 import { parseCodingCodeReviewText } from '../engine/workers/coding-worker/subagents/code-review/code-review-agent.js';
 import { readPackageScripts, runCodingRepoPreflight } from '../engine/workers/coding-worker/repo/preflight.js';
 import { parseGitStatusShort } from '../engine/workers/coding-worker/repo/git-state.js';
@@ -78,9 +79,10 @@ test('coding worker internal subagents are worker-local profiles with distinct c
   assert.equal(subagents.every((agent) => agent.model === 'ollama-cloud/minimax-m3'), true);
 
   for (const subagent of subagents) {
-    assert.match(subagent.instructions ?? '', /worker-local internal subagent/);
-    assert.match(subagent.instructions ?? '', /coding-worker lead/);
-    assert.doesNotMatch(subagent.instructions ?? '', /human operator as the immediate principal/i);
+    const composition = getCodingInternalSubagentComposition(subagent);
+    assert.match(composition.instructions, /worker-local internal subagent/);
+    assert.match(composition.instructions, /coding-worker lead/);
+    assert.doesNotMatch(composition.instructions, /human operator as the immediate principal/i);
   }
 });
 
@@ -853,7 +855,7 @@ test('coding worker profile wires GitHub read context with a client and supports
 
   try {
     writeFileSync(join(project.repoPath, 'README.md'), '# scoped repo\n');
-    const subagent = await createCodingWorkerSubagent({
+    const subagent = createCodingWorkerComposition({
       repoPath: project.repoPath,
       githubClient: {
         async getIssue() {
@@ -908,13 +910,10 @@ test('coding worker remains available when optional GitHub MCP connection fails'
 
   try {
     writeFileSync(join(project.repoPath, 'README.md'), '# available worker\n');
-    const subagent = await createCodingWorkerSubagent({
+    const subagent = createCodingWorkerComposition({
       repoPath: project.repoPath,
       env: {
         GITHUB_PERSONAL_ACCESS_TOKEN: 'secret-pat',
-      },
-      connectGithubMcp: async () => {
-        throw new Error('upstream rejected secret-pat');
       },
     });
 
@@ -1794,24 +1793,23 @@ test('orchestrator exposes repo execution only through the coding-worker lead', 
   writeExecutableProjectFiles(project.repoPath);
 
   try {
-    const config = await orchestratorAgent.initialize({
-      id: 'coding-worker-orchestrator-surface',
-      env: {
-        ...createModelEnv(),
-        GOROMBO_RUNTIME_ROOT: runtimeRoot,
-        GOROMBO_WORKSPACE_ROOT: 'workspace',
-      },
-      payload: undefined,
+    const config = createOrchestratorComposition({
+      ...createModelEnv(),
+      GOROMBO_RUNTIME_ROOT: runtimeRoot,
+      GOROMBO_WORKSPACE_ROOT: 'workspace',
     });
 
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_repo_apply_patch'), false);
     assert.equal(config.tools?.some((tool) => tool.name === 'coding_shell_run'), false);
 
-    const codingWorker = config.subagents?.find((agent) => agent.name === 'coding-worker');
-    assert.ok(codingWorker);
-
-    const patch = getTool(codingWorker.tools ?? [], 'coding_repo_apply_patch');
-    const shell = getTool(codingWorker.tools ?? [], 'coding_shell_run');
+    assert.equal(config.subagents.some((agent) => agent.name === 'coding-worker'), true);
+    const codingWorker = createCodingWorkerComposition({
+      workspaceRoot,
+      projectRelativePath,
+      targetKind: 'project',
+    });
+    const patch = getTool(codingWorker.tools, 'coding_repo_apply_patch');
+    const shell = getTool(codingWorker.tools, 'coding_shell_run');
 
     await patch.execute({
       path: `${project.projectRelativePath}/index.js`,

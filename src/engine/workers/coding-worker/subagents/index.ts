@@ -1,4 +1,4 @@
-import type { AgentProfile, ToolDefinition } from '@flue/runtime';
+import type { SubagentDefinition, ToolDefinition } from '@flue/runtime';
 import type { CodingApprovalService } from '../../../../engine/workers/coding-worker/approvals/approval-service.js';
 import type { GitHubClient } from '../../../../engine/workers/coding-worker/github/github-client.js';
 import { createCodingGitHubTools } from '../../../../engine/workers/coding-worker/github/github-tools.js';
@@ -34,7 +34,7 @@ export interface CodingWorkerInternalSubagentsOptions extends CodingWorkspaceTar
 
 export function createCodingWorkerInternalSubagents(
   options?: CodingWorkerInternalSubagentsOptions,
-): AgentProfile[] {
+): SubagentDefinition[] {
   const toolsets = createInternalToolsets(options ?? {});
 
   return [
