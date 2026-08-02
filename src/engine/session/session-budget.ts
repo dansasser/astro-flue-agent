@@ -43,6 +43,7 @@ export interface CreateSessionBudgetReportInput {
   store?: SessionBudgetStore;
   snapshots?: readonly FlueConversationSnapshot[];
   compactions?: number;
+  additionalHistoryText?: string;
 }
 
 export interface RecordPromptUsageInput {
@@ -107,8 +108,10 @@ export function createSessionBudgetReport(input: CreateSessionBudgetReportInput)
         compactions: input.compactions ?? 0,
       })
     : (input.store ?? chatSessionBudgetStore).get(sessionId, input.modelCard.specifier);
+  const additionalHistoryTokens = estimateTextTokens(input.additionalHistoryText ?? '');
+  const estimatedHistoryTokens = state.estimatedHistoryTokens + additionalHistoryTokens;
   const estimatedPromptTokens = estimateTextTokens(input.promptText ?? '');
-  const estimatedUsedTokens = state.estimatedHistoryTokens + estimatedPromptTokens;
+  const estimatedUsedTokens = estimatedHistoryTokens + estimatedPromptTokens;
   const decision = evaluateCompaction({
     usedTokens: estimatedUsedTokens,
     warningTokens: budget.warningTokens,
@@ -124,7 +127,7 @@ export function createSessionBudgetReport(input: CreateSessionBudgetReportInput)
     warningTokens: budget.warningTokens,
     compactionTokens: budget.compactionTokens,
     hardStopTokens: budget.hardStopTokens,
-    estimatedHistoryTokens: state.estimatedHistoryTokens,
+    estimatedHistoryTokens,
     estimatedPromptTokens,
     estimatedUsedTokens,
     remainingInputTokens: decision.remainingTokens,

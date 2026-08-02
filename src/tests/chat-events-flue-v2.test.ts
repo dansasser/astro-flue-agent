@@ -73,6 +73,7 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
       result?: { command?: { name?: string }; contextBudget?: { compactedBeforePrompt?: boolean } };
       session?: { id?: string };
       event?: { id?: string };
+      streamUrl?: string;
     };
     fixture.eventIds.push(compactedBody.event?.id ?? '');
 
@@ -91,6 +92,23 @@ test('/compact preserves the product session and rotates its Flue 2 runtime gene
     assert.equal(generations[1]?.compactionSubmissionId, 'submission-2');
     assert.equal(generations[1]?.continuationSummary, 'Continuation summary');
     assert.notEqual(generations[1]?.instanceId, fixture.sessionId);
+    assert.equal(
+      compactedBody.streamUrl,
+      `/agents/orchestrator/${generations[1]?.instanceId}`,
+    );
+
+    fixture.loadedInstanceIds.splice(0);
+    const continued = await fixture.post({
+      connector: 'tui',
+      text: 'Continue after compaction.',
+      actorId: fixture.actorId,
+      conversationId: fixture.conversationId,
+      session: fixture.sessionId,
+    });
+    const continuedBody = await continued.json() as { event?: { id?: string } };
+    fixture.eventIds.push(continuedBody.event?.id ?? '');
+    assert.equal(continued.status, 200);
+    assert.deepEqual(fixture.loadedInstanceIds, [generations[1]?.instanceId]);
   } finally {
     fixture.cleanup();
   }
@@ -102,6 +120,7 @@ function createFixture() {
   const conversationId = `flue-v2-conversation-${suffix}`;
   const eventIds: string[] = [];
   const dispatches: Array<{ instanceId: string; message: DeliveredMessageInput }> = [];
+  const loadedInstanceIds: string[] = [];
   let dispatchCount = 0;
   let sessionId: string | undefined;
   const app = new Hono();
@@ -126,7 +145,10 @@ function createFixture() {
         },
       };
     },
-    loadConversationSnapshot: async ({ instanceId }) => snapshot(instanceId, dispatchCount),
+    loadConversationSnapshot: async ({ instanceId }) => {
+      loadedInstanceIds.push(instanceId);
+      return snapshot(instanceId, dispatchCount);
+    },
   });
 
   const previous = {
@@ -145,6 +167,7 @@ function createFixture() {
     conversationId,
     eventIds,
     dispatches,
+    loadedInstanceIds,
     get sessionId() { return sessionId; },
     set sessionId(value: string | undefined) { sessionId = value; },
     post(body: Record<string, unknown>) {

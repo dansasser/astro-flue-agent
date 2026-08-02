@@ -92,11 +92,13 @@ export function projectSessionTranscript(input: {
   generations?: ChatSessionGenerationRecord[];
   limit?: number;
   before?: string;
+  includeUnmatchedAssistants?: boolean;
 }): ChatTranscriptPage {
   const entries = buildTranscriptEntries(
     input.prompts,
     input.snapshots,
     input.generations ?? [],
+    input.includeUnmatchedAssistants ?? true,
   );
   const limit = input.limit ?? Math.max(1, entries.length);
   const selected = entries.slice(-limit);
@@ -157,6 +159,7 @@ export async function loadSessionTranscriptPage(input: {
     generations: input.generations,
     limit: input.limit,
     ...(input.before ? { before: input.before } : {}),
+    includeUnmatchedAssistants: !cursor,
   });
 }
 
@@ -170,6 +173,7 @@ function buildTranscriptEntries(
   sourcePrompts: SessionNormalizedMessageRecord[],
   snapshots: FlueConversationSnapshot[],
   generations: ChatSessionGenerationRecord[],
+  includeUnmatchedAssistants: boolean,
 ): TranscriptEntry[] {
   const compactSubmissions = new Set(
     generations.map((generation) => generation.compactionSubmissionId).filter(isString),
@@ -222,7 +226,11 @@ function buildTranscriptEntries(
   }
 
   for (const [submissionId, assistant] of assistantBySubmission) {
-    if (consumedAssistantSubmissions.has(submissionId) || compactSubmissions.has(submissionId)) {
+    if (
+      !includeUnmatchedAssistants
+      || consumedAssistantSubmissions.has(submissionId)
+      || compactSubmissions.has(submissionId)
+    ) {
       continue;
     }
     entries.push({
