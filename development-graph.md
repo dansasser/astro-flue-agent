@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b -->
+<!-- development-graph-sha256: 2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `72` |
+| Graph version | `78` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-connectors-clients-packaging-scope:2026-08-01` |
+| Context version | `flue-v2-stacked-pr-delivery-ci-bootstrap:2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `2ef184a3a1c3a563448119270229b54d57a256cfcb23628948e5df0bb93d851b` |
+| Canonical checksum | `2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd` |
 
 ## Flow
 
@@ -114,6 +114,11 @@ flowchart TD
     n_migrate_flue_v2_documentation["Update Flue 2 Documentation\\n(work / planned)"]
     n_verify_flue_v2_production_migration(["Verify Flue 2 Production Migration\\n(verification / planned)"])
     n_resolve_d12_flue_v2_persistence_and_compaction{"Resolve Flue 2 Persistence History And Compaction\\n(decision / planned)"}
+    n_repair_flue_v2_verification_regressions["Repair Flue 2 Verification Regressions\\n(work / planned)"]
+    n_repair_flue_v2_memory_smoke_harness["Repair Flue 2 Memory Smoke Harness\\n(work / planned)"]
+    n_repair_flue_v2_tui_e2e_harness["Repair Flue 2 TUI E2E Harness\\n(work / planned)"]
+    n_repair_flue_v2_telegram_connector_flow["Repair Flue 2 Telegram Connector Flow\\n(work / planned)"]
+    n_deliver_flue_v2_stacked_pull_requests[["Deliver Flue 2 Stacked Pull Requests\\n(operation / planned)"]]
     n_baseline_context -- "consumes" --> n_install_dependencies
     n_install_dependencies -- "consumes" --> n_fetch_embedding_model
     n_install_dependencies -- "consumes" --> n_build_wasm_memory
@@ -904,6 +909,21 @@ flowchart TD
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_migrate_flue_v2_documentation
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_verify_release_reconciliation_specifications
     n_resolve_d12_flue_v2_persistence_and_compaction -- "consumes" --> n_plan_implementation
+    n_migrate_flue_v2_agents_workers -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_migrate_flue_v2_documentation -- "consumes" --> n_repair_flue_v2_verification_regressions
+    n_repair_flue_v2_verification_regressions -- "consumes" --> n_verify_flue_v2_production_migration
+    n_migrate_flue_v2_capabilities -- "consumes" --> n_repair_flue_v2_memory_smoke_harness
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_memory_smoke_harness
+    n_repair_flue_v2_memory_smoke_harness -- "consumes" --> n_verify_flue_v2_production_migration
+    n_migrate_flue_v2_connectors_clients -- "consumes" --> n_repair_flue_v2_tui_e2e_harness
+    n_migrate_flue_v2_product_packaging -- "consumes" --> n_repair_flue_v2_tui_e2e_harness
+    n_repair_flue_v2_tui_e2e_harness -- "consumes" --> n_verify_flue_v2_production_migration
+    n_migrate_flue_v2_connectors_clients -- "consumes" --> n_repair_flue_v2_telegram_connector_flow
+    n_migrate_flue_v2_execution_persistence -- "consumes" --> n_repair_flue_v2_telegram_connector_flow
+    n_migrate_flue_v2_product_packaging -- "consumes" --> n_repair_flue_v2_telegram_connector_flow
+    n_repair_flue_v2_telegram_connector_flow -- "consumes" --> n_verify_flue_v2_production_migration
+    n_verify_flue_v2_production_migration -- "consumes" --> n_deliver_flue_v2_stacked_pull_requests
 ```
 
 ## Nodes
@@ -1000,6 +1020,11 @@ flowchart TD
 | `migrate-flue-v2-documentation` | `work` | `planned` | agent: SIM-ONE Flue documentation migrator | Update every affected current-state architecture, guide, operations, OpenWiki, example, diagram, and release document after the implementation behavior is verified. | artifact:flue-v2-documentation-change |
 | `verify-flue-v2-production-migration` | `verification` | `planned` | hybrid: SIM-ONE Flue production verifier | Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity. | artifact:flue-v2-production-verification |
 | `resolve-d12-flue-v2-persistence-and-compaction` | `decision` | `planned` | agent: SIM-ONE Flue migration architect | Bind Flue 2 to a separate persistence namespace while preserving SIM-ONE product sessions and implementing explicit compaction through public runtime generations. | decision:d12-flue-v2-persistence-and-compaction |
+| `repair-flue-v2-verification-regressions` | `work` | `planned` | hybrid: SIM-ONE Flue verification repair | Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture. | artifact:flue-v2-verification-repair |
+| `repair-flue-v2-memory-smoke-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 memory smoke repair | Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract. | artifact:flue-v2-memory-smoke-repair |
+| `repair-flue-v2-tui-e2e-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 TUI E2E repair | Migrate the TUI end-to-end product harness from the removed beta synchronous HTTP contract to the Flue 2 conversation client contract. | artifact:flue-v2-tui-e2e-repair |
+| `repair-flue-v2-telegram-connector-flow` | `work` | `planned` | hybrid: SIM-ONE Flue 2 Telegram connector repair | Complete and prove the Flue 2 Telegram connector flow from verified webhook ingress through persistent conversation routing to outbound Bot API delivery. | artifact:flue-v2-telegram-connector-repair |
+| `deliver-flue-v2-stacked-pull-requests` | `operation` | `planned` | hybrid: SIM-ONE Flue 2 stacked pull-request delivery | Deliver the verified Flue 2 migration as a CI-bootstrap pull request plus eight dependency-ordered, review-complete stacked migration pull requests without merging them. | artifact:flue-v2-stacked-pr-delivery |
 
 ## Edges
 
@@ -1795,6 +1820,21 @@ flowchart TD
 | `resolve-d12-flue-v2-persistence-and-compaction-to-migrate-flue-v2-documentation-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `migrate-flue-v2-documentation` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
 | `resolve-d12-flue-v2-persistence-and-compaction-to-verify-release-reconciliation-specifications-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `verify-release-reconciliation-specifications` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
 | `resolve-d12-flue-v2-persistence-and-compaction-to-plan-implementation-consumes` | `resolve-d12-flue-v2-persistence-and-compaction` | `consumes` | `plan-implementation` | The resolved Flue 2 persistence and compaction decision is current and bound to this consumer. | decision:d12-flue-v2-persistence-and-compaction | — |
+| `migrate-flue-v2-agents-workers-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-agents-workers` | `consumes` | `repair-flue-v2-verification-regressions` | The verified agent and Coding Worker migration remains current. | artifact:flue-v2-agents-workers-change | — |
+| `migrate-flue-v2-execution-persistence-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-verification-regressions` | The verified execution migration remains current. | artifact:flue-v2-execution-persistence-change | — |
+| `migrate-flue-v2-documentation-to-repair-flue-v2-verification-regressions-consumes` | `migrate-flue-v2-documentation` | `consumes` | `repair-flue-v2-verification-regressions` | The verified documentation migration remains current. | artifact:flue-v2-documentation-change | — |
+| `repair-flue-v2-verification-regressions-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-verification-regressions` | `consumes` | `verify-flue-v2-production-migration` | The bounded final-verification repair is verified before production verification resumes. | artifact:flue-v2-verification-repair | — |
+| `migrate-flue-v2-capabilities-to-repair-flue-v2-memory-smoke-harness-consumes` | `migrate-flue-v2-capabilities` | `consumes` | `repair-flue-v2-memory-smoke-harness` | The verified Flue 2 capability definitions remain current. | artifact:flue-v2-capabilities-change | — |
+| `migrate-flue-v2-execution-persistence-to-repair-flue-v2-memory-smoke-harness-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-memory-smoke-harness` | The verified Flue 2 structured-memory execution and persistence migration remains current. | artifact:flue-v2-execution-persistence-change | — |
+| `repair-flue-v2-memory-smoke-harness-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-memory-smoke-harness` | `consumes` | `verify-flue-v2-production-migration` | The deterministic memory smoke repair is verified before final production verification resumes. | artifact:flue-v2-memory-smoke-repair | — |
+| `migrate-flue-v2-connectors-clients-to-repair-flue-v2-tui-e2e-harness-consumes` | `migrate-flue-v2-connectors-clients` | `consumes` | `repair-flue-v2-tui-e2e-harness` | The verified Flue 2 client integration remains current. | artifact:flue-v2-connectors-clients-change | — |
+| `migrate-flue-v2-product-packaging-to-repair-flue-v2-tui-e2e-harness-consumes` | `migrate-flue-v2-product-packaging` | `consumes` | `repair-flue-v2-tui-e2e-harness` | The verified Flue 2 product package remains current. | artifact:flue-v2-product-packaging-change | — |
+| `repair-flue-v2-tui-e2e-harness-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-tui-e2e-harness` | `consumes` | `verify-flue-v2-production-migration` | The TUI E2E harness repair is verified before final production verification resumes. | artifact:flue-v2-tui-e2e-repair | — |
+| `migrate-flue-v2-connectors-clients-to-repair-flue-v2-telegram-connector-flow-consumes` | `migrate-flue-v2-connectors-clients` | `consumes` | `repair-flue-v2-telegram-connector-flow` | The verified Flue 2 connector integration remains current. | artifact:flue-v2-connectors-clients-change | — |
+| `migrate-flue-v2-execution-persistence-to-repair-flue-v2-telegram-connector-flow-consumes` | `migrate-flue-v2-execution-persistence` | `consumes` | `repair-flue-v2-telegram-connector-flow` | The verified Flue 2 persistence integration remains current. | artifact:flue-v2-execution-persistence-change | — |
+| `migrate-flue-v2-product-packaging-to-repair-flue-v2-telegram-connector-flow-consumes` | `migrate-flue-v2-product-packaging` | `consumes` | `repair-flue-v2-telegram-connector-flow` | The verified Flue 2 product package remains current. | artifact:flue-v2-product-packaging-change | — |
+| `repair-flue-v2-telegram-connector-flow-to-verify-flue-v2-production-migration-consumes` | `repair-flue-v2-telegram-connector-flow` | `consumes` | `verify-flue-v2-production-migration` | The Telegram connector repair is verified before final production verification resumes. | artifact:flue-v2-telegram-connector-repair | — |
+| `verify-flue-v2-production-migration-to-deliver-flue-v2-stacked-pull-requests-consumes` | `verify-flue-v2-production-migration` | `consumes` | `deliver-flue-v2-stacked-pull-requests` | The complete Flue 2 production migration remains verified before GitHub stack publication begins. | artifact:flue-v2-production-verification | — |
 
 ## Node contracts
 
@@ -3334,9 +3374,9 @@ flowchart TD
 
 - Goal: Prove the complete Flue 2 migration through static scans, full automated suites, standalone product flows, persistence boundaries, connector behavior, and graph/documentation parity.
 - Executor instructions: Run every configured check and real product flow. Do not infer working status from a process or port. Retain output-level evidence.
-- Inputs: artifact:flue-v2-documentation-change
+- Inputs: artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair, artifact:flue-v2-memory-smoke-repair, artifact:flue-v2-tui-e2e-repair, artifact:flue-v2-telegram-connector-repair
 - Resources: authorized project tree, .gorombo/, runtime:evidence/verify-flue-v2-production-migration/
-- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
+- Permissions: read [authorized project tree, node_modules/, artifact:flue-v2-documentation-change, artifact:flue-v2-verification-repair, artifact:flue-v2-memory-smoke-repair, artifact:flue-v2-tui-e2e-repair, artifact:flue-v2-telegram-connector-repair]; write [.gorombo/, .tmp/, dist/, target/, crates/gorombo-memory/pkg/, runtime:evidence/verify-flue-v2-production-migration/]; external [configured model providers for authorized production smoke tests, loopback gateway]; destructive `false`
 - Execution: max `3` attempt(s), `600` minute(s); Every migration acceptance criterion passes and all prospective PR slices remain below 100 files.
 - Side effects: `reversible` — Builds and exercises local product artifacts without opening a PR or publishing.
 - Rollback: Stop local test processes and remove only generated test/build artifacts.
@@ -3362,6 +3402,90 @@ flowchart TD
 - Approval required: `false`
 - Acceptance:
   - `flue-v2-persistence-decision-complete` (artifact): The decision records the exact Flue 2 database path, beta rollback archive, app-owned session/history boundary, public dispatch/read compaction rotation, failure behavior, and affected consumers. Evidence: `doc/decisions/d12-flue-v2-persistence-and-compaction.md`
+
+### `repair-flue-v2-verification-regressions` — Repair Flue 2 Verification Regressions
+
+- Goal: Repair the four bounded regressions found by the final Flue 2 verification without changing migrated runtime architecture.
+- Executor instructions: Apply only the three verified corrections exposed by final unit verification, run focused checks first, then typecheck and documentation/graph checks, and preserve the project-scoped Coding Worker boundary.
+- Inputs: artifact:flue-v2-agents-workers-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-documentation-change
+- Resources: src/workflows/research.ts, src/tests/coding-worker.test.ts, docs/architecture/flue-architecture.md
+- Permissions: read [artifact:flue-v2-agents-workers-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-documentation-change, src/engine/workers/coding-worker/, src/workflows/research.ts, src/tests/coding-worker.test.ts, src/tests/research-workflow.test.ts, src/tests/architecture-contract.test.ts, docs/architecture/flue-architecture.md]; write [src/workflows/research.ts, src/tests/coding-worker.test.ts, docs/architecture/flue-architecture.md, runtime:evidence/repair-flue-v2-verification-regressions/]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `120` minute(s); All four failed contracts pass with no unrelated source changes and the repair milestone is committed and pushed.
+- Side effects: `reversible` — Repairs three tracked files and writes local verification evidence.
+- Rollback: Revert the bounded repair commit and restore the prior three tracked files.
+- Approval required: `false`
+- Acceptance:
+  - `research-contract-restored` (test): The research workflow prompt preserves explicit providerFailures reporting and tells the researcher to omit unspecified budget controls so depth defaults remain authoritative. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/research.json`
+  - `project-scope-test-corrected` (test): The coding-worker ownership test invokes project-scoped tools with project-root-relative paths while continuing to prove that repository execution is available only through the coding-worker lead. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/coding-worker.json`
+  - `research-ownership-explicit` (test): The current Flue architecture contract explicitly states that the orchestrator must not directly call web search and the architecture contract test passes. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/documentation.json`
+  - `repair-verification-green` (test): Focused tests, typecheck, documentation checks, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-verification-regressions/verification.json`
+
+### `repair-flue-v2-memory-smoke-harness` — Repair Flue 2 Memory Smoke Harness
+
+- Goal: Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract.
+- Executor instructions: Replace only stale beta direct tool invocations in the deterministic memory smoke with the project's shared Flue 2 direct-tool runner, then prove the entire smoke and focused memory contracts.
+- Inputs: artifact:flue-v2-capabilities-change, artifact:flue-v2-execution-persistence-change
+- Resources: scripts/smoke-memory-helper.mjs, src/engine/tools/direct-tool-runner.ts
+- Permissions: read [artifact:flue-v2-capabilities-change, artifact:flue-v2-execution-persistence-change, scripts/smoke-memory-helper.mjs, src/engine/tools/direct-tool-runner.ts, src/engine/tools/, src/engine/workers/coding-worker/tools/, src/tests/, node_modules/@flue/runtime/docs/]; write [scripts/smoke-memory-helper.mjs, runtime:evidence/repair-flue-v2-memory-smoke-harness/]; external [—]; destructive `false`
+- Execution: max `3` attempt(s), `120` minute(s); The deterministic memory smoke passes end to end under the Flue 2 tool contract and the bounded milestone is committed and pushed.
+- Side effects: `reversible` — Repairs one deterministic product smoke harness and writes local verification evidence.
+- Rollback: Revert the bounded memory-smoke repair commit and restore the prior harness.
+- Approval required: `false`
+- Acceptance:
+  - `memory-smoke-uses-flue-v2-tool-contract` (test): The deterministic memory smoke invokes every orchestrator and Coding Worker Flue 2 tool through the shared direct-tool runner and contains no beta execute calls. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/static-scan.json`
+  - `memory-smoke-passes` (probe): The complete memory smoke creates, retrieves, restarts, and verifies orchestrator and Coding Worker structured-memory records with the Flue 2 tool contract. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/memory-smoke.log`
+  - `memory-smoke-repair-verified` (test): Typecheck, focused memory tests, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-memory-smoke-harness/verification.json`
+
+### `repair-flue-v2-tui-e2e-harness` — Repair Flue 2 TUI E2E Harness
+
+- Goal: Migrate the TUI end-to-end product harness from the removed beta synchronous HTTP contract to the Flue 2 conversation client contract.
+- Executor instructions: Replace only the stale beta direct-agent request in scripts/test-tui-e2e.mjs with the installed Flue 2 SDK conversation client, retain the existing live-model and CLI assertions, and prove the built product path.
+- Inputs: artifact:flue-v2-connectors-clients-change, artifact:flue-v2-product-packaging-change
+- Resources: scripts/test-tui-e2e.mjs, package.json, pnpm-lock.yaml
+- Permissions: read [artifact:flue-v2-connectors-clients-change, artifact:flue-v2-product-packaging-change, scripts/test-tui-e2e.mjs, package.json, pnpm-lock.yaml, node_modules/@flue/runtime/docs/, node_modules/@flue/cli/docs/]; write [scripts/test-tui-e2e.mjs, package.json, pnpm-lock.yaml, runtime:evidence/repair-flue-v2-tui-e2e-harness/]; external [configured model provider for authorized TUI E2E smoke, loopback gateway]; destructive `false`
+- Execution: max `3` attempt(s), `180` minute(s); The built TUI E2E product path passes through the Flue 2 client contract and the bounded milestone is committed and pushed.
+- Side effects: `reversible` — Repairs one product E2E harness, adds the direct Flue 2 SDK dependency, and runs a configured live-model smoke.
+- Rollback: Revert the bounded TUI E2E repair commit and restore the prior harness and dependency manifest.
+- Approval required: `false`
+- Acceptance:
+  - `tui-e2e-uses-flue-v2-client-contract` (test): The TUI E2E harness uses the Flue 2 conversation client contract: structured user-message admission followed by durable reply read, with no ?wait query or beta string message body. Evidence: `runtime:evidence/repair-flue-v2-tui-e2e-harness/static-scan.json`
+  - `tui-e2e-passes` (probe): The built server accepts the direct agent prompt, settles it through the Flue 2 stream, returns a non-error assistant reply, and the packaged CLI remains runnable. Evidence: `runtime:evidence/repair-flue-v2-tui-e2e-harness/tui-e2e.log`
+  - `tui-e2e-repair-verified` (test): Typecheck, graph validation, specification verification, ledger verification, and the TUI E2E product test pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-tui-e2e-harness/verification.json`
+
+### `repair-flue-v2-telegram-connector-flow` — Repair Flue 2 Telegram Connector Flow
+
+- Goal: Complete and prove the Flue 2 Telegram connector flow from verified webhook ingress through persistent conversation routing to outbound Bot API delivery.
+- Executor instructions: Follow the installed Flue 2 channel contract: keep webhook acknowledgement asynchronous, expose outbound Telegram behavior through a provider-SDK tool bound from trusted delivery context, add a configurable Bot API root for deterministic testing/self-hosted API use, and prove persistence and delivery through a built server restart.
+- Inputs: artifact:flue-v2-connectors-clients-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-product-packaging-change
+- Resources: src/channels/telegram.ts, src/agents/orchestrator.ts, scripts/test-telegram-product.mjs, .gorombo/sim-one-alpha/server.mjs
+- Permissions: read [artifact:flue-v2-connectors-clients-change, artifact:flue-v2-execution-persistence-change, artifact:flue-v2-product-packaging-change, src/channels/telegram.ts, src/agents/orchestrator.ts, src/api/routes/chat-prompt.ts, src/core/config/runtime-environment.ts, sim-one.config.example, scripts/, src/tests/, node_modules/@flue/telegram/, node_modules/@flue/cli/docs/guide/channels.md]; write [src/channels/, src/agents/orchestrator.ts, src/api/routes/chat-prompt.ts, src/core/config/runtime-environment.ts, sim-one.config.example, scripts/test-telegram-product.mjs, scripts/deterministic-telegram-provider.mjs, src/tests/, docs/, openwiki/, package.json, runtime:evidence/repair-flue-v2-telegram-connector-flow/]; external [loopback gateway, loopback deterministic model provider, loopback Telegram Bot API fixture]; destructive `false`
+- Execution: max `3` attempt(s), `300` minute(s); The Telegram channel has a Flue 2-correct bound outbound path and a deterministic packaged restart proof, then the bounded milestone is committed and pushed.
+- Side effects: `reversible` — Repairs Telegram response delivery, adds deterministic loopback product fixtures, and exercises a temporary persistent runtime through restart.
+- Rollback: Revert the bounded Telegram connector repair commit and remove only temporary test runtime files.
+- Approval required: `false`
+- Acceptance:
+  - `telegram-outbound-contract` (test): Telegram ingress dispatches each chat to the canonical Flue conversation id, the orchestrator exposes a reply tool bound to the verified current Telegram event, and product instructions no longer claim that ingress auto-sends final text. Evidence: `runtime:evidence/repair-flue-v2-telegram-connector-flow/contract.json`
+  - `telegram-restart-product-flow` (probe): A packaged product harness posts authenticated Telegram webhooks before and after a gateway restart, captures both outbound Bot API replies, and proves both settled submissions share one persisted Flue 2 session key. Evidence: `runtime:evidence/repair-flue-v2-telegram-connector-flow/telegram-product.log`
+  - `telegram-repair-verified` (test): Focused Telegram/config tests, typecheck, build, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files. Evidence: `runtime:evidence/repair-flue-v2-telegram-connector-flow/verification.json`
+
+### `deliver-flue-v2-stacked-pull-requests` — Deliver Flue 2 Stacked Pull Requests
+
+- Goal: Deliver the verified Flue 2 migration as a CI-bootstrap pull request plus eight dependency-ordered, review-complete stacked migration pull requests without merging them.
+- Executor instructions: First deliver CI support for feature-based stack members without weakening normal main CI. Then construct the eight migration branches so the original verified commits remain reachable, verify every base/head pair before opening the next non-draft request, and loop over CI and all review systems. Batch repairs by owning slice, propagate descendants deterministically, and never merge.
+- Inputs: artifact:flue-v2-production-verification
+- Resources: git:refs/codex/flue-v2-*, github:pull-request-stack:flue-v2, verified Flue 2 migration files
+- Permissions: read [artifact:flue-v2-production-verification, current Git history and remote refs, .github/workflows/, verified Flue 2 migration diff, GitHub pull-request, CI, review, and thread metadata]; write [.github/workflows/ci.yml, scripts/check-flue-v2-stack-slice.mjs, scripts/check-flue-v2-stack-slice.test.mjs, files already owned by the Flue 2 migration when required by validated review findings, runtime:evidence/deliver-flue-v2-stacked-pull-requests/]; external [GitHub branch refs under codex/flue-v2-*, GitHub non-draft pull-request creation and description updates, GitHub CI, review, comment, reply, and thread-resolution operations]; destructive `false`
+- Execution: max `10` attempt(s), `1440` minute(s); All nine non-draft stacked pull requests are published below the file cap, their boundary-appropriate checks are green, all current reviews are resolved, and the unmerged stack is ready for one controlled bottom-up merge sequence.
+- Side effects: `reversible` — Creates reversible remote stack branches and non-draft pull requests, adds bounded stack-slice CI, and may push bounded review repairs. The owner explicitly authorized this publication phase.
+- Rollback: Close the unmerged stack pull requests and delete only the stack-specific remote branches; preserve codex/flue-v2-migration and all verified commits. Revert the CI bootstrap if it has been merged separately.
+- Approval required: `false`
+- Acceptance:
+  - `stack-branches-valid` (policy): Nine remote stack branches preserve the delivery order: CI bootstrap, foundation, agents/workers, capabilities, execution/persistence, connectors/clients, product packaging, documentation, and production verification. Every adjacent branch diff contains fewer than 100 changed files, and the eight migration branches retain the verified migration commits through ancestry. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/branches.json`
+  - `stack-prs-published` (probe): Nine non-draft pull requests exist with the CI bootstrap based on main and each later request based on the preceding stack branch; each body names its dependency, substantive commits, changed-file count, verification evidence, rollback boundary, transitional status where applicable, and merge order. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/pull-requests.json`
+  - `stack-ci-green` (test): The CI bootstrap and production-verification tip pass the complete repository CI suite. Each transitional migration slice passes the stack-slice check that validates its exact base/head identity, fewer-than-100-file boundary, lockfile installation, documentation, and the strongest compiler or focused contract applicable at that migration boundary. No failed, cancelled, or timed-out current check remains. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/checks.json`
+  - `stack-reviews-resolved` (review): All current actionable review findings and non-outdated review threads are fixed or answered with a concrete reason, reviewer reruns are complete, and no unresolved current thread remains on any stack member. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/reviews.json`
+  - `stack-repairs-propagated` (policy): Any review repair is committed to its owning stack slice and propagated through every descendant branch without dropping verified migration commits, changing branch order, or raising any pull request to 100 or more changed files. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/propagation.json`
+  - `stack-ready-not-merged` (policy): No pull request is merged, no draft pull request is created, codex/flue-v2-migration remains preserved, and the final report gives the exact bottom-up merge sequence and states that the transitional migration stack must be merged as one controlled release sequence without deployment between its intermediate slices. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/final.json`
 
 ## Assumptions
 

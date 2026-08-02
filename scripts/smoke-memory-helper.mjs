@@ -50,6 +50,7 @@ async function loadModules() {
     runtime: await import(`${base}/engine/memory/structured-memory-runtime.js`),
     tools: await import(`${base}/engine/tools/index.js`),
     memoryTool: await import(`${base}/engine/tools/memory-tool.js`),
+    directToolRunner: await import(`${base}/engine/tools/direct-tool-runner.js`),
     cwMemory: await import(`${base}/engine/workers/coding-worker/tools/coding-task-memory-tools.js`),
     cwApproval: await import(`${base}/engine/workers/coding-worker/approvals/approval-service.js`),
     taskRunStore: await import(`${base}/engine/workers/coding-worker/session/task-run-store.js`),
@@ -172,7 +173,8 @@ async function main() {
   // Use the dev WASM artifact path.
   process.env.GOROMBO_MEMORY_WASM_MODULE_PATH = join(process.cwd(), 'crates', 'gorombo-memory', 'pkg', 'gorombo_memory.js');
 
-  const { runtime, tools, memoryTool, cwMemory, cwApproval, taskRunStore } = await loadModules();
+  const { runtime, tools, memoryTool, directToolRunner, cwMemory, cwApproval, taskRunStore } = await loadModules();
+  const runTool = directToolRunner.runToolForText;
 
   // Register a trusted event via the session database.
   const sessionId = `smoke-${Date.now()}`;
@@ -191,7 +193,7 @@ async function main() {
 
   // Drive the orchestrator memory tools.
   const checklistRes = JSON.parse(
-    await tools.createChecklistTool.execute({
+    await runTool(tools.createChecklistTool, {
       eventId: event.id,
       title: 'Phase 0 prep',
       slug: 'phase-0-prep',
@@ -202,7 +204,7 @@ async function main() {
   assert(checklistId, 'create_checklist returned an id');
   console.log(`[smoke] created checklist ${checklistId} with ${checklistRes.checklist.items.length} items`);
 
-  await tools.addChecklistItemTool.execute({
+  await runTool(tools.addChecklistItemTool, {
     eventId: event.id,
     checklistId,
     parentId: checklistRes.checklist.items[0].id,
@@ -210,13 +212,13 @@ async function main() {
   });
 
   const todoRes = JSON.parse(
-    await tools.createTodoTool.execute({ eventId: event.id, title: 'Run smoke test', priority: 'high' }),
+    await runTool(tools.createTodoTool, { eventId: event.id, title: 'Run smoke test', priority: 'high' }),
   );
   assert(todoRes.todo.id, 'create_todo returned an id');
   console.log(`[smoke] created todo ${todoRes.todo.id}`);
 
   const noteRes = JSON.parse(
-    await tools.storeSessionNoteTool.execute({
+    await runTool(tools.storeSessionNoteTool, {
       eventId: event.id,
       title: 'Architectural decision',
       content: 'Flat store + tree render; Rust owns compute, TS owns boundaries.',
@@ -227,7 +229,7 @@ async function main() {
   console.log(`[smoke] stored note ${noteRes.note.id}`);
 
   // Retrieve via retrieve_memory (structured-memory provider).
-  const retrieved = JSON.parse(await memoryTool.retrieveMemoryTool.execute({ eventId: event.id, text: 'phase smoke architectural' }));
+  const retrieved = JSON.parse(await runTool(memoryTool.retrieveMemoryTool, { eventId: event.id, text: 'phase smoke architectural' }));
   const structured = (retrieved.contexts ?? []).filter((c) => c.provider === 'structured-memory');
   assert(structured.length > 0, 'retrieve_memory returned structured-memory contexts');
   const kinds = new Set(structured.map((c) => c.metadata?.kind));
@@ -255,19 +257,19 @@ async function main() {
   function getCw(name) { const t = cwTools.find((x) => x.name === name); if (!t) throw new Error(`coding tool ${name} missing`); return t; }
 
   const cwChecklist = JSON.parse(
-    await getCw('coding_task_create_checklist').execute({ taskId: 'cw-task-1', title: 'CW phase', slug: 'cw-phase' }),
+    await runTool(getCw('coding_task_create_checklist'), { taskId: 'cw-task-1', title: 'CW phase', slug: 'cw-phase' }),
   );
   assert(cwChecklist.checklist.scope.projectId === 'smoke-cw-proj', 'coding_task_create_checklist injects projectId');
   console.log(`[smoke] coding-worker created project-scoped checklist ${cwChecklist.checklist.id}`);
 
   const cwTodo = JSON.parse(
-    await getCw('coding_task_add_todo').execute({ taskId: 'cw-task-1', title: 'Implement memory helper' }),
+    await runTool(getCw('coding_task_add_todo'), { taskId: 'cw-task-1', title: 'Implement memory helper' }),
   );
   assert(cwTodo.todo.scope.projectId === 'smoke-cw-proj', 'coding_task_add_todo injects projectId');
-  await getCw('coding_task_complete_todo').execute({ taskId: 'cw-task-1', id: cwTodo.todo.id });
+  await runTool(getCw('coding_task_complete_todo'), { taskId: 'cw-task-1', id: cwTodo.todo.id });
 
   const cwNote = JSON.parse(
-    await getCw('coding_task_store_note').execute({ taskId: 'cw-task-1', title: 'CW decision', content: 'audit-only writes, projectId injected' }),
+    await runTool(getCw('coding_task_store_note'), { taskId: 'cw-task-1', title: 'CW decision', content: 'audit-only writes, projectId injected' }),
   );
   assert(cwNote.note.scope.projectId === 'smoke-cw-proj', 'coding_task_store_note injects projectId');
 
@@ -286,7 +288,7 @@ async function main() {
     updatedAt: '2026-06-18T00:00:00.000Z',
   });
   const handoff = JSON.parse(
-    await getCw('coding_task_handoff_plan_to_checklist').execute({ taskId: 'cw-task-1', sourceTaskId: 'cw-task-1' }),
+    await runTool(getCw('coding_task_handoff_plan_to_checklist'), { taskId: 'cw-task-1', sourceTaskId: 'cw-task-1' }),
   );
   assert(handoff.checklist.title === 'Handoff: cw-task-1', 'handoff checklist titled from source task');
   assert(handoff.checklist.items.length === 2, 'handoff copies plan items');
@@ -294,7 +296,7 @@ async function main() {
 
   // Coding-worker search returns the project-scoped records.
   const cwSearch = JSON.parse(
-    await getCw('coding_task_search_memory').execute({ taskId: 'cw-task-1', text: 'cw' }),
+    await runTool(getCw('coding_task_search_memory'), { taskId: 'cw-task-1', text: 'cw' }),
   );
   assert(cwSearch.contexts.length > 0, 'coding_task_search_memory returns contexts');
   assert(cwSearch.contexts.every((c) => c.provider === 'structured-memory'), 'coding search returns structured-memory contexts');

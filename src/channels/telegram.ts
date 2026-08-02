@@ -1,6 +1,5 @@
-import { dispatch, defineTool } from '@flue/runtime';
+import { dispatch } from '@flue/runtime';
 import { createTelegramChannel, type TelegramConversationRef } from '@flue/telegram';
-import { Api } from 'grammy';
 import type { Message, Update } from 'grammy/types';
 import { Orchestrator } from '../agents/orchestrator.js';
 import {
@@ -15,7 +14,7 @@ import { normalizeTelegramUpdate } from '../api/connectors/telegram/telegram.js'
 import { buildApprovalResolvedMessage, parseApprovalCallback } from '../api/connectors/telegram/approval-ui/index.js';
 import { markTelegramUpdateReceived } from '../api/connectors/telegram/telegram-state.js';
 import { isMentioned } from '../api/connectors/telegram/telegram-api.js';
-import * as v from 'valibot';
+import { client } from './telegram-client.js';
 
 function isTestMode(): boolean {
   return process.env.NODE_ENV === 'test' || process.env.GOROMBO_TEST_MODE === '1';
@@ -25,30 +24,6 @@ function isTelegramConfigured(): boolean {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   return (typeof token === 'string' && token.trim().length > 0) || isTestMode();
 }
-
-function getTelegramBotToken(): string {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    if (isTestMode()) {
-      return 'placeholder-token';
-    }
-    throw new Error(
-      'TELEGRAM_BOT_TOKEN environment variable is required. Set it to enable Telegram, or omit it to run without Telegram (TUI/HTTP only).',
-    );
-  }
-  return token;
-}
-
-let cachedClient: Api | undefined;
-
-export const client = new Proxy({} as Api, {
-  get(_target, prop, receiver) {
-    if (!cachedClient) {
-      cachedClient = new Api(getTelegramBotToken());
-    }
-    return Reflect.get(cachedClient, prop, receiver);
-  },
-});
 
 type DmPolicy = 'disabled' | 'allowlist' | 'pairing';
 
@@ -186,42 +161,6 @@ export function getTelegramChannel(): TelegramChannel | undefined {
 
 export const channel: TelegramChannel = getOrCreateTelegramChannel();
 
-/**
- * Project-owned outbound Telegram reply tool. The channel owns inbound ingress;
- * this tool sends replies scoped by the trusted persisted eventId.
- */
-export const telegramReplyTool = defineTool({
-  name: 'telegram_reply',
-  description:
-    'Reply to the Telegram conversation that triggered the current event. Pass the eventId from the trusted Telegram chat context.',
-  input: v.object({
-    eventId: v.string(),
-    text: v.string(),
-    format: v.optional(v.picklist(['text', 'markdownv2'])),
-  }),
-  run: async ({ data: { eventId, text, format } }) => {
-    const event = goromboPersistenceRuntime.sessionDatabase.getNormalizedMessageEvent(eventId);
-    if (!event) {
-      throw new Error('telegram_reply requires a trusted eventId persisted by chat ingress.');
-    }
-    if (event.connector !== 'telegram') {
-      throw new Error('telegram_reply can only respond to Telegram events.');
-    }
-
-    const chatId = event.conversation.id;
-    const rawMessage = event.raw as { message?: { message_id?: number } } | undefined;
-    const replyTo = rawMessage?.message?.message_id != null ? Number(rawMessage.message.message_id) : undefined;
-    const parseMode = format === 'markdownv2' ? ('MarkdownV2' as const) : undefined;
-
-    await client.sendMessage(chatId, String(text), {
-      reply_to_message_id: Number.isFinite(replyTo) ? replyTo : undefined,
-      parse_mode: parseMode,
-    });
-
-    return 'sent';
-  },
-});
-
 async function handleIncomingMessage(incoming: Message, update: Update) {
   const accessCheck = shouldProcessUpdate(incoming);
   if (!accessCheck.allowed) {
@@ -244,11 +183,15 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
   const receipt = await dispatch(Orchestrator, {
     id: agentInstanceId,
     idempotencyKey: telegramDispatchIdempotencyKey(update.update_id),
+    initialData: conversationData(conversationFromMessage(incoming)),
     message: {
       kind: 'signal',
       type: 'telegram.message',
       tagName: 'telegram_message',
-      attributes: { updateId: String(update.update_id) },
+      attributes: {
+        updateId: String(update.update_id),
+        eventId: normalized.id,
+      },
       body: createChatPrompt(normalized),
     },
   });
@@ -346,5 +289,14 @@ function conversationFromMessage(message: Message): TelegramConversationRef {
     chatId: message.chat.id,
     messageThreadId: message.message_thread_id,
     directMessagesTopicId: message.direct_messages_topic?.topic_id,
+  };
+}
+
+function conversationData(conversation: TelegramConversationRef) {
+  return {
+    connector: 'telegram' as const,
+    chatId: conversation.chatId,
+    messageThreadId: conversation.messageThreadId,
+    directMessagesTopicId: conversation.directMessagesTopicId,
   };
 }

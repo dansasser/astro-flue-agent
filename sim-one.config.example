@@ -96,6 +96,8 @@ GOROMBO_SCHEDULES_SESSION_RETENTION=
 # secrets; required when the corresponding Telegram endpoint is enabled
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_WEBHOOK_SECRET_TOKEN=
+# URL; default: https://api.telegram.org
+TELEGRAM_API_ROOT=
 # comma-separated IDs
 TELEGRAM_APPROVED_USER_IDS=
 TELEGRAM_ADMIN_USER_IDS=

@@ -278,6 +278,9 @@ export const runtimeEnvironmentDefinitions: readonly RuntimeEnvironmentDefinitio
   define('TELEGRAM_WEBHOOK_SECRET_TOKEN', 'telegram', 'secret', 'Telegram webhook verification secret.', {
     requiredWhen: 'The Telegram webhook endpoint is enabled',
   }),
+  define('TELEGRAM_API_ROOT', 'telegram', 'url', 'Telegram Bot API root URL.', {
+    defaultDescription: 'https://api.telegram.org',
+  }),
   define('TELEGRAM_APPROVED_USER_IDS', 'telegram', 'csv', 'Telegram user IDs allowed to message the bot.'),
   define('TELEGRAM_ADMIN_USER_IDS', 'telegram', 'csv', 'Telegram user IDs allowed to perform admin actions.'),
   define('TELEGRAM_BOT_USERNAME', 'telegram', 'string', 'Telegram bot username without the at-sign.'),
