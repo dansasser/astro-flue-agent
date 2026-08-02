@@ -8,6 +8,7 @@ import type {
   SessionNormalizedMessageRecord,
 } from './session-database.js';
 import {
+  agentConversationUrl,
   readMessageText,
   type FlueConversationMessage,
   type FlueConversationPart,
@@ -53,7 +54,12 @@ export interface ChatTranscriptExchange {
 export interface ChatTranscriptPage {
   session: { id: string; title?: string };
   exchanges: ChatTranscriptExchange[];
-  stream: { nextOffset: string; upToDate: boolean };
+  stream: {
+    instanceId: string;
+    url: string;
+    nextOffset: string;
+    upToDate: boolean;
+  };
   page: { limit: number; hasOlder: boolean; before?: string };
 }
 
@@ -111,12 +117,18 @@ export function projectSessionTranscript(input: {
         eventId: oldestPrompt.event.id,
       })
     : undefined;
-  const activeSnapshot = input.snapshots.at(-1);
+  const activeGeneration = input.generations?.at(-1);
+  const activeInstanceId = activeGeneration?.instanceId ?? input.session.id;
+  const activeSnapshot = input.snapshots.find(
+    (snapshot) => snapshot.conversationId === activeInstanceId,
+  );
 
   return {
     session: input.session,
     exchanges: selected.map((entry) => entry.exchange),
     stream: {
+      instanceId: activeInstanceId,
+      url: agentConversationUrl(activeInstanceId),
       nextOffset: activeSnapshot?.offset ?? '-1',
       upToDate: true,
     },
@@ -188,7 +200,12 @@ function buildTranscriptEntries(
       settlementBySubmission.set(settlement.submissionId, settlement);
     }
     for (const message of snapshot.messages) {
-      if (message.role !== 'assistant' || message.purpose !== 'assistant' || !message.submissionId) {
+      if (
+        message.role !== 'assistant'
+        || message.purpose !== 'assistant'
+        || message.display !== 'visible'
+        || !message.submissionId
+      ) {
         continue;
       }
       assistantBySubmission.set(message.submissionId, message);
@@ -247,7 +264,11 @@ function buildTranscriptEntries(
     if (!generation.compactionSubmissionId) {
       continue;
     }
-    const previous = [...entries].sort((left, right) => left.sequence - right.sequence).at(-1);
+    const compactionSequence = assistantSequence.get(generation.compactionSubmissionId);
+    const previous = [...entries]
+      .filter((entry) => compactionSequence === undefined || entry.sequence < compactionSequence)
+      .sort((left, right) => left.sequence - right.sequence)
+      .at(-1);
     const activity: ChatTranscriptActivity = {
       id: `compaction:${generation.compactionSubmissionId}`,
       kind: 'operation',
@@ -280,9 +301,12 @@ function createExchange(input: {
 }): ChatTranscriptExchange {
   const activities = input.assistant ? projectActivities(input.assistant) : [];
   const text = input.assistant ? readMessageText(input.assistant) : '';
+  const assistantCompleted = input.assistant?.parts.some(
+    (part) => part.type === 'text' && part.state === 'done' && part.text.length > 0,
+  ) ?? false;
   const status = input.settlement?.outcome === 'failed' || input.settlement?.outcome === 'aborted'
     ? 'failed'
-    : input.settlement?.outcome === 'completed' || input.assistant
+    : input.settlement?.outcome === 'completed' || assistantCompleted
       ? 'completed'
       : 'running';
   if (input.settlement) {

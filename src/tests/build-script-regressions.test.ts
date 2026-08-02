@@ -127,3 +127,26 @@ test('custom model providers use Pi provider objects and Flue setProvider', () =
   assert.match(sharedProviderSource, /createProvider/);
   assert.match(sharedProviderSource, /openAICompletionsApi/);
 });
+
+test('local research command targets the Flue 2 researcher agent module', () => {
+  const source = readFileSync('scripts/research.mjs', 'utf8');
+  assert.match(source, /src\/engine\/workers\/researcher\/researcher\.ts/);
+  assert.match(source, /--message/);
+  assert.doesNotMatch(source, /'run',\s*'research'/);
+  assert.doesNotMatch(source, /--payload/);
+});
+
+test('documented Coding Worker skill ids match their runtime names', () => {
+  const source = readFileSync('src/engine/workers/coding-worker/skills.ts', 'utf8');
+  const docs = readFileSync('docs/architecture/skill-system.md', 'utf8');
+  for (const name of [
+    'coding-worker-triage-loop',
+    'coding-worker-code-change-loop',
+    'coding-worker-ci-debug-loop',
+    'coding-worker-code-review-loop',
+    'coding-worker-github-pr-loop',
+  ]) {
+    assert.match(source, new RegExp(escapeRegExp(`name: '${name}'`)));
+    assert.match(docs, new RegExp(escapeRegExp(`\`${name}\``)));
+  }
+});

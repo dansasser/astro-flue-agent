@@ -17,6 +17,7 @@ import {
   createSessionBudgetReport,
   type SessionBudgetReport,
 } from '../../engine/session/session-budget.js';
+import { renderContinuationContext } from '../../engine/session/continuation-context.js';
 import {
   ChatSessionAmbiguousError,
   ChatSessionNotFoundError,
@@ -29,9 +30,10 @@ import type { AgentDeliveryReference } from '../../engine/session/session-databa
 import { createChatPrompt } from '../../api/routes/chat-prompt.js';
 import { runWithTrustedMessageEvent } from '../../api/ingress/trusted-event-context.js';
 import {
-  isFlueConversationSnapshot,
+  agentConversationUrl,
   type FlueConversationSnapshot,
 } from '../../engine/session/flue-conversation.js';
+import { loadFlueConversationSnapshot } from '../../engine/session/flue-conversation-loader.js';
 
 export interface ChatEventRouteOptions {
   dispatchOrchestrator?: OrchestratorDispatcher;
@@ -45,7 +47,10 @@ export interface ChatEventRouteOptions {
 export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOptions = {}): void {
   const dispatchOrchestrator = options.dispatchOrchestrator ?? dispatchOrchestratorMessage;
   const loadConversationSnapshot = options.loadConversationSnapshot
-    ?? ((input) => loadAgentConversationSnapshot(app, input));
+    ?? ((input) => loadFlueConversationSnapshot(
+      (path, init, env) => app.request(path, init, env),
+      input,
+    ));
 
   app.post('/api/chat/events', requireApiSecret, async (c) => {
     const headers = new Headers(c.req.raw.headers);
@@ -215,9 +220,17 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
     const generation = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(
       sessionResolution.sessionId,
     );
+    const chatPrompt = createChatPrompt(event);
+    const dispatchMessage = generation.continuationSummary
+      ? `${renderContinuationContext({
+          productSessionId: sessionResolution.sessionId,
+          generation: generation.generation,
+          continuationSummary: generation.continuationSummary,
+        })}\n\n${chatPrompt}`
+      : chatPrompt;
     const dispatchResult = await runWithTrustedMessageEvent(event, () => dispatchOrchestrator({
       instanceId: generation.instanceId,
-      message: createChatPrompt(event),
+      message: dispatchMessage,
       idempotencyKey: event.id,
       initialData: {
         productSessionId: sessionResolution.sessionId,
@@ -241,12 +254,18 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
       delivery,
       acceptedAt: dispatchResult.receipt.acceptedAt,
     });
-    const contextUsage = await createContextUsageProjection({
+    const contextProjection = await createContextUsageProjection({
       sessionId: sessionResolution.sessionId,
       env: runtimeEnv,
       headers,
       loadConversationSnapshot,
     });
+    if (contextProjection.snapshot) {
+      scheduleConversationIndexing(
+        sessionResolution.sessionId,
+        contextProjection.snapshot,
+      );
+    }
 
     return c.json({
       result: {
@@ -272,7 +291,7 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
         surface: sessionResolution.surface,
         created: sessionResolution.created,
       },
-      contextUsage,
+      contextUsage: contextProjection.contextUsage,
     });
   });
 }
@@ -360,12 +379,15 @@ async function createContextUsageProjection(input: {
   env: Record<string, unknown>;
   headers: Headers;
   loadConversationSnapshot: NonNullable<ChatEventRouteOptions['loadConversationSnapshot']>;
-}): Promise<ContextUsageProjection> {
+}): Promise<{
+  contextUsage: ContextUsageProjection;
+  snapshot?: FlueConversationSnapshot;
+}> {
   try {
     const generations = goromboPersistenceRuntime.sessionDatabase.listRuntimeGenerations(input.sessionId);
     const active = generations.at(-1);
     if (!active) {
-      return unavailableContextUsage();
+      return { contextUsage: unavailableContextUsage() };
     }
     const snapshot = await input.loadConversationSnapshot({
       instanceId: active.instanceId,
@@ -373,29 +395,36 @@ async function createContextUsageProjection(input: {
       env: input.env,
     });
     if (!snapshot) {
-      return unavailableContextUsage();
-    }
-    try {
-      await goromboPersistenceRuntime.sessionDatabase.indexFlueConversationSnapshot(
-        input.sessionId,
-        snapshot,
-      );
-    } catch (error) {
-      console.error(
-        '[WARN] Flue 2 session memory indexing failed:',
-        error instanceof Error ? error.message : String(error),
-      );
+      return { contextUsage: unavailableContextUsage() };
     }
     const modelCard = configureRuntimeModels(input.env).selectedModelCard;
-    return projectContextUsage(createSessionBudgetReport({
-      sessionId: input.sessionId,
-      modelCard,
-      snapshots: [snapshot],
-      compactions: Math.max(0, generations.length - 1),
-    }));
+    return {
+      contextUsage: projectContextUsage(createSessionBudgetReport({
+        sessionId: input.sessionId,
+        modelCard,
+        snapshots: [snapshot],
+        compactions: Math.max(0, generations.length - 1),
+      })),
+      snapshot,
+    };
   } catch {
-    return unavailableContextUsage();
+    return { contextUsage: unavailableContextUsage() };
   }
+}
+
+function scheduleConversationIndexing(
+  sessionId: string,
+  snapshot: FlueConversationSnapshot,
+): void {
+  void goromboPersistenceRuntime.sessionDatabase.indexFlueConversationSnapshot(
+    sessionId,
+    snapshot,
+  ).catch((error) => {
+    console.error(
+      '[WARN] Flue 2 session memory indexing failed:',
+      error instanceof Error ? error.message : String(error),
+    );
+  });
 }
 
 function projectContextUsage(report: SessionBudgetReport): ContextUsageProjection {
@@ -462,7 +491,11 @@ async function compactDurableChatSession(input: {
     modelCard,
     snapshots: [],
     compactions: generation.generation,
-    additionalHistoryText: generation.continuationSummary,
+    additionalHistoryText: renderContinuationContext({
+      productSessionId: sessionId,
+      generation: generation.generation,
+      continuationSummary: result.reply.text,
+    }),
   });
 
   return {
@@ -475,34 +508,4 @@ async function compactDurableChatSession(input: {
     },
     streamUrl: agentConversationUrl(generation.instanceId),
   };
-}
-
-async function loadAgentConversationSnapshot(
-  app: Hono,
-  input: {
-    instanceId: string;
-    headers: Headers;
-    env: Record<string, unknown>;
-  },
-): Promise<FlueConversationSnapshot | null> {
-  const response = await app.request(
-    `${agentConversationUrl(input.instanceId)}?view=history`,
-    { method: 'GET', headers: input.headers },
-    input.env,
-  );
-  if (response.status === 404) {
-    return null;
-  }
-  if (!response.ok) {
-    throw new Error(`Flue conversation history returned HTTP ${response.status}.`);
-  }
-  const body = await response.json() as unknown;
-  if (!isFlueConversationSnapshot(body)) {
-    throw new Error('Flue conversation history returned an invalid snapshot.');
-  }
-  return body;
-}
-
-function agentConversationUrl(instanceId: string): string {
-  return `/agents/orchestrator/${encodeURIComponent(instanceId)}`;
 }

@@ -4,6 +4,7 @@ import type { ResearchDepth } from './web-research.js';
 import type { WebFetchMode } from './retrieval.js';
 
 export interface ResearchWorkflowPayload {
+  operationId: string;
   text: string;
   actorId?: string;
   conversationId?: string;
@@ -28,8 +29,9 @@ export async function runResearchWorkflow(
   const handle = init(Researcher, { id: instanceId });
   const receipt = await handle.dispatch({
     message: createResearchPrompt(payload),
-    idempotencyKey: `research:${instanceId}:${Date.now()}`,
+    idempotencyKey: `research:${instanceId}:${payload.operationId}`,
     initialData: {
+      operationId: payload.operationId,
       actorId: payload.actorId,
       conversationId: payload.conversationId,
       depth: payload.depth ?? 'standard',

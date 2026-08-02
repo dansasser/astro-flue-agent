@@ -168,6 +168,8 @@ test('chat transcript route validates canonical session ownership and pagination
           status: 'completed' as const,
         }],
         stream: {
+          instanceId: input.generations.at(-1)?.instanceId ?? input.session.id,
+          url: `/agents/orchestrator/${encodeURIComponent(input.generations.at(-1)?.instanceId ?? input.session.id)}`,
           nextOffset: '0000000000000000_0000000000000042',
           upToDate: true,
         },
