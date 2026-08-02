@@ -42,7 +42,6 @@ export { checkNameCollision } from '../../engine/capabilities/collision-check.js
 export type { CollisionResult } from '../../engine/capabilities/collision-check.js';
 export {
   astroDocsMcpConnection,
-  getBuiltinMcpConnections,
   getBuiltinMcpIds,
   BUILTIN_MCP_ASTRO_DOCS_ID,
 } from '../../engine/capabilities/builtin-mcp.js';

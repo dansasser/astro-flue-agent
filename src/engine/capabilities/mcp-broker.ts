@@ -32,6 +32,13 @@ export function createUserMcpConnections(
       });
       continue;
     }
+    if (tokenEnv && !readEnv(env, tokenEnv)) {
+      failures.push({
+        id: record.id,
+        error: `MCP credential ${tokenEnv} is not configured.`,
+      });
+      continue;
+    }
 
     try {
       connections.push(

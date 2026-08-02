@@ -3,9 +3,11 @@
 import {
   defineSubagent,
   type AgentProps,
+  type McpConnectionDefinition,
   type SubagentDefinition,
   type ToolDefinition,
   useModel,
+  useMcpConnection,
   useTool,
 } from '@flue/runtime';
 import '../../../core/models/runtime.js';
@@ -17,6 +19,7 @@ import {
 } from '../../../workspace-loader.js';
 import { calculateContextBudget } from '../../../engine/session/context-budget.js';
 import { webResearchTool } from '../../../engine/tools/index.js';
+import { astroDocsMcpConnection } from '../../capabilities/builtin-mcp.js';
 
 export const researcherAgentName = 'researcher';
 export const researcherDescription =
@@ -41,6 +44,7 @@ export function createResearcherSubagent(model?: string): SubagentDefinition {
     ...(composition.model ? { model: composition.model } : {}),
     agent: function ResearcherDelegate() {
       mountResearcherTools(composition.tools);
+      mountResearcherMcpConnections(composition.mcpConnections);
       return composition.instructions;
     },
   });
@@ -52,6 +56,7 @@ export interface ResearcherComposition {
   model?: string;
   instructions: string;
   tools: ToolDefinition[];
+  mcpConnections: McpConnectionDefinition[];
 }
 
 export function createResearcherComposition(model?: string): ResearcherComposition {
@@ -61,6 +66,7 @@ export function createResearcherComposition(model?: string): ResearcherCompositi
     ...(model ? { model } : {}),
     instructions: researcherInstructions,
     tools: [webResearchTool],
+    mcpConnections: [astroDocsMcpConnection],
   };
 }
 
@@ -73,6 +79,7 @@ export function Researcher(_props: AgentProps): string {
     compaction: createResearchCompactionConfig(selectedModelCard),
   });
   mountResearcherTools(composition.tools);
+  mountResearcherMcpConnections(composition.mcpConnections);
   return composition.instructions;
 }
 Researcher.agentName = 'researcher';
@@ -80,6 +87,14 @@ Researcher.agentName = 'researcher';
 function mountResearcherTools(tools: ToolDefinition[]): void {
   for (const tool of tools) {
     useTool(tool);
+  }
+}
+
+function mountResearcherMcpConnections(
+  connections: McpConnectionDefinition[],
+): void {
+  for (const connection of connections) {
+    useMcpConnection(connection);
   }
 }
 
@@ -109,6 +124,7 @@ function createResearcherRuntimeCapabilityBlock(): string {
 The following capabilities are actually attached to this researcher profile at runtime:
 
 - Tool: \`web_research\`
+- MCP: \`astro-docs\` (search Astro framework documentation)
 
 Use only attached tools and provider capabilities. If a workspace file mentions a future capability that is not attached at runtime, report that limitation instead of pretending it exists.`;
 }

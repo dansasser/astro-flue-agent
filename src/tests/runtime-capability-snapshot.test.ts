@@ -92,6 +92,37 @@ test('runtime snapshot reports a mismatched skill identity without mounting it',
   }
 });
 
+test('runtime snapshot rejects an MCP whose configured credential is missing', async () => {
+  const fixture = createFixture();
+  delete fixture.env.GOROMBO_MCP_TOKEN;
+  try {
+    const store = createCapabilityStore({ env: fixture.env });
+    try {
+      store.insert(record({
+        id: 'credentialed-mcp',
+        kind: 'mcp',
+        config: {
+          mcpUrl: 'https://mcp.example.test/api',
+          mcpTransport: 'streamable-http',
+          mcpTokenEnv: 'GOROMBO_MCP_TOKEN',
+        },
+      }));
+    } finally {
+      store.close();
+    }
+
+    const snapshot = await loadRuntimeCapabilitySnapshot(fixture.env);
+    assert.equal(snapshot.mcpConnections.length, 0);
+    assert.deepEqual(snapshot.failures, [{
+      kind: 'mcp',
+      id: 'credentialed-mcp',
+      error: 'MCP credential GOROMBO_MCP_TOKEN is not configured.',
+    }]);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
 for (const [field, value] of [
   ['license', '[]'],
   ['compatibility', '{}'],
