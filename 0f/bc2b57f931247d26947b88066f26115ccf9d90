@@ -1,0 +1,32 @@
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_56a75de9f74ba0 10,78-81,150-153,166-173,334-337
+  s_a81fff26d52223::t_d3e0710aba0f93 132-143
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_51eb066fc8341e 103,105-108,154-155,165,169,176-188
+  s_a81fff26d52223::t_b180c49b8bf7f5 189-190
+src/engine/capabilities/runtime-capability-snapshot.ts
+  s_a81fff26d52223::t_51eb066fc8341e 27-42,73-81
+  s_a81fff26d52223::t_911d8afd10221b 82-84
+src/tests/coding-worker.test.ts
+  s_a81fff26d52223::t_56a75de9f74ba0 18,1825-1832
+src/tests/runtime-capability-snapshot.test.ts
+  s_a81fff26d52223::t_51eb066fc8341e 8-11,90-101
+  s_a81fff26d52223::t_80f9b6e2aca8cd 102-104
+  s_a81fff26d52223::t_0f21730d2333c3 105-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "0fbc2b57f931247d26947b88066f26115ccf9d90",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
