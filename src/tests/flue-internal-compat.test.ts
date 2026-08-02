@@ -1,17 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  Bash,
-  InMemoryFs,
-  bashFactoryToSessionEnv,
-  createFlueContext,
-  resolveModel,
-} from '@flue/runtime/internal';
+  init,
+  useInitialData,
+  useInstruction,
+  useResponseFinish,
+} from '@flue/runtime';
 
-test('durable orchestrator session required Flue internal exports are available', () => {
-  assert.equal(typeof Bash, 'function');
-  assert.equal(typeof InMemoryFs, 'function');
-  assert.equal(typeof bashFactoryToSessionEnv, 'function');
-  assert.equal(typeof createFlueContext, 'function');
-  assert.equal(typeof resolveModel, 'function');
+test('Flue 2 public execution hooks and handle API are available', () => {
+  assert.equal(typeof init, 'function');
+  assert.equal(typeof useInitialData, 'function');
+  assert.equal(typeof useInstruction, 'function');
+  assert.equal(typeof useResponseFinish, 'function');
 });

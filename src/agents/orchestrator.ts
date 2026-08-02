@@ -13,6 +13,9 @@ import {
   useSkill,
   useSubagent,
   useTool,
+  useInitialData,
+  useInstruction,
+  useResponseFinish,
 } from '@flue/runtime';
 import { local } from '@flue/runtime/node';
 import '../core/models/runtime.js';
@@ -72,6 +75,7 @@ import {
   loadRuntimeCapabilitySnapshot,
   type RuntimeCapabilitySnapshot,
 } from '../engine/capabilities/runtime-capability-snapshot.js';
+import type { OrchestratorInitialData } from '../engine/session/direct-agent-session.js';
 
 const runtimeCapabilitySnapshot = await loadRuntimeCapabilitySnapshot(process.env);
 
@@ -167,10 +171,21 @@ export function createOrchestratorComposition(
 
 export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
+  const initialData = useInitialData<OrchestratorInitialData | undefined>();
 
   useModel(composition.model, { compaction: composition.compaction });
   useRuntimeCapabilities(composition);
   useSandbox(composition.sandbox, { cwd: composition.cwd });
+  if (initialData?.continuationSummary) {
+    useInstruction(createContinuationInstruction(initialData));
+  }
+  useResponseFinish(({ response }) => ({
+    simOne: {
+      modelSpecifier: composition.model,
+      usage: response.usage,
+      toolCallCount: response.toolCalls.length,
+    },
+  }));
   return composition.instructions;
 }
 Orchestrator.agentName = 'orchestrator';
@@ -231,6 +246,14 @@ function createCodingWorkerToolEnv(
 function readOptionalEnv(env: Record<string, unknown>, key: string): string | undefined {
   const value = env[key];
   return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+function createContinuationInstruction(data: OrchestratorInitialData): string {
+  return `# Continued Product Session
+
+This Flue runtime generation continues SIM-ONE product session \`${data.productSessionId}\` after manual compaction. Treat the following trusted summary as prior conversation context. Do not repeat it to the user unless it is relevant to the current request.
+
+${data.continuationSummary}`;
 }
 
 function createOrchestratorRuntimeCapabilityBlock(): string {

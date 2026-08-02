@@ -42,7 +42,7 @@ export interface ScheduleProgressEvent {
   slug?: string;
   runId?: string;
   instanceId?: string;
-  dispatchId?: string;
+  submissionId?: string;
   scheduledAt?: string;
   attempt?: number;
   retrying?: boolean;

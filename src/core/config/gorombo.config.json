@@ -5,6 +5,7 @@
     "backup": "codex-brain"
   },
   "storage": {
+    "flueV2DatabasePath": "db/flue-v2.sqlite",
     "flueDatabasePath": "db/flue.sqlite",
     "sessionDatabasePath": "db/sessions.sqlite",
     "vectorStorePath": "vector"

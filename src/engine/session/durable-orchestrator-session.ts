@@ -1,63 +1,47 @@
-import type { FlueSession } from '@flue/runtime';
 import {
-  Bash,
-  InMemoryFs,
-  bashFactoryToSessionEnv,
-  createFlueContext,
-  resolveModel,
-} from '@flue/runtime/internal';
-import orchestratorAgent from '../../agents/orchestrator.js';
-import { goromboPersistenceRuntime } from '../../db.js';
-export { directAgentHarnessName, directAgentSessionName } from '../../engine/session/direct-agent-session.js';
+  init,
+  type AgentReadOptions,
+  type AgentReply,
+  type DeliveredMessageInput,
+  type DispatchReceipt,
+} from '@flue/runtime';
+import type { OrchestratorInitialData } from './direct-agent-session.js';
 
-export interface DurableOrchestratorSessionInput {
-  sessionId: string;
-  env: Record<string, unknown>;
-  payload?: unknown;
-  allowFullInternetAccess?: boolean;
+export interface OrchestratorDispatchInput {
+  instanceId: string;
+  message: DeliveredMessageInput;
+  initialData?: OrchestratorInitialData;
+  idempotencyKey?: string;
+  onEvent?: AgentReadOptions['onEvent'];
+  signal?: AbortSignal;
 }
 
-export type DurableOrchestratorSessionOpener = (
-  input: DurableOrchestratorSessionInput,
-) => Promise<FlueSession>;
+export interface OrchestratorDispatchResult {
+  instanceId: string;
+  receipt: DispatchReceipt;
+  reply: AgentReply;
+}
 
-export const openDurableOrchestratorSession: DurableOrchestratorSessionOpener = async ({
-  sessionId,
-  env,
-  payload = {},
-  allowFullInternetAccess = false,
-}) => {
-  const stores = await goromboPersistenceRuntime.adapter.connect();
-  const context = createFlueContext({
-    id: sessionId,
-    payload,
-    env,
-    agentConfig: {
-      packagedSkills: {},
-      resolveModel,
-    },
-    createDefaultEnv: async () =>
-      bashFactoryToSessionEnv(
-        () =>
-          new Bash(
-            allowFullInternetAccess
-              ? {
-                  fs: new InMemoryFs(),
-                  cwd: 'src',
-                  network: {
-                    dangerouslyAllowFullInternetAccess: true,
-                  },
-                }
-              : {
-                  fs: new InMemoryFs(),
-                  cwd: 'src',
-                },
-          ),
-      ),
-    defaultStore: stores.executionStore.sessions,
-    submissionStore: stores.executionStore.submissions,
+export type OrchestratorDispatcher = (
+  input: OrchestratorDispatchInput,
+) => Promise<OrchestratorDispatchResult>;
+
+export const dispatchOrchestratorMessage: OrchestratorDispatcher = async (input) => {
+  const { Orchestrator } = await import('../../agents/orchestrator.js');
+  const handle = init(Orchestrator, { id: input.instanceId });
+  const receipt = await handle.dispatch({
+    message: input.message,
+    ...(input.initialData ? { initialData: input.initialData } : {}),
+    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
+  });
+  const reply = await handle.read(receipt, {
+    ...(input.onEvent ? { onEvent: input.onEvent } : {}),
+    ...(input.signal ? { signal: input.signal } : {}),
   });
 
-  const harness = await context.initializeCreatedAgent(orchestratorAgent, payload);
-  return harness.session();
+  return {
+    instanceId: input.instanceId,
+    receipt,
+    reply,
+  };
 };

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { FlueEvent, FlueSession } from '@flue/runtime';
-import type { SessionData } from '@flue/runtime/adapter';
+import type { DeliveredMessageInput, FlueEvent } from '@flue/runtime';
 import { Hono } from 'hono';
 import { DatabaseSync } from 'node:sqlite';
 import { resolve } from 'node:path';
@@ -14,6 +13,7 @@ import { registerTelemetryRoutes } from '../api/routes/telemetry.js';
 import { flueTelemetryStore } from '../core/telemetry/flue-telemetry.js';
 import { isSupportedSlashCommand, parseSlashCommand } from '../engine/commands/slash-commands.js';
 import { createFreshChatSession } from '../engine/session/session-routing.js';
+import type { FlueConversationSnapshot } from '../engine/session/flue-conversation.js';
 
 test('slash command parser supports session management commands', () => {
   const resume = parseSlashCommand('/resume tui-abc123');
@@ -240,60 +240,30 @@ test('chat event ingress enters the durable orchestrator agent route', async () 
   const testApp = new Hono();
   let promptedAgent = false;
   const loadedSessionIds: string[] = [];
+  let deliveredMessage: DeliveredMessageInput | undefined;
 
-  testApp.use('/agents/*', requireApiSecret);
   registerChatEventRoutes(testApp, {
-    loadSessionData: async (sessionId) => {
-      loadedSessionIds.push(sessionId);
+    dispatchOrchestrator: async (input) => {
+      promptedAgent = true;
+      deliveredMessage = input.message;
       return {
-        version: 6,
-        affinityKey: 'test-affinity',
-        entries: [
-          {
-            type: 'message',
-            id: 'assistant-1',
-            parentId: null,
-            timestamp: '2026-07-29T00:00:00.000Z',
-            message: {
-              role: 'assistant',
-              content: [{ type: 'text', text: 'direct-agent-ok' }],
-              stopReason: 'stop',
-              usage: {
-                input: 1_000,
-                output: 200,
-                cacheRead: 0,
-                cacheWrite: 0,
-                totalTokens: 1_200,
-              },
-            },
-            source: 'prompt',
-          },
-        ],
-        leafId: 'assistant-1',
-        metadata: {},
-        taskSessions: [],
-        createdAt: '2026-07-29T00:00:00.000Z',
-        updatedAt: '2026-07-29T00:00:01.000Z',
-      } as unknown as SessionData;
+        instanceId: input.instanceId,
+        receipt: {
+          submissionId: 'test-delivery-id',
+          acceptedAt: '2026-07-29T00:00:00.000Z',
+          uid: 'test-delivery-uid',
+        },
+        reply: {
+          text: 'direct-agent-ok',
+          data: {},
+          submissionId: 'test-delivery-id',
+        },
+      };
     },
-  });
-  testApp.post('/agents/orchestrator/:id', requireApiSecret, async (c) => {
-    promptedAgent = true;
-    assert.equal(c.req.query('wait'), 'result');
-
-    const body = await c.req.json() as { message?: string };
-    assert.match(body.message ?? '', /load_protocols/);
-    assert.match(body.message ?? '', /Reply through the durable boundary/);
-    assert.doesNotMatch(body.message ?? '', /durable-actor/);
-
-    return c.json({
-      result: {
-        text: 'direct-agent-ok',
-      },
-      submissionId: 'test-delivery-id',
-      streamUrl: c.req.url,
-      offset: '0000000000000000_0000000000000042',
-    });
+    loadConversationSnapshot: async ({ instanceId }) => {
+      loadedSessionIds.push(instanceId);
+      return conversationSnapshot(instanceId, 'test-delivery-id', 'direct-agent-ok', 1_200);
+    },
   });
 
   await withApiSecret('test-secret', async () => {
@@ -324,6 +294,10 @@ test('chat event ingress enters the durable orchestrator agent route', async () 
         };
       };
       assert.equal(promptedAgent, true);
+      assert.equal(typeof deliveredMessage, 'string');
+      assert.match(JSON.stringify(deliveredMessage), /load_protocols/);
+      assert.match(JSON.stringify(deliveredMessage), /Reply through the durable boundary/);
+      assert.doesNotMatch(JSON.stringify(deliveredMessage), /durable-actor/);
       assert.equal(body.result?.text, 'direct-agent-ok');
       assert.equal(body.session?.surface, 'web');
       assert.equal(body.session?.created, true);
@@ -345,9 +319,9 @@ test('chat event ingress enters the durable orchestrator agent route', async () 
         .listNormalizedMessageEventsForSession({ sessionId: body.session?.id ?? '' });
       assert.deepEqual(storedSessionEvents[0]?.delivery, {
         submissionId: 'test-delivery-id',
-        streamUrl: 'http://localhost/agents/orchestrator/'
-          + `${body.session?.id}?wait=result`,
-        offset: '0000000000000000_0000000000000042',
+        instanceId: body.session?.id,
+        uid: 'test-delivery-uid',
+        streamUrl: `/agents/orchestrator/${body.session?.id}`,
       });
 
       if (body.event?.id) {
@@ -364,15 +338,24 @@ test('chat event context projection is unavailable when session budget loading f
   const testApp = new Hono();
   const actorId = `context-unavailable-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-  testApp.use('/agents/*', requireApiSecret);
   registerChatEventRoutes(testApp, {
-    loadSessionData: async () => {
+    dispatchOrchestrator: async (input) => ({
+      instanceId: input.instanceId,
+      receipt: {
+        submissionId: 'context-fallback-submission',
+        acceptedAt: '2026-07-29T00:00:00.000Z',
+        uid: 'context-fallback-uid',
+      },
+      reply: {
+        text: 'reply remains available',
+        data: {},
+        submissionId: 'context-fallback-submission',
+      },
+    }),
+    loadConversationSnapshot: async () => {
       throw new Error('fixture budget lookup failure');
     },
   });
-  testApp.post('/agents/orchestrator/:id', requireApiSecret, (c) => c.json({
-    result: { text: 'reply remains available' },
-  }));
 
   await withApiSecret('test-secret', async () => {
     const response = await testApp.request('/api/chat/events', {
@@ -419,27 +402,33 @@ test('chat event compact command compacts the durable orchestrator session witho
   });
   const requestedSessionId = createdSession.sessionId;
   let eventId: string | undefined;
-  let openedSessionId: string | undefined;
-  let compacted = false;
-  let prompted = false;
+  let dispatchedInstanceId: string | undefined;
+  let dispatchedMessage: DeliveredMessageInput | undefined;
 
-  testApp.use('/agents/*', requireApiSecret);
   registerChatEventRoutes(testApp, {
-    openDurableSession: async ({ sessionId }) => {
-      openedSessionId = sessionId;
+    dispatchOrchestrator: async (input) => {
+      dispatchedInstanceId = input.instanceId;
+      dispatchedMessage = input.message;
       return {
-        compact: async () => {
-          compacted = true;
+        instanceId: input.instanceId,
+        receipt: {
+          submissionId: 'compact-summary-submission',
+          acceptedAt: '2026-07-29T00:00:00.000Z',
+          uid: 'compact-summary-uid',
         },
-        prompt: async () => {
-          prompted = true;
-          throw new Error('compact command should not prompt');
+        reply: {
+          text: 'Continuation summary for the next generation.',
+          data: {},
+          submissionId: 'compact-summary-submission',
         },
-      } as unknown as FlueSession;
+      };
     },
-  });
-  testApp.post('/agents/orchestrator/:id', () => {
-    throw new Error('compact command should not forward to the agent prompt route');
+    loadConversationSnapshot: async ({ instanceId }) => conversationSnapshot(
+      instanceId,
+      'compact-summary-submission',
+      'Continuation summary for the next generation.',
+      150,
+    ),
   });
 
   try {
@@ -478,9 +467,9 @@ test('chat event compact command compacts the durable orchestrator session witho
         };
         eventId = body.event?.id;
 
-        assert.equal(openedSessionId, requestedSessionId);
-        assert.equal(compacted, true);
-        assert.equal(prompted, false);
+        assert.equal(dispatchedInstanceId, requestedSessionId);
+        assert.match(JSON.stringify(dispatchedMessage), /sim_one_compact/);
+        assert.match(JSON.stringify(dispatchedMessage), /continuation summary/i);
         assert.equal(body.result?.text, `Compacted session ${requestedSessionId}.`);
         assert.equal(body.result?.command?.name, 'compact');
         assert.equal(body.result?.command?.handled, true);
@@ -955,14 +944,15 @@ test('chat event TUI resume and rename commands validate required arguments', as
   }
 });
 
-test('telemetry run endpoint is protected and reports researcher delegation', async () => {
+test('telemetry execution endpoint is protected and reports researcher delegation', async () => {
   flueTelemetryStore.reset();
 
   try {
     flueTelemetryStore.record(
       createEvent({
         type: 'task_start',
-        runId: 'agent:orchestrator:run-telemetry',
+        instanceId: 'agent:orchestrator:session-telemetry',
+        submissionId: 'submission-telemetry',
         taskId: 'task-1',
         agent: 'researcher',
       }),
@@ -970,7 +960,8 @@ test('telemetry run endpoint is protected and reports researcher delegation', as
     flueTelemetryStore.record(
       createEvent({
         type: 'tool',
-        runId: 'agent:orchestrator:run-telemetry',
+        instanceId: 'agent:orchestrator:session-telemetry',
+        submissionId: 'submission-telemetry',
         taskId: 'task-1',
         toolCallId: 'tool-1',
         toolName: 'web_research',
@@ -980,10 +971,10 @@ test('telemetry run endpoint is protected and reports researcher delegation', as
     );
 
     await withApiSecret('test-secret', async () => {
-      const unauthorized = await app.request('/api/telemetry/runs/agent%3Aorchestrator%3Arun-telemetry');
+      const unauthorized = await app.request('/api/telemetry/executions/submission-telemetry');
       assert.equal(unauthorized.status, 401);
 
-      const response = await app.request('/api/telemetry/runs/agent%3Aorchestrator%3Arun-telemetry', {
+      const response = await app.request('/api/telemetry/executions/submission-telemetry', {
         headers: { 'x-api-secret': 'test-secret' },
       });
 
@@ -1004,79 +995,20 @@ test('telemetry run endpoint is protected and reports researcher delegation', as
   }
 });
 
-test('telemetry run endpoint falls back to persisted Flue run events after memory miss', async () => {
+test('telemetry execution endpoint returns a typed not-found response after memory miss', async () => {
   const testApp = new Hono();
-  testApp.get('/runs/:runId', requireApiSecret, (c) => c.json([
-    {
-      type: 'run_start',
-      runId: c.req.param('runId'),
-      payload: { text: 'do not expose prompt text' },
-    },
-    {
-      type: 'task_start',
-      runId: c.req.param('runId'),
-      taskId: 'task-1',
-      agent: 'researcher',
-    },
-    {
-      type: 'tool',
-      runId: c.req.param('runId'),
-      taskId: 'task-1',
-      toolName: 'web_research',
-      isError: false,
-      durationMs: 12,
-    },
-    {
-      type: 'run_end',
-      runId: c.req.param('runId'),
-      result: { text: 'do not expose final text' },
-    },
-  ]));
-  registerTelemetryRoutes(testApp);
-
-  flueTelemetryStore.reset();
-
-  try {
-    await withApiSecret('test-secret', async () => {
-      const unauthorized = await testApp.request('/api/telemetry/runs/agent%3Aorchestrator%3Apersisted-run');
-      assert.equal(unauthorized.status, 401);
-
-      const response = await testApp.request('/api/telemetry/runs/agent%3Aorchestrator%3Apersisted-run', {
-        headers: { 'x-api-secret': 'test-secret' },
-      });
-
-      assert.equal(response.status, 200);
-      const body = await response.json() as {
-        eventCount?: number;
-        delegatedToResearcher?: boolean;
-        calledWebResearch?: boolean;
-        events?: Array<Record<string, unknown>>;
-      };
-      assert.equal(body.eventCount, 4);
-      assert.equal(body.delegatedToResearcher, true);
-      assert.equal(body.calledWebResearch, true);
-      assert.equal(body.events?.some((event) => 'payload' in event || 'result' in event), false);
-    });
-  } finally {
-    flueTelemetryStore.reset();
-  }
-});
-
-test('telemetry run endpoint treats non-JSON persisted run responses as not found', async () => {
-  const testApp = new Hono();
-  testApp.get('/runs/:runId', requireApiSecret, (c) => c.text('not json'));
   registerTelemetryRoutes(testApp);
   flueTelemetryStore.reset();
 
   await withApiSecret('test-secret', async () => {
-    const response = await testApp.request('/api/telemetry/runs/agent%3Aorchestrator%3Anon-json-run', {
+    const response = await testApp.request('/api/telemetry/executions/missing-submission', {
       headers: { 'x-api-secret': 'test-secret' },
     });
 
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), {
-      error: 'Telemetry run not found',
-      runId: 'agent:orchestrator:non-json-run',
+      error: 'Telemetry execution not found',
+      executionId: 'missing-submission',
     });
   });
 });
@@ -1181,4 +1113,35 @@ function restoreEnv(name: string, value: string | undefined): void {
 
 function createEvent(input: Record<string, unknown>): FlueEvent {
   return input as unknown as FlueEvent;
+}
+
+function conversationSnapshot(
+  conversationId: string,
+  submissionId: string,
+  text: string,
+  totalTokens: number,
+): FlueConversationSnapshot {
+  return {
+    v: 1,
+    conversationId,
+    offset: '42',
+    settlements: [{ submissionId, outcome: 'completed' }],
+    messages: [{
+      id: `assistant-${submissionId}`,
+      role: 'assistant',
+      purpose: 'assistant',
+      display: 'visible',
+      submissionId,
+      parts: [{ type: 'text', text, state: 'done' }],
+      metadata: {
+        simOne: {
+          usage: {
+            input: Math.max(0, totalTokens - 200),
+            output: Math.min(200, totalTokens),
+            totalTokens,
+          },
+        },
+      },
+    }],
+  };
 }

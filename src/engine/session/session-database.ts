@@ -2,7 +2,6 @@ import { randomUUID, createHash } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { SessionData } from '@flue/runtime/adapter';
 import { resolveRuntimePath } from '../../core/config/runtime-root.js';
 import type { EmbeddingClient } from '../../engine/rag/embeddings.js';
 import { getOnnxEmbeddingDimensions } from '../../engine/embeddings/index.js';
@@ -10,7 +9,19 @@ import type { VectorStore, VectorRecord } from '../../engine/rag/vector/index.js
 import type { NormalizedMessageEvent } from '../../core/types/index.js';
 import { estimateTextTokens } from '../../engine/session/context-budget.js';
 import { directAgentHarnessName, directAgentSessionName } from '../../engine/session/direct-agent-session.js';
-import { parseFlueSessionStorageKey } from '../../engine/session/flue-session-store.js';
+import { parseLegacyFlueStorageKey } from '../../engine/session/flue-session-store.js';
+
+interface LegacyBetaConversationData {
+  createdAt: string;
+  updatedAt: string;
+  entries: Array<{
+    id: string;
+    type: string;
+    timestamp: string;
+    message?: { role?: unknown; content?: unknown };
+    summary?: string;
+  }>;
+}
 
 export const defaultSessionDatabasePath = 'db/sessions.sqlite';
 
@@ -88,8 +99,19 @@ export interface RecordNormalizedMessageEventInput {
 
 export interface AgentDeliveryReference {
   submissionId?: string;
+  instanceId?: string;
+  uid?: string;
   streamUrl?: string;
   offset?: string;
+}
+
+export interface ChatSessionGenerationRecord {
+  sessionId: string;
+  generation: number;
+  instanceId: string;
+  continuationSummary?: string;
+  compactionSubmissionId?: string;
+  createdAt: string;
 }
 
 export interface SessionNormalizedMessageRecord {
@@ -164,8 +186,8 @@ export class GoromboSessionDatabase {
     this.database.close();
   }
 
-  async recordFlueSession(storageKey: string, data: SessionData): Promise<void> {
-    const parts = parseFlueSessionStorageKey(storageKey);
+  async recordLegacyBetaConversation(storageKey: string, data: LegacyBetaConversationData): Promise<void> {
+    const parts = parseLegacyFlueStorageKey(storageKey);
     if (!parts) {
       return;
     }
@@ -208,8 +230,8 @@ export class GoromboSessionDatabase {
     await this.indexSessionMemory(storageKey, parts.harnessName, parts.sessionName, data);
   }
 
-  async deleteFlueSession(storageKey: string): Promise<void> {
-    const parts = parseFlueSessionStorageKey(storageKey);
+  async deleteLegacyBetaConversation(storageKey: string): Promise<void> {
+    const parts = parseLegacyFlueStorageKey(storageKey);
     if (!parts) {
       return;
     }
@@ -317,6 +339,8 @@ export class GoromboSessionDatabase {
         now,
       );
 
+    this.ensureRuntimeGeneration(input.sessionId);
+
     const record = this.getChatSession(input.sessionId);
     if (!record) {
       throw new Error(`Failed to create chat session ${input.sessionId}`);
@@ -373,7 +397,109 @@ export class GoromboSessionDatabase {
 
   deleteChatSession(sessionId: string): void {
     this.database.prepare(`DELETE FROM active_sessions WHERE session_id = ?`).run(sessionId);
+    this.database.prepare(`DELETE FROM chat_session_generations WHERE session_id = ?`).run(sessionId);
     this.database.prepare(`DELETE FROM chat_sessions WHERE session_id = ?`).run(sessionId);
+  }
+
+  ensureRuntimeGeneration(sessionId: string): ChatSessionGenerationRecord {
+    const existing = this.getActiveRuntimeGeneration(sessionId);
+    if (existing) {
+      return existing;
+    }
+
+    const createdAt = new Date().toISOString();
+    this.database
+      .prepare(
+        `INSERT OR IGNORE INTO chat_session_generations
+         (session_id, generation, instance_id, continuation_summary, compaction_submission_id, created_at)
+         VALUES (?, 0, ?, NULL, NULL, ?)`,
+      )
+      .run(sessionId, sessionId, createdAt);
+
+    const created = this.getActiveRuntimeGeneration(sessionId);
+    if (!created) {
+      throw new Error(`Failed to create runtime generation for session ${sessionId}`);
+    }
+    return created;
+  }
+
+  getActiveRuntimeGeneration(sessionId: string): ChatSessionGenerationRecord | null {
+    const row = this.database
+      .prepare(
+        `SELECT session_id, generation, instance_id, continuation_summary,
+                compaction_submission_id, created_at
+         FROM chat_session_generations
+         WHERE session_id = ?
+         ORDER BY generation DESC
+         LIMIT 1`,
+      )
+      .get(sessionId) as ChatSessionGenerationRow | undefined;
+
+    return row ? toChatSessionGenerationRecord(row) : null;
+  }
+
+  listRuntimeGenerations(sessionId: string): ChatSessionGenerationRecord[] {
+    const rows = this.database
+      .prepare(
+        `SELECT session_id, generation, instance_id, continuation_summary,
+                compaction_submission_id, created_at
+         FROM chat_session_generations
+         WHERE session_id = ?
+         ORDER BY generation ASC`,
+      )
+      .all(sessionId) as unknown as ChatSessionGenerationRow[];
+
+    return rows.map(toChatSessionGenerationRecord);
+  }
+
+  rotateRuntimeGeneration(input: {
+    sessionId: string;
+    expectedInstanceId: string;
+    continuationSummary: string;
+    compactionSubmissionId: string;
+  }): ChatSessionGenerationRecord {
+    const summary = input.continuationSummary.trim();
+    if (!summary) {
+      throw new Error('Compaction summary must not be empty.');
+    }
+
+    this.database.exec('BEGIN IMMEDIATE');
+    try {
+      const active = this.getActiveRuntimeGeneration(input.sessionId);
+      if (!active || active.instanceId !== input.expectedInstanceId) {
+        throw new Error(`Runtime generation changed for session ${input.sessionId}.`);
+      }
+
+      const generation = active.generation + 1;
+      const instanceId = `${input.sessionId}-g${generation}-${randomUUID().slice(0, 8)}`;
+      const createdAt = new Date().toISOString();
+      this.database
+        .prepare(
+          `INSERT INTO chat_session_generations
+           (session_id, generation, instance_id, continuation_summary, compaction_submission_id, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          input.sessionId,
+          generation,
+          instanceId,
+          summary,
+          input.compactionSubmissionId,
+          createdAt,
+        );
+      this.database.exec('COMMIT');
+      return {
+        sessionId: input.sessionId,
+        generation,
+        instanceId,
+        continuationSummary: summary,
+        compactionSubmissionId: input.compactionSubmissionId,
+        createdAt,
+      };
+    } catch (error) {
+      this.database.exec('ROLLBACK');
+      throw error;
+    }
   }
 
   listChatSessions(limit = 50): ChatSessionRecord[] {
@@ -449,8 +575,8 @@ export class GoromboSessionDatabase {
     this.database
       .prepare(
         `INSERT INTO normalized_message_events
-         (event_id, session_id, connector, message_kind, text, received_at, actor_id, actor_display_name, conversation_id, thread_id, client_id, project_id, workflow, task, delivery_kind, delivery_id, delivery_submission_id, delivery_stream_url, delivery_offset, accepted_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         (event_id, session_id, connector, message_kind, text, received_at, actor_id, actor_display_name, conversation_id, thread_id, client_id, project_id, workflow, task, delivery_kind, delivery_id, delivery_submission_id, delivery_instance_id, delivery_uid, delivery_stream_url, delivery_offset, accepted_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(event_id) DO UPDATE SET
            session_id = COALESCE(excluded.session_id, normalized_message_events.session_id),
            connector = excluded.connector,
@@ -468,6 +594,8 @@ export class GoromboSessionDatabase {
            delivery_kind = COALESCE(excluded.delivery_kind, normalized_message_events.delivery_kind),
            delivery_id = COALESCE(excluded.delivery_id, normalized_message_events.delivery_id),
            delivery_submission_id = COALESCE(excluded.delivery_submission_id, normalized_message_events.delivery_submission_id),
+           delivery_instance_id = COALESCE(excluded.delivery_instance_id, normalized_message_events.delivery_instance_id),
+           delivery_uid = COALESCE(excluded.delivery_uid, normalized_message_events.delivery_uid),
            delivery_stream_url = COALESCE(excluded.delivery_stream_url, normalized_message_events.delivery_stream_url),
            delivery_offset = COALESCE(excluded.delivery_offset, normalized_message_events.delivery_offset),
            accepted_at = COALESCE(excluded.accepted_at, normalized_message_events.accepted_at),
@@ -491,6 +619,8 @@ export class GoromboSessionDatabase {
         input.deliveryKind ?? null,
         input.deliveryId ?? null,
         input.delivery?.submissionId ?? null,
+        input.delivery?.instanceId ?? null,
+        input.delivery?.uid ?? null,
         input.delivery?.streamUrl ?? null,
         input.delivery?.offset ?? null,
         input.acceptedAt ?? null,
@@ -520,7 +650,7 @@ export class GoromboSessionDatabase {
         `SELECT event_id, session_id, connector, message_kind, text, received_at, actor_id,
                 actor_display_name, conversation_id, thread_id, client_id, project_id,
                 workflow, task, delivery_kind, delivery_id, delivery_submission_id,
-                delivery_stream_url, delivery_offset, accepted_at
+                delivery_instance_id, delivery_uid, delivery_stream_url, delivery_offset, accepted_at
          FROM normalized_message_events
          WHERE event_id = ? AND session_id = ? AND delivery_kind = 'direct-agent'`,
       )
@@ -541,7 +671,7 @@ export class GoromboSessionDatabase {
         `SELECT event_id, session_id, connector, message_kind, text, received_at, actor_id,
                 actor_display_name, conversation_id, thread_id, client_id, project_id,
                 workflow, task, delivery_kind, delivery_id, delivery_submission_id,
-                delivery_stream_url, delivery_offset, accepted_at
+                delivery_instance_id, delivery_uid, delivery_stream_url, delivery_offset, accepted_at
          FROM normalized_message_events
          WHERE session_id = ?
            AND delivery_kind = 'direct-agent'
@@ -980,6 +1110,19 @@ export class GoromboSessionDatabase {
       CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated
         ON chat_sessions(updated_at DESC);
 
+      CREATE TABLE IF NOT EXISTS chat_session_generations (
+        session_id TEXT NOT NULL,
+        generation INTEGER NOT NULL,
+        instance_id TEXT NOT NULL UNIQUE,
+        continuation_summary TEXT,
+        compaction_submission_id TEXT,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (session_id, generation)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_chat_session_generations_active
+        ON chat_session_generations(session_id, generation DESC);
+
       CREATE TABLE IF NOT EXISTS active_sessions (
         active_key TEXT PRIMARY KEY,
         surface TEXT NOT NULL,
@@ -1009,6 +1152,8 @@ export class GoromboSessionDatabase {
         delivery_kind TEXT,
         delivery_id TEXT,
         delivery_submission_id TEXT,
+        delivery_instance_id TEXT,
+        delivery_uid TEXT,
         delivery_stream_url TEXT,
         delivery_offset TEXT,
         accepted_at TEXT,
@@ -1136,7 +1281,13 @@ export class GoromboSessionDatabase {
         .map((column) => column.name),
     );
 
-    for (const column of ['delivery_submission_id', 'delivery_stream_url', 'delivery_offset']) {
+    for (const column of [
+      'delivery_submission_id',
+      'delivery_instance_id',
+      'delivery_uid',
+      'delivery_stream_url',
+      'delivery_offset',
+    ]) {
       if (existingColumns.has(column)) {
         continue;
       }
@@ -1177,10 +1328,10 @@ export class GoromboSessionDatabase {
     storageKey: string,
     harnessName: string,
     sessionName: string,
-    data: SessionData,
+    data: LegacyBetaConversationData,
   ): Promise<void> {
     this.deleteSessionMemoryByStorageKey(storageKey);
-    const parts = parseFlueSessionStorageKey(storageKey);
+    const parts = parseLegacyFlueStorageKey(storageKey);
     const chatSession =
       this.getChatSession(sessionName) ??
       (parts && this.isDirectAgentChatSession(parts.instanceId, harnessName, sessionName)
@@ -1464,7 +1615,7 @@ interface ExtractSessionMemoryInput {
   actorId?: string;
   conversationId?: string;
   threadId?: string;
-  data: SessionData;
+  data: LegacyBetaConversationData;
 }
 
 interface ExtractedSessionMemoryChunk {
@@ -1487,7 +1638,7 @@ function extractSessionMemoryChunks(input: ExtractSessionMemoryInput): Extracted
   const chunks: ExtractedSessionMemoryChunk[] = [];
 
   for (const entry of input.data.entries) {
-    if (entry.type === 'message') {
+    if (entry.type === 'message' && entry.message) {
       const role = String(entry.message.role ?? 'message');
       const content = extractMessageText(entry.message);
       if (!content.trim()) {
@@ -1519,7 +1670,7 @@ function extractSessionMemoryChunks(input: ExtractSessionMemoryInput): Extracted
       continue;
     }
 
-    if (entry.type === 'compaction') {
+    if (entry.type === 'compaction' && typeof entry.summary === 'string') {
       chunks.push({
         id: createChunkKey(input, entry.id, 'compaction'),
         entryId: entry.id,
@@ -1657,6 +1808,21 @@ function toChatSessionRecord(row: ChatSessionRow): ChatSessionRecord {
   };
 }
 
+function toChatSessionGenerationRecord(row: ChatSessionGenerationRow): ChatSessionGenerationRecord {
+  return {
+    sessionId: row.session_id,
+    generation: row.generation,
+    instanceId: row.instance_id,
+    ...(typeof row.continuation_summary === 'string'
+      ? { continuationSummary: row.continuation_summary }
+      : {}),
+    ...(typeof row.compaction_submission_id === 'string'
+      ? { compactionSubmissionId: row.compaction_submission_id }
+      : {}),
+    createdAt: row.created_at,
+  };
+}
+
 function toNormalizedMessageEvent(row: NormalizedMessageEventRow): NormalizedMessageEvent {
   const context = {
     ...(typeof row.client_id === 'string' ? { clientId: row.client_id } : {}),
@@ -1691,6 +1857,10 @@ function toSessionNormalizedMessageRecord(row: NormalizedMessageEventRow): Sessi
     ...(typeof row.delivery_submission_id === 'string'
       ? { submissionId: row.delivery_submission_id }
       : {}),
+    ...(typeof row.delivery_instance_id === 'string'
+      ? { instanceId: row.delivery_instance_id }
+      : {}),
+    ...(typeof row.delivery_uid === 'string' ? { uid: row.delivery_uid } : {}),
     ...(typeof row.delivery_stream_url === 'string'
       ? { streamUrl: row.delivery_stream_url }
       : {}),
@@ -1761,6 +1931,15 @@ interface ChatSessionRow {
   updated_at: string;
 }
 
+interface ChatSessionGenerationRow {
+  session_id: string;
+  generation: number;
+  instance_id: string;
+  continuation_summary: string | null;
+  compaction_submission_id: string | null;
+  created_at: string;
+}
+
 interface ActiveSessionRow {
   session_id: string;
 }
@@ -1804,6 +1983,8 @@ interface NormalizedMessageEventRow {
   delivery_kind: string | null;
   delivery_id: string | null;
   delivery_submission_id: string | null;
+  delivery_instance_id: string | null;
+  delivery_uid: string | null;
   delivery_stream_url: string | null;
   delivery_offset: string | null;
   accepted_at: string | null;

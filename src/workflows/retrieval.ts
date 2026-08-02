@@ -1,4 +1,3 @@
-import type { FlueContext } from '@flue/runtime';
 import type { MemoryProvider } from '../engine/memory/memory-provider.js';
 import { SessionMemoryProvider } from '../engine/memory/memory-provider.js';
 import { MemoryRouter } from '../engine/memory/memory-router.js';
@@ -33,13 +32,6 @@ export interface RetrievalWorkflowOptions {
   env?: Record<string, unknown>;
   memoryProvider?: MemoryProvider;
   providers?: RagProvider[];
-}
-
-export async function run({
-  env,
-  payload,
-}: FlueContext<RetrievalWorkflowPayload>): Promise<RagResult> {
-  return retrieveContext(payload, { env });
 }
 
 export async function retrieveContext(

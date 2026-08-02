@@ -10,17 +10,14 @@
  *      Uses a 1-second `every` schedule (converted to a 6-field seconds cron)
  *      and asserts the `schedule.fired` telemetry event + the run row appearing
  *      (last_fired_at update). Does NOT assert only on the cron object existing.
- *   3. Dispatch + observe — the run is admitted (dispatch_id non-null,
+ *   3. Dispatch + settlement — the run is admitted (submission_id non-null,
  *      instance_id is the expected per-fire id) and reaches a terminal status
- *      observed via the in-process observe() subscription filtered by
- *      instanceId — NOT merely that the dispatch promise resolved (dispatch is
- *      admission-only; see schedule-dispatch.ts).
+ *      only after the exact Flue 2 submission settlement resolves.
  *
- * Dispatch + observe use injectable fakes (a mock target agent that emits a
- * deterministic `agent_end` event the observer catches), per plan §12's
- * allowance. A real-Flue-server + live-model integration is out of scope for the
- * unit suite; the manager unit test (schedule-manager.test.ts) covers the
- * observe/retry/skip logic in depth, and this test covers the REAL Croner
+ * Dispatch + settlement use injectable fakes with deterministic replies. A
+ * real-Flue-server + live-model integration is out of scope for the unit suite;
+ * the manager unit test (schedule-manager.test.ts) covers settlement,
+ * timeout, retry, and skip logic in depth, and this test covers the REAL Croner
  * firing + persistence surfaces that the manager unit test (which uses
  * fireNow manual triggers) does not.
  */
@@ -33,7 +30,6 @@ import type { DispatchScheduleArgs, ScheduleDispatchResult } from '../engine/sch
 import { ScheduleStore } from '../engine/schedules/schedule-store.js';
 import { ScheduleManager } from '../engine/schedules/schedule-manager.js';
 import { installScheduleTelemetry, getScheduleProgressReporter } from '../engine/schedules/schedule-telemetry.js';
-import type { FlueEvent } from '@flue/runtime';
 
 function tempDbPath(): string {
   return `/tmp/sim-one-schedules-3surface-${Date.now()}-${Math.floor(Math.random() * 1e6)}.sqlite`;
@@ -43,32 +39,26 @@ function wait(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function makeManagerWithFakes(path: string, observeTimeoutMs = 4000) {
+function makeManagerWithFakes(path: string, settlementTimeoutMs = 4000) {
   const store = new ScheduleStore(path);
-  let subscriber: ((event: FlueEvent) => void) | null = null;
-  const fakeObserve = (sub: (event: FlueEvent) => void): (() => void) => {
-    subscriber = sub;
-    return () => {
-      subscriber = null;
-    };
-  };
   const fakeDispatch = async (args: DispatchScheduleArgs): Promise<ScheduleDispatchResult> => ({
-    dispatchId: 'd-' + args.instanceId,
+    submissionId: 'd-' + args.instanceId,
     acceptedAt: new Date().toISOString(),
+    uid: 'uid-' + args.instanceId,
     instanceId: args.instanceId,
+    settlement: Promise.resolve({ text: 'done', data: {}, submissionId: 'd-' + args.instanceId }),
   });
   const config = resolveScheduleConfig({ maxConcurrentRuns: 4 }, {});
   const manager = new ScheduleManager({
     store,
     config,
     dispatch: fakeDispatch,
-    observeFn: fakeObserve as never,
-    observeTimeoutMs,
+    settlementTimeoutMs,
   });
-  return { manager, emit: (e: FlueEvent) => subscriber?.(e) };
+  return { manager };
 }
 
-test('three-surface: persistence + real Croner firing + dispatch/observe terminal', async () => {
+test('three-surface: persistence + real Croner firing + exact settlement', async () => {
   const path = tempDbPath();
   installScheduleTelemetry(); // so schedule.* events are captured
   const reporter = getScheduleProgressReporter()!;
@@ -91,8 +81,8 @@ test('three-surface: persistence + real Croner firing + dispatch/observe termina
     store.close();
   }
 
-  // --- Surfaces 2 + 3: real Croner firing + dispatch/observe terminal ---
-  const { manager, emit } = makeManagerWithFakes(path);
+  // --- Surfaces 2 + 3: real Croner firing + exact settlement ---
+  const { manager } = makeManagerWithFakes(path);
   try {
     manager.start(); // rehydrates the enabled 'every-second' schedule into a real Croner job
     await wait(50);
@@ -110,7 +100,7 @@ test('three-surface: persistence + real Croner firing + dispatch/observe termina
       const found = runs.find((r) => r.status === 'admitted' || r.status === 'queued' || r.status === 'ok');
       if (found) {
         runId = found.runId;
-        admitted = found.status === 'admitted';
+        admitted = found.status === 'admitted' || found.status === 'ok';
       }
       await wait(100);
     }
@@ -123,21 +113,17 @@ test('three-surface: persistence + real Croner firing + dispatch/observe termina
     // wait for admission to land (if not already)
     if (runId && !admitted) {
       const dl = Date.now() + 1000;
-      while (Date.now() < dl && manager.store.getRun(runId)?.status !== 'admitted') {
+      while (Date.now() < dl && manager.store.getRun(runId)?.status !== 'ok') {
         await wait(50);
       }
     }
     const run = manager.store.getRun(runId!);
-    assert.equal(run?.status, 'admitted', 'surface 3: dispatch admitted the run');
-    assert.ok(run?.dispatchId, 'surface 3: dispatchId non-null (admission succeeded)');
+    assert.equal(run?.status, 'ok', 'surface 3: dispatch admitted and read the exact settled reply');
+    assert.ok(run?.submissionId, 'surface 3: submissionId non-null (admission succeeded)');
     assert.ok(run?.instanceId?.startsWith(`schedule:${sched!.id}:`), 'surface 3: instanceId is the per-fire id');
 
-    // surface 3: observe the turn to terminal by emitting agent_end for the instanceId.
-    emit({ type: 'agent_end', instanceId: run!.instanceId } as FlueEvent);
-    await wait(100);
-
     const done = manager.store.getRun(runId!);
-    assert.equal(done?.status, 'ok', 'surface 3: terminal ok observed via observe() (NOT just dispatch resolve)');
+    assert.equal(done?.status, 'ok', 'surface 3: terminal ok came from the submission settlement');
     assert.equal(manager.store.getBySlug('every-second')?.lastRunStatus, 'ok', 'schedule lastRunStatus updated to ok');
   } finally {
     manager.stop();

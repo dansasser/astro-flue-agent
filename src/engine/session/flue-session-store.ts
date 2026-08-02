@@ -1,6 +1,4 @@
-import { createSessionStorageKey as createFlueRuntimeSessionStorageKey } from '@flue/runtime/adapter';
-
-export interface FlueSessionStorageParts {
+export interface LegacyFlueStorageParts {
   instanceId: string;
   harnessName: string;
   sessionName: string;
@@ -8,15 +6,15 @@ export interface FlueSessionStorageParts {
 
 const flueSessionStoragePrefix = 'agent-session:';
 
-export function createFlueSessionStorageKey(
+export function createLegacyFlueStorageKey(
   instanceId: string,
   harnessName: string,
   sessionName: string,
 ): string {
-  return createFlueRuntimeSessionStorageKey(instanceId, harnessName, sessionName);
+  return `${flueSessionStoragePrefix}${JSON.stringify([instanceId, harnessName, sessionName])}`;
 }
 
-export function parseFlueSessionStorageKey(id: string): FlueSessionStorageParts | undefined {
+export function parseLegacyFlueStorageKey(id: string): LegacyFlueStorageParts | undefined {
   if (!id.startsWith(flueSessionStoragePrefix)) {
     return undefined;
   }

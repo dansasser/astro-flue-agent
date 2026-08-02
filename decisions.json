@@ -169,6 +169,21 @@
         "specify-task-lifecycle-architecture",
         "verify-release-reconciliation-specifications"
       ]
+    },
+    {
+      "id": "d12-flue-v2-persistence-and-compaction",
+      "title": "D12 Flue 2 Persistence History And Compaction",
+      "question": "How should Flue 2 persistence, beta conversation history, and the user-invoked compact command work without opening beta framework storage or recreating removed Flue APIs?",
+      "status": "resolved",
+      "source_path": "doc/decisions/d12-flue-v2-persistence-and-compaction.md",
+      "affected_nodes": [
+        "migrate-flue-v2-execution-persistence",
+        "migrate-flue-v2-connectors-clients",
+        "migrate-flue-v2-product-packaging",
+        "migrate-flue-v2-documentation",
+        "verify-release-reconciliation-specifications",
+        "plan-implementation"
+      ]
     }
   ]
 }

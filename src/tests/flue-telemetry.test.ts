@@ -3,154 +3,65 @@ import test from 'node:test';
 import type { FlueEvent } from '@flue/runtime';
 import {
   FlueTelemetryStore,
-  summarizeTelemetryRunFromEvents,
+  summarizeTelemetryExecutionFromEvents,
 } from '../core/telemetry/flue-telemetry.js';
 
-test('telemetry store summarizes researcher delegation and web research calls', () => {
+test('telemetry groups Flue 2 events by submission and preserves instance identity', () => {
   const store = new FlueTelemetryStore();
+  store.record(event({ type: 'submission_running', instanceId: 'session-1', submissionId: 'sub-1' }));
+  store.record(event({ type: 'task_start', instanceId: 'session-1', submissionId: 'sub-1', agent: 'researcher' }));
+  store.record(event({ type: 'tool', instanceId: 'session-1', submissionId: 'sub-1', toolName: 'web_research', isError: false }));
+  store.record(event({ type: 'submission_settled', instanceId: 'session-1', submissionId: 'sub-1' }));
 
-  store.record(createEvent({ type: 'run_start', runId: 'agent:orchestrator:run-1' }));
-  store.record(
-    createEvent({
-      type: 'task_start',
-      runId: 'agent:orchestrator:run-1',
-      taskId: 'task-1',
-      agent: 'researcher',
-      session: 'support',
-    }),
-  );
-  store.record(
-    createEvent({
-      type: 'tool_start',
-      runId: 'agent:orchestrator:run-1',
-      taskId: 'task-1',
-      toolCallId: 'tool-1',
-      toolName: 'web_research',
-    }),
-  );
-  store.record(
-    createEvent({
-      type: 'operation',
-      runId: 'agent:orchestrator:run-1',
-      operationId: 'operation-1',
-      operationKind: 'task',
-      durationMs: 123,
-      isError: false,
-      usage: {
-        input: 1,
-        output: 2,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 3,
-        cost: {
-          input: 0,
-          output: 0,
-          cacheRead: 0,
-          cacheWrite: 0,
-          total: 0,
-        },
-      },
-    }),
-  );
-
-  const summary = store.getRunSummary('agent:orchestrator:run-1');
-
+  const summary = store.getExecutionSummary('sub-1');
+  assert.equal(summary?.executionId, 'sub-1');
+  assert.equal(summary?.instanceId, 'session-1');
+  assert.equal(summary?.submissionId, 'sub-1');
   assert.equal(summary?.delegatedToResearcher, true);
   assert.equal(summary?.calledWebResearch, true);
-  assert.equal(summary?.taskStarts[0]?.agent, 'researcher');
-  assert.equal(summary?.toolCalls[0]?.toolName, 'web_research');
-  assert.equal(summary?.operations[0]?.usage?.totalTokens, 3);
-  assert.equal(summary?.events.some((event) => 'prompt' in event), false);
+  assert.equal(store.snapshot().executions.length, 1);
 });
 
-test('telemetry store keeps unrelated runs separate', () => {
+test('instance identity scopes events emitted before a submission exists', () => {
   const store = new FlueTelemetryStore();
-
-  store.record(createEvent({ type: 'task_start', runId: 'agent:orchestrator:run-1', taskId: 'task-1', agent: 'researcher' }));
-  store.record(createEvent({ type: 'task_start', runId: 'agent:orchestrator:run-2', taskId: 'task-2', agent: 'coding-worker' }));
-
-  assert.equal(store.getRunSummary('agent:orchestrator:run-1')?.delegatedToResearcher, true);
-  assert.equal(store.getRunSummary('agent:orchestrator:run-2')?.delegatedToResearcher, false);
+  store.record(event({ type: 'agent_start', instanceId: 'session-early' }));
+  assert.equal(store.getExecutionSummary('session-early')?.instanceId, 'session-early');
 });
 
-test('telemetry store trims oldest runs through serialized mutations', () => {
-  const store = new FlueTelemetryStore({ maxRuns: 1 });
-
-  store.record(createEvent({ type: 'run_start', runId: 'agent:orchestrator:run-1' }));
-  store.record(createEvent({ type: 'run_start', runId: 'agent:orchestrator:run-2' }));
-
-  const snapshot = store.snapshot();
-
-  assert.equal(snapshot.runs.length, 1);
-  assert.equal(snapshot.runs[0]?.runId, 'agent:orchestrator:run-2');
-  assert.equal(store.getRunSummary('agent:orchestrator:run-1'), undefined);
-});
-
-test('telemetry summary can be rebuilt from persisted Flue run events', () => {
-  const summary = summarizeTelemetryRunFromEvents('agent:orchestrator:run-persisted', [
-    {
-      type: 'run_start',
-      runId: 'agent:orchestrator:run-persisted',
-      payload: {
-        text: 'do not expose this prompt text',
-      },
-      timestamp: '2026-06-10T00:00:00.000Z',
-    },
-    {
-      type: 'operation',
-      runId: 'agent:orchestrator:run-persisted',
-      operationId: 'operation-1',
-      operationKind: 'prompt',
-      isError: false,
-      durationMs: 42,
-      result: {
-        text: 'do not expose this result text',
-      },
-      usage: {
-        input: 10,
-        output: 5,
-        cacheRead: 0,
-        cacheWrite: 0,
-        totalTokens: 15,
-      },
-    },
-    {
-      type: 'run_end',
-      runId: 'agent:orchestrator:run-persisted',
-      result: {
-        text: 'do not expose final result text',
-      },
-      isError: false,
-      durationMs: 43,
-    },
+test('telemetry execution summaries sanitize arbitrary event arrays', () => {
+  const summary = summarizeTelemetryExecutionFromEvents('sub-2', [
+    event({ type: 'operation_start', instanceId: 'session-2', submissionId: 'sub-2', operationKind: 'prompt' }),
+    event({ type: 'operation', instanceId: 'session-2', submissionId: 'sub-2', operationKind: 'prompt', isError: true }),
+    { not: 'an event' },
   ]);
-
-  assert.equal(summary?.eventCount, 3);
-  assert.equal(summary?.operations[0]?.usage?.totalTokens, 15);
-  assert.equal(summary?.events.some((event) => 'payload' in event), false);
-  assert.equal(summary?.events.some((event) => 'result' in event), false);
+  assert.equal(summary?.errors.length, 1);
+  assert.equal(summary?.events.some((item) => 'runId' in item), false);
 });
 
-test('telemetry summary ignores invalid persisted run event entries', () => {
-  const summary = summarizeTelemetryRunFromEvents('agent:orchestrator:run-invalid', [
-    null,
-    'bad event',
-    {
-      payload: 'missing type',
-    },
-    {
-      type: 'tool',
-      runId: 'agent:orchestrator:run-invalid',
-      toolName: 'web_research',
-      isError: false,
-      durationMs: 100,
-    },
-  ]);
+test('telemetry bounds executions and memory mutation records', () => {
+  const store = new FlueTelemetryStore({ maxExecutions: 1, maxMemoryMutations: 1 });
+  store.record(event({ type: 'agent_start', instanceId: 'one', submissionId: 'sub-one' }));
+  store.record(event({ type: 'agent_start', instanceId: 'two', submissionId: 'sub-two' }));
+  assert.deepEqual(store.snapshot().executions.map((item) => item.executionId), ['sub-two']);
 
-  assert.equal(summary?.eventCount, 1);
-  assert.equal(summary?.calledWebResearch, true);
+  store.recordMemoryMutation({
+    type: 'memory_mutation',
+    timestamp: '2026-08-01T00:00:00.000Z',
+    toolName: 'store_session_note',
+    agentName: 'orchestrator',
+    recordId: 'note-1',
+    kind: 'session_note',
+    scopeKeys: { conversationId: 'conversation-1' },
+    updatedBy: 'orchestrator',
+  });
+  assert.equal(store.memoryMutationSnapshot().mutations.length, 1);
 });
 
-function createEvent(input: Record<string, unknown>): FlueEvent {
-  return input as unknown as FlueEvent;
+function event(fields: Record<string, unknown>): FlueEvent {
+  return {
+    v: 3,
+    eventIndex: 1,
+    timestamp: '2026-08-01T00:00:00.000Z',
+    ...fields,
+  } as unknown as FlueEvent;
 }

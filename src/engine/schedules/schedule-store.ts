@@ -14,10 +14,9 @@
  * Flue adapter migrate hook. TS owns ids (ulid from `src/memory/ulid.ts`) and
  * the clock (`Date.now()`), matching the structured-memory pattern.
  *
- * Dispatch is ADMISSION-ONLY (see `schedule-types.ts`): a run row tracks
- * `instanceId` + `dispatchId` (admission), not a fictional `agentRunId`. The
- * terminal status is observed via the Flue event stream and written here by the
- * manager.
+ * Dispatch admission and settlement are distinct (see `schedule-types.ts`): a
+ * run row tracks `instanceId` + `submissionId`, then the manager writes terminal
+ * status only after the exact Flue 2 submission settles.
  */
 
 import { mkdirSync } from 'node:fs';
@@ -97,7 +96,7 @@ function rowToRunRecord(row: RunRow): ScheduleRunRecord {
     runId: row.run_id,
     scheduleId: row.schedule_id,
     instanceId: row.instance_id,
-    dispatchId: row.dispatch_id,
+    submissionId: row.dispatch_id,
     status: row.status,
     error: row.error,
     attempt: row.attempt,
@@ -469,7 +468,7 @@ export class ScheduleStore {
   }
 
   /** Record dispatch admission (DispatchReceipt). acceptedAt is an ISO string. */
-  recordRunAdmitted(runId: string, dispatchId: string, acceptedAt: string): void {
+  recordRunAdmitted(runId: string, submissionId: string, acceptedAt: string): void {
     const admittedMs = Date.parse(acceptedAt);
     this.database
       .prepare(
@@ -477,7 +476,7 @@ export class ScheduleStore {
          SET dispatch_id = ?, status = 'admitted', admitted_at = ?
          WHERE run_id = ?`,
       )
-      .run(dispatchId, Number.isNaN(admittedMs) ? Date.now() : admittedMs, runId);
+      .run(submissionId, Number.isNaN(admittedMs) ? Date.now() : admittedMs, runId);
   }
 
   /**
@@ -549,7 +548,7 @@ export class ScheduleStore {
     return rows.map(rowToRunRecord);
   }
 
-  /** Runs that have been admitted but not yet observed to terminal (for shutdown drain). */
+  /** Runs that have been admitted but have not reached settlement (for shutdown drain). */
   listInFlightRuns(): ScheduleRunRecord[] {
     const rows = this.database
       .prepare(

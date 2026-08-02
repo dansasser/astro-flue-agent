@@ -196,6 +196,14 @@ Before the persistence implementation merges, resolve and record:
    Automatic model compaction can use `useModel` configuration, but it is not a
    substitute for the user-invoked command.
 
+Decision D12 resolves this boundary: Flue 2 uses `db/flue-v2.sqlite`; the beta
+`db/flue.sqlite` remains an untouched rollback archive; SIM-ONE-owned product
+session data remains in `sessions.sqlite`; and `/compact` rotates the Flue 2
+runtime generation behind the same product session after an awaited internal
+summary submission. See
+`doc/decisions/d12-flue-v2-persistence-and-compaction.md` for the full history,
+rollback, transcript, and failure contract.
+
 Startup must identify the selected instance clearly, preserve the TUI's fresh
 default, and preserve persistent connector behavior without a global
 "primary session" shortcut.

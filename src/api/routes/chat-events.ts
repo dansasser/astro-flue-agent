@@ -1,5 +1,4 @@
 import type { Hono } from 'hono';
-import type { SessionData } from '@flue/runtime/adapter';
 import {
   isSessionCreationSlashCommand,
   isSupportedSlashCommand,
@@ -10,15 +9,12 @@ import { normalizeWebApiMessage, type WebApiMessageInput } from '../../api/conne
 import { goromboPersistenceRuntime } from '../../db.js';
 import { requireApiSecret, runtimeEnvForRequest } from '../../api/middleware/api-secret.js';
 import { configureRuntimeModels } from '../../core/models/index.js';
-import { calculateContextBudget } from '../../engine/session/context-budget.js';
-import { directAgentHarnessName, directAgentSessionName } from '../../engine/session/direct-agent-session.js';
 import {
-  openDurableOrchestratorSession,
-  type DurableOrchestratorSessionOpener,
+  dispatchOrchestratorMessage,
+  type OrchestratorDispatcher,
 } from '../../engine/session/durable-orchestrator-session.js';
 import {
   createSessionBudgetReport,
-  recordManualCompaction,
   type SessionBudgetReport,
 } from '../../engine/session/session-budget.js';
 import {
@@ -32,20 +28,24 @@ import {
 import type { AgentDeliveryReference } from '../../engine/session/session-database.js';
 import { createChatPrompt } from '../../api/routes/chat-prompt.js';
 import { runWithTrustedMessageEvent } from '../../api/ingress/trusted-event-context.js';
+import {
+  isFlueConversationSnapshot,
+  type FlueConversationSnapshot,
+} from '../../engine/session/flue-conversation.js';
 
 export interface ChatEventRouteOptions {
-  openDurableSession?: DurableOrchestratorSessionOpener;
-  loadSessionData?: (sessionId: string) => Promise<SessionData | null>;
+  dispatchOrchestrator?: OrchestratorDispatcher;
+  loadConversationSnapshot?: (input: {
+    instanceId: string;
+    headers: Headers;
+    env: Record<string, unknown>;
+  }) => Promise<FlueConversationSnapshot | null>;
 }
 
 export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOptions = {}): void {
-  const openDurableSession = options.openDurableSession ?? openDurableOrchestratorSession;
-  const loadSessionData = options.loadSessionData
-    ?? ((sessionId: string) => goromboPersistenceRuntime.getLatestSessionDataForInstance(
-      sessionId,
-      directAgentHarnessName,
-      directAgentSessionName,
-    ));
+  const dispatchOrchestrator = options.dispatchOrchestrator ?? dispatchOrchestratorMessage;
+  const loadConversationSnapshot = options.loadConversationSnapshot
+    ?? ((input) => loadAgentConversationSnapshot(app, input));
 
   app.post('/api/chat/events', requireApiSecret, async (c) => {
     const headers = new Headers(c.req.raw.headers);
@@ -191,12 +191,15 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
 
     if (slashCommand?.name === 'compact') {
       const runtimeEnv = runtimeEnvForRequest(c.env as Record<string, unknown> | undefined);
-      const contextBudget = await compactDurableChatSession({
+      const contextBudget = await runWithTrustedMessageEvent(event, () => compactDurableChatSession({
         sessionResolution,
         command: slashCommand,
         env: runtimeEnv,
-        openDurableSession,
-      });
+        eventId: event.id,
+        headers,
+        dispatchOrchestrator,
+        loadConversationSnapshot,
+      }));
 
       return c.json(createCommandResponse({
         eventId: event.id,
@@ -208,57 +211,67 @@ export function registerChatEventRoutes(app: Hono, options: ChatEventRouteOption
     }
 
     const runtimeEnv = runtimeEnvForRequest(c.env as Record<string, unknown> | undefined);
-    const agentResponse = await runWithTrustedMessageEvent(event, () => app.request(
-      `/agents/orchestrator/${encodeURIComponent(sessionResolution.sessionId)}?wait=result`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ message: createChatPrompt(event) }),
+    const generation = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(
+      sessionResolution.sessionId,
+    );
+    const dispatchResult = await runWithTrustedMessageEvent(event, () => dispatchOrchestrator({
+      instanceId: generation.instanceId,
+      message: createChatPrompt(event),
+      idempotencyKey: event.id,
+      initialData: {
+        productSessionId: sessionResolution.sessionId,
+        generation: generation.generation,
+        ...(generation.continuationSummary
+          ? { continuationSummary: generation.continuationSummary }
+          : {}),
       },
-      runtimeEnv,
-    ));
+    }));
+    const delivery: AgentDeliveryReference = {
+      submissionId: dispatchResult.receipt.submissionId,
+      instanceId: generation.instanceId,
+      uid: dispatchResult.receipt.uid,
+      streamUrl: agentConversationUrl(generation.instanceId),
+    };
+    goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
+      event,
+      sessionId: sessionResolution.sessionId,
+      deliveryKind: 'direct-agent',
+      deliveryId: dispatchResult.receipt.submissionId,
+      delivery,
+      acceptedAt: dispatchResult.receipt.acceptedAt,
+    });
+    const contextUsage = await createContextUsageProjection({
+      sessionId: sessionResolution.sessionId,
+      env: runtimeEnv,
+      headers,
+      loadConversationSnapshot,
+    });
 
-    const body = await readJsonResponse(agentResponse.clone());
-    if (isRecord(body)) {
-      const contextUsage = agentResponse.ok
-        ? await createContextUsageProjection({
-            sessionId: sessionResolution.sessionId,
-            env: runtimeEnv,
-            loadSessionData,
-          })
-        : unavailableContextUsage();
-      const delivery = readDeliveryReference(body);
-      const deliveryId = legacyDeliveryId(delivery);
-      if (deliveryId || Object.keys(delivery).length > 0) {
-        goromboPersistenceRuntime.sessionDatabase.recordNormalizedMessageEvent({
-          event,
-          sessionId: sessionResolution.sessionId,
-          deliveryKind: 'direct-agent',
-          deliveryId,
-          delivery,
-        });
-      }
-
-      return c.json({
-        ...body,
-        event: {
-          id: event.id,
-          connector: event.connector,
-          messageKind: event.kind,
-          receivedAt: event.receivedAt,
-        },
-        session: {
-          id: sessionResolution.sessionId,
-          surface: sessionResolution.surface,
-          created: sessionResolution.created,
-        },
-        contextUsage,
-      }, agentResponse.status as never);
-    }
-
-    return new Response(await agentResponse.text(), {
-      status: agentResponse.status,
-      headers: agentResponse.headers,
+    return c.json({
+      result: {
+        text: dispatchResult.reply.text,
+        data: dispatchResult.reply.data,
+        ...(dispatchResult.reply.metadata ? { metadata: dispatchResult.reply.metadata } : {}),
+      },
+      submissionId: dispatchResult.receipt.submissionId,
+      submission: {
+        id: dispatchResult.receipt.submissionId,
+        acceptedAt: dispatchResult.receipt.acceptedAt,
+        uid: dispatchResult.receipt.uid,
+      },
+      streamUrl: delivery.streamUrl,
+      event: {
+        id: event.id,
+        connector: event.connector,
+        messageKind: event.kind,
+        receivedAt: event.receivedAt,
+      },
+      session: {
+        id: sessionResolution.sessionId,
+        surface: sessionResolution.surface,
+        created: sessionResolution.created,
+      },
+      contextUsage,
     });
   });
 }
@@ -341,19 +354,18 @@ type ContextUsageProjection =
 async function createContextUsageProjection(input: {
   sessionId: string;
   env: Record<string, unknown>;
-  loadSessionData: (sessionId: string) => Promise<SessionData | null>;
+  headers: Headers;
+  loadConversationSnapshot: NonNullable<ChatEventRouteOptions['loadConversationSnapshot']>;
 }): Promise<ContextUsageProjection> {
   try {
-    const sessionData = await input.loadSessionData(input.sessionId);
-    if (!sessionData) {
-      return unavailableContextUsage();
-    }
-
+    const generations = goromboPersistenceRuntime.sessionDatabase.listRuntimeGenerations(input.sessionId);
+    const snapshots = await loadConversationSnapshots({ ...input, generations });
     const modelCard = configureRuntimeModels(input.env).selectedModelCard;
     return projectContextUsage(createSessionBudgetReport({
       sessionId: input.sessionId,
       modelCard,
-      sessionData,
+      snapshots,
+      compactions: Math.max(0, generations.length - 1),
     }));
   } catch {
     return unavailableContextUsage();
@@ -385,38 +397,47 @@ async function compactDurableChatSession(input: {
   sessionResolution: ChatSessionResolution;
   command: ParsedSlashCommand;
   env: Record<string, unknown>;
-  openDurableSession: DurableOrchestratorSessionOpener;
+  eventId: string;
+  headers: Headers;
+  dispatchOrchestrator: OrchestratorDispatcher;
+  loadConversationSnapshot: NonNullable<ChatEventRouteOptions['loadConversationSnapshot']>;
 }): Promise<DurableChatContextBudget> {
   const modelCard = configureRuntimeModels(input.env).selectedModelCard;
   const sessionId = input.sessionResolution.sessionId;
-  const session = await input.openDurableSession({
-    sessionId,
-    env: input.env,
-    payload: {
-      command: input.command.raw,
+  const active = goromboPersistenceRuntime.sessionDatabase.ensureRuntimeGeneration(sessionId);
+  const result = await input.dispatchOrchestrator({
+    instanceId: active.instanceId,
+    message: {
+      kind: 'signal',
+      type: 'sim_one_compact',
+      tagName: 'session_compaction',
+      attributes: {
+        productSessionId: sessionId,
+        generation: String(active.generation),
+      },
+      body: `Create a concise continuation summary for the next runtime generation of this product session. Preserve user decisions, active tasks, constraints, names, paths, and unresolved work. Return only the summary text. Command: ${input.command.raw}`,
+    },
+    idempotencyKey: `compact:${input.eventId}`,
+    initialData: {
+      productSessionId: sessionId,
+      generation: active.generation,
+      ...(active.continuationSummary ? { continuationSummary: active.continuationSummary } : {}),
     },
   });
-
-  await session.compact();
-
-  const sessionData = await goromboPersistenceRuntime.getLatestSessionDataForInstance(
+  goromboPersistenceRuntime.sessionDatabase.rotateRuntimeGeneration({
     sessionId,
-    directAgentHarnessName,
-    directAgentSessionName,
-  );
+    expectedInstanceId: active.instanceId,
+    continuationSummary: result.reply.text,
+    compactionSubmissionId: result.receipt.submissionId,
+  });
 
-  if (!sessionData) {
-    recordManualCompaction({
-      sessionId,
-      modelSpecifier: modelCard.specifier,
-      budget: calculateContextBudget(modelCard),
-    });
-  }
-
+  const generations = goromboPersistenceRuntime.sessionDatabase.listRuntimeGenerations(sessionId);
+  const snapshots = await loadConversationSnapshots({ ...input, generations });
   const contextBudget = createSessionBudgetReport({
     sessionId,
     modelCard,
-    sessionData,
+    snapshots,
+    compactions: Math.max(0, generations.length - 1),
   });
 
   return {
@@ -428,47 +449,47 @@ async function compactDurableChatSession(input: {
   };
 }
 
-async function readJsonResponse(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text.trim()) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return undefined;
-  }
+async function loadConversationSnapshots(input: {
+  generations: readonly { instanceId: string }[];
+  headers: Headers;
+  env: Record<string, unknown>;
+  loadConversationSnapshot: NonNullable<ChatEventRouteOptions['loadConversationSnapshot']>;
+}): Promise<FlueConversationSnapshot[]> {
+  const snapshots = await Promise.all(input.generations.map((generation) =>
+    input.loadConversationSnapshot({
+      instanceId: generation.instanceId,
+      headers: input.headers,
+      env: input.env,
+    })));
+  return snapshots.filter((snapshot): snapshot is FlueConversationSnapshot => snapshot !== null);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
-}
-
-function readDeliveryReference(body: Record<string, unknown>): AgentDeliveryReference {
-  const submission = isRecord(body.submission) ? body.submission : undefined;
-  const submissionId = readNonEmptyString(body.submissionId)
-    ?? readNonEmptyString(submission?.id);
-  const streamUrl = readNonEmptyString(body.streamUrl);
-  const offset = readNonEmptyString(body.offset);
-
-  return {
-    ...(submissionId ? { submissionId } : {}),
-    ...(streamUrl ? { streamUrl } : {}),
-    ...(offset ? { offset } : {}),
-  };
-}
-
-function legacyDeliveryId(delivery: AgentDeliveryReference): string | undefined {
-  if (delivery.submissionId) {
-    return delivery.submissionId;
+async function loadAgentConversationSnapshot(
+  app: Hono,
+  input: {
+    instanceId: string;
+    headers: Headers;
+    env: Record<string, unknown>;
+  },
+): Promise<FlueConversationSnapshot | null> {
+  const response = await app.request(
+    `${agentConversationUrl(input.instanceId)}?view=history`,
+    { method: 'GET', headers: input.headers },
+    input.env,
+  );
+  if (response.status === 404) {
+    return null;
   }
-  if (!delivery.streamUrl && !delivery.offset) {
-    return undefined;
+  if (!response.ok) {
+    throw new Error(`Flue conversation history returned HTTP ${response.status}.`);
   }
-  return [delivery.streamUrl ?? '', delivery.offset ?? ''].join('#');
+  const body = await response.json() as unknown;
+  if (!isFlueConversationSnapshot(body)) {
+    throw new Error('Flue conversation history returned an invalid snapshot.');
+  }
+  return body;
 }
 
-function readNonEmptyString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+function agentConversationUrl(instanceId: string): string {
+  return `/agents/orchestrator/${encodeURIComponent(instanceId)}`;
 }

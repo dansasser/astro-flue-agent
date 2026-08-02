@@ -1,11 +1,7 @@
-import type { FlueContext, PromptResponse, WorkflowRouteHandler } from '@flue/runtime';
-import researcherAgent from '../engine/workers/researcher/researcher.js';
+import { init, type AgentReply } from '@flue/runtime';
+import { Researcher } from '../engine/workers/researcher/researcher.js';
 import type { ResearchDepth } from './web-research.js';
 import type { WebFetchMode } from './retrieval.js';
-
-export const route: WorkflowRouteHandler = async (_c, next) => next();
-
-const researcherHarnessName = 'gorombo-researcher';
 
 export interface ResearchWorkflowPayload {
   text: string;
@@ -20,67 +16,49 @@ export interface ResearchWorkflowPayload {
 
 export interface ResearchWorkflowResponse {
   text: string;
-  model: PromptResponse['model'];
-  usage: PromptResponse['usage'];
+  data: AgentReply['data'];
+  metadata?: AgentReply['metadata'];
+  submissionId: string;
 }
 
-/**
- * Runs the standalone research workflow by prompting the researcher worker directly.
- */
-export async function run({
-  init,
-  payload,
-}: FlueContext<ResearchWorkflowPayload>): Promise<ResearchWorkflowResponse> {
-  const harness = await init(researcherAgent, { name: researcherHarnessName });
-  const session = await harness.session(payload.session ?? payload.conversationId ?? 'research');
-  const response = await session.prompt(createResearchPrompt(payload));
-
+export async function runResearchWorkflow(
+  payload: ResearchWorkflowPayload,
+): Promise<ResearchWorkflowResponse> {
+  const instanceId = payload.session ?? payload.conversationId ?? 'research';
+  const handle = init(Researcher, { id: instanceId });
+  const receipt = await handle.dispatch({
+    message: createResearchPrompt(payload),
+    idempotencyKey: `research:${instanceId}:${Date.now()}`,
+    initialData: {
+      actorId: payload.actorId,
+      conversationId: payload.conversationId,
+      depth: payload.depth ?? 'standard',
+    },
+  });
+  const reply = await handle.read(receipt);
   return {
-    text: response.text,
-    model: response.model,
-    usage: response.usage,
+    text: reply.text,
+    data: reply.data,
+    ...(reply.metadata ? { metadata: reply.metadata } : {}),
+    submissionId: reply.submissionId,
   };
 }
 
-/**
- * Builds the researcher prompt with bounded web-research controls from the workflow payload.
- */
 export function createResearchPrompt(payload: ResearchWorkflowPayload): string {
   const depth = payload.depth ?? 'standard';
   const webResearchControls = [`depth: "${depth}"`];
+  if (payload.maxContextTokens !== undefined) webResearchControls.push(`maxContextTokens: ${payload.maxContextTokens}`);
+  if (payload.webFetch !== undefined) webResearchControls.push(`webFetch: "${payload.webFetch}"`);
+  if (payload.fetchTopK !== undefined) webResearchControls.push(`maxFetches: ${payload.fetchTopK}`);
 
-  if (payload.maxContextTokens !== undefined) {
-    webResearchControls.push(`maxContextTokens: ${payload.maxContextTokens}`);
-  }
-
-  if (payload.webFetch !== undefined) {
-    webResearchControls.push(`webFetch: "${payload.webFetch}"`);
-  }
-
-  if (payload.fetchTopK !== undefined) {
-    webResearchControls.push(`maxFetches: ${payload.fetchTopK}`);
-  }
-
-  return `
-You are running the GOROMBO research workflow.
-
-Use web_research for source-backed research before answering.
+  return `Use web_research for source-backed research before answering.
 Call web_research with ${webResearchControls.join(', ')}, and enough maxQueries for the task complexity.
-When a budget or fetch option is not listed, omit it so web_research applies the selected depth defaults.
-Compare sources before writing the final findings.
-Preserve source URLs from retrieved context metadata when available.
-If providerFailures reports a failed source, include that limitation in the findings.
-Return concise findings that the main orchestrator can use directly.
+Compare sources, preserve source URLs, and report provider failures that affect confidence.
 
 Research request:
-${JSON.stringify(
-  {
-    text: payload.text,
-    actorId: payload.actorId ?? 'research-user',
-    conversationId: payload.conversationId ?? payload.session ?? 'research',
-  },
-  null,
-  2,
-)}
-`;
+${JSON.stringify({
+  text: payload.text,
+  actorId: payload.actorId ?? 'research-user',
+  conversationId: payload.conversationId ?? payload.session ?? 'research',
+}, null, 2)}`;
 }

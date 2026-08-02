@@ -21,8 +21,6 @@ const app = new Hono();
 app.get('/health', (c) => c.json({ ok: true }));
 
 app.use('/agents/*', requireApiSecret);
-app.use('/workflows/*', requireApiSecret);
-app.use('/runs/*', requireApiSecret);
 app.use('/api/schedules/*', requireApiSecret);
 registerChatEventRoutes(app);
 registerChatSessionRoutes(app);
