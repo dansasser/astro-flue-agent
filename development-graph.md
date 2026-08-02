@@ -1,4 +1,4 @@
-<!-- development-graph-sha256: 7160f9c332457e051eff385e5afba0ef87492b59ffad0f6e7e2a1f418563bbf6 -->
+<!-- development-graph-sha256: 2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd -->
 <!-- Generated from canonical JSON. Do not edit by hand. -->
 # SIM-ONE Alpha Development Lifecycle
 
@@ -9,16 +9,16 @@ Govern future SIM-ONE Alpha changes from an authorized request through grounded 
 | Field | Value |
 |---|---|
 | Graph ID | `sim-one-alpha-lifecycle` |
-| Graph version | `77` |
+| Graph version | `78` |
 | Schema version | `1` |
 | Status | `validated` |
 | Project | sim-one-alpha |
 | Project root | `.` |
-| Context version | `flue-v2-stacked-pr-delivery:2026-08-02` |
+| Context version | `flue-v2-stacked-pr-delivery-ci-bootstrap:2026-08-02` |
 | Templates | discovery-to-delivery, parallel-fanout-fanin, human-gate, bounded-feedback, rollback-observation, specification-to-delivery |
 | Entry nodes | baseline-context |
 | Terminal nodes | closeout-release |
-| Canonical checksum | `7160f9c332457e051eff385e5afba0ef87492b59ffad0f6e7e2a1f418563bbf6` |
+| Canonical checksum | `2ff362b26c3a5eaf28b9502361e1bf35cb75aee4f00c658f811f30f8df6e8dcd` |
 
 ## Flow
 
@@ -1024,7 +1024,7 @@ flowchart TD
 | `repair-flue-v2-memory-smoke-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 memory smoke repair | Migrate the deterministic structured-memory product smoke from removed beta tool execution to the Flue 2 tool contract. | artifact:flue-v2-memory-smoke-repair |
 | `repair-flue-v2-tui-e2e-harness` | `work` | `planned` | hybrid: SIM-ONE Flue 2 TUI E2E repair | Migrate the TUI end-to-end product harness from the removed beta synchronous HTTP contract to the Flue 2 conversation client contract. | artifact:flue-v2-tui-e2e-repair |
 | `repair-flue-v2-telegram-connector-flow` | `work` | `planned` | hybrid: SIM-ONE Flue 2 Telegram connector repair | Complete and prove the Flue 2 Telegram connector flow from verified webhook ingress through persistent conversation routing to outbound Bot API delivery. | artifact:flue-v2-telegram-connector-repair |
-| `deliver-flue-v2-stacked-pull-requests` | `operation` | `planned` | hybrid: SIM-ONE Flue 2 stacked pull-request delivery | Deliver the verified Flue 2 migration as eight dependency-ordered, review-complete stacked pull requests without merging them. | artifact:flue-v2-stacked-pr-delivery |
+| `deliver-flue-v2-stacked-pull-requests` | `operation` | `planned` | hybrid: SIM-ONE Flue 2 stacked pull-request delivery | Deliver the verified Flue 2 migration as a CI-bootstrap pull request plus eight dependency-ordered, review-complete stacked migration pull requests without merging them. | artifact:flue-v2-stacked-pr-delivery |
 
 ## Edges
 
@@ -3470,22 +3470,22 @@ flowchart TD
 
 ### `deliver-flue-v2-stacked-pull-requests` — Deliver Flue 2 Stacked Pull Requests
 
-- Goal: Deliver the verified Flue 2 migration as eight dependency-ordered, review-complete stacked pull requests without merging them.
-- Executor instructions: Create the stack from the verified commit boundaries, verify each base/head pair before opening the next request, publish detailed non-draft PRs, then loop over CI and all review systems. Batch repairs by owning slice, restack descendants deterministically, and never merge.
+- Goal: Deliver the verified Flue 2 migration as a CI-bootstrap pull request plus eight dependency-ordered, review-complete stacked migration pull requests without merging them.
+- Executor instructions: First deliver CI support for feature-based stack members without weakening normal main CI. Then construct the eight migration branches so the original verified commits remain reachable, verify every base/head pair before opening the next non-draft request, and loop over CI and all review systems. Batch repairs by owning slice, propagate descendants deterministically, and never merge.
 - Inputs: artifact:flue-v2-production-verification
 - Resources: git:refs/codex/flue-v2-*, github:pull-request-stack:flue-v2, verified Flue 2 migration files
-- Permissions: read [artifact:flue-v2-production-verification, current Git history and remote refs, .github/workflows/, verified Flue 2 migration diff, GitHub pull-request, CI, review, and thread metadata]; write [files already owned by the Flue 2 migration when required by validated review findings, runtime:evidence/deliver-flue-v2-stacked-pull-requests/]; external [GitHub branch refs under codex/flue-v2-*, GitHub non-draft pull-request creation and description updates, GitHub CI, review, comment, reply, and thread-resolution operations]; destructive `false`
-- Execution: max `10` attempt(s), `1440` minute(s); All eight non-draft stacked pull requests are published, below the file cap, green, review-complete, and ready for bottom-up merge without any merge being performed.
-- Side effects: `reversible` — Creates reversible remote stack branches and non-draft pull requests, and may push bounded review repairs to those branches. The owner has explicitly authorized this publication phase.
-- Rollback: Close the unmerged stack pull requests and delete only the stack-specific remote branches; preserve codex/flue-v2-migration and all verified commits.
+- Permissions: read [artifact:flue-v2-production-verification, current Git history and remote refs, .github/workflows/, verified Flue 2 migration diff, GitHub pull-request, CI, review, and thread metadata]; write [.github/workflows/ci.yml, scripts/check-flue-v2-stack-slice.mjs, scripts/check-flue-v2-stack-slice.test.mjs, files already owned by the Flue 2 migration when required by validated review findings, runtime:evidence/deliver-flue-v2-stacked-pull-requests/]; external [GitHub branch refs under codex/flue-v2-*, GitHub non-draft pull-request creation and description updates, GitHub CI, review, comment, reply, and thread-resolution operations]; destructive `false`
+- Execution: max `10` attempt(s), `1440` minute(s); All nine non-draft stacked pull requests are published below the file cap, their boundary-appropriate checks are green, all current reviews are resolved, and the unmerged stack is ready for one controlled bottom-up merge sequence.
+- Side effects: `reversible` — Creates reversible remote stack branches and non-draft pull requests, adds bounded stack-slice CI, and may push bounded review repairs. The owner explicitly authorized this publication phase.
+- Rollback: Close the unmerged stack pull requests and delete only the stack-specific remote branches; preserve codex/flue-v2-migration and all verified commits. Revert the CI bootstrap if it has been merged separately.
 - Approval required: `false`
 - Acceptance:
-  - `stack-branches-valid` (policy): Eight remote stack branches preserve the verified migration order: foundation, agents/workers, capabilities, execution/persistence, connectors/clients, product packaging, documentation, and production verification. Every adjacent branch diff contains fewer than 100 changed files and every branch is reachable from the verified migration history. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/branches.json`
-  - `stack-prs-published` (probe): Eight non-draft pull requests exist with the first based on main and each later request based on the preceding stack branch; each body names its dependency, substantive commits, changed-file count, verification evidence, rollback boundary, and merge order. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/pull-requests.json`
-  - `stack-ci-green` (test): Every required GitHub check on every stack member is successful, and skipped, cancelled, timed-out, or neutral results are reviewed against repository policy rather than treated as passing. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/checks.json`
+  - `stack-branches-valid` (policy): Nine remote stack branches preserve the delivery order: CI bootstrap, foundation, agents/workers, capabilities, execution/persistence, connectors/clients, product packaging, documentation, and production verification. Every adjacent branch diff contains fewer than 100 changed files, and the eight migration branches retain the verified migration commits through ancestry. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/branches.json`
+  - `stack-prs-published` (probe): Nine non-draft pull requests exist with the CI bootstrap based on main and each later request based on the preceding stack branch; each body names its dependency, substantive commits, changed-file count, verification evidence, rollback boundary, transitional status where applicable, and merge order. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/pull-requests.json`
+  - `stack-ci-green` (test): The CI bootstrap and production-verification tip pass the complete repository CI suite. Each transitional migration slice passes the stack-slice check that validates its exact base/head identity, fewer-than-100-file boundary, lockfile installation, documentation, and the strongest compiler or focused contract applicable at that migration boundary. No failed, cancelled, or timed-out current check remains. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/checks.json`
   - `stack-reviews-resolved` (review): All current actionable review findings and non-outdated review threads are fixed or answered with a concrete reason, reviewer reruns are complete, and no unresolved current thread remains on any stack member. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/reviews.json`
-  - `stack-repairs-propagated` (policy): Any review repair is committed to its owning stack slice and propagated through every descendant branch without dropping verified migration commits, changing branch order, or raising any prospective PR to 100 or more files. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/propagation.json`
-  - `stack-ready-not-merged` (policy): No pull request is merged, no draft pull request is created, the source migration branch remains preserved, and the final report gives the exact bottom-up merge order. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/final.json`
+  - `stack-repairs-propagated` (policy): Any review repair is committed to its owning stack slice and propagated through every descendant branch without dropping verified migration commits, changing branch order, or raising any pull request to 100 or more changed files. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/propagation.json`
+  - `stack-ready-not-merged` (policy): No pull request is merged, no draft pull request is created, codex/flue-v2-migration remains preserved, and the final report gives the exact bottom-up merge sequence and states that the transitional migration stack must be merged as one controlled release sequence without deployment between its intermediate slices. Evidence: `runtime:evidence/deliver-flue-v2-stacked-pull-requests/final.json`
 
 ## Assumptions
 

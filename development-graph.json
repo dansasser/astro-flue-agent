@@ -9652,7 +9652,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 77,
+  "graph_version": 78,
   "nodes": [
     {
       "acceptance": [
@@ -20857,19 +20857,19 @@
     {
       "acceptance": [
         {
-          "criterion": "Eight remote stack branches preserve the verified migration order: foundation, agents/workers, capabilities, execution/persistence, connectors/clients, product packaging, documentation, and production verification. Every adjacent branch diff contains fewer than 100 changed files and every branch is reachable from the verified migration history.",
+          "criterion": "Nine remote stack branches preserve the delivery order: CI bootstrap, foundation, agents/workers, capabilities, execution/persistence, connectors/clients, product packaging, documentation, and production verification. Every adjacent branch diff contains fewer than 100 changed files, and the eight migration branches retain the verified migration commits through ancestry.",
           "evidence": "runtime:evidence/deliver-flue-v2-stacked-pull-requests/branches.json",
           "id": "stack-branches-valid",
           "kind": "policy"
         },
         {
-          "criterion": "Eight non-draft pull requests exist with the first based on main and each later request based on the preceding stack branch; each body names its dependency, substantive commits, changed-file count, verification evidence, rollback boundary, and merge order.",
+          "criterion": "Nine non-draft pull requests exist with the CI bootstrap based on main and each later request based on the preceding stack branch; each body names its dependency, substantive commits, changed-file count, verification evidence, rollback boundary, transitional status where applicable, and merge order.",
           "evidence": "runtime:evidence/deliver-flue-v2-stacked-pull-requests/pull-requests.json",
           "id": "stack-prs-published",
           "kind": "probe"
         },
         {
-          "criterion": "Every required GitHub check on every stack member is successful, and skipped, cancelled, timed-out, or neutral results are reviewed against repository policy rather than treated as passing.",
+          "criterion": "The CI bootstrap and production-verification tip pass the complete repository CI suite. Each transitional migration slice passes the stack-slice check that validates its exact base/head identity, fewer-than-100-file boundary, lockfile installation, documentation, and the strongest compiler or focused contract applicable at that migration boundary. No failed, cancelled, or timed-out current check remains.",
           "evidence": "runtime:evidence/deliver-flue-v2-stacked-pull-requests/checks.json",
           "id": "stack-ci-green",
           "kind": "test"
@@ -20881,29 +20881,29 @@
           "kind": "review"
         },
         {
-          "criterion": "Any review repair is committed to its owning stack slice and propagated through every descendant branch without dropping verified migration commits, changing branch order, or raising any prospective PR to 100 or more files.",
+          "criterion": "Any review repair is committed to its owning stack slice and propagated through every descendant branch without dropping verified migration commits, changing branch order, or raising any pull request to 100 or more changed files.",
           "evidence": "runtime:evidence/deliver-flue-v2-stacked-pull-requests/propagation.json",
           "id": "stack-repairs-propagated",
           "kind": "policy"
         },
         {
-          "criterion": "No pull request is merged, no draft pull request is created, the source migration branch remains preserved, and the final report gives the exact bottom-up merge order.",
+          "criterion": "No pull request is merged, no draft pull request is created, codex/flue-v2-migration remains preserved, and the final report gives the exact bottom-up merge sequence and states that the transitional migration stack must be merged as one controlled release sequence without deployment between its intermediate slices.",
           "evidence": "runtime:evidence/deliver-flue-v2-stacked-pull-requests/final.json",
           "id": "stack-ready-not-merged",
           "kind": "policy"
         }
       ],
       "execution": {
-        "completion_condition": "All eight non-draft stacked pull requests are published, below the file cap, green, review-complete, and ready for bottom-up merge without any merge being performed.",
+        "completion_condition": "All nine non-draft stacked pull requests are published below the file cap, their boundary-appropriate checks are green, all current reviews are resolved, and the unmerged stack is ready for one controlled bottom-up merge sequence.",
         "max_attempts": 10,
         "timeout_minutes": 1440
       },
       "executor": {
-        "instructions": "Create the stack from the verified commit boundaries, verify each base/head pair before opening the next request, publish detailed non-draft PRs, then loop over CI and all review systems. Batch repairs by owning slice, restack descendants deterministically, and never merge.",
+        "instructions": "First deliver CI support for feature-based stack members without weakening normal main CI. Then construct the eight migration branches so the original verified commits remain reachable, verify every base/head pair before opening the next non-draft request, and loop over CI and all review systems. Batch repairs by owning slice, propagate descendants deterministically, and never merge.",
         "kind": "hybrid",
         "name": "SIM-ONE Flue 2 stacked pull-request delivery"
       },
-      "goal": "Deliver the verified Flue 2 migration as eight dependency-ordered, review-complete stacked pull requests without merging them.",
+      "goal": "Deliver the verified Flue 2 migration as a CI-bootstrap pull request plus eight dependency-ordered, review-complete stacked migration pull requests without merging them.",
       "id": "deliver-flue-v2-stacked-pull-requests",
       "inputs": [
         {
@@ -20934,6 +20934,9 @@
           "GitHub pull-request, CI, review, and thread metadata"
         ],
         "write": [
+          ".github/workflows/ci.yml",
+          "scripts/check-flue-v2-stack-slice.mjs",
+          "scripts/check-flue-v2-stack-slice.test.mjs",
           "files already owned by the Flue 2 migration when required by validated review findings",
           "runtime:evidence/deliver-flue-v2-stacked-pull-requests/"
         ]
@@ -20945,9 +20948,9 @@
       ],
       "side_effects": {
         "approval_required": false,
-        "description": "Creates reversible remote stack branches and non-draft pull requests, and may push bounded review repairs to those branches. The owner has explicitly authorized this publication phase.",
+        "description": "Creates reversible remote stack branches and non-draft pull requests, adds bounded stack-slice CI, and may push bounded review repairs. The owner explicitly authorized this publication phase.",
         "level": "reversible",
-        "rollback": "Close the unmerged stack pull requests and delete only the stack-specific remote branches; preserve codex/flue-v2-migration and all verified commits."
+        "rollback": "Close the unmerged stack pull requests and delete only the stack-specific remote branches; preserve codex/flue-v2-migration and all verified commits. Revert the CI bootstrap if it has been merged separately."
       },
       "state": "planned",
       "tags": [
@@ -20963,7 +20966,7 @@
     }
   ],
   "project": {
-    "context_version": "flue-v2-stacked-pr-delivery:2026-08-02",
+    "context_version": "flue-v2-stacked-pr-delivery-ci-bootstrap:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",
