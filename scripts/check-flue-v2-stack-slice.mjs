@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 export const STACK_SLICES = Object.freeze({
@@ -66,12 +67,22 @@ export function validateSliceMetadata({ baseRef, changedFiles, headRef }) {
   return slice;
 }
 
-function git(args) {
-  const result = spawnSync('git', args, { encoding: 'utf8' });
-  if (result.status !== 0) {
-    throw new Error(result.stderr.trim() || `git ${args.join(' ')} failed`);
+export function runGit(args, run = spawnSync) {
+  const result = run('git', args, { encoding: 'utf8' });
+  if (result.error) {
+    throw new Error(`git ${args.join(' ')} failed to run: ${result.error.message}`);
   }
-  return result.stdout.trim();
+  if (result.status !== 0) {
+    throw new Error((result.stderr || '').trim() || `git ${args.join(' ')} failed`);
+  }
+  return (result.stdout || '').trim();
+}
+
+export function validateCommitAncestry({ headSha, requiredCommit }, run = spawnSync) {
+  if (!requiredCommit) {
+    return;
+  }
+  runGit(['merge-base', '--is-ancestor', requiredCommit, headSha], run);
 }
 
 export function validateCurrentSlice(env = process.env) {
@@ -83,17 +94,14 @@ export function validateCurrentSlice(env = process.env) {
     throw new Error('STACK_HEAD_REF, STACK_BASE_REF, STACK_HEAD_SHA, and STACK_BASE_SHA are required');
   }
 
-  const changed = git(['diff', '--name-only', `${baseSha}...${headSha}`]);
+  const changed = runGit(['diff', '--name-only', `${baseSha}...${headSha}`]);
   const changedFiles = changed ? changed.split('\n').length : 0;
   const slice = validateSliceMetadata({ baseRef, changedFiles, headRef });
 
-  if (slice.requiredCommit) {
-    const ancestry = spawnSync(
-      'git',
-      ['merge-base', '--is-ancestor', slice.requiredCommit, headSha],
-      { encoding: 'utf8' },
-    );
-    if (ancestry.status !== 0) {
+  try {
+    validateCommitAncestry({ headSha, requiredCommit: slice.requiredCommit });
+  } catch {
+    if (slice.requiredCommit) {
       throw new Error(`${headRef} does not retain required migration commit ${slice.requiredCommit}`);
     }
   }
@@ -103,5 +111,8 @@ export function validateCurrentSlice(env = process.env) {
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = validateCurrentSlice();
+  if (process.env.GITHUB_OUTPUT) {
+    appendFileSync(process.env.GITHUB_OUTPUT, `verification=${result.verification}\n`);
+  }
   process.stdout.write(`${JSON.stringify(result)}\n`);
 }
