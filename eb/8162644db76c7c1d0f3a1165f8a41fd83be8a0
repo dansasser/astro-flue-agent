@@ -1,0 +1,97 @@
+scripts/research.mjs
+  s_a81fff26d52223::t_682e70ffdd4c0f 2,6-8,18-26
+src/tests/flue-conversation-loader.test.ts
+  s_a81fff26d52223::t_99cbba5c361d80 1-45
+src/api/routes/chat-events.ts
+  s_a81fff26d52223::t_8624c9e7ba8d67 257,263-268,294,382-385,390,398,401-409,411,415-427
+  s_a81fff26d52223::t_700fa5de152ce5 36,50-53,497
+  s_a81fff26d52223::t_0ccd05e259545b 20,223-230,233,494-496,498
+  s_a81fff26d52223::t_bd09efcd9653ef 428-429
+src/tests/build-script-regressions.test.ts
+  s_a81fff26d52223::t_0119ff3e21910f 130-152
+src/workflows/research.ts
+  s_a81fff26d52223::t_682e70ffdd4c0f 7,32,34
+src/engine/schedules/schedule-dispatch.ts
+  s_a81fff26d52223::t_c5f1e2f5fd289e 13,57
+src/api/routes/chat-sessions.ts
+  s_a81fff26d52223::t_700fa5de152ce5 25,160-163
+src/tests/session-memory-vector.test.ts
+  s_a81fff26d52223::t_0119ff3e21910f 64-143
+  s_a81fff26d52223::t_8624c9e7ba8d67 144-196
+src/engine/session/flue-conversation-loader.ts
+  s_a81fff26d52223::t_569a132d99108b 17
+  s_a81fff26d52223::t_700fa5de152ce5 1-16,18-39
+src/tests/session-transcript.test.ts
+  s_a81fff26d52223::t_4b4a1aa675b73b 197-220
+  s_a81fff26d52223::t_0119ff3e21910f 99-175,221,298-320
+  s_a81fff26d52223::t_dd2a4ca914aba6 222
+  s_a81fff26d52223::t_cc2f885333c103 321
+src/tests/schedules.test.ts
+  s_a81fff26d52223::t_de7ff59fe20719 49,129,152
+src/engine/session/session-database.ts
+  s_a81fff26d52223::t_8624c9e7ba8d67 273,276-280,299-303,306,321-343
+  s_a81fff26d52223::t_16061997e2f2c3 175,242-271,274-275,311-320,345-359,1226-1232
+  s_a81fff26d52223::t_5c0bb70f260239 344
+  s_a81fff26d52223::t_5c339cfa93673c 1233
+src/engine/session/session-budget.ts
+  s_a81fff26d52223::t_399c242d2cb368 150-155,162-165
+src/engine/schedules/schedule-shutdown.ts
+  s_a81fff26d52223::t_c5f1e2f5fd289e 11-12,19,41,45,53
+src/engine/session/session-transcript.ts
+  s_a81fff26d52223::t_b9f2aeebec73f9 305
+  s_a81fff26d52223::t_399c242d2cb368 203-208,267-271,304,306,309
+  s_a81fff26d52223::t_bca0006f5b4853 122-124
+src/tests/flue-session-store.test.ts
+  s_a81fff26d52223::t_0119ff3e21910f 3,41-60
+  s_a81fff26d52223::t_99f5aaea2c26b8 61-62
+src/tests/coding-schedule-tools.test.ts
+  s_a81fff26d52223::t_de7ff59fe20719 31,99,118
+src/tests/architecture-contract.test.ts
+  s_a81fff26d52223::t_5a209e07ab97fe 157,162,166-168,171-173
+  s_a81fff26d52223::t_0ccd05e259545b 10,190-191,201
+  s_a81fff26d52223::t_dac4eca7fe53a3 15,148-156,158-161,163-165,169-170,174-189
+src/tests/schedules-routes.test.ts
+  s_a81fff26d52223::t_de7ff59fe20719 45,53,72-73,96,109,175,191,217-218,220,256,280,284-296
+src/engine/schedules/schedule-types.ts
+  s_a81fff26d52223::t_c5f1e2f5fd289e 37-38,41-42
+src/engine/schedules/schedule-manager.ts
+  s_a81fff26d52223::t_c5f1e2f5fd289e 40-44,63,80,90-91,105-125,300-320,553-554,557,567-583,585
+  s_a81fff26d52223::t_7d9e2101a45e3c 584
+src/engine/session/session-persistence.ts
+  s_a81fff26d52223::t_399c242d2cb368 3,52,80-96
+  s_a81fff26d52223::t_bb8386fc9e817c 97
+src/tests/flue-conversation.test.ts
+  s_a81fff26d52223::t_0119ff3e21910f 1-31
+src/tests/research-workflow.test.ts
+  s_a81fff26d52223::t_682e70ffdd4c0f 8,31,46
+  s_a81fff26d52223::t_0119ff3e21910f 42-43
+  s_a81fff26d52223::t_b20ac2abbc4ed4 2,44-45,47
+  s_a81fff26d52223::t_ab1291ea995032 48
+src/engine/session/flue-conversation.ts
+  s_a81fff26d52223::t_399c242d2cb368 74,76-78,143-220
+src/tests/schedule-manager.test.ts
+  s_a81fff26d52223::t_574327b6f57075 34,39-42,56,61,68-122,134,160-161,181-185,192,196-197
+  s_a81fff26d52223::t_c68c103a01c2c9 198-199
+src/tests/session-budget.test.ts
+  s_a81fff26d52223::t_0119ff3e21910f 49,63,68-93
+  s_a81fff26d52223::t_399c242d2cb368 5,50-54,59
+  s_a81fff26d52223::t_4422a623459954 94-95
+src/engine/session/continuation-context.ts
+  s_a81fff26d52223::t_0ccd05e259545b 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "eb8162644db76c7c1d0f3a1165f8a41fd83be8a0",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
