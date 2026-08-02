@@ -1,0 +1,27 @@
+scripts/test-telegram-product.mjs
+  s_a81fff26d52223::t_16dc33e38f9161 1-366
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_1e7e1a84fe0f7c 16-17,68-73,86,229-230,234-239,252-262
+src/channels/telegram-client.ts
+  s_a81fff26d52223::t_eec48f6fb63629 1-174
+src/channels/telegram.ts
+  s_a81fff26d52223::t_f7f739945190a0 25,276
+src/tests/telegram-reply-tool.test.ts
+  s_a81fff26d52223::t_f3d769db489cfc 1-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "6f80219d720f0dc99ce21692ebd5be81183e5422",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
