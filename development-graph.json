@@ -9472,7 +9472,7 @@
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 70,
+  "graph_version": 72,
   "nodes": [
     {
       "acceptance": [
@@ -19782,29 +19782,48 @@
         ],
         "read": [
           "artifact:flue-v2-execution-persistence-change",
+          "src/app.ts",
           "src/channels/",
+          "src/api/routes/chat-events.ts",
+          "src/api/routes/chat-sessions.ts",
           "src/api/routes/telegram-admin.ts",
+          "src/engine/session/session-transcript.ts",
           "sim-one-cli/",
           "tui/",
           "scripts/test-tui-e2e.mjs",
           "scripts/test-ratatui-product.mjs",
           "src/tests/",
-          "docs/architecture/flue-v2-migration.md"
+          "docs/architecture/flue-v2-migration.md",
+          "package.json",
+          "vite.config.ts",
+          "scripts/test-ratatui-interactive.py",
+          "scripts/test-ratatui-visible-final.py"
         ],
         "write": [
+          "src/app.ts",
           "src/channels/",
+          "src/api/routes/chat-events.ts",
+          "src/api/routes/chat-sessions.ts",
           "src/api/routes/telegram-admin.ts",
+          "src/engine/session/session-transcript.ts",
           "sim-one-cli/",
           "tui/",
           "scripts/test-tui-e2e.mjs",
           "scripts/test-ratatui-product.mjs",
-          "src/tests/ files assigned exclusively to connector and client migration"
+          "src/tests/ files assigned exclusively to connector and client migration",
+          "package.json",
+          "vite.config.ts",
+          "scripts/test-ratatui-interactive.py",
+          "scripts/test-ratatui-visible-final.py"
         ]
       },
       "resources": [
+        "src/app.ts",
         "src/channels/",
+        "src/api/routes/chat-client-facade",
         "sim-one-cli/",
-        "tui/"
+        "tui/",
+        "product-packaging"
       ],
       "side_effects": {
         "approval_required": false,
@@ -20222,7 +20241,7 @@
     }
   ],
   "project": {
-    "context_version": "flue-v2-execution-skill-validation-scope:2026-08-01",
+    "context_version": "flue-v2-connectors-clients-packaging-scope:2026-08-01",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

@@ -3,4 +3,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [flue({ providers: [] })],
+  build: {
+    outDir: '.gorombo/sim-one-alpha',
+  },
 });

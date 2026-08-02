@@ -75,6 +75,8 @@ pub struct TranscriptAssistantMessage {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TranscriptStreamCursor {
+    pub instance_id: String,
+    pub url: String,
     pub next_offset: String,
     pub up_to_date: bool,
 }

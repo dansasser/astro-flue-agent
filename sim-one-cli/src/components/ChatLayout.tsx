@@ -17,7 +17,9 @@ export interface ChatLayoutProps {
 }
 
 export function ChatLayout({ baseUrl, session, decidedBy }: ChatLayoutProps) {
-  const agent = useFlueAgent({ name: 'orchestrator', id: session });
+  const agent = useFlueAgent({
+    url: `${baseUrl}/agents/orchestrator/${encodeURIComponent(session)}`,
+  });
   const [input, setInput] = useState('');
 
   const approvalClient = useMemo(

@@ -243,6 +243,7 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
   });
   const receipt = await dispatch(Orchestrator, {
     id: agentInstanceId,
+    idempotencyKey: telegramDispatchIdempotencyKey(update.update_id),
     message: {
       kind: 'signal',
       type: 'telegram.message',
@@ -253,6 +254,10 @@ async function handleIncomingMessage(incoming: Message, update: Update) {
   });
 
   return receipt;
+}
+
+export function telegramDispatchIdempotencyKey(updateId: number): string {
+  return `telegram:update:${updateId}`;
 }
 
 async function handleCallbackQuery(query: NonNullable<Update['callback_query']>, _update: Update) {

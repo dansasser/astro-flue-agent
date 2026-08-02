@@ -11,13 +11,16 @@ use sim_one_ratatui_tui::agent::{
 use sim_one_ratatui_tui::app::{
     App, AppEvent, Clock, ContextUsageState, MouseRegions, SCROLL_PAGE_LINES,
 };
-use sim_one_ratatui_tui::flue::events::{FlueEvent, StreamControl};
+use sim_one_ratatui_tui::flue::events::StreamControl;
 use sim_one_ratatui_tui::flue::stream::AgentStreamUpdate;
 use sim_one_ratatui_tui::history::{
     TranscriptActivity, TranscriptActivityKind, TranscriptActivityStatus,
     TranscriptAssistantMessage, TranscriptExchange, TranscriptPage, TranscriptPageInfo,
     TranscriptPrompt, TranscriptPromptVisibility, TranscriptSession, TranscriptStreamCursor,
 };
+
+mod support;
+use support::chunk;
 
 #[test]
 fn typing_updates_prompt_without_changing_transcript_scroll() {
@@ -37,13 +40,11 @@ fn typing_updates_prompt_without_changing_transcript_scroll() {
 fn transcript_drag_at_viewport_edge_autoscrolls_without_losing_selection() {
     let mut app = App::new_for_test();
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":8_000 + index,
-                "text":format!("selection history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":8_000 + index,
+            "text":format!("selection history row {index}")
+        }))]));
     }
     app.set_transcript_viewport_size(3, 24);
     app.set_mouse_regions(MouseRegions {
@@ -213,6 +214,7 @@ fn agent_reply_context_projection_updates_the_status_meter() {
                 text: "context reply".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-context-1".to_string()),
                 session_title: None,
                 command_name: None,
@@ -241,17 +243,22 @@ fn final_agent_response_moves_below_stream_activity_rows() {
     app.handle_event(AppEvent::Submit);
     wait_for_calls(&calls, 1);
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "batch":10,
             "text":"checking protocol"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool",
-            "eventIndex":11,
+        chunk(serde_json::json!({
+            "type":"tool-input",
+            "batch":11,
             "toolCallId":"cap",
             "toolName":"activate_skill"
+        })),
+        chunk(serde_json::json!({
+            "type":"tool-output",
+            "batch":12,
+            "toolCallId":"cap"
         })),
     ]));
 
@@ -279,13 +286,11 @@ fn final_agent_response_moves_below_stream_activity_rows() {
         Some("assistant: done: order the transcript")
     );
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"operation",
-            "eventIndex":12,
-            "name":"operation"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"submission-settled",
+        "batch":13,
+        "name":"operation"
+    }))]));
 
     let lines = app.transcript_lines();
     let final_line = lines
@@ -311,13 +316,28 @@ fn streamed_final_response_reconciles_in_place_after_late_activity() {
     app.handle_event(AppEvent::Text("keep one final row".to_string()));
     app.handle_event(AppEvent::Submit);
     wait_for_calls(&calls, 1);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"message_end",
-            "eventIndex":20,
-            "message":{"role":"assistant","content":"streamed final answer"}
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "submissionId":"stream-final",
+            "messageId":"stream-final-message",
+            "batch":20
+        })),
+        chunk(serde_json::json!({
+            "type":"message-delta",
+            "kind":"text",
+            "submissionId":"stream-final",
+            "messageId":"stream-final-message",
+            "batch":21,
+            "delta":"streamed final answer"
+        })),
+        chunk(serde_json::json!({
+            "type":"message-completed",
+            "submissionId":"stream-final",
+            "messageId":"stream-final-message",
+            "batch":22
+        })),
+    ]));
 
     assert!(app.is_agent_pending());
     assert_eq!(
@@ -325,14 +345,13 @@ fn streamed_final_response_reconciles_in_place_after_late_activity() {
         Some("assistant: streamed final answer")
     );
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"operation",
-            "eventIndex":21,
-            "name":"operation",
-            "isError":false
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"submission-settled",
+        "submissionId":"stream-final",
+        "batch":23,
+        "name":"operation",
+        "isError":false
+    }))]));
     let lines = app.transcript_lines();
     let operation_line = lines
         .iter()
@@ -388,22 +407,32 @@ fn multiline_stream_final_and_http_result_consolidate_without_orphaned_lines() {
 
     app.handle_event(AppEvent::Text("explain the research handoff".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"message_end",
-            "eventIndex":21,
-            "message":{"role":"assistant","content":[{"type":"text","text":answer}]}
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "submissionId":"multiline-submission",
+            "messageId":"multiline-message",
+            "batch":21,
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn",
-            "eventIndex":23,
-            "isError":false
+        chunk(serde_json::json!({
+            "type":"message-delta",
+            "kind":"text",
+            "submissionId":"multiline-submission",
+            "messageId":"multiline-message",
+            "batch":22,
+            "delta":answer
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation",
-            "eventIndex":25,
-            "name":"operation",
-            "isError":false
+        chunk(serde_json::json!({
+            "type":"message-completed",
+            "submissionId":"multiline-submission",
+            "messageId":"multiline-message",
+            "batch":23
+        })),
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "submissionId":"multiline-submission",
+            "batch":24,
+            "outcome":"completed"
         })),
     ]));
     app.tick();
@@ -464,38 +493,39 @@ fn root_assistant_stream_reuses_one_block_and_nested_worker_output_stays_interna
 
     app.handle_event(AppEvent::Text("delegate and answer".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
-            "eventIndex":50,
-            "timestamp":"2026-07-11T18:35:00Z",
-            "session":"task:default:worker-1",
-            "parentSession":"default",
-            "text":"CHILD_RAW_OUTPUT"
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "submissionId":"hidden-advisory",
+        "batch":50,
+        "message":{
+            "id":"hidden-message",
+            "role":"assistant",
+            "purpose":"assistant",
+            "display":"hidden",
+            "submissionId":"hidden-advisory",
+            "parts":[{"type":"text","text":"CHILD_FINAL_OUTPUT","state":"done"}]
+        }
+    }))]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "submissionId":"root-submission",
+            "messageId":"root-message",
+            "batch":51
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"message_end",
-            "eventIndex":51,
-            "timestamp":"2026-07-11T18:35:01Z",
-            "session":"task:default:worker-1",
-            "parentSession":"default",
-            "message":{"role":"assistant","content":[{"type":"text","text":"CHILD_FINAL_OUTPUT"}]}
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
+            "submissionId":"root-submission",
+            "messageId":"root-message",
+            "batch":5,
+            "delta":"Root answer "
         })),
-    ]));
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
-            "eventIndex":5,
-            "timestamp":"2026-07-11T18:37:02Z",
-            "session":"default",
-            "text":"Root answer "
-        })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
-            "eventIndex":6,
-            "timestamp":"2026-07-11T18:37:03Z",
-            "session":"default",
-            "text":"streaming."
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
+            "submissionId":"root-submission",
+            "messageId":"root-message",
+            "batch":6,
+            "delta":"streaming."
         })),
     ]));
     let live_root_count = app
@@ -504,36 +534,20 @@ fn root_assistant_stream_reuses_one_block_and_nested_worker_output_stays_interna
         .filter(|line| line.as_str() == "assistant: Root answer streaming.")
         .count();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"message_end",
-            "eventIndex":21,
-            "timestamp":"2026-07-11T18:37:09Z",
-            "session":"default",
-            "message":{"role":"assistant","content":[{"type":"text","text":final_answer}]}
-        }),
-    )]));
-    assert_eq!(
-        app.transcript_lines()
-            .iter()
-            .filter(|line| line.as_str() == "assistant: Root answer complete.")
-            .count(),
-        1,
-        "{:?}",
-        app.transcript_lines()
-    );
-    assert!(!app
-        .transcript_lines()
-        .iter()
-        .any(|line| line.contains("Root answer streaming.")));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-completed",
+        "submissionId":"root-submission",
+        "messageId":"root-message",
+        "batch":21
+    }))]));
 
     release_tx.send(()).expect("pending sender should release");
     wait_for_agent(&mut app);
     assert!(
         !app.transcript_lines()
             .iter()
-            .any(|line| line.contains("CHILD_RAW_OUTPUT") || line.contains("CHILD_FINAL_OUTPUT")),
-        "nested worker output reached the final transcript: {:?}",
+            .any(|line| line.contains("CHILD_FINAL_OUTPUT")),
+        "hidden runtime output reached the final transcript: {:?}",
         app.transcript_lines()
     );
     assert_eq!(live_root_count, 1, "{:?}", app.transcript_lines());
@@ -646,6 +660,7 @@ fn startup_preflight_creates_fresh_session_before_sending_one_greeting_prompt() 
                 text: "Hello Daniel, I'm Ollie. All systems are go.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-startup-1".to_string()),
                 session_title: None,
                 command_name: None,
@@ -659,6 +674,8 @@ fn startup_preflight_creates_fresh_session_before_sending_one_greeting_prompt() 
                 id: "tui-startup-1".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _| panic!("default startup must not call the session resumer")),
@@ -715,6 +732,8 @@ fn startup_preflight_fails_when_lifecycle_creation_returns_no_session_id() {
                 id: " ".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _| panic!("default startup must not call the session resumer")),
@@ -766,6 +785,8 @@ fn startup_preflight_reports_lifecycle_and_greeting_failures() {
                 id: "tui-greeting-failure".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _| panic!("default startup must not call the session resumer")),
@@ -802,6 +823,8 @@ fn explicit_startup_resume_validates_and_restores_title_without_greeting() {
                 id: "tui-existing-1".to_string(),
                 title: Some("Release Work".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
     );
@@ -853,6 +876,8 @@ fn explicit_resume_locks_input_until_history_and_snapshot_offset_are_installed()
                 id: "tui-history-1".to_string(),
                 title: Some("Release Work".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(move |_, session_id, limit, before| {
@@ -922,6 +947,8 @@ fn explicit_resume_history_failure_stops_startup_without_greeting() {
                 id: "tui-history-failed".to_string(),
                 title: Some("Failed History".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _, _, _| Err("history unavailable".to_string())),
@@ -951,6 +978,8 @@ fn fresh_startup_uses_the_fresh_stream_tail_and_never_loads_history() {
                 id: "tui-fresh-history".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _| panic!("fresh startup must not resume")),
@@ -965,7 +994,7 @@ fn fresh_startup_uses_the_fresh_stream_tail_and_never_loads_history() {
 
     assert!(app.startup_succeeded());
     assert_eq!(history_calls.load(Ordering::SeqCst), 0);
-    assert_eq!(app.stream_start_offset(), "now");
+    assert_eq!(app.stream_start_offset(), "-1");
 }
 
 #[test]
@@ -983,6 +1012,8 @@ fn scrolling_to_loaded_history_top_requests_one_older_page_and_prepends_it() {
                 id: "tui-paged-history".to_string(),
                 title: None,
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(move |_, _, _, before| {
@@ -1045,6 +1076,8 @@ fn older_history_failure_preserves_loaded_history_and_keeps_startup_usable() {
                 id: "tui-history-page-error".to_string(),
                 title: None,
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(move |_, _, _, before| {
@@ -1089,6 +1122,8 @@ fn explicit_resume_renders_sanitized_snapshot_as_the_canonical_transcript() {
                 id: "tui-render-history".to_string(),
                 title: Some("Restored Work".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _, _, _| {
@@ -1186,6 +1221,8 @@ fn older_history_prepend_preserves_the_exact_visible_source_row() {
                 id: "tui-anchor-history".to_string(),
                 title: None,
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(move |_, _, _, before| {
@@ -1287,6 +1324,8 @@ fn page_up_history_load_preserves_viewport_when_startup_notices_precede_exchange
                 id: "tui-page-jump-history".to_string(),
                 title: None,
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(move |_, _, _, before| {
@@ -1382,6 +1421,8 @@ fn replayed_old_final_cannot_settle_a_new_pending_prompt() {
                 id: "tui-replay-history".to_string(),
                 title: None,
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
         Arc::new(|_, _, _, _| {
@@ -1404,14 +1445,12 @@ fn replayed_old_final_cannot_settle_a_new_pending_prompt() {
     wait_for_startup(&mut app);
     app.handle_event(AppEvent::Text("new prompt".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"message_end",
-            "submissionId":"old-submission",
-            "eventIndex":99,
-            "message":{"role":"assistant","content":"STALE_REPLAY_FINAL"}
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "submissionId":"old-submission",
+        "batch":99,
+        "message":{"role":"assistant","content":"STALE_REPLAY_FINAL"}
+    }))]));
 
     let after_replay = app.transcript_lines().join("\n");
     assert!(after_replay.contains("old authoritative final"));
@@ -1419,17 +1458,17 @@ fn replayed_old_final_cannot_settle_a_new_pending_prompt() {
     assert!(after_replay.contains("waiting for final response"));
     assert!(app.is_agent_pending());
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
             "submissionId":"new-submission",
-            "eventIndex":1,
+            "batch":1,
             "text":"new streamed "
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"message_end",
+        chunk(serde_json::json!({
+            "type":"message-appended",
             "submissionId":"new-submission",
-            "eventIndex":2,
+            "batch":2,
             "message":{"role":"assistant","content":"new streamed final"}
         })),
     ]));
@@ -1458,45 +1497,45 @@ fn replayed_old_final_cannot_settle_a_new_pending_prompt() {
 fn reconnect_replay_keeps_one_in_flight_activity_and_final() {
     let mut app = App::new_for_test();
     let in_flight = vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation_start",
+        chunk(serde_json::json!({
+            "type":"message-started",
             "submissionId":"reconnect-submission",
             "operationId":"reconnect-operation",
             "operationKind":"prompt",
-            "eventIndex":0,
+            "batch":0,
             "timestamp":"2026-07-23T16:01:00.100Z"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"text_delta",
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"text",
             "submissionId":"reconnect-submission",
-            "eventIndex":1,
+            "batch":1,
             "timestamp":"2026-07-23T16:01:00.200Z",
             "text":"reconnect streamed text"
         })),
     ];
 
-    app.handle_stream_update(AgentStreamUpdate::Events(in_flight.clone()));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(in_flight.clone()));
     app.handle_stream_update(AgentStreamUpdate::Reconnecting(
         "fixture disconnect".to_string(),
     ));
-    app.handle_stream_update(AgentStreamUpdate::Events(in_flight));
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"message_end",
+    app.handle_stream_update(AgentStreamUpdate::Chunks(in_flight));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-appended",
             "submissionId":"reconnect-submission",
-            "eventIndex":2,
+            "batch":2,
             "timestamp":"2026-07-23T16:01:01.000Z",
             "message":{
                 "role":"assistant",
                 "content":[{"type":"text","text":"reconnect final"}]
             }
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"operation",
+        chunk(serde_json::json!({
+            "type":"submission-settled",
             "submissionId":"reconnect-submission",
             "operationId":"reconnect-operation",
             "operationKind":"prompt",
-            "eventIndex":3,
+            "batch":3,
             "timestamp":"2026-07-23T16:01:01.100Z",
             "durationMs":1500,
             "isError":false
@@ -1507,7 +1546,7 @@ fn reconnect_replay_keeps_one_in_flight_activity_and_final() {
     assert_eq!(
         transcript
             .lines()
-            .filter(|line| line == &"operation: prompt completed in 1.5s")
+            .filter(|line| line == &"operation: operation completed")
             .count(),
         1
     );
@@ -1540,6 +1579,8 @@ fn explicit_startup_resume_accepts_a_name_resolved_canonical_id_without_greeting
                 id: "tui-existing-by-name".to_string(),
                 title: Some("Release Work".to_string()),
                 created: false,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
     );
@@ -1573,6 +1614,7 @@ fn explicit_startup_missing_session_uses_fresh_session_and_greeting() {
                 text: "Fresh fallback greeting".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-fresh-fallback".to_string()),
                 session_title: None,
                 command_name: None,
@@ -1587,6 +1629,8 @@ fn explicit_startup_missing_session_uses_fresh_session_and_greeting() {
                 id: "tui-fresh-fallback".to_string(),
                 title: None,
                 created: true,
+                stream_url: "/agents/orchestrator/fixture-instance".to_string(),
+                stream_offset: "-1".to_string(),
             })
         }),
     );
@@ -1617,12 +1661,12 @@ fn stream_updates_change_status_without_touching_prompt() {
     assert_eq!(app.stream_status(), "connecting");
     assert_eq!(app.prompt(), "keep this prompt");
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({"type":"thinking_delta","eventIndex":3}),
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
+        serde_json::json!({"type":"message-delta","kind":"reasoning","batch":3}),
     )]));
     assert_eq!(app.stream_status(), "live");
-    assert_eq!(app.last_stream_event(), Some("thinking_delta"));
-    assert!(app.status_text().contains("last: thinking_delta"));
+    assert_eq!(app.last_stream_event(), Some("message-delta"));
+    assert!(app.status_text().contains("last: message-delta"));
 
     app.handle_stream_update(AgentStreamUpdate::Control(StreamControl {
         up_to_date: true,
@@ -1651,15 +1695,15 @@ fn stream_reconnect_and_failure_are_visible_in_status() {
 fn stream_activity_rows_are_synced_into_transcript() {
     let mut app = App::new_for_test();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "batch":10,
             "text":"checking protocol"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"tool_start",
-            "eventIndex":11,
+        chunk(serde_json::json!({
+            "type":"tool-input",
+            "batch":11,
             "toolCallId":"cap",
             "toolName":"list_capabilities"
         })),
@@ -1682,13 +1726,11 @@ fn stream_activity_updates_do_not_snap_when_scrolled_back() {
     app.scroll_page_up();
     let before_scroll = app.transcript_scroll();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
-            "text":"checking protocol"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-delta","kind":"reasoning",
+        "batch":10,
+        "text":"checking protocol"
+    }))]));
 
     assert_eq!(app.transcript_scroll(), before_scroll);
     assert!(!app.follow_tail());
@@ -1699,13 +1741,11 @@ fn stream_activity_updates_follow_tail_when_at_bottom() {
     let mut app = App::new_for_test();
     app.jump_to_tail();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
-            "text":"checking protocol"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-delta","kind":"reasoning",
+        "batch":10,
+        "text":"checking protocol"
+    }))]));
 
     assert!(app.follow_tail());
     assert_eq!(app.transcript_scroll(), app.max_scroll());
@@ -1732,8 +1772,8 @@ fn multiline_agent_response_reindexes_stream_activity_rows() {
 
     app.handle_event(AppEvent::Text("multiline".to_string()));
     app.handle_event(AppEvent::Submit);
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({"type":"turn_start","eventIndex":20}),
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
+        serde_json::json!({"type":"message-started","batch":20}),
     )]));
     release_tx.send(()).expect("pending sender should release");
     wait_for_agent(&mut app);
@@ -1747,8 +1787,8 @@ fn multiline_agent_response_reindexes_stream_activity_rows() {
         .iter()
         .any(|line| line == "  second line"));
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({"type":"turn","eventIndex":21}),
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(
+        serde_json::json!({"type":"submission-settled","batch":21}),
     )]));
 
     assert!(app
@@ -1765,21 +1805,26 @@ fn multiline_agent_response_reindexes_stream_activity_rows() {
 fn second_turn_start_does_not_rewrite_previous_ephemeral_rows() {
     let mut app = App::new_for_test();
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn_start",
-            "eventIndex":1,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "submissionId":"first-submission",
+            "messageId":"first-message",
+            "batch":1,
             "timestamp":"2026-07-03T00:00:00Z"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":2,
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "submissionId":"first-submission",
+            "messageId":"first-message",
+            "batch":2,
             "timestamp":"2026-07-03T00:00:01Z",
             "text":"first"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn",
-            "eventIndex":3,
+        chunk(serde_json::json!({
+            "type":"submission-settled",
+            "submissionId":"first-submission",
+            "batch":3,
             "timestamp":"2026-07-03T00:00:02Z"
         })),
     ]));
@@ -1790,15 +1835,19 @@ fn second_turn_start_does_not_rewrite_previous_ephemeral_rows() {
         .position(|line| line == "thinking: first")
         .expect("first thinking activity should render");
 
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![
-        FlueEvent::from_value(serde_json::json!({
-            "type":"turn_start",
-            "eventIndex":1,
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![
+        chunk(serde_json::json!({
+            "type":"message-started",
+            "submissionId":"second-submission",
+            "messageId":"second-message",
+            "batch":4,
             "timestamp":"2026-07-03T00:01:00Z"
         })),
-        FlueEvent::from_value(serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":2,
+        chunk(serde_json::json!({
+            "type":"message-delta","kind":"reasoning",
+            "submissionId":"second-submission",
+            "messageId":"second-message",
+            "batch":5,
             "timestamp":"2026-07-03T00:01:01Z",
             "text":"second"
         })),
@@ -1844,13 +1893,11 @@ fn max_scroll_uses_rendered_viewport_height() {
 #[test]
 fn max_scroll_counts_wrapped_rows_for_narrow_transcript_width() {
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"thinking_delta",
-            "eventIndex":10,
-            "text":"alpha bravo charlie delta"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-delta","kind":"reasoning",
+        "batch":10,
+        "text":"alpha bravo charlie delta"
+    }))]));
 
     app.set_transcript_viewport_size(3, 12);
     app.jump_to_tail();
@@ -1866,13 +1913,11 @@ fn max_scroll_counts_wrapped_rows_for_narrow_transcript_width() {
 #[test]
 fn transcript_splits_a_token_that_is_longer_than_the_viewport() {
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":12,
-            "text":"abcdefghij12345"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":12,
+        "text":"abcdefghij12345"
+    }))]));
 
     app.set_transcript_viewport_size(4, 5);
     let rendered = app.transcript_rendered_lines();
@@ -1885,13 +1930,11 @@ fn transcript_splits_a_token_that_is_longer_than_the_viewport() {
 #[test]
 fn transcript_wraps_before_a_word_that_does_not_fit() {
     let mut app = App::new_for_test();
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":11,
-            "text":"alpha bravo"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":11,
+        "text":"alpha bravo"
+    }))]));
 
     app.set_transcript_viewport_size(4, 12);
     let rendered = app.transcript_rendered_lines();
@@ -1911,13 +1954,11 @@ fn transcript_wraps_before_a_word_that_does_not_fit() {
 fn max_scroll_uses_exact_prewrapped_transcript_rows() {
     let mut app = App::new_for_test();
     for index in 0..30 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":100 + index,
-                "text":format!("row {index} alpha bravo charlie delta echo foxtrot")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":100 + index,
+            "text":format!("row {index} alpha bravo charlie delta echo foxtrot")
+        }))]));
     }
 
     let height = 4;
@@ -2025,13 +2066,11 @@ fn prompt_arrows_follow_wrapped_rows_and_unicode_display_columns() {
 fn prompt_arrows_do_not_steal_transcript_page_or_mouse_scrolling() {
     let mut app = App::new_for_test();
     for index in 0..20 {
-        app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-            serde_json::json!({
-                "type":"log",
-                "eventIndex":700 + index,
-                "text":format!("history row {index}")
-            }),
-        )]));
+        app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+            "type":"message-appended",
+            "batch":700 + index,
+            "text":format!("history row {index}")
+        }))]));
     }
     app.set_transcript_viewport_size(4, 80);
     app.jump_to_tail();
@@ -2058,6 +2097,7 @@ fn rename_reply_updates_status_title_without_changing_session_id() {
                 text: "Renamed session tui-existing-1 to \"Release Work\".".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-existing-1".to_string()),
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("rename".to_string()),
@@ -2118,6 +2158,7 @@ fn resume_reply_replaces_the_old_transcript_with_durable_history() {
                 text: "Resumed session tui-named-1.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-named-1".to_string()),
                 session_title: Some("Release Work".to_string()),
                 command_name: Some("resume".to_string()),
@@ -2145,13 +2186,11 @@ fn resume_reply_replaces_the_old_transcript_with_durable_history() {
             ))
         }),
     );
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":1001,
-            "text":"OLD_SESSION_ONLY"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":1001,
+        "text":"OLD_SESSION_ONLY"
+    }))]));
     app.handle_event(AppEvent::Text("/resume tui-named-1".to_string()));
     app.handle_event(AppEvent::Submit);
     wait_for_agent(&mut app);
@@ -2450,6 +2489,7 @@ fn new_command_replaces_the_old_transcript_and_shows_the_command_result() {
                 text: "Started new session tui-new-1.".to_string(),
                 submission_id: None,
                 stream_offset: None,
+                stream_url: None,
                 session_id: Some("tui-new-1".to_string()),
                 session_title: None,
                 command_name: Some("new".to_string()),
@@ -2458,13 +2498,11 @@ fn new_command_replaces_the_old_transcript_and_shows_the_command_result() {
             })
         }),
     );
-    app.handle_stream_update(AgentStreamUpdate::Events(vec![FlueEvent::from_value(
-        serde_json::json!({
-            "type":"log",
-            "eventIndex":1002,
-            "text":"OLD_SESSION_ONLY"
-        }),
-    )]));
+    app.handle_stream_update(AgentStreamUpdate::Chunks(vec![chunk(serde_json::json!({
+        "type":"message-appended",
+        "batch":1002,
+        "text":"OLD_SESSION_ONLY"
+    }))]));
     app.set_authoritative_context_usage(250, 1_000);
     assert_eq!(
         app.context_usage(),
@@ -2537,6 +2575,8 @@ fn history_page(
         },
         exchanges,
         stream: TranscriptStreamCursor {
+            instance_id: format!("{session_id}-instance"),
+            url: format!("/agents/orchestrator/{session_id}-instance"),
             next_offset: next_offset.to_string(),
             up_to_date: true,
         },
@@ -2609,6 +2649,7 @@ fn agent_reply(text: impl Into<String>) -> AgentReply {
         text: text.into(),
         submission_id: None,
         stream_offset: None,
+        stream_url: None,
         session_id: None,
         session_title: None,
         command_name: None,

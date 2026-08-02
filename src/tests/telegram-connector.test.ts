@@ -6,7 +6,10 @@ import {
   generatePairingCode,
   isMentioned,
 } from '../api/connectors/telegram/telegram-api.js';
-import { resolveTelegramApprovalPrincipal } from '../channels/telegram.js';
+import {
+  resolveTelegramApprovalPrincipal,
+  telegramDispatchIdempotencyKey,
+} from '../channels/telegram.js';
 import { goromboPersistenceRuntime } from '../db.js';
 import app from '../app.js';
 
@@ -86,6 +89,12 @@ test('telegram approval principal is admin for configured admin ids', () => {
   assert.equal(resolveTelegramApprovalPrincipal('6653274440', ['6653274440']), 'admin');
   assert.equal(resolveTelegramApprovalPrincipal('999999', ['6653274440']), 'operator');
   assert.equal(resolveTelegramApprovalPrincipal('999999', []), 'operator');
+});
+
+test('telegram Flue dispatch idempotency is stable per update', () => {
+  assert.equal(telegramDispatchIdempotencyKey(42), 'telegram:update:42');
+  assert.equal(telegramDispatchIdempotencyKey(42), telegramDispatchIdempotencyKey(42));
+  assert.notEqual(telegramDispatchIdempotencyKey(42), telegramDispatchIdempotencyKey(43));
 });
 
 test('telegram api client builds correct base url', () => {
@@ -232,6 +241,17 @@ test('telegram admin status route requires api secret', async () => {
   } finally {
     restore();
   }
+});
+
+test('telegram Flue 2 channel is mounted at its explicit webhook route', async () => {
+  const response = await app.request('/channels/telegram/webhook', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ update_id: 1 }),
+  });
+
+  assert.notEqual(response.status, 404);
+  assert.ok([401, 403].includes(response.status), `unexpected status ${response.status}`);
 });
 
 test('telegram settings CRUD works in session database', () => {

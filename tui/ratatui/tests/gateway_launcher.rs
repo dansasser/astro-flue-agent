@@ -211,10 +211,7 @@ if (listenFd) {
         .arg(reserved_port.port().to_string())
         .env("SIM_ONE_TEST_LISTEN_FD", reserved_port.raw_fd().to_string())
         .env("SIM_ONE_TEST_CWD_MARKER", &cwd_marker)
-        .env(
-            "GOROMBO_RUNTIME_ROOT",
-            runtime_root.path().join(".gorombo"),
-        )
+        .env("GOROMBO_RUNTIME_ROOT", runtime_root.path().join(".gorombo"))
         .env(
             "SIM_ONE_TUI_LOG_PATH",
             runtime_root.path().join("tui.jsonl"),

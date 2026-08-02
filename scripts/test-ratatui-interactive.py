@@ -103,6 +103,8 @@ class GatewayHandler(BaseHTTPRequestHandler):
                     },
                     "exchanges": exchanges,
                     "stream": {
+                        "instanceId": "tui-interactive-smoke",
+                        "url": "/agents/orchestrator/tui-interactive-smoke",
                         "nextOffset": "0000000000000000_0000000000000042",
                         "upToDate": True,
                     },
@@ -160,7 +162,11 @@ class GatewayHandler(BaseHTTPRequestHandler):
                         "id": "tui-interactive-smoke",
                         "surface": "tui",
                         "created": False,
-                    }
+                    },
+                    "stream": {
+                        "url": "/agents/orchestrator/tui-interactive-smoke",
+                        "nextOffset": "0000000000000000_0000000000000042",
+                    },
                 }
             ).encode()
             self.send_response(200)

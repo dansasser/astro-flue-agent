@@ -62,6 +62,7 @@
     "fetch-embedding-model": "node scripts/fetch-embedding-model.mjs",
     "wasm:build": "node scripts/wasm-build.mjs",
     "prebuild": "node scripts/wasm-build.mjs",
+    "postbuild": "node scripts/generate-builtin-registry.mjs && node scripts/copy-runtime-config.mjs && node scripts/copy-wasm-artifact.mjs && node scripts/package-runtime-dependencies.mjs",
     "smoke:memory": "node scripts/smoke-memory-helper.mjs",
     "cargo:test": "cargo test --workspace"
   },

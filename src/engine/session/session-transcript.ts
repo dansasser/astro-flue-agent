@@ -53,7 +53,12 @@ export interface ChatTranscriptExchange {
 export interface ChatTranscriptPage {
   session: { id: string; title?: string };
   exchanges: ChatTranscriptExchange[];
-  stream: { nextOffset: string; upToDate: boolean };
+  stream: {
+    instanceId: string;
+    url: string;
+    nextOffset: string;
+    upToDate: boolean;
+  };
   page: { limit: number; hasOlder: boolean; before?: string };
 }
 
@@ -110,11 +115,15 @@ export function projectSessionTranscript(input: {
       })
     : undefined;
   const activeSnapshot = input.snapshots.at(-1);
+  const activeGeneration = input.generations?.at(-1);
+  const activeInstanceId = activeGeneration?.instanceId ?? input.session.id;
 
   return {
     session: input.session,
     exchanges: selected.map((entry) => entry.exchange),
     stream: {
+      instanceId: activeInstanceId,
+      url: `/agents/orchestrator/${encodeURIComponent(activeInstanceId)}`,
       nextOffset: activeSnapshot?.offset ?? '-1',
       upToDate: true,
     },
@@ -330,10 +339,16 @@ function projectToolActivity(
 ): ChatTranscriptActivity {
   const failed = part.state === 'output-error';
   const completed = part.state === 'output-available';
+  const taskAgent = part.toolName === 'task'
+    && isRecord(part.input)
+    && typeof part.input.agent === 'string'
+    && part.input.agent.trim()
+    ? part.input.agent.trim()
+    : undefined;
   return {
     id: part.toolCallId,
-    kind: 'tool',
-    name: boundedText(part.toolName, MAX_ACTIVITY_NAME_CHARS),
+    kind: part.toolName === 'task' ? 'task' : 'tool',
+    name: boundedText(taskAgent ?? part.toolName, MAX_ACTIVITY_NAME_CHARS),
     status: failed ? 'failed' : completed ? 'completed' : 'running',
     ...('durationMs' in part && typeof part.durationMs === 'number'
       ? { durationMs: part.durationMs }
