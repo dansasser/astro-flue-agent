@@ -22,7 +22,7 @@ Cards also preserve conflicting-but-useful metadata. For example, MiniMax advert
 
 Runtime setup has two layers:
 
-1. Provider modules in `src/core/models/providers/<provider>` register Flue provider IDs from `src/app.ts`.
+1. Provider modules in `src/core/models/providers/<provider>` create Pi providers and register them with Flue 2 through `setProvider(...)` during runtime bootstrap.
 2. Model cards in each provider's `cards/` directory provide the model IDs and per-model metadata used by those provider registrations and by the orchestrator model registry.
 3. The shipped `gorombo.config.json` runtime file selects active project model card keys for the running deployment.
 4. `src/core/models/catalog.ts` aggregates provider-owned cards for lookup by Flue model specifier.
@@ -138,8 +138,8 @@ The session-management layer uses cards in this order:
 2. Use the provider-reported context window for safety when available.
 3. Reserve output tokens before calculating usable input budget.
 4. Warn before the prompt approaches the compaction threshold.
-5. Derive current session usage from stored Flue `SessionData` when available.
-6. Trigger `session.compact()` before Flue or the provider rejects the prompt.
+5. Derive current usage from Flue 2 conversation snapshots and response metadata when available.
+6. On explicit `/compact`, ask the active generation for a continuation summary and rotate the product session to a new Flue instance.
 7. Give RAG only the remaining context budget after system instructions, protocol context, memory, current user input, and output reserve are accounted for.
 
 The durable orchestrator agent prompts with the primary card. Backup cards
@@ -148,9 +148,13 @@ budgeting.
 
 RAG should come after this budget layer because retrieved context must fit into the selected card's remaining budget.
 
-The default web retrieval provider is Ollama Search through `POST https://ollama.com/api/web_search`, authenticated with the existing Ollama key resolved from model-card/provider env bindings. Web search is owned by the researcher subagent. The researcher-facing `web_research` tool calls the `web-research` Flue workflow boundary, which plans searches, uses cache, optionally expands top web results through fetch, packs contexts to a token budget, and records non-fatal provider failures. Other providers can be added behind the same RAG provider interface.
+The default web retrieval provider is Ollama Search through `POST https://ollama.com/api/web_search`, authenticated with the existing Ollama key resolved from model-card/provider env bindings. Web search is owned by the researcher subagent. The researcher-facing `web_research` tool calls the application-owned web-research function, which plans searches, uses cache, optionally expands top web results through fetch, packs contexts to a token budget, and records non-fatal provider failures. Other providers can be added behind the same RAG provider interface.
 
-The main orchestrator registers a Flue subagent named `researcher`. The orchestrator must not call web search or web-capable retrieval directly. It delegates current, external, source-backed, or research tasks through Flue `task` with `agent: "researcher"`. The researcher may use workflows and tools to decide whether one search, many searches, page fetches, or cache hits are enough.
+The main orchestrator registers a Flue 2 subagent named `researcher` with
+`useSubagent(...)`. The orchestrator must not call web search or web-capable
+retrieval directly. The researcher may use application workflow functions and
+tools to decide whether one search, many searches, page fetches, or cache hits
+are enough.
 
 ## Related Documentation
 

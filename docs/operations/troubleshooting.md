@@ -170,9 +170,10 @@ The SIM-ONE terminal UI writes privacy-safe, rotating JSONL diagnostics to:
 This TUI log is bounded and omits prompt text, responses, selected text,
 secrets, session names, and raw errors. For the gateway and workers, preserve
 stdout/stderr from the launcher or service manager and inspect the protected
-`/api/telemetry/runs` and `/api/telemetry/runs/:runId` endpoints. Use event
-categories, session ids, run ids, and timestamps to correlate failures across
-those surfaces.
+`/api/telemetry/executions` and
+`/api/telemetry/executions/:executionId` endpoints. Use event categories,
+product session ids, Flue instance/submission ids, execution ids, and
+timestamps to correlate failures across those surfaces.
 
 ## Recovery Order
 

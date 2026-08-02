@@ -4,26 +4,30 @@ The capability system lets users and agents add skills, tools, workers (subagent
 
 ## Overview
 
-Built-in Flue runtime capabilities are source-time application code. Built-in Agent Skills live under `src/skills/<name>/SKILL.md`, are imported with `with { type: 'skill' }`, and are registered directly on the owning agent or workflow. Example: `src/skills/greeting-preflight/SKILL.md` is registered on `src/agents/orchestrator.ts`.
+Built-in Flue runtime capabilities are source-time application code. Built-in
+Agent Skills live under `src/skills/<name>/SKILL.md`, are imported directly,
+and are registered by the owning agent with `useSkill(...)`. For example,
+`src/skills/greeting-preflight/SKILL.md` is registered by
+`src/agents/orchestrator.ts`.
 
 The capability registry is the post-build extension lane. Its default paths are
 `<runtime-root>/db/capabilities.sqlite` and
 `<runtime-root>/capabilities/`. `GOROMBO_CAPABILITY_DB_PATH` and
 `GOROMBO_CAPABILITIES_DIR` can override them; relative overrides resolve under
 the same canonical runtime root. `GOROMBO_CAPABILITY_DIR` remains a supported
-fallback for the capability directory. The orchestrator reads the store at
-agent init (`createAgent(...)`) and merges user-defined capabilities into the
-same `tools`, `skills`, and `subagents` arrays that hold built-in capabilities.
-A service restart picks up changes; no rebuild is needed.
+fallback for the capability directory. The orchestrator builds one runtime
+capability snapshot when its module loads and registers that snapshot through
+Flue 2 hooks each time the agent function runs. A service restart rebuilds the
+snapshot; no product rebuild is needed.
 
 Four capability kinds:
 
 | Kind | Flue ingress | Runtime loading path |
 | --- | --- | --- |
-| Skill | `skills: [...]` + auto-discovery of `<cwd>/.agents/skills/<name>/` | Built-ins import from `src/skills`. Registry/user skills materialize into the discovery path. Flue loads both natively. |
-| Tool | `tools: ToolDefinition[]` | Dynamic `import()` of user JS modules exporting `defineTool(...)` results. |
-| Worker (subagent) | `subagents: AgentProfile[]` | Dynamic `import()` of user JS modules exporting `defineAgentProfile(...)` results. |
-| MCP | `connectMcpServer(name, opts) -> { tools }` | `connectMcpServer(...)` per enabled row at init; tools spread into `tools`. |
+| Skill | `Skill` + `useSkill(...)` | Built-ins are direct `SKILL.md` imports. Registry skills are parsed into `defineSkill(...)` definitions. |
+| Tool | `ToolDefinition` + `useTool(...)` | Dynamic `import()` of user JS modules exporting `defineTool(...)` results. |
+| Worker (subagent) | `SubagentDefinition` + `useSubagent(...)` | Dynamic `import()` of user JS modules exporting `defineSubagent(...)` results. |
+| MCP | `McpConnectionDefinition` + `useMcpConnection(...)` | Enabled rows become `defineMcpConnection(...)` definitions. Flue owns tool discovery for each connection. |
 
 ## Architecture
 
@@ -49,11 +53,11 @@ Capability implementation request
 -> typed source handoff
 -> capability-manager
 -> Service restart
--> createAgent(...) init
--> loadUserCapabilities(env) reads SQLite
+-> gateway module initialization
+-> loadRuntimeCapabilitySnapshot(env) reads SQLite
 -> promoted managed packages are selected without refetching mutable sources
--> connectUserMcpServers() opens MCP connections
--> merge into tools/skills/subagents arrays
+-> loaders produce Flue 2 skills, tools, subagents, and MCP definitions
+-> Orchestrator registers each definition through its owning hook
 -> built-in + user capabilities live together
 ```
 
@@ -142,7 +146,9 @@ src/engine/capabilities/
   capability-store.ts      SQLite CRUD
   capability-loader.ts     loadUserCapabilities(env) — reads SQLite, returns grouped by kind
   skill-materializer.ts    copies/github-clones sources into lifecycle staging directories
-  mcp-broker.ts            connectUserMcpServers() — opens MCP connections, returns tools
+  mcp-broker.ts            creates Flue 2 MCP connection definitions
+  runtime-capability-snapshot.ts
+                           composes enabled runtime definitions once at module load
   index.ts                 barrel exports
 
 scripts/
@@ -155,15 +161,15 @@ src/engine/workers/
     skills/                imported capability authoring skills
 
 src/agents/
-  orchestrator.ts          Modified — calls loadUserCapabilitiesFromStore(env) at init,
-                            merges user tools/MCP into tools array, user workers into subagents
+  orchestrator.ts          registers built-in and runtime definitions with Agent Hooks
 ```
 
 ## Reload At Initialization
 
 Adding a capability writes to SQLite. When the gateway process restarts,
-`createAgent(...)` initialization re-reads SQLite and loads only the promoted
-managed package. It never recopies or reclones a mutable source during startup.
+Gateway module initialization re-reads SQLite and loads only the promoted
+managed package into a runtime capability snapshot. It never recopies or
+reclones a mutable source during startup.
 An enabled record whose promoted package is missing fails closed and is not
 attached. No product rebuild is required.
 User-defined capabilities live in SQLite and
@@ -225,7 +231,7 @@ merge defined fields with the stored connection before validation, so changing
 transport or token configuration does not discard the endpoint.
 
 Executable package validation accepts only direct exported
-`defineTool(...)` or `defineAgentProfile(...)` results, including arrays made
+`defineTool(...)` or `defineSubagent(...)` results, including arrays made
 entirely from direct results. A function that merely contains a factory call
 is not a loadable Flue capability and is rejected before promotion.
 

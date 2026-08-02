@@ -306,7 +306,8 @@ root:
 
 | Data | Default location |
 | --- | --- |
-| Flue persistence and sessions | `.gorombo/db/flue.sqlite`, `.gorombo/db/sessions.sqlite` |
+| Flue 2 conversations and product sessions | `.gorombo/db/flue-v2.sqlite`, `.gorombo/db/sessions.sqlite` |
+| Flue beta rollback archive | `.gorombo/db/flue.sqlite` (retained unchanged) |
 | Protocols, structured memory, and schedules | `.gorombo/db/` |
 | Vector retrieval data | `.gorombo/vector/` |
 | Capability registry and installed definitions | `.gorombo/db/capabilities.sqlite`, `.gorombo/capabilities/` |
@@ -388,7 +389,7 @@ Type `/` at the beginning of the TUI prompt to open the command palette. Use `Up
 | `/sessions [limit]` | List recent owned sessions; the default is 10 and the accepted range is 1 to 50. |
 | `/session` | Show the active session id. |
 | `/rename <title>` | Rename the active session. |
-| `/compact` | Compact the active durable session without sending the command to the model. |
+| `/compact` | Summarize the active generation and continue the product session in a new Flue 2 instance. |
 | `/help` | Show the in-TUI command reference. |
 | `/exit` | Exit cleanly and print the active session id for later resume. |
 
@@ -400,7 +401,12 @@ SIM-ONE Alpha combines [Flue](https://flueframework.com/) runtime primitives wit
 
 ### Flue Runtime Foundation
 
-Flue is the TypeScript foundation for durable agents and sessions, workflows, skills, tools, workers/subagents, MCP connections, persistence, compaction, sandboxing, routing, and observability. The SIM-ONE gateway mounts the Flue runtime, and each conversation enters a durable orchestrator session. Flue remains the execution foundation while product governance and business data remain owned by SIM-ONE Alpha.
+Flue 2 is the TypeScript foundation for durable agent instances, submissions,
+messages, snapshots, updates, Agent Hooks, skills, tools, subagents, MCP
+connections, persistence, compaction, sandboxing, explicit routing, and
+observability. The SIM-ONE gateway explicitly mounts the orchestrator and
+Telegram routers. Flue remains the execution foundation while application
+workflows, product governance, and business data remain owned by SIM-ONE Alpha.
 
 ### SIM-ONE Governance Layer
 
@@ -422,17 +428,20 @@ the active protocol bundle or product-owned runtime checks.
 ```text
 TUI / Telegram / API / schedule
 -> Secure gateway and normalized event
--> Durable Flue orchestrator session
+-> Product session and active Flue 2 orchestrator instance
 -> Protocol Tool and SQLite protocol bundle
 -> Orchestrator routing and validation
 -> Memory, RAG, and capability registries
--> Governed tool, worker, workflow, or MCP execution
+-> Governed tool, worker, application workflow, or MCP execution
 -> Structured result returned to the orchestrator
 -> Protocol and response validation
 -> Approval, revision, rejection, or final response
 ```
 
-Workers are controlled executors, not independent authorities. They perform specialized work in child sessions, report structured results to the orchestrator, and remain inside the same protocol, validation, and approval path.
+Workers are controlled executors, not independent authorities. They perform
+specialized work in child agent instances, report structured results to the
+orchestrator, and remain inside the same protocol, validation, and approval
+path.
 
 ### Built-In And Runtime Capabilities
 
@@ -440,14 +449,23 @@ SIM-ONE Alpha exposes capabilities through two layers:
 
 | Layer | What it contains | How it enters the runtime |
 | --- | --- | --- |
-| Flue / built-in | Product-shipped skills, tools, worker profiles, and MCP servers | Defined with the application and attached through Flue |
+| Flue / built-in | Product-shipped skills, tools, subagent definitions, and MCP connections | Defined with the application and registered through Flue 2 Agent Hooks |
 | SIM-ONE runtime registry | User- or agent-added skills, tools, workers, and MCP servers | Stored in SQLite; file-backed capabilities are materialized under `<runtime-root>/capabilities/` and enabled capabilities load after restart without rebuilding |
 
-Enabled runtime tools and MCP tools join the built-in Flue tool surface, worker profiles join the available subagents, and skills join Flue skill discovery. Registration does not grant unrestricted authority: enablement, identity and scope, collision checks, protocols, and approval requirements still apply.
+Enabled runtime tools, MCP connections, subagent definitions, and skills join
+the corresponding built-in Flue 2 hook surfaces. Registration does not grant
+unrestricted authority: enablement, identity and scope, collision checks,
+protocols, and approval requirements still apply.
 
 ### Persistence And State
 
-Flue SQLite stores canonical agent-runtime state such as durable sessions, accepted submissions, agent and workflow runs, and event streams. SIM-ONE application stores hold product and governance state such as logical session and connector metadata, protocols, structured memory, schedules, capability records, retrieval data, and approvals. Structured checklists, todos, and session notes are managed by the Rust/WebAssembly memory helper and persisted to SQLite.
+Flue 2 SQLite stores canonical agent instances, submissions, messages,
+snapshots, and updates in `.gorombo/db/flue-v2.sqlite`. The beta
+`.gorombo/db/flue.sqlite` remains an untouched rollback archive. SIM-ONE
+application stores hold product sessions and generation mappings, connector
+metadata, protocols, structured memory, schedules, capability records,
+retrieval data, and approvals. Structured checklists, todos, and session notes
+are managed by the Rust/WebAssembly memory helper and persisted to SQLite.
 
 Keeping those layers distinct lets Flue resume and observe execution while SIM-ONE controls the rules, context, capabilities, and durable business state applied to that execution.
 
@@ -479,7 +497,7 @@ SIM-ONE Alpha supports the built-in and runtime capability layers described in [
 | --- | --- | --- |
 | Skill | Reusable instructions, procedures, and supporting resources loaded through Flue skill discovery | Enabled |
 | Tool | Typed executable action exposed to an owning agent | Disabled unless `--enable` is supplied |
-| Worker | Specialized executor loaded as a Flue subagent profile | Disabled unless `--enable` is supplied |
+| Worker | Specialized executor loaded as a Flue `SubagentDefinition` | Disabled unless `--enable` is supplied |
 | MCP server | HTTP or HTTPS connection that contributes remote tools | Disabled unless `--enable` is supplied |
 
 Protocols are not skills or capabilities. They are SQLite-backed runtime rules

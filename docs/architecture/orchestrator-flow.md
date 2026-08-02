@@ -18,7 +18,7 @@ flowchart TD
     Ingress["TUI / Telegram / Web API / Schedule"]
     Gateway["Gateway authentication and validation"]
     Event["Trusted normalized event"]
-    Session["Owned durable Flue session"]
+    Session["Owned product session and active Flue 2 instance"]
     Orchestrator["SIM-ONE orchestrator and critic"]
     ProtocolTool["load_protocols"]
     ProtocolDB[("SQLite protocol database")]
@@ -27,7 +27,7 @@ flowchart TD
     Memory["Memory and document retrieval"]
     LocalTools["Orchestrator-owned tools and MCP"]
     Researcher["Researcher worker"]
-    Research["Research workflows and web providers"]
+    Research["Research application workflows and web providers"]
     Coding["Coding Worker lead"]
     Internal["Worker-local tools and internal subagents"]
     Result["Structured result and evidence"]
@@ -77,10 +77,10 @@ Equivalent text flow:
 connector or schedule
 -> authenticated application ingress
 -> trusted normalized event
--> owned durable Flue session
+-> owned product session and active Flue 2 instance
 -> orchestrator
 -> load_protocols from SQLite
--> governed selection of memory, tools, MCP, workflows, or workers
+-> governed selection of memory, tools, MCP, application workflows, or workers
 -> structured result returned to the orchestrator
 -> protocol and result validation
 -> approval, revision, rejection, or final root response
@@ -104,12 +104,13 @@ connector or schedule
 ## Durable Execution Boundaries
 
 Normal chat uses the app-owned `/api/chat/events` route, which persists trusted
-event context and prompts the durable Flue orchestrator agent. Scheduled work
-uses Flue `dispatch(...)` and is admitted to the same orchestrator boundary.
+event context, initializes the active orchestrator generation, dispatches the
+message, and reads the exact receipt to settlement. Scheduled work uses the
+same Flue 2 agent-handle contract.
 
-Finite workflows remain available for bounded operations. Workflow invocation
-creates a Flue run and returns a run pointer; direct agent prompts and
-dispatched agent input use the durable agent submission lifecycle instead.
+Finite application workflows remain available as ordinary TypeScript
+functions. Flue 2 does not discover them, create workflow runs, or expose
+workflow/run route families.
 
 ## Source Map
 
@@ -122,7 +123,7 @@ dispatched agent input use the durable agent submission lifecycle instead.
 | Protocol lookup | `src/engine/tools/protocol-tool.ts` |
 | Protocol matching and storage | `src/core/protocols/` |
 | Researcher worker | `src/engine/workers/researcher/` |
-| Research workflows | `src/workflows/research.ts`, `src/workflows/web-research.ts` |
+| Research application workflows | `src/workflows/research.ts`, `src/workflows/web-research.ts` |
 | Coding Worker | `src/engine/workers/coding-worker/` |
 | Schedule dispatch | `src/engine/schedules/schedule-dispatch.ts` |
 

@@ -14,6 +14,11 @@ protocol-governed AI employee runtime built with Flue and the SIM-ONE Framework.
 
 ### Added
 
+- Flue 2 runtime architecture with Vite builds, `'use agent'` functions,
+  Agent Hooks, explicit agent/channel routers, direct agent handles,
+  `defineSubagent(...)` workers, and `defineMcpConnection(...)` integrations.
+- Dedicated `flue-v2.sqlite` conversation storage, preserved beta rollback
+  storage, and product-session generation rotation for manual compaction.
 - Protocol Tool, trusted-event lookup, SQLite protocol provider, and base
   protocol records attached to the governing orchestrator. Complete release
   policies and trusted fail-closed pre-execution enforcement remain release

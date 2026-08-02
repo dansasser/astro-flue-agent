@@ -15,7 +15,7 @@ Admitted event
 -> Orchestrator
 -> Protocol and context loading
 -> Worker selection
--> Flue child session
+-> Flue child agent instance and submission
 -> Worker tools, skills, and internal subagents
 -> Structured result and progress events
 -> Orchestrator synthesis
@@ -26,10 +26,10 @@ The orchestrator remains between the user-facing connector and every worker.
 A worker performs the delegated task, but it does not admit the original
 request, redefine the active protocol bundle, or approve its own result.
 
-## Flue Worker Profiles
+## Flue Subagent Definitions
 
-Each worker is a Flue subagent profile with a distinct execution context. A
-profile can own:
+Each worker is a Flue 2 `SubagentDefinition` created with
+`defineSubagent(...)`. Its agent function can own:
 
 - workspace instructions;
 - a selected model;
@@ -39,9 +39,9 @@ profile can own:
 - compaction settings;
 - a sandbox and working directory.
 
-Delegation opens a child session under the orchestrator's run. This keeps a
-worker's working context separate while preserving the parent-child execution
-relationship and the orchestrator's final review boundary.
+Delegation opens a child agent instance and submission under the orchestrator
+conversation. This keeps the worker's context separate while preserving the
+parent-child relationship and the orchestrator's final review boundary.
 
 ## Built-In Workers
 
@@ -87,7 +87,7 @@ passes its import, compatibility, restart-recovery, and cutover tests. Cutover
 must not leave the JSON store and Rust/WASM-backed task-run store writable as
 competing authorities.
 
-The Coding Worker's file APIs use a Flue Node local session rooted at
+The Coding Worker's file APIs use a Flue Node local sandbox rooted at
 `<runtime-root>/workspace`. Shell, Git, and verification child processes run
 inside a Bubblewrap mount and process namespace that exposes the workspace
 read-write, the active Node and system runtime read-only, and a private
@@ -135,9 +135,9 @@ direct capability mutation tools.
 
 ## Internal Coding Subagents
 
-The Coding Worker coordinates five worker-local profiles:
+The Coding Worker coordinates five worker-local subagent definitions:
 
-| Profile | Responsibility |
+| Subagent | Responsibility |
 | --- | --- |
 | Triage | Classify the task, inspect the repository, and establish the plan |
 | Implementer | Produce scoped file edits |
@@ -145,13 +145,13 @@ The Coding Worker coordinates five worker-local profiles:
 | Code Review | Evaluate correctness, regressions, risk, and missing tests |
 | GitHub | Prepare and execute approved repository publication actions |
 
-These profiles are private to the Coding Worker. They are not registered as
+These definitions are private to the Coding Worker. They are not registered as
 top-level orchestrator workers and cannot be selected directly by a connector
 or user request.
 
 ## Worker Skills And Tools
 
-A worker's profile defines the capabilities available inside its execution
+A worker's agent function registers the capabilities available inside its execution
 boundary:
 
 - tools execute typed operations;
@@ -202,10 +202,10 @@ The standalone Coding Worker loop defines structured progress events for:
 
 That loop can return status, summary, plan, subagent results, verification
 evidence, public events, artifacts, and a task checkpoint. The live Flue Coding
-Worker profile currently constructs its tools without a reporter or task id,
+Worker agent currently constructs its tools without a reporter or task id,
 so `coding_progress_emit` reports unavailable and those checkpoint events are
 not forwarded to the active connector. Wiring the reporter into the live
-profile and connector transport is a release gate. The orchestrator still
+worker agent and connector transport is a release gate. The orchestrator still
 receives the Flue task result for final synthesis.
 
 ## Security Boundaries
@@ -233,9 +233,9 @@ gate.
 | Area | Source |
 | --- | --- |
 | Orchestrator registration | `src/agents/orchestrator.ts` |
-| Researcher profile | `src/engine/workers/researcher/researcher.ts` |
+| Researcher definition | `src/engine/workers/researcher/researcher.ts` |
 | Coding Worker lead | `src/engine/workers/coding-worker/coding-worker.ts` |
-| Internal coding profiles | `src/engine/workers/coding-worker/subagents/` |
+| Internal coding subagents | `src/engine/workers/coding-worker/subagents/` |
 | Worker skills | `src/engine/workers/coding-worker/skills/` |
 | Coding execution loop | `src/engine/workers/coding-worker/workflow/` |
 | Approval service | `src/engine/workers/coding-worker/approvals/` |
