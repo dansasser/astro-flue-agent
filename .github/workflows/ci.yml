@@ -153,6 +153,7 @@ jobs:
         run: node --test scripts/check-flue-v2-stack-slice.test.mjs
 
       - name: Validate stack boundary
+        id: stack-boundary
         env:
           STACK_BASE_REF: ${{ github.base_ref }}
           STACK_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -185,10 +186,5 @@ jobs:
           src/tests/runtime-capability-snapshot.test.ts
 
       - name: Typecheck compiler-coherent slices
-        if: >-
-          github.head_ref == 'codex/flue-v2-04-execution-persistence' ||
-          github.head_ref == 'codex/flue-v2-05-connectors-clients' ||
-          github.head_ref == 'codex/flue-v2-06-product-packaging' ||
-          github.head_ref == 'codex/flue-v2-07-documentation' ||
-          github.head_ref == 'codex/flue-v2-08-production-verification'
+        if: steps.stack-boundary.outputs.verification == 'typecheck'
         run: pnpm run typecheck
