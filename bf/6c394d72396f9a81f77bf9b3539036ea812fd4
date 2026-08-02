@@ -1,0 +1,48 @@
+scripts/runtime-configuration-files.test.mjs
+  s_a81fff26d52223::t_c5e8ec4328736b 184-186,209-211
+src/channels/telegram.ts
+  s_a81fff26d52223::t_0efdeaa3983ca5 194
+.github/workflows/ci.yml
+  s_a81fff26d52223::t_0efdeaa3983ca5 114-118
+package.json
+  s_a81fff26d52223::t_0efdeaa3983ca5 37
+specification-manifest.json
+  s_a81fff26d52223::t_1ae90e610d545b 4-5
+src/tests/telegram-reply-tool.test.ts
+  s_a81fff26d52223::t_c5e8ec4328736b 3-6,13-16,56-58,61,63,65,67,72-97
+  s_a81fff26d52223::t_8c50e8cda833ad 98-99
+src/agents/orchestrator.ts
+  s_a81fff26d52223::t_0efdeaa3983ca5 72,210
+scripts/deterministic-telegram-provider.mjs
+  s_a81fff26d52223::t_70845060f64b90 68-73,180-181
+  s_a81fff26d52223::t_0efdeaa3983ca5 3,50-51
+  s_a81fff26d52223::t_224f3dc2af1ec5 182-183
+scripts/deterministic-telegram-provider.test.mjs
+  s_a81fff26d52223::t_c5e8ec4328736b 1-27
+scripts/test-telegram-product.mjs
+  s_a81fff26d52223::t_70845060f64b90 17-21,27-34,90-113,147-160,212
+  s_a81fff26d52223::t_56211b51ce6c7e 70-71
+src/channels/telegram-client.ts
+  s_a81fff26d52223::t_0efdeaa3983ca5 3,22-26,66,83,87,90,98-122,130-149
+  s_a81fff26d52223::t_0c4a5e8e8608c5 150
+development-graph.json
+  s_a81fff26d52223::t_be3a1a5067a847 9649-9668,9675,20503,20989
+development-graph.md
+  s_a81fff26d52223::t_171c964f750d7d 1,12,17,21,927-928,1025,1840-1841,3412
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "bf6c394d72396f9a81f77bf9b3539036ea812fd4",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
