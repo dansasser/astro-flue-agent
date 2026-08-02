@@ -9,8 +9,8 @@ and the Telegram Bot API for replies and administrative notifications.
 - SIM-ONE normalizes admitted updates and persists trusted event context.
 - Direct-message and group admission runs before orchestrator dispatch.
 - The durable orchestrator receives admitted messages.
-- `telegram_reply` can respond only to the conversation identified by a
-  persisted trusted Telegram event.
+- The orchestrator binds `telegram_reply` to the trusted event id on the
+  current Flue delivery; the model supplies response text, not a destination.
 - Pairing, allow-list, group, and policy records live in the session database.
 
 ## Configuration
@@ -29,7 +29,11 @@ TELEGRAM_APPROVED_USER_IDS=<comma-separated-user-ids>
 TELEGRAM_ADMIN_USER_IDS=<comma-separated-admin-ids>
 TELEGRAM_BOT_USERNAME=<bot-username>
 TELEGRAM_MENTION_PATTERNS=<comma-separated-patterns>
+TELEGRAM_API_ROOT=<optional-bot-api-root>
 ```
+
+`TELEGRAM_API_ROOT` defaults to `https://api.telegram.org`. Set it only for a
+self-hosted Bot API server or a deterministic test endpoint.
 
 Omit `TELEGRAM_BOT_TOKEN` to run without Telegram. When the bot token is set,
 `TELEGRAM_WEBHOOK_SECRET_TOKEN` is required and startup fails without it.

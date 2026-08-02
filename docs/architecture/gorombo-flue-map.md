@@ -21,7 +21,7 @@ entries use Flue 2 APIs; workflow files are ordinary application modules.
 | --- | --- | --- |
 | `src/agents/` | Flue 2 agent entrypoints | `'use agent'` synchronous agent functions. `src/app.ts` explicitly mounts the public orchestrator with `createAgentRouter(...)`. |
 | `src/workflows/` | Application workflows | Finite TypeScript functions that can initialize agents, manage bounded loops, and return structured results. Flue 2 does not discover or route these files. |
-| `src/channels/` | Flue 2 channel handlers | First-party provider ingress. `src/app.ts` explicitly mounts Telegram under `/channels/telegram`. |
+| `src/channels/` | Flue 2 channel handlers and provider clients | `telegram.ts` owns verified ingress and stable Flue conversation routing; `telegram-client.ts` owns the official Bot API client and a reply tool bound from trusted delivery context. `src/app.ts` explicitly mounts Telegram under `/channels/telegram`. |
 | `src/skills/` | Flue Agent Skills | Application-owned Agent Skills imported directly and registered by the owning agent with `useSkill(...)`. These are built-in skills, not post-build registry capabilities. |
 | `src/db.ts` | Flue persistence adapter entrypoint | Exports the Flue 2 SQLite adapter backed by the dedicated `flue-v2.sqlite` store and bootstraps application-owned persistence. |
 | `src/app.ts` | Application entrypoint | Hono composition root with explicit Flue 2 agent and channel routers. |

@@ -167,6 +167,16 @@ test('RunPod chat configuration uses a dedicated base URL key', () => {
   );
 });
 
+test('Telegram Bot API root is a canonical optional URL setting', () => {
+  const apiRoot = runtimeEnvironmentDefinitions.find(
+    (definition) => definition.key === 'TELEGRAM_API_ROOT',
+  );
+
+  assert.equal(apiRoot?.kind, 'url');
+  assert.equal(apiRoot?.secret, false);
+  assert.equal(apiRoot?.defaultDescription, 'https://api.telegram.org');
+});
+
 test('source and packaged modules resolve only their owning canonical configuration', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'sim-one-runtime-resolution-'));
   const sourceRoot = join(fixture, 'source');

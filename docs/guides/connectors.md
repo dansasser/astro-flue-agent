@@ -32,6 +32,7 @@ Telegram requires:
 | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | Bot API credential |
 | `TELEGRAM_WEBHOOK_SECRET_TOKEN` | Verifies webhook delivery |
+| `TELEGRAM_API_ROOT` | Optional Bot API root for self-hosted or test endpoints |
 | `TELEGRAM_ADMIN_USER_IDS` | Optional connector administrators |
 | `TELEGRAM_APPROVED_USER_IDS` | Optional pre-approved users |
 | `TELEGRAM_BOT_USERNAME` | Optional bot username for mention handling |
@@ -48,6 +49,10 @@ the authenticated Telegram admin API.
 
 Although the stored setting is named `dmPolicy`, the current source applies
 `disabled` before distinguishing direct messages from groups.
+
+Each admitted Telegram chat maps to one canonical Flue conversation. Outbound
+replies use a `telegram_reply` tool bound from the current verified delivery,
+so the model cannot choose another Telegram destination.
 
 ### Pair A Telegram User
 

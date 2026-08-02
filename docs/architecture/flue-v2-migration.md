@@ -1,14 +1,17 @@
 # Flue 2 Migration Specification
 
-Status: implementation-ready migration contract; implementation has not started.
+Status: implemented; production verification evidence is governed by the
+`verify-flue-v2-production-migration` lifecycle node.
 
-Target: migrate SIM-ONE Alpha from `@flue/*` `1.0.0-beta.1` to the
-official Flue `2.0.1` release line without weakening product architecture,
-runtime portability, connector behavior, approvals, or user-visible progress.
+Result: SIM-ONE Alpha is migrated from the `@flue/*` `1.0.0-beta.1` baseline
+to the official Flue `2.0.1` release line without weakening product
+architecture, runtime portability, connector behavior, approvals, or
+user-visible progress.
 
 This specification is governed by the `specify-flue-v2-migration` node in
-`development-graph.json`. Current-state architecture documents remain
-authoritative until an implementation slice changes and verifies that behavior.
+`development-graph.json`. Current-state architecture documents describe the
+verified Flue 2 behavior. The beta coupling inventory and delivery instructions
+retained here are the historical migration baseline and implementation contract.
 
 ## Authoritative Sources
 
@@ -57,7 +60,7 @@ The migration must preserve these contracts:
 9. Existing app-owned databases, runtime configuration, workspaces, and user
    capability packages are not silently deleted or overwritten.
 
-## Observed Impact
+## Baseline Impact Before Migration
 
 The beta.1 implementation has broad framework coupling:
 
@@ -325,8 +328,8 @@ same PR as behavior. Expected surfaces include:
 - diagrams, examples, templates, runtime capability authoring docs, and
   `docs/getting-started/pre-release-status.md`
 
-Do not rewrite these documents to describe Flue 2 as current before the
-corresponding implementation and tests are merged.
+Current-state documents describe Flue 2 behavior only after the corresponding
+implementation and tests are verified in their migration slice.
 
 ## Completion Contract
 

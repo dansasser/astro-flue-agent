@@ -181,6 +181,9 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
   const tuiEndToEndStep = workflow.match(
     /      - name: TUI end-to-end test\n[\s\S]*?(?=\n      - name: )/,
   )?.[0];
+  const telegramProductStep = workflow.match(
+    /      - name: Telegram product smoke\n[\s\S]*?(?=\n      - name: )/,
+  )?.[0];
 
   assert.match(workflow, /- name: Create CI runtime configuration/);
   assert.match(workflow, /- name: Install Coding Worker shell sandbox/);
@@ -203,6 +206,9 @@ test('CI preserves the Ratatui credential contract with canonical owner configur
   assert.ok(runtimeConfigStep, 'CI runtime configuration step is missing');
   assert.ok(ratatuiStep, 'Ratatui product smoke step is missing');
   assert.ok(tuiEndToEndStep, 'TUI end-to-end step is missing');
+  assert.ok(telegramProductStep, 'Telegram product smoke step is missing');
+  assert.match(telegramProductStep, /pnpm run test:telegram-product/);
+  assert.match(telegramProductStep, /GOROMBO_TEST_MODE: '1'/);
   for (const trustedStep of [
     runtimeConfigStep,
     ratatuiStep,

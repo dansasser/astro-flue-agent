@@ -152,7 +152,11 @@ the product-command validation script.
 
 ## Telegram and connector workflow
 
-Telegram integration is under `src/channels/telegram.ts` with admin routes in `src/api/routes/telegram-admin.ts`. The orchestrator has a `telegram_reply` tool when `TELEGRAM_BOT_TOKEN` is configured.
+Telegram ingress is under `src/channels/telegram.ts`, outbound Bot API access is
+under `src/channels/telegram-client.ts`, and admin routes are in
+`src/api/routes/telegram-admin.ts`. The orchestrator always registers the
+`telegram_reply` hook, but the tool can send only when the current verified
+delivery is a Telegram signal with a persisted event id.
 
 Tests include `src/tests/telegram-connector.test.ts` and
 `src/tests/telegram-approval-ui.test.ts`. Recent history moved Telegram from a

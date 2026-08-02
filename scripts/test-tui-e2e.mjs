@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'no
 import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { parseEnv } from 'node:util';
+import { createFlueClient } from '@flue/sdk';
+import { startDeterministicChatProvider } from './deterministic-chat-provider.mjs';
 
 if (!existsSync('.gorombo/sim-one-alpha/server.mjs')) {
   throw new Error('.gorombo/sim-one-alpha/server.mjs does not exist. Run pnpm run build before the TUI e2e test.');
@@ -48,6 +50,7 @@ const modelEnv = {
 let stderr = '';
 let stdout = '';
 let child;
+let deterministicChatProvider;
 let runtimeModelConfigChanged = false;
 
 try {
@@ -61,11 +64,18 @@ try {
     runtimeModelConfigChanged = true;
   }
 
+  if (process.env.GOROMBO_TEST_MODE === '1' && testModelCard === 'kimi-k2-6-runpod') {
+    deterministicChatProvider = await startDeterministicChatProvider();
+  }
+
   child = spawn(process.execPath, nodeArgs, {
     cwd: process.cwd(),
     env: {
       ...process.env,
       ...modelEnv,
+      ...(deterministicChatProvider
+        ? { RUNPOD_CHAT_BASE_URL: deterministicChatProvider.baseUrl }
+        : {}),
       PORT: String(port),
       API_SECRET: requestSecret,
       GOROMBO_RUNTIME_ROOT: runtimeRoot,
@@ -80,34 +90,27 @@ try {
   await waitForHealth();
   console.log('[tui-e2e] Server healthy, starting tests...');
 
-  // Test 1: Direct agent prompt (simulates TUI sendMessage path via /agents/orchestrator)
+  // Test 1: Direct agent prompt through the Flue 2 conversation contract.
   console.log('[tui-e2e] Test 1: Direct agent prompt via /agents/orchestrator...');
-  const response1 = await fetch(
-    `${baseUrl}/agents/orchestrator/tui-e2e-1?wait=result`,
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-secret': requestSecret,
-      },
-      body: JSON.stringify({ message: 'Hello, what can you do?' }),
-    },
-  );
-
-  assertEqual(response1.status, 200, 'direct agent prompt should return 200');
-  const result1 = await response1.json();
-  const responseText = result1.text ?? result1.result?.text ?? result1.result;
+  const conversation = createFlueClient({
+    url: `${baseUrl}/agents/orchestrator/tui-e2e-1`,
+    headers: { 'x-api-secret': requestSecret },
+  });
+  const admission = await conversation.send({
+    message: { kind: 'user', body: 'Hello, what can you do?' },
+    signal: AbortSignal.timeout(30_000),
+  });
+  const result1 = await conversation.read(admission, {
+    signal: AbortSignal.timeout(180_000),
+  });
+  const responseText = result1.text;
   assertJson(
     typeof responseText === 'string' && responseText.length > 0,
     `direct agent prompt should return text. Got: ${JSON.stringify(result1).slice(0, 500)}`,
   );
   console.log('[tui-e2e] Test 1 PASSED: agent responded with text');
 
-  // Test 2: Verify the response is not an error
-  assertJson(
-    !result1.isError && !result1.result?.isError,
-    `agent response should not be an error. Got: ${JSON.stringify(result1).slice(0, 500)}`,
-  );
+  // FlueClient.read rejects failed or aborted submissions.
   console.log('[tui-e2e] Test 2 PASSED: response is not an error');
 
   // Test 3: Verify CLI binary is runnable
@@ -117,6 +120,10 @@ try {
   assertJson(cliResult.stdout.length > 0, 'CLI --help should produce output');
   console.log('[tui-e2e] Test 3 PASSED: CLI binary is runnable');
 
+  if (deterministicChatProvider && deterministicChatProvider.requestCount() === 0) {
+    throw new Error('TUI E2E gateway did not use the deterministic test-mode chat provider.');
+  }
+
   console.log('\n[tui-e2e] All TUI end-to-end tests passed.');
 } finally {
   if (child) {
@@ -124,6 +131,9 @@ try {
   }
   if (runtimeModelConfigChanged) {
     writeFileSync(runtimeModelConfigPath, originalRuntimeModelConfig);
+  }
+  if (deterministicChatProvider) {
+    await deterministicChatProvider.close();
   }
   rmSync(codingWorkspaceRoot, { recursive: true, force: true });
 }
