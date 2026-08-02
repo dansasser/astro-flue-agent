@@ -9586,13 +9586,61 @@
       "max_traversals": null,
       "to": "verify-flue-v2-production-migration",
       "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-connectors-clients-change"
+      ],
+      "condition": "The verified Flue 2 connector integration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-connectors-clients",
+      "id": "migrate-flue-v2-connectors-clients-to-repair-flue-v2-telegram-connector-flow-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-telegram-connector-flow",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-execution-persistence-change"
+      ],
+      "condition": "The verified Flue 2 persistence integration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-execution-persistence",
+      "id": "migrate-flue-v2-execution-persistence-to-repair-flue-v2-telegram-connector-flow-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-telegram-connector-flow",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-product-packaging-change"
+      ],
+      "condition": "The verified Flue 2 product package remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-product-packaging",
+      "id": "migrate-flue-v2-product-packaging-to-repair-flue-v2-telegram-connector-flow-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-telegram-connector-flow",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-telegram-connector-repair"
+      ],
+      "condition": "The Telegram connector repair is verified before final production verification resumes.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-telegram-connector-flow",
+      "id": "repair-flue-v2-telegram-connector-flow-to-verify-flue-v2-production-migration-consumes",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 75,
+  "graph_version": 76,
   "nodes": [
     {
       "acceptance": [
@@ -20244,6 +20292,11 @@
           "artifact": "artifact:flue-v2-tui-e2e-repair",
           "name": "verified Flue 2 TUI E2E harness repair",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-telegram-connector-repair",
+          "name": "verified Flue 2 Telegram connector repair",
+          "required": true
         }
       ],
       "outputs": [
@@ -20265,7 +20318,8 @@
           "artifact:flue-v2-documentation-change",
           "artifact:flue-v2-verification-repair",
           "artifact:flue-v2-memory-smoke-repair",
-          "artifact:flue-v2-tui-e2e-repair"
+          "artifact:flue-v2-tui-e2e-repair",
+          "artifact:flue-v2-telegram-connector-repair"
         ],
         "write": [
           ".gorombo/",
@@ -20669,10 +20723,128 @@
       ],
       "title": "Repair Flue 2 TUI E2E Harness",
       "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "Telegram ingress dispatches each chat to the canonical Flue conversation id, the orchestrator exposes a reply tool bound to the verified current Telegram event, and product instructions no longer claim that ingress auto-sends final text.",
+          "evidence": "runtime:evidence/repair-flue-v2-telegram-connector-flow/contract.json",
+          "id": "telegram-outbound-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "A packaged product harness posts authenticated Telegram webhooks before and after a gateway restart, captures both outbound Bot API replies, and proves both settled submissions share one persisted Flue 2 session key.",
+          "evidence": "runtime:evidence/repair-flue-v2-telegram-connector-flow/telegram-product.log",
+          "id": "telegram-restart-product-flow",
+          "kind": "probe"
+        },
+        {
+          "criterion": "Focused Telegram/config tests, typecheck, build, graph validation, specification verification, and ledger verification pass, and the repair changes fewer than 100 tracked files.",
+          "evidence": "runtime:evidence/repair-flue-v2-telegram-connector-flow/verification.json",
+          "id": "telegram-repair-verified",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The Telegram channel has a Flue 2-correct bound outbound path and a deterministic packaged restart proof, then the bounded milestone is committed and pushed.",
+        "max_attempts": 3,
+        "timeout_minutes": 300
+      },
+      "executor": {
+        "instructions": "Follow the installed Flue 2 channel contract: keep webhook acknowledgement asynchronous, expose outbound Telegram behavior through a provider-SDK tool bound from trusted delivery context, add a configurable Bot API root for deterministic testing/self-hosted API use, and prove persistence and delivery through a built server restart.",
+        "kind": "hybrid",
+        "name": "SIM-ONE Flue 2 Telegram connector repair"
+      },
+      "goal": "Complete and prove the Flue 2 Telegram connector flow from verified webhook ingress through persistent conversation routing to outbound Bot API delivery.",
+      "id": "repair-flue-v2-telegram-connector-flow",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-connectors-clients-change",
+          "name": "verified Flue 2 connector integration",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-execution-persistence-change",
+          "name": "verified Flue 2 persistence integration",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-product-packaging-change",
+          "name": "verified Flue 2 product package",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-telegram-connector-repair",
+          "format": "git-diff",
+          "name": "Flue 2 Telegram connector repair"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "loopback gateway",
+          "loopback deterministic model provider",
+          "loopback Telegram Bot API fixture"
+        ],
+        "read": [
+          "artifact:flue-v2-connectors-clients-change",
+          "artifact:flue-v2-execution-persistence-change",
+          "artifact:flue-v2-product-packaging-change",
+          "src/channels/telegram.ts",
+          "src/agents/orchestrator.ts",
+          "src/api/routes/chat-prompt.ts",
+          "src/core/config/runtime-environment.ts",
+          "sim-one.config.example",
+          "scripts/",
+          "src/tests/",
+          "node_modules/@flue/telegram/",
+          "node_modules/@flue/cli/docs/guide/channels.md"
+        ],
+        "write": [
+          "src/channels/",
+          "src/agents/orchestrator.ts",
+          "src/api/routes/chat-prompt.ts",
+          "src/core/config/runtime-environment.ts",
+          "sim-one.config.example",
+          "scripts/test-telegram-product.mjs",
+          "scripts/deterministic-telegram-provider.mjs",
+          "src/tests/",
+          "docs/",
+          "openwiki/",
+          "package.json",
+          "runtime:evidence/repair-flue-v2-telegram-connector-flow/"
+        ]
+      },
+      "resources": [
+        "src/channels/telegram.ts",
+        "src/agents/orchestrator.ts",
+        "scripts/test-telegram-product.mjs",
+        ".gorombo/sim-one-alpha/server.mjs"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Repairs Telegram response delivery, adds deterministic loopback product fixtures, and exercises a temporary persistent runtime through restart.",
+        "level": "reversible",
+        "rollback": "Revert the bounded Telegram connector repair commit and remove only temporary test runtime files."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "telegram",
+        "connector",
+        "persistence",
+        "repair",
+        "verification"
+      ],
+      "title": "Repair Flue 2 Telegram Connector Flow",
+      "type": "work"
     }
   ],
   "project": {
-    "context_version": "flue-v2-tui-e2e-repair:2026-08-02",
+    "context_version": "flue-v2-telegram-connector-repair:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",

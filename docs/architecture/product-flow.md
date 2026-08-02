@@ -76,6 +76,9 @@ send independent final responses.
 - applies API-secret middleware to protected agent and schedule routes;
 - mounts `createAgentRouter(Orchestrator)` at `/agents/orchestrator`;
 - mounts the Telegram channel router at `/channels/telegram`.
+- binds outbound `telegram_reply` calls to the persisted event id on the
+  current verified Telegram delivery; the model supplies text but cannot pick
+  a destination.
 
 The complete movable product runtime is one `.gorombo` tree. Compiled
 application files and mutable state occupy separate children:

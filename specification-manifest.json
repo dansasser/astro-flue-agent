@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 75,
-  "context_version": "flue-v2-tui-e2e-repair:2026-08-02",
+  "graph_version": 76,
+  "context_version": "flue-v2-telegram-connector-repair:2026-08-02",
   "specification_root": "doc",
   "documents": [
     {

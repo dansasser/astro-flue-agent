@@ -13,6 +13,7 @@ import {
   useSkill,
   useSubagent,
   useTool,
+  useDelivery,
   useInitialData,
   useInstruction,
   useResponseFinish,
@@ -65,7 +66,11 @@ import {
   scheduleRunsTool,
 } from '../engine/tools/index.js';
 import type { AgentModelCard } from '../core/models/types.js';
-import { telegramReplyTool } from '../channels/telegram.js';
+import {
+  asTelegramConversationData,
+  createTelegramReplyTool,
+  type TelegramConversationData,
+} from '../channels/telegram-client.js';
 import { createCodingWorkerSubagent } from '../engine/workers/coding-worker/coding-worker.js';
 import { createCapabilityManagerSubagent } from '../engine/workers/capability-manager/capability-manager.js';
 import { createResearcherSubagent } from '../engine/workers/researcher/researcher.js';
@@ -141,7 +146,6 @@ export function createOrchestratorComposition(
     scheduleGetTool,
     scheduleRunNowTool,
     scheduleRunsTool,
-    telegramReplyTool,
   ];
 
   return {
@@ -171,12 +175,19 @@ export function createOrchestratorComposition(
 
 export function Orchestrator(_props: AgentProps): string {
   const composition = createOrchestratorComposition(process.env);
-  const initialData = useInitialData<OrchestratorInitialData | undefined>();
+  const initialData = useInitialData<OrchestratorInitialData | TelegramConversationData | undefined>();
+  const delivery = useDelivery();
 
   useModel(composition.model, { compaction: composition.compaction });
   useRuntimeCapabilities(composition);
+  useTool(
+    createTelegramReplyTool(
+      asTelegramConversationData(initialData),
+      resolveTelegramEventId(delivery),
+    ),
+  );
   useSandbox(composition.sandbox, { cwd: composition.cwd });
-  if (initialData?.continuationSummary) {
+  if (isOrchestratorInitialData(initialData) && initialData.continuationSummary) {
     useInstruction(createContinuationInstruction(initialData));
   }
   useResponseFinish(({ response }) => ({
@@ -189,6 +200,28 @@ export function Orchestrator(_props: AgentProps): string {
   return composition.instructions;
 }
 Orchestrator.agentName = 'orchestrator';
+
+export function resolveTelegramEventId(delivery: {
+  kind: string;
+  type?: string;
+  attributes?: Record<string, string>;
+}): string | undefined {
+  if (delivery.kind !== 'signal' || delivery.type !== 'telegram.message') {
+    return undefined;
+  }
+  return delivery.attributes?.eventId;
+}
+
+function isOrchestratorInitialData(value: unknown): value is OrchestratorInitialData {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Partial<OrchestratorInitialData>;
+  return (
+    typeof candidate.productSessionId === 'string' &&
+    typeof candidate.generation === 'number'
+  );
+}
 
 function useRuntimeCapabilities(composition: OrchestratorComposition): void {
   for (const skill of composition.skills) {
