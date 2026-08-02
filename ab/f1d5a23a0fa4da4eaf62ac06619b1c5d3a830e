@@ -1,0 +1,29 @@
+specification-manifest.json
+  s_a81fff26d52223::t_65279fa28be0f8 4-5
+src/tests/build-script-regressions.test.ts
+  s_a81fff26d52223::t_dac4eca7fe53a3 5,62,72
+src/tests/test-utils.ts
+  s_a81fff26d52223::t_dac4eca7fe53a3 1-3
+package.json
+  s_a81fff26d52223::t_18e9cd70501997 72
+development-graph.json
+  s_a81fff26d52223::t_f6866773832e51 9669-9688,9695,21009
+development-graph.md
+  s_a81fff26d52223::t_f10263f2b1c40e 1,12,17,21,929-930,1844-1845
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "abf1d5a23a0fa4da4eaf62ac06619b1c5d3a830e",
+  "prompts": {},
+  "sessions": {
+    "s_a81fff26d52223": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f28ea-ba13-7d73-8821-342dae1c483c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "dansasser <sasserenterprises@gmail.com>"
+    }
+  }
+}
