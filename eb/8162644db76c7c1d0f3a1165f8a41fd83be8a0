@@ -7,6 +7,7 @@ src/api/routes/chat-events.ts
   s_a81fff26d52223::t_700fa5de152ce5 36,50-53,497
   s_a81fff26d52223::t_0ccd05e259545b 20,223-230,233,494-496,498
   s_a81fff26d52223::t_bd09efcd9653ef 428-429
+  s_a81fff26d52223::t_bc297dfca086e7 33
 src/tests/build-script-regressions.test.ts
   s_a81fff26d52223::t_0119ff3e21910f 130-152
 src/workflows/research.ts
@@ -15,6 +16,7 @@ src/engine/schedules/schedule-dispatch.ts
   s_a81fff26d52223::t_c5f1e2f5fd289e 13,57
 src/api/routes/chat-sessions.ts
   s_a81fff26d52223::t_700fa5de152ce5 25,160-163
+  s_a81fff26d52223::t_bc297dfca086e7 22
 src/tests/session-memory-vector.test.ts
   s_a81fff26d52223::t_0119ff3e21910f 64-143
   s_a81fff26d52223::t_8624c9e7ba8d67 144-196
@@ -41,6 +43,8 @@ src/engine/session/session-transcript.ts
   s_a81fff26d52223::t_b9f2aeebec73f9 305
   s_a81fff26d52223::t_399c242d2cb368 203-208,267-271,304,306,309
   s_a81fff26d52223::t_bca0006f5b4853 122-124
+  s_a81fff26d52223::t_a8aa0d48ddf552 11,57-62,130-131
+  s_a81fff26d52223::t_bc297dfca086e7 120-121
 src/tests/flue-session-store.test.ts
   s_a81fff26d52223::t_0119ff3e21910f 3,41-60
   s_a81fff26d52223::t_99f5aaea2c26b8 61-62
@@ -69,6 +73,7 @@ src/tests/research-workflow.test.ts
   s_a81fff26d52223::t_ab1291ea995032 48
 src/engine/session/flue-conversation.ts
   s_a81fff26d52223::t_399c242d2cb368 74,76-78,143-220
+  s_a81fff26d52223::t_a8aa0d48ddf552 3-6
 src/tests/schedule-manager.test.ts
   s_a81fff26d52223::t_574327b6f57075 34,39-42,56,61,68-122,134,160-161,181-185,192,196-197
   s_a81fff26d52223::t_c68c103a01c2c9 198-199
@@ -78,6 +83,8 @@ src/tests/session-budget.test.ts
   s_a81fff26d52223::t_4422a623459954 94-95
 src/engine/session/continuation-context.ts
   s_a81fff26d52223::t_0ccd05e259545b 1-16
+src/tests/http-endpoints.test.ts
+  s_a81fff26d52223::t_7441b49744b351 171-172
 ---
 {
   "schema_version": "authorship/3.0.0",
