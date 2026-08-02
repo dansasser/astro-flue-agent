@@ -31,12 +31,15 @@ test('scheduled turn records Flue 2 admission and exact settled reply', async ()
     assert.equal(run.status, 'ok');
     assert.match(run.submissionId ?? '', /^sub-schedule:/);
   } finally {
-    fixture.cleanup();
+    await fixture.cleanup();
   }
 });
 
 test('failed Flue 2 settlement is classified and recorded', async () => {
-  const fixture = createFixture(async (args) => settled(args, Promise.reject(new Error('validation failed'))));
+  const fixture = createFixture(async (args) => settled(
+    args,
+    () => Promise.reject(new Error('validation failed')),
+  ));
   try {
     fixture.manager.store.upsert({
       slug: 'bad',
@@ -50,19 +53,73 @@ test('failed Flue 2 settlement is classified and recorded', async () => {
     assert.equal(run.status, 'skipped');
     assert.match(run.error ?? '', /validation failed/);
   } finally {
-    fixture.cleanup();
+    await fixture.cleanup();
   }
 });
 
 test('settlement timeout is terminal without treating admission as completion', async () => {
-  const fixture = createFixture(async (args) => settled(args, rejectWhenAborted(args.signal)), 15);
+  const fixture = createFixture(async (args) => settled(args, rejectWhenAborted), 15);
   try {
     fixture.manager.store.upsert({ slug: 'slow', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
     const runId = fixture.manager.fireNow('slow')?.runId;
     const run = await waitForRun(fixture.store, runId!, ['timeout']);
     assert.equal(run.status, 'timeout');
   } finally {
-    fixture.cleanup();
+    await fixture.cleanup();
+  }
+});
+
+test('settlement timeout starts after dispatch admission completes', async () => {
+  const admissionDelayMs = 40;
+  const settlementTimeoutMs = 25;
+  const fixture = createFixture(async (args) => {
+    await wait(admissionDelayMs);
+    return settled(args, rejectWhenAborted);
+  }, settlementTimeoutMs);
+  try {
+    fixture.manager.store.upsert({ slug: 'slow-admission', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
+    const startedAt = Date.now();
+    const runId = fixture.manager.fireNow('slow-admission')?.runId;
+    const run = await waitForRun(fixture.store, runId!, ['timeout']);
+    assert.equal(run.status, 'timeout');
+    assert.ok(
+      Date.now() - startedAt >= admissionDelayMs + settlementTimeoutMs - 10,
+      'the full settlement timeout remains available after admission',
+    );
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('stop drains a settlement that completes within the grace window', async () => {
+  let resolveSettlement!: (reply: AgentReply) => void;
+  const settlement = new Promise<AgentReply>((resolve) => {
+    resolveSettlement = resolve;
+  });
+  const fixture = createFixture(async (args) => settled(args, () => settlement));
+  try {
+    fixture.manager.store.upsert({ slug: 'drain', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
+    const runId = fixture.manager.fireNow('drain')?.runId;
+    await waitForRun(fixture.store, runId!, ['admitted']);
+    const stopping = fixture.manager.stop(250);
+    resolveSettlement({ text: 'done', data: {}, submissionId: `sub-${runId}` });
+    await stopping;
+    assert.equal(fixture.store.getRun(runId!)?.status, 'ok');
+  } finally {
+    await fixture.cleanup();
+  }
+});
+
+test('stop aborts a settlement that exceeds the grace window', async () => {
+  const fixture = createFixture(async (args) => settled(args, rejectWhenAborted));
+  try {
+    fixture.manager.store.upsert({ slug: 'abort', kind: 'cron', schedule: '0 9 * * *', prompt: 'run' });
+    const runId = fixture.manager.fireNow('abort')?.runId;
+    await waitForRun(fixture.store, runId!, ['admitted']);
+    await fixture.manager.stop(0);
+    assert.equal(fixture.store.getRun(runId!)?.status, 'timeout');
+  } finally {
+    await fixture.cleanup();
   }
 });
 
@@ -74,7 +131,7 @@ test('dispatch admission failures are recorded as errors', async () => {
     const run = await waitForRun(fixture.store, runId!, ['error']);
     assert.match(run.error ?? '', /database unavailable/);
   } finally {
-    fixture.cleanup();
+    await fixture.cleanup();
   }
 });
 
@@ -100,8 +157,8 @@ function createFixture(
   return {
     manager,
     store,
-    cleanup() {
-      manager.stop();
+    async cleanup() {
+      await manager.stop();
       store.close();
       rmSync(path, { force: true });
     },
@@ -121,19 +178,23 @@ function rejectWhenAborted(signal: AbortSignal | undefined): Promise<AgentReply>
 
 function settled(
   args: DispatchScheduleArgs,
-  settlement: Promise<AgentReply> = Promise.resolve({
-    text: 'done',
-    data: {},
-    submissionId: `sub-${args.instanceId}`,
-  }),
+  settle: (signal?: AbortSignal) => Promise<AgentReply> = () => Promise.resolve({
+      text: 'done',
+      data: {},
+      submissionId: `sub-${args.instanceId}`,
+    }),
 ): ScheduleDispatchResult {
   return {
     submissionId: `sub-${args.instanceId}`,
     acceptedAt: new Date().toISOString(),
     uid: `uid-${args.instanceId}`,
     instanceId: args.instanceId,
-    settlement,
+    settle,
   };
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitForRun(

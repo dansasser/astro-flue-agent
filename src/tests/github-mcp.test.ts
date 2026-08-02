@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { escapeRegExp } from './test-utils.js';
 import { defineTool, type McpConnection, type McpConnectionDefinition, type ToolDefinition } from '@flue/runtime';
 import * as v from 'valibot';
 import { createInMemoryCodingApprovalService } from '../engine/workers/coding-worker/approvals/approval-service.js';
@@ -433,9 +434,6 @@ function getTool(tools: ToolDefinition[], name: string): ToolDefinition {
   return tool;
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 async function resolveMcpAuth(definition: McpConnectionDefinition): Promise<string | undefined> {
   return typeof definition.auth === 'function'

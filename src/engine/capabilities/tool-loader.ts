@@ -38,7 +38,6 @@ export async function loadUserTools(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({ id: record.id, error: message });
-      console.error(`[capabilities] Tool loader failed for ${record.id}: ${message}`);
     }
   }
 

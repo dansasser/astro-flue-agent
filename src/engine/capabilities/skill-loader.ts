@@ -53,7 +53,6 @@ export function loadUserSkills(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       errors.push({ id: record.id, error: message });
-      console.error(`[capabilities] Skill loader failed for ${record.id}: ${message}`);
     }
   }
 
@@ -90,12 +89,10 @@ function parseSkill(
     fields: {
       name,
       description,
-      ...readOptionalString(record, 'license'),
-      ...readOptionalString(record, 'compatibility'),
+      ...readOptionalString(record, 'license', path),
+      ...readOptionalString(record, 'compatibility', path),
       ...(metadata ? { metadata } : {}),
-      ...(typeof record['allowed-tools'] === 'string'
-        ? { allowedTools: record['allowed-tools'] }
-        : {}),
+      ...readAllowedTools(record, path),
     },
     instructions: content.slice(match[0].length),
   };
@@ -143,11 +140,30 @@ function readRequiredString(
 function readOptionalString(
   record: Record<string, unknown>,
   key: 'license' | 'compatibility',
+  path: string,
 ): Partial<Pick<SkillFields, 'license' | 'compatibility'>> {
   const value = record[key];
-  return typeof value === 'string' && value.trim().length > 0
-    ? { [key]: value.trim() }
-    : {};
+  if (value === undefined) {
+    return {};
+  }
+  if (typeof value !== 'string') {
+    throw new Error(`SKILL.md ${key} must be a string: ${path}`);
+  }
+  return value.trim().length > 0 ? { [key]: value.trim() } : {};
+}
+
+function readAllowedTools(
+  record: Record<string, unknown>,
+  path: string,
+): Partial<Pick<SkillFields, 'allowedTools'>> {
+  const value = record['allowed-tools'];
+  if (value === undefined) {
+    return {};
+  }
+  if (typeof value !== 'string') {
+    throw new Error(`SKILL.md allowed-tools must be a string: ${path}`);
+  }
+  return value.trim().length > 0 ? { allowedTools: value.trim() } : {};
 }
 
 function readMetadata(

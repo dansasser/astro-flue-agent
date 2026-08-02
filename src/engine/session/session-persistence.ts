@@ -1,5 +1,6 @@
 import { sqlite } from '@flue/runtime/node';
 import type { PersistenceAdapter } from '@flue/runtime/adapter';
+import { realpathSync, statSync } from 'node:fs';
 import type { GoromboConfig } from '../../core/config/gorombo-config.js';
 import {
   createGoromboRuntimePaths,
@@ -48,7 +49,7 @@ export function createGoromboPersistenceRuntime(config: GoromboConfig): GoromboP
     { runtimeRoot: runtimePaths.runtimeRoot },
   );
 
-  if (flueV2DatabasePath === legacyDatabasePath) {
+  if (databasePathsAlias(flueV2DatabasePath, legacyDatabasePath)) {
     throw new Error('storage.flueV2DatabasePath must not point to the legacy Flue database.');
   }
 
@@ -75,4 +76,22 @@ export function createGoromboPersistenceRuntime(config: GoromboConfig): GoromboP
     flueV2DatabasePath,
     legacyFlueDatabasePath: legacyDatabasePath,
   };
+}
+
+function databasePathsAlias(left: string, right: string): boolean {
+  if (left === right) {
+    return true;
+  }
+
+  try {
+    if (realpathSync(left) === realpathSync(right)) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  const leftStat = statSync(left);
+  const rightStat = statSync(right);
+  return leftStat.dev === rightStat.dev && leftStat.ino === rightStat.ino;
 }

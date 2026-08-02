@@ -147,13 +147,22 @@ export function deriveSessionBudgetStateFromSnapshots(input: {
 }): SessionBudgetState {
   const estimated = estimateConversationTokens(input.snapshots);
   const providerReported = readConversationUsageTokens(input.snapshots);
+  const compactionSubmissions = new Set(input.snapshots.flatMap(
+    (snapshot) => snapshot.messages
+      .filter((message) => message.signal?.tagName === 'session_compaction')
+      .map((message) => message.submissionId)
+      .filter((submissionId): submissionId is string => typeof submissionId === 'string'),
+  ));
   return {
     sessionId: input.sessionId,
     modelSpecifier: input.modelSpecifier,
     estimatedHistoryTokens: Math.max(estimated, providerReported),
     turns: input.snapshots.reduce(
       (total, snapshot) => total + snapshot.messages.filter(
-        (message) => message.role === 'assistant' && message.purpose === 'assistant',
+        (message) => message.role === 'assistant'
+          && message.purpose === 'assistant'
+          && message.display === 'visible'
+          && !compactionSubmissions.has(message.submissionId ?? ''),
       ).length,
       0,
     ),

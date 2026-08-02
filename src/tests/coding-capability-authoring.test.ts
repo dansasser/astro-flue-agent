@@ -1,5 +1,6 @@
 import { runToolForText as runTool } from '../engine/tools/direct-tool-runner.js';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -15,6 +16,7 @@ import type { ToolDefinition } from '@flue/runtime';
 import type { ProtocolBundle } from '../core/types/index.js';
 import { createCodingCapabilityAuthoringTools } from '../engine/workers/coding-worker/capability-authoring/capability-authoring-tools.js';
 import {
+  scaffoldCapabilityFiles,
   validateCapabilityPackage,
   type CodingCapabilityAuthoringKind,
 } from '../engine/workers/coding-worker/capability-authoring/capability-authoring.js';
@@ -461,6 +463,30 @@ test('Coding Worker capability authoring source has no runtime registry mutation
     source,
     /capability-(?:store|lifecycle-service|loader|materializer)|resolveCapabilitiesDir/,
   );
+});
+
+test('capability scaffolds serialize arbitrary ids as valid JavaScript strings', () => {
+  const id = "fixture-'quoted'\\path\nnext-line";
+  for (const authoringKind of ['tool', 'worker'] as const) {
+    const module = scaffoldCapabilityFiles({
+      authoringKind,
+      id,
+      name: 'Serialized identifier fixture',
+      description: 'Generated source remains valid.',
+    }).find((file) => file.path === 'index.mjs');
+    assert.ok(module);
+
+    const result = spawnSync(process.execPath, ['--check', '--input-type=module'], {
+      input: module.content,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const expectedId = authoringKind === 'tool' ? id.replace(/-/g, '_') : id;
+    assert.match(
+      module.content,
+      new RegExp(JSON.stringify(expectedId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    );
+  }
 });
 
 function createFixture() {

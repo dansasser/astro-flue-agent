@@ -34,12 +34,12 @@ export type ScheduleTargetAgent = 'orchestrator' | 'coding-worker';
  * `running`   — terminal observation in flight (reserved; `admitted` and
  *               `running` are often interchangeable in v1).
  * `ok`        — the admitted submission's durable reply settled successfully.
- * `error`     — the admitted submission settled failed (non-retryable, or
- *               retries exhausted).
+ * `error`     — dispatch admission failed, or the admitted submission settled
+ *               failed (non-retryable, or retries exhausted).
  * `skipped`   — permanent failure (validation/provider-unavailable) or
  *               provider-preflight down; NOT retried.
- * `timeout`   — observation did not reach terminal before the shutdown grace
- *               window closed.
+ * `timeout`   — observation exceeded its settlement timeout or did not reach
+ *               terminal before the shutdown grace window closed.
  * `lost`      — run orphaned (process died before settlement) and not reconciled.
  */
 export type ScheduleRunStatus =
