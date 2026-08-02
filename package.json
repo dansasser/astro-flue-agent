@@ -106,6 +106,7 @@
   },
   "devDependencies": {
     "@flue/cli": "2.0.1",
+    "@flue/sdk": "2.0.1",
     "@flue/vite": "2.0.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.9.2",

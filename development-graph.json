@@ -9550,13 +9550,49 @@
       "max_traversals": null,
       "to": "verify-flue-v2-production-migration",
       "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-connectors-clients-change"
+      ],
+      "condition": "The verified Flue 2 client integration remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-connectors-clients",
+      "id": "migrate-flue-v2-connectors-clients-to-repair-flue-v2-tui-e2e-harness-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-tui-e2e-harness",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-product-packaging-change"
+      ],
+      "condition": "The verified Flue 2 product package remains current.",
+      "exit_condition": null,
+      "from": "migrate-flue-v2-product-packaging",
+      "id": "migrate-flue-v2-product-packaging-to-repair-flue-v2-tui-e2e-harness-consumes",
+      "max_traversals": null,
+      "to": "repair-flue-v2-tui-e2e-harness",
+      "type": "consumes"
+    },
+    {
+      "artifacts": [
+        "artifact:flue-v2-tui-e2e-repair"
+      ],
+      "condition": "The TUI E2E harness repair is verified before final production verification resumes.",
+      "exit_condition": null,
+      "from": "repair-flue-v2-tui-e2e-harness",
+      "id": "repair-flue-v2-tui-e2e-harness-to-verify-flue-v2-production-migration-consumes",
+      "max_traversals": null,
+      "to": "verify-flue-v2-production-migration",
+      "type": "consumes"
     }
   ],
   "entry_nodes": [
     "baseline-context"
   ],
   "graph_id": "sim-one-alpha-lifecycle",
-  "graph_version": 74,
+  "graph_version": 75,
   "nodes": [
     {
       "acceptance": [
@@ -20203,6 +20239,11 @@
           "artifact": "artifact:flue-v2-memory-smoke-repair",
           "name": "verified Flue 2 memory smoke repair",
           "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-tui-e2e-repair",
+          "name": "verified Flue 2 TUI E2E harness repair",
+          "required": true
         }
       ],
       "outputs": [
@@ -20223,7 +20264,8 @@
           "node_modules/",
           "artifact:flue-v2-documentation-change",
           "artifact:flue-v2-verification-repair",
-          "artifact:flue-v2-memory-smoke-repair"
+          "artifact:flue-v2-memory-smoke-repair",
+          "artifact:flue-v2-tui-e2e-repair"
         ],
         "write": [
           ".gorombo/",
@@ -20530,10 +20572,107 @@
       ],
       "title": "Repair Flue 2 Memory Smoke Harness",
       "type": "work"
+    },
+    {
+      "acceptance": [
+        {
+          "criterion": "The TUI E2E harness uses the Flue 2 conversation client contract: structured user-message admission followed by durable reply read, with no ?wait query or beta string message body.",
+          "evidence": "runtime:evidence/repair-flue-v2-tui-e2e-harness/static-scan.json",
+          "id": "tui-e2e-uses-flue-v2-client-contract",
+          "kind": "test"
+        },
+        {
+          "criterion": "The built server accepts the direct agent prompt, settles it through the Flue 2 stream, returns a non-error assistant reply, and the packaged CLI remains runnable.",
+          "evidence": "runtime:evidence/repair-flue-v2-tui-e2e-harness/tui-e2e.log",
+          "id": "tui-e2e-passes",
+          "kind": "probe"
+        },
+        {
+          "criterion": "Typecheck, graph validation, specification verification, ledger verification, and the TUI E2E product test pass, and the repair changes fewer than 100 tracked files.",
+          "evidence": "runtime:evidence/repair-flue-v2-tui-e2e-harness/verification.json",
+          "id": "tui-e2e-repair-verified",
+          "kind": "test"
+        }
+      ],
+      "execution": {
+        "completion_condition": "The built TUI E2E product path passes through the Flue 2 client contract and the bounded milestone is committed and pushed.",
+        "max_attempts": 3,
+        "timeout_minutes": 180
+      },
+      "executor": {
+        "instructions": "Replace only the stale beta direct-agent request in scripts/test-tui-e2e.mjs with the installed Flue 2 SDK conversation client, retain the existing live-model and CLI assertions, and prove the built product path.",
+        "kind": "hybrid",
+        "name": "SIM-ONE Flue 2 TUI E2E repair"
+      },
+      "goal": "Migrate the TUI end-to-end product harness from the removed beta synchronous HTTP contract to the Flue 2 conversation client contract.",
+      "id": "repair-flue-v2-tui-e2e-harness",
+      "inputs": [
+        {
+          "artifact": "artifact:flue-v2-connectors-clients-change",
+          "name": "verified Flue 2 client integration",
+          "required": true
+        },
+        {
+          "artifact": "artifact:flue-v2-product-packaging-change",
+          "name": "verified Flue 2 product package",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "artifact": "artifact:flue-v2-tui-e2e-repair",
+          "format": "git-diff",
+          "name": "Flue 2 TUI E2E harness repair"
+        }
+      ],
+      "permissions": {
+        "destructive": false,
+        "external": [
+          "configured model provider for authorized TUI E2E smoke",
+          "loopback gateway"
+        ],
+        "read": [
+          "artifact:flue-v2-connectors-clients-change",
+          "artifact:flue-v2-product-packaging-change",
+          "scripts/test-tui-e2e.mjs",
+          "package.json",
+          "pnpm-lock.yaml",
+          "node_modules/@flue/runtime/docs/",
+          "node_modules/@flue/cli/docs/"
+        ],
+        "write": [
+          "scripts/test-tui-e2e.mjs",
+          "package.json",
+          "pnpm-lock.yaml",
+          "runtime:evidence/repair-flue-v2-tui-e2e-harness/"
+        ]
+      },
+      "resources": [
+        "scripts/test-tui-e2e.mjs",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "side_effects": {
+        "approval_required": false,
+        "description": "Repairs one product E2E harness, adds the direct Flue 2 SDK dependency, and runs a configured live-model smoke.",
+        "level": "reversible",
+        "rollback": "Revert the bounded TUI E2E repair commit and restore the prior harness and dependency manifest."
+      },
+      "state": "planned",
+      "tags": [
+        "flue",
+        "migration",
+        "tui",
+        "e2e",
+        "repair",
+        "verification"
+      ],
+      "title": "Repair Flue 2 TUI E2E Harness",
+      "type": "work"
     }
   ],
   "project": {
-    "context_version": "flue-v2-memory-smoke-repair:2026-08-02",
+    "context_version": "flue-v2-tui-e2e-repair:2026-08-02",
     "instructions": [
       "AGENTS.md",
       "src/AGENTS.md",
