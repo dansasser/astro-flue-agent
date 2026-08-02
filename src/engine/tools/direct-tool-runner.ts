@@ -4,6 +4,7 @@ import type {
   ToolDefinition,
   ToolRunEnvelope,
 } from '@flue/runtime';
+import { randomUUID } from 'node:crypto';
 import * as v from 'valibot';
 
 const silentLogger: FlueLogger = {
@@ -26,7 +27,7 @@ export async function runToolDirect(
   const parsedData = tool.input ? v.parse(tool.input, data) : data;
   return tool.run({
     data: parsedData,
-    toolCallId: options.toolCallId ?? `direct:${tool.name}`,
+    toolCallId: options.toolCallId ?? `direct:${tool.name}:${randomUUID()}`,
     signal: options.signal,
     log: options.log ?? silentLogger,
   } as never);
