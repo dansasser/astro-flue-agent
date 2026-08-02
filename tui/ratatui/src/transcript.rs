@@ -1069,9 +1069,15 @@ fn notice_kind(speaker: &str) -> TranscriptLineKind {
 }
 
 fn stable_chunk_identity(chunk: &ConversationChunk) -> Option<String> {
-    chunk
-        .position
-        .map(|position| format!("{}:{}", position.batch, position.index))
+    let position = chunk.position?;
+    let conversation_id = chunk
+        .value
+        .get("conversationId")
+        .and_then(serde_json::Value::as_str)?;
+    Some(format!(
+        "{conversation_id}:{}:{}",
+        position.batch, position.index
+    ))
 }
 
 fn chunk_kind(chunk: &ConversationChunk) -> Option<&str> {

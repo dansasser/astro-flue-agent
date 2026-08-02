@@ -10,6 +10,10 @@ import type { NormalizedMessageEvent } from '../../core/types/index.js';
 import { estimateTextTokens } from '../../engine/session/context-budget.js';
 import { directAgentHarnessName, directAgentSessionName } from '../../engine/session/direct-agent-session.js';
 import { parseLegacyFlueStorageKey } from '../../engine/session/flue-session-store.js';
+import {
+  readMessageText,
+  type FlueConversationSnapshot,
+} from '../../engine/session/flue-conversation.js';
 
 interface LegacyBetaConversationData {
   createdAt: string;
@@ -228,6 +232,44 @@ export class GoromboSessionDatabase {
     }
 
     await this.indexSessionMemory(storageKey, parts.harnessName, parts.sessionName, data);
+  }
+
+  async indexFlueConversationSnapshot(
+    sessionId: string,
+    snapshot: FlueConversationSnapshot,
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    const prompts = this.listNormalizedMessageEventsForSession({
+      sessionId,
+      limit: 1_000,
+    }).filter((record) => record.delivery.instanceId === snapshot.conversationId);
+    const entries: LegacyBetaConversationData['entries'] = [
+      ...prompts.map((record) => ({
+        id: `event:${record.event.id}`,
+        type: 'message',
+        timestamp: record.event.receivedAt,
+        message: { role: 'user', content: record.event.text },
+      })),
+      ...snapshot.messages
+        .filter((message) =>
+          message.role === 'assistant'
+          && message.purpose === 'assistant'
+          && message.display === 'visible'
+          && readMessageText(message).trim().length > 0)
+        .map((message) => ({
+          id: `message:${message.id}`,
+          type: 'message',
+          timestamp: now,
+          message: { role: 'assistant', content: readMessageText(message) },
+        })),
+    ];
+
+    await this.indexSessionMemory(
+      `flue-v2:${snapshot.conversationId}`,
+      'orchestrator',
+      sessionId,
+      { createdAt: now, updatedAt: now, entries },
+    );
   }
 
   async deleteLegacyBetaConversation(storageKey: string): Promise<void> {

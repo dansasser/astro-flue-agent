@@ -686,6 +686,7 @@ fn startup_preflight_creates_fresh_session_before_sending_one_greeting_prompt() 
 
     assert_eq!(creator_calls.load(Ordering::SeqCst), 1);
     assert_eq!(app.session_id(), "tui-startup-1");
+    assert_eq!(app.stream_url(), "/agents/orchestrator/fixture-instance");
     let prompts = prompts.lock().expect("prompt recorder should lock");
     assert_eq!(prompts.len(), 1);
     assert_eq!(prompts[0].0, "tui-startup-1");

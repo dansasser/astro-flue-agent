@@ -27,7 +27,10 @@ import {
   composeWorkspaceInstructions,
   resolveWorkspaceDirectory,
 } from '../../../workspace-loader.js';
-import type { CodingWorkerGithubMcp } from '../../../engine/workers/coding-worker/github/github-mcp.js';
+import {
+  prepareCodingWorkerGithubMcp,
+  type CodingWorkerGithubMcp,
+} from '../../../engine/workers/coding-worker/github/github-mcp.js';
 import { githubPatEnvironmentKey } from '../../../engine/workers/coding-worker/github/github-pat.js';
 import { createCodingGitHubTools } from '../../../engine/workers/coding-worker/github/github-tools.js';
 import type { GitHubClient } from '../../../engine/workers/coding-worker/github/github-client.js';
@@ -51,6 +54,10 @@ import type { CodingWorkspaceTargetInput } from '../../../engine/workers/coding-
 export const codingWorkerAgentName = 'coding-worker';
 export const codingWorkerDescription =
   'coding worker lead that coordinates worker-local triage, implementation, test/debug, code review, and GitHub subagents.';
+
+export const runtimeCodingWorkerGithubMcp = await prepareCodingWorkerGithubMcp({
+  env: process.env,
+});
 
 export interface CodingWorkerSubagentOptions extends CodingWorkspaceTargetInput {
   model?: string;
@@ -281,6 +288,7 @@ export function CodingWorker(_props: AgentProps): string {
     stateRoot: runtimePaths.codingWorkerState,
     approvalRoot: readOptionalEnv(process.env, 'GOROMBO_APPROVAL_ROOT'),
     env: createCodingWorkerToolEnv(process.env, runtimeRoot),
+    githubMcp: runtimeCodingWorkerGithubMcp,
   });
 
   useModel(selectedModelCard.specifier);

@@ -134,6 +134,32 @@ fn repeated_transport_delivery_is_deduped_by_chunk_position() {
 }
 
 #[test]
+fn chunk_positions_are_deduped_per_conversation_stream() {
+    let mut document = TranscriptDocument::default();
+    let first = chunk(serde_json::json!({
+        "type":"message-appended",
+        "conversationId":"generation-one",
+        "batch":1,
+        "submissionId":"submission-one",
+        "message":{"content":"First generation."}
+    }));
+    let second = chunk(serde_json::json!({
+        "type":"message-appended",
+        "conversationId":"generation-two",
+        "batch":1,
+        "submissionId":"submission-two",
+        "message":{"content":"Second generation."}
+    }));
+
+    document.apply_chunks(&[first, second]);
+
+    let transcript = rendered(&document);
+    assert!(transcript.contains("assistant: First generation."));
+    assert!(transcript.contains("assistant: Second generation."));
+    assert_eq!(document.exchanges().len(), 2);
+}
+
+#[test]
 fn fresh_reset_materializes_visible_history_and_settlements() {
     let mut document = TranscriptDocument::default();
     document.apply_chunks(&[chunk(serde_json::json!({

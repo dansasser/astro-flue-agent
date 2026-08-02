@@ -1469,6 +1469,10 @@ impl App {
         &self.stream_start_offset
     }
 
+    pub fn stream_url(&self) -> &str {
+        &self.stream_url
+    }
+
     pub fn max_scroll(&self) -> usize {
         self.transcript_rendered_row_count()
             .saturating_sub(self.transcript_viewport_height.max(1))
@@ -2495,9 +2499,6 @@ impl App {
         if session_id.is_empty() {
             return Err("Gateway returned an empty TUI session id.".to_string());
         }
-        self.stream_url = reply.stream_url.clone();
-        self.stream_start_offset = reply.stream_offset.clone();
-
         match self.startup_phase {
             StartupPhase::CreatingSession => {
                 if !reply.created {
@@ -2507,6 +2508,8 @@ impl App {
                     session_id,
                     reply.title,
                     format!("created fresh TUI session {session_id}"),
+                    reply.stream_url,
+                    reply.stream_offset,
                 );
                 diagnostics::session_lifecycle_completed("fresh", None, session_id);
             }
@@ -2522,6 +2525,8 @@ impl App {
                         format!(
                             "session {requested_session_selector} was not found; created fresh TUI session {session_id}"
                         ),
+                        reply.stream_url,
+                        reply.stream_offset,
                     );
                     diagnostics::session_lifecycle_completed(
                         "fresh_fallback",
@@ -2532,6 +2537,8 @@ impl App {
                 }
 
                 self.switch_session_with_announcement(session_id.to_string(), false);
+                self.stream_url = reply.stream_url;
+                self.stream_start_offset = reply.stream_offset;
                 self.session_title = clean_session_title(reply.title);
                 self.push_speaker_text("preflight", &format!("resumed TUI session {session_id}"));
                 self.start_history_load();
@@ -2556,8 +2563,12 @@ impl App {
         session_id: &str,
         session_title: Option<String>,
         announcement: String,
+        stream_url: String,
+        stream_offset: String,
     ) {
         self.switch_session_with_announcement(session_id.to_string(), false);
+        self.stream_url = stream_url;
+        self.stream_start_offset = stream_offset;
         self.session_title = clean_session_title(session_title);
         self.push_speaker_text("preflight", &announcement);
         self.attach_startup_stream();

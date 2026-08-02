@@ -10,7 +10,7 @@ export interface MessageListProps {
 export function MessageList({ messages }: MessageListProps) {
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1} overflowY="hidden">
-      {messages.filter((message) => message.display !== 'hidden').map((message) => (
+      {messages.map((message) => (
         <MessageView key={message.id} message={message} />
       ))}
     </Box>
